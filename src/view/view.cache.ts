@@ -9,6 +9,7 @@ export interface INodeCached {
     cos?: number;
     sin?: number;
     path?: Path2D;
+    text_path?: Path2D;
     img?: HTMLImageElement;
     pattern?: CanvasPattern;
     image_loading?: boolean;

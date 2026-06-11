@@ -15,14 +15,9 @@ import type { HollowMode } from "../../factory/node.adapter";
 export class LineAdapter extends PolylineAdapter {
 
     public static NAME = 'line';
-    public name = LineAdapter.NAME;
 
     hollow_mode: HollowMode = 'always';
     multistep_create = false;
-
-    register() {
-        NodeRegistry.register(this.name, this);
-    }
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

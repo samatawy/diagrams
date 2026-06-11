@@ -26,7 +26,8 @@ export class NodeRegistry {
      * @param type The type of the node.
      * @param handler The handler responsible for managing the node type.
      */
-    public static register(type: string, handler: INodeAdapter): void {
+    public static register(type: string, handler: INodeAdapter | (new () => INodeAdapter)): void {
+        handler = typeof handler === 'function' ? new handler() : handler;
         this._nodes.set(type, handler);
     }
 

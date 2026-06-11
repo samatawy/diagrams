@@ -24,6 +24,9 @@ export class ColorPalette {
      * @returns An array of color strings sorted by their usage frequency.
      */
     public frequentColors(): string[] {
+        if (this.colors_used.size === 0) {
+            this.refresh();
+        }
         return Array.from(this.colors_used).sort((a, b) => b[1] - a[1]).map(c => c[0]);
     }
 

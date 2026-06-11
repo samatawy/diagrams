@@ -14,14 +14,9 @@ import type { HollowMode, TextOverflowMode } from "../../factory/node.adapter";
 export class PolygonAdapter extends PolylineAdapter {
 
     public static NAME = 'polygon';
-    public name = PolygonAdapter.NAME;
 
     hollow_mode: HollowMode = 'if_transparent';
     text_overflow: TextOverflowMode = 'hidden';
-
-    register() {
-        NodeRegistry.register(this.name, this);
-    }
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

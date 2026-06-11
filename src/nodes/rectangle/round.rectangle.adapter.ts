@@ -14,11 +14,6 @@ import { RenderBasics } from "../render.basics";
 export class RoundRectangleAdapter extends RectangleAdapter {
 
     public static NAME = 'round_rectangle';
-    protected name = RoundRectangleAdapter.NAME;
-
-    register() {
-        NodeRegistry.register(this.name, this);
-    }
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

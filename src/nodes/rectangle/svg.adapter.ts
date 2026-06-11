@@ -14,13 +14,8 @@ import type { HollowMode } from "../../factory/node.adapter";
 export class SvgAdapter extends RectangleAdapter {
 
     public static NAME = 'svg';
-    protected name = SvgAdapter.NAME;
 
     hollow_mode: HollowMode = 'never';
-
-    register() {
-        NodeRegistry.register(this.name, this);
-    }
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

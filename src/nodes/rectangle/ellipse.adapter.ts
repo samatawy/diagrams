@@ -13,11 +13,6 @@ import { RenderBasics } from "../render.basics";
 export class EllipseAdapter extends RectangleAdapter {
 
     public static NAME = 'ellipse';
-    public NAME = EllipseAdapter.NAME;
-
-    register() {
-        NodeRegistry.register(this.NAME, this);
-    }
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

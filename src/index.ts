@@ -35,8 +35,9 @@ export * from './factory/node.adapter';
 export * from './factory/node.registry';
 
 // control
-export * from './control/history';
-export * from './control/diagram.edit.view';
+export * from './editview/history';
+export * from './editview/color.palette';
+export * from './editview/diagram.edit.view';
 
 // view
 export * from './layout/fit.viewport';
@@ -44,7 +45,9 @@ export * from './layout/z.order';
 export * from './view/coordinate.system';
 export * from './view/dto';
 export * from './view/diagram.view';
-export * from './elements/diagram.view.element';
-export * from './elements/diagram.edit.element';
 export * from './view/asset.store';
 export * from './view/view.cache';
+
+// elements
+export * from './elements/diagram.view.element';
+export * from './elements/diagram.edit.element';

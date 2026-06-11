@@ -73,6 +73,11 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected readonly handlePointerUp = (event: PointerEvent) => this.pointerUp(event);
 
+    // Only cancel an in-progress drag when the pointer leaves; ignore plain hover-exits.
+    protected readonly handlePointerLeave = (event: PointerEvent) => {
+        if (event.buttons !== 0) this.pointerUp(event);
+    };
+
     protected readonly handleWheel = (event: WheelEvent) => this.wheel(event);
 
     protected readonly handleKeyDown = (event: KeyboardEvent) => this.keydown(event);
@@ -121,7 +126,7 @@ export class DiagramView extends Diagram implements HasSelection {
         this.canvas.removeEventListener('pointerdown', this.handlePointerDown);
         this.canvas.removeEventListener('pointermove', this.handlePointerMove);
         this.canvas.removeEventListener('pointerup', this.handlePointerUp);
-        this.canvas.removeEventListener('pointerleave', this.handlePointerUp);
+        this.canvas.removeEventListener('pointerleave', this.handlePointerLeave);
         this.canvas.removeEventListener('wheel', this.handleWheel);
         this.canvas.removeEventListener('contextmenu', this.handleContextMenu);
         window.removeEventListener('keydown', this.handleKeyDown);
@@ -460,14 +465,18 @@ export class DiagramView extends Diagram implements HasSelection {
     /**
      * Renders the diagram onto the canvas, including any selection markers.
      * By default, both nodes and selection markers are rendered, but this can be controlled with the `what` parameter.
-     * @param what A string indicating what to render: 'nodes' to render only nodes, 'selection' to render only selection markers, or 'all' to render both.
+     * @param what A string indicating what to render: 'nodes' to render only nodes, 'selection' to render only selection markers, 'grid' to render only the grid, or 'all' to render everything.
      */
-    public render(what: 'nodes' | 'selection' | 'all' = 'all'): void {
+    public render(what: 'nodes' | 'selection' | 'grid' | 'all' = 'all'): void {
         if (!this.canvas || !this.context) return;
 
         this.coordinates.resetTransform(this.context);
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
         this.coordinates.applyViewportTransform(this.context);
+
+        if (this.grid?.visible && (what === 'grid' || what === 'all')) {
+            this.renderGrid(this.context);
+        }
 
         for (const layer of this.layers) {
             if (!layer.visible) continue;
@@ -487,6 +496,36 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         this.coordinates.resetTransform(this.context);
+    }
+
+    private renderGrid(context: CanvasRenderingContext2D): void {
+        const { zoom, pan } = this.coordinates;
+        const cellW = (this.grid.width || 20) * zoom;
+        const cellH = (this.grid.height || 20) * zoom;
+        const canvasW = this.canvas!.width;
+        const canvasH = this.canvas!.height;
+
+        const startX = -((pan.x % cellW) + cellW) % cellW;
+        const startY = -((pan.y % cellH) + cellH) % cellH;
+
+        context.save();
+        context.setTransform(1, 0, 0, 1, 0, 0);
+        context.strokeStyle = this.grid.color || 'lightgray';
+        context.lineWidth = 0.5;
+        context.globalAlpha = 0.6;
+        context.beginPath();
+
+        for (let x = startX; x <= canvasW; x += cellW) {
+            context.moveTo(x, 0);
+            context.lineTo(x, canvasH);
+        }
+        for (let y = startY; y <= canvasH; y += cellH) {
+            context.moveTo(0, y);
+            context.lineTo(canvasW, y);
+        }
+
+        context.stroke();
+        context.restore();
     }
 
     /**
@@ -920,7 +959,7 @@ export class DiagramView extends Diagram implements HasSelection {
         this.canvas.addEventListener('pointerdown', this.handlePointerDown);
         this.canvas.addEventListener('pointermove', this.handlePointerMove);
         this.canvas.addEventListener('pointerup', this.handlePointerUp);
-        this.canvas.addEventListener('pointerleave', this.handlePointerUp);
+        this.canvas.addEventListener('pointerleave', this.handlePointerLeave);
         this.canvas.addEventListener('wheel', this.handleWheel, { passive: false });
         this.canvas.addEventListener('contextmenu', this.handleContextMenu);
         window.addEventListener('keydown', this.handleKeyDown);

@@ -34,6 +34,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "docs": "typedoc",
+    "site": "npm run build && npm run docs && node scripts/build-site.mjs",
+    "site:run": "npm run site && npx --yes http-server -p 4173 ./site",
     "prepublishOnly": "npm run lint && npm run test && npm run build && npm run docs"
   },
   "keywords": [

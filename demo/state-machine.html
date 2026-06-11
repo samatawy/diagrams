@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+    <title>State Machine Demo</title>
+    <link rel="stylesheet"
+          href="./demo.css" />
+</head>
+
+<body>
+    <main class="page">
+        <div class="shell">
+            <header class="topbar">
+                <div class="brand">State Machine Viewer</div>
+                <nav class="nav">
+                    <a href="./index.html">All demos</a>
+                    <a href="../index.html">Docs</a>
+                </nav>
+            </header>
+
+            <section class="canvas-card">
+                <h2>State Machine Viewer</h2>
+                <p>A state machine example using DiagramView with ellipses, rounded rectangles, and anchored transition
+                    lines.</p>
+                <div class="facts">
+                    <div class="fact"><strong>Mode</strong><span>Read-only viewer with initial fit-to-content.</span>
+                    </div>
+                    <div class="fact"><strong>Focus</strong><span>State transitions, feedback loops, and directional
+                            arrows.</span></div>
+                    <div class="fact"><strong>Use Case</strong><span>Workflow engines, lifecycle views, runtime
+                            states.</span></div>
+                </div>
+                <div id="state-machine-demo"
+                     class="canvas-frame"></div>
+                <p class="note">This example intentionally uses different node types from the decision tree so the docs
+                    and demos cover more of the rendering surface.</p>
+            </section>
+        </div>
+    </main>
+    <script type="module"
+            src="./state-machine.js"></script>
+</body>
+
+</html>

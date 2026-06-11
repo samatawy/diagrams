@@ -1,5 +1,5 @@
 import type { INode } from '../src';
-import { DiagramEditView } from '../src/control/diagram.edit.view';
+import { DiagramEditView } from '../src/editview/diagram.edit.view';
 import { DiagramEditElement, registerDiagramEditElement } from '../src/elements/diagram.edit.element';
 
 function createContext(): CanvasRenderingContext2D {

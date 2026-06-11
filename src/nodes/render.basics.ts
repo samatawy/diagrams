@@ -159,6 +159,12 @@ export class RenderBasics {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
+        const cache = diagram.getCache();
+        const cached = cache.getNode(node) || {} as INodeCached;
+        cached.text_path = this.getTextHitPath(node, context);
+        if (typeof (cache as { setNode?: unknown }).setNode === 'function') {
+            cache.setNode(node, cached);
+        }
 
         if (node.points.length > 1) {
             let rect = coordinates.getBoundingRect(node);

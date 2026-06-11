@@ -93,7 +93,27 @@ The older Angular editor under `src/diagram/` is currently best treated as a ref
 - `npm run test`
 - `npm run build`
 - `npm run docs`
+- `npm run site`
 
 ## Documentation
 
 Generated API documentation is produced with TypeDoc into `docs/`.
+
+## Docs And Demo Site
+
+The GitHub Pages site is assembled into `site/` with:
+
+```bash
+npm run site
+```
+
+The published layout is:
+
+- `/` for the generated API docs
+- `/demo/` for the browser demos
+
+For this repository's Pages deployment, that means:
+
+- `https://samatawy.github.io/diagrams/` for the docs landing page
+- `https://samatawy.github.io/diagrams/demo/` for the demo index
+

@@ -288,6 +288,9 @@ export class DiagramEditView extends DiagramView {
 
         for (let node of this.selection()) {
             node.fillStyle = color;
+            if (NodeRegistry.adapter(node.type)?.hollow_mode == 'if_transparent') {
+                node.hollow = color == 'transparent' || color == 'transparent';
+            }
         }
         this.color_palette.refresh();
 
@@ -815,16 +818,17 @@ export class DiagramEditView extends DiagramView {
             this.current.layer = this.createLayerAt('top');
         }
         for (let node of this.selection()) {
-            let clone = await { ...node };
-            if (clone) {
-                NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
-                // clone.moveBy(24, 24);
-                this.nodes.push(clone);
-                this.current.layer.nodes.push(clone.id);
+            const clone = {
+                ...node,
+                id: `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                points: node.points.map(p => ({ ...p })),
+            };
+            NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
+            this.nodes.push(clone);
+            this.current.layer.nodes.push(clone.id);
 
-                this.deselect(node);
-                this.select(clone);
-            }
+            this.deselect(node);
+            this.select(clone);
         }
         this.render('all');
         this.renderPreview();
@@ -875,63 +879,58 @@ export class DiagramEditView extends DiagramView {
 
         this.addUndo();
 
-        let first = nodes[0]!;
-        let rect = this.coordinates.getBoundingRect(first, true);
+        // Compute the union bounding rect across all selected nodes.
+        const rects = nodes.map(n => this.coordinates.getBoundingRect(n, true));
+        const unionLeft = Math.min(...rects.map(r => r.left));
+        const unionTop = Math.min(...rects.map(r => r.top));
+        const unionRight = Math.max(...rects.map(r => r.left + r.width));
+        const unionBottom = Math.max(...rects.map(r => r.top + r.height));
 
         switch (dir) {
             case 'left':
-                for (let node of nodes) {
-                    let old = this.coordinates.getBoundingRect(node, true);
-                    let byX = rect.left - old.left;
-                    NodeBasics.moveBy(node, byX, 0, 'ignore_scale');
+                for (let i = 0; i < nodes.length; i++) {
+                    let byX = unionLeft - rects[i]!.left;
+                    NodeBasics.moveBy(nodes[i]!, byX, 0, 'ignore_scale');
                 }
                 break;
 
-            case 'right': {
-                let right = rect.left + rect.width;
-                for (let node of nodes) {
-                    let old = this.coordinates.getBoundingRect(node, true);
-                    let byX = right - (old.left + old.width);
-                    NodeBasics.moveBy(node, byX, 0, 'ignore_scale');
+            case 'right':
+                for (let i = 0; i < nodes.length; i++) {
+                    let byX = unionRight - (rects[i]!.left + rects[i]!.width);
+                    NodeBasics.moveBy(nodes[i]!, byX, 0, 'ignore_scale');
                 }
                 break;
-            }
 
             case 'top':
-                for (let node of nodes) {
-                    let old = this.coordinates.getBoundingRect(node, true);
-                    let byY = rect.top - old.top;
-                    NodeBasics.moveBy(node, 0, byY, 'ignore_scale');
+                for (let i = 0; i < nodes.length; i++) {
+                    let byY = unionTop - rects[i]!.top;
+                    NodeBasics.moveBy(nodes[i]!, 0, byY, 'ignore_scale');
                 }
                 break;
 
-            case 'bottom': {
-                let bottom = rect.top + rect.height;
-                for (let node of nodes) {
-                    let old = this.coordinates.getBoundingRect(node, true);
-                    let byY = bottom - (old.top + old.height);
-                    NodeBasics.moveBy(node, 0, byY, 'ignore_scale');
+            case 'bottom':
+                for (let i = 0; i < nodes.length; i++) {
+                    let byY = unionBottom - (rects[i]!.top + rects[i]!.height);
+                    NodeBasics.moveBy(nodes[i]!, 0, byY, 'ignore_scale');
                 }
                 break;
-            }
 
             case 'center': {
-                let center = rect.left + (rect.width / 2);
-                for (let node of nodes) {
-                    let old = this.coordinates.getBoundingRect(node, true);
-                    let byX = center - (old.left + (old.width / 2));
-                    NodeBasics.moveBy(node, byX, 0, 'ignore_scale');
+                let center = unionLeft + (unionRight - unionLeft) / 2;
+                for (let i = 0; i < nodes.length; i++) {
+                    let byX = center - (rects[i]!.left + rects[i]!.width / 2);
+                    NodeBasics.moveBy(nodes[i]!, byX, 0, 'ignore_scale');
                 }
                 break;
             }
 
             case 'middle': {
-                let middle = rect.top + (rect.height / 2);
-                for (let node of nodes) {
-                    let old = this.coordinates.getBoundingRect(node, true);
-                    let byY = middle - (old.top + (old.height / 2));
-                    NodeBasics.moveBy(node, 0, byY, 'ignore_scale');
+                let middle = unionTop + (unionBottom - unionTop) / 2;
+                for (let i = 0; i < nodes.length; i++) {
+                    let byY = middle - (rects[i]!.top + rects[i]!.height / 2);
+                    NodeBasics.moveBy(nodes[i]!, 0, byY, 'ignore_scale');
                 }
+                break;
             }
         }
         this.render('all');
@@ -1339,9 +1338,8 @@ export class DiagramEditView extends DiagramView {
             this.reflectStyles(this.downShape);
         }
 
-
         // We need the handle for move operations.. (maybe select as well)
-        this.downHandle = this.hitHandle(event.offsetX, event.offsetY, this.downShape);  // moved here
+        this.downHandle = this.hitHandle(event.offsetX, event.offsetY, this.downShape);
 
         // Alt+MOVE = insert new point on the segment (then it can be dragged).
         // Alt+POINT = remove that inner point immediately (no drag).
@@ -1354,8 +1352,6 @@ export class DiagramEditView extends DiagramView {
             && this.downHandle == NodeHandle.POINT
             && event.altKey
             && ConnectorBasics.supportsMutablePoints(this.downShape);
-
-        const additiveSelection = toggleSelectionGesture;
 
         if (rectSelectionGesture) this.downHandle = NodeHandle.NONE;
 
@@ -1376,18 +1372,24 @@ export class DiagramEditView extends DiagramView {
             // this.downShape.disconnect(event.offsetX, event.offsetY);
         }
 
-        if (insertPointGesture && this.downShape) {
+        let removedPoint = false;
+
+        if (removePointGesture && this.downShape) {
+            const beforeCount = this.downShape.points.length;
+            ConnectorBasics.removePoint(this.downShape, event.offsetX, event.offsetY);
+            removedPoint = this.downShape.points.length < beforeCount;
+            if (removedPoint) {
+                this.pointChangedNodes.add(this.downShape);
+                // Suppress any drag gesture after removal.
+                this.downHandle = NodeHandle.NONE;
+            }
+        }
+
+        if (insertPointGesture && this.downShape && (!removePointGesture || !removedPoint)) {
             ConnectorBasics.insertPoint(this.downShape, event.offsetX, event.offsetY);
             this.pointChangedNodes.add(this.downShape);
             // After insertion the new point is at the cursor; treat it as a POINT drag.
             this.downHandle = NodeHandle.POINT;
-        }
-
-        if (removePointGesture && this.downShape) {
-            ConnectorBasics.removePoint(this.downShape, event.offsetX, event.offsetY);
-            this.pointChangedNodes.add(this.downShape);
-            // Suppress any drag gesture after removal.
-            this.downHandle = NodeHandle.NONE;
         }
 
         // Check for shiftKey since we will not add an Undo step if we are selecting a rect..
@@ -1395,12 +1397,9 @@ export class DiagramEditView extends DiagramView {
             // If we are clicking on an already selected item, only get the handle..
             // the rest will be done by SelectMove..
             this.addUndo();
-
-            // this.downHandle = this.model.hitHandle(event.offsetX, event.offsetY, this.downShape);  // removed here
             return;
         }
 
-        // this.downCtrl = event.ctrlKey;
         if (toggleSelectionGesture && this.downShape) {
             // Toggle select of downShape..
             if (this.downShape && this.isSelected(this.downShape)) {
@@ -1416,7 +1415,7 @@ export class DiagramEditView extends DiagramView {
 
         // select the local shape only..
         if (this.downShape && !toggleSelectionGesture && !rectSelectionGesture) {
-            this.select(this.downShape);  // moved here
+            this.select(this.downShape);
         }
 
         if (this.downHandle != NodeHandle.NONE) {
@@ -1572,9 +1571,12 @@ export class DiagramEditView extends DiagramView {
         if (this.downRect && this.downPos) {
             const movePos = { x: event.offsetX, y: event.offsetY }
             const selectionRect = this.normalizeRect(this.downPos, movePos);
-            const isExactClick = movePos.x === this.downPos.x && movePos.y === this.downPos.y;
+            const moveDistance = Math.hypot(movePos.x - this.downPos.x, movePos.y - this.downPos.y);
+            const isNearClick = moveDistance <= 8;
+            const stillOnDownShape = !!this.downShape
+                && this.hitNodes(event.offsetX, event.offsetY).some(node => node.id === this.downShape!.id);
 
-            if (event.shiftKey && this.downShape && isExactClick) {
+            if (event.shiftKey && this.downShape && isNearClick && stillOnDownShape) {
                 if (this.isSelected(this.downShape)) {
                     this.deselect(this.downShape);
                 } else {

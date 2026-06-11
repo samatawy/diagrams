@@ -18,11 +18,6 @@ import { RenderBasics } from "../render.basics";
 export class CurveAdapter extends PolylineAdapter {
 
     public static NAME = 'curve';
-    public name = CurveAdapter.NAME;
-
-    register() {
-        NodeRegistry.register(this.name, this);
-    }
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

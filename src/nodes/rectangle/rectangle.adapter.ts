@@ -14,7 +14,12 @@ import type { HollowMode, INodeAdapter, TextOverflowMode } from "../../factory/n
 export class RectangleAdapter implements INodeAdapter {
 
     public static NAME = 'rectangle';
-    protected name = RectangleAdapter.NAME;
+
+    public get name(): string {
+        return (this.constructor as typeof RectangleAdapter).NAME;
+    }
+
+    protected readonly hitStrokePadding = 8;
 
     hollow_mode: HollowMode = 'if_transparent';
 
@@ -22,6 +27,10 @@ export class RectangleAdapter implements INodeAdapter {
     multistep_create = false;
     has_text = true;
     text_overflow: TextOverflowMode = 'hidden';
+
+    static register() {
+        NodeRegistry.register(this.NAME, this);
+    }
 
     register() {
         NodeRegistry.register(this.name, this);
@@ -55,10 +64,15 @@ export class RectangleAdapter implements INodeAdapter {
             if (Math.abs(rect.left + rect.width + 8 + 4 - x) <= 4 &&
                 Math.abs(rect.top + rect.height / 2 - y) <= 4) return NodeHandle.ROTATE;
 
+            if (cached?.text_path && coordinates.isPointInPath(cached.text_path, x, y)) {
+                return NodeHandle.MOVE;
+            }
+
             let inpath: boolean = false;
             if (cached?.path) {
+                const hitStrokeWidth = Math.max(node.lineWidth + this.hitStrokePadding, 10);
                 inpath = (node.hollow) ?
-                    coordinates.isPointInStroke(cached.path, x, y) :
+                    coordinates.isPointInStroke(cached.path, x, y, hitStrokeWidth) :
                     coordinates.isPointInPath(cached.path, x, y);
             }
 

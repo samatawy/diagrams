@@ -106,10 +106,6 @@ class TestDiagramEditView extends DiagramEditView {
         this.keydown(event);
     }
 
-    public triggerKeyup(event: KeyboardEvent): void {
-        this.keyup(event);
-    }
-
     public override hitNodes(x: number, y: number): INode[] {
         if (this.hitNodesMock) {
             return this.hitNodesMock(x, y);
@@ -371,98 +367,7 @@ describe('DiagramEditable', () => {
         expect(editview.selection().map(node => node.id)).toEqual(['node-2']);
     });
 
-    it('starts a selection rect with Shift+drag even when starting on a node', () => {
-        const host = createHost(400, 300);
-        const editview = new TestDiagramEditView('demo', host);
-        const layer = editview.upsertLayer('main');
-        const first: INode = {
-            id: 'node-1',
-            type: 'rectangle',
-            points: [{ x: 10, y: 20 }, { x: 110, y: 80 }],
-            hollow: false,
-            text: 'One',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
-        const second: INode = {
-            id: 'node-2',
-            type: 'rectangle',
-            points: [{ x: 140, y: 20 }, { x: 240, y: 80 }],
-            hollow: false,
-            text: 'Two',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
-
-        editview.upsertNode(first);
-        editview.upsertNode(second);
-        layer.nodes.push(first.id, second.id);
-        editview.setHitNodesMock((x: number, y: number) => {
-            const found: INode[] = [];
-            if (nodeAt(first, x, y)) found.push(first);
-            if (nodeAt(second, x, y)) found.push(second);
-            return found;
-        });
-        editview.setHitHandleMock((x: number, y: number) => {
-            if (nodeAt(first, x, y) || nodeAt(second, x, y)) {
-                return NodeHandle.MOVE;
-            }
-            return NodeHandle.NONE;
-        });
-
-        editview.triggerPointerDown({
-            button: 0,
-            buttons: 1,
-            shiftKey: true,
-            offsetX: 20,
-            offsetY: 40,
-            pointerId: 1,
-            preventDefault() { },
-            stopImmediatePropagation() { },
-        } as PointerEvent);
-
-        editview.triggerPointerMove({
-            buttons: 1,
-            shiftKey: true,
-            offsetX: 220,
-            offsetY: 70,
-        } as PointerEvent);
-
-        editview.triggerPointerUp({
-            button: 0,
-            buttons: 0,
-            shiftKey: true,
-            offsetX: 220,
-            offsetY: 70,
-            pointerId: 1,
-            preventDefault() { },
-            stopImmediatePropagation() { },
-        } as PointerEvent);
-
-        expect(editview.selection().map(node => node.id).sort()).toEqual(['node-1', 'node-2']);
-    });
-
-    it('toggles selection membership with Shift+click on a node', () => {
+    it('toggles selection membership with Shift+pointerup on a node', () => {
         const host = createHost(400, 300);
         const editview = new TestDiagramEditView('demo', host);
         const layer = editview.upsertLayer('main');
@@ -532,6 +437,7 @@ describe('DiagramEditable', () => {
             preventDefault() { },
             stopImmediatePropagation() { },
         } as PointerEvent);
+
         editview.triggerPointerUp({
             button: 0,
             buttons: 0,
@@ -543,7 +449,7 @@ describe('DiagramEditable', () => {
             stopImmediatePropagation() { },
         } as PointerEvent);
 
-        expect(editview.selection().map(node => node.id).sort()).toEqual(['node-1', 'node-2']);
+        expect(editview.selection().map(node => node.id)).toEqual(['node-1', 'node-2']);
 
         editview.triggerPointerDown({
             button: 0,
@@ -555,6 +461,7 @@ describe('DiagramEditable', () => {
             preventDefault() { },
             stopImmediatePropagation() { },
         } as PointerEvent);
+
         editview.triggerPointerUp({
             button: 0,
             buttons: 0,
@@ -632,7 +539,7 @@ describe('DiagramEditable', () => {
         expect(moved).toEqual(['node-1']);
     });
 
-    it('starts a selection rect with pointerdown from empty space', () => {
+    it('starts a selection rect with Shift+pointerdown from empty space', () => {
         const host = createHost(400, 300);
         const editview = new TestDiagramEditView('demo', host);
         const layer = editview.upsertLayer('main');
@@ -688,6 +595,7 @@ describe('DiagramEditable', () => {
         editview.triggerPointerDown({
             button: 0,
             buttons: 1,
+            shiftKey: true,
             offsetX: 5,
             offsetY: 10,
             pointerId: 1,
@@ -697,6 +605,7 @@ describe('DiagramEditable', () => {
 
         editview.triggerPointerMove({
             buttons: 1,
+            shiftKey: true,
             offsetX: 220,
             offsetY: 70,
         } as PointerEvent);
@@ -704,6 +613,7 @@ describe('DiagramEditable', () => {
         editview.triggerPointerUp({
             button: 0,
             buttons: 0,
+            shiftKey: true,
             offsetX: 220,
             offsetY: 70,
             pointerId: 1,
@@ -714,75 +624,10 @@ describe('DiagramEditable', () => {
         expect(editview.selection().map(node => node.id).sort()).toEqual(['node-1', 'node-2']);
     });
 
-    it('pans with space+drag even when starting on a node', () => {
+    it('drags a polyline endpoint with Alt+pointerdown when starting on a point handle', () => {
         const host = createHost(400, 300);
         const editview = new TestDiagramEditView('demo', host);
         const layer = editview.upsertLayer('main');
-        const node: INode = {
-            id: 'node-1',
-            type: 'rectangle',
-            points: [{ x: 10, y: 20 }, { x: 110, y: 80 }],
-            hollow: false,
-            text: 'One',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
-
-        editview.upsertNode(node);
-        layer.nodes.push(node.id);
-        editview.select(node);
-        editview.setHitNodesMock((x: number, y: number) => nodeAt(node, x, y) ? [node] : []);
-        editview.setHitHandleMock((x: number, y: number) => nodeAt(node, x, y) ? NodeHandle.MOVE : NodeHandle.NONE);
-
-        editview.triggerKeydown({ key: ' ' } as KeyboardEvent);
-
-        editview.triggerPointerDown({
-            button: 0,
-            buttons: 1,
-            offsetX: 20,
-            offsetY: 40,
-            pointerId: 1,
-            preventDefault() { },
-            stopImmediatePropagation() { },
-        } as PointerEvent);
-
-        editview.triggerPointerMove({
-            buttons: 1,
-            offsetX: 40,
-            offsetY: 60,
-        } as PointerEvent);
-
-        editview.triggerPointerUp({
-            button: 0,
-            buttons: 0,
-            offsetX: 40,
-            offsetY: 60,
-            pointerId: 1,
-            preventDefault() { },
-            stopImmediatePropagation() { },
-        } as PointerEvent);
-
-        editview.triggerKeyup({ key: ' ' } as KeyboardEvent);
-
-        expect(editview.getCoordinates().pan).toEqual({ x: -20, y: -20 });
-        expect(node.points).toEqual([{ x: 10, y: 20 }, { x: 110, y: 80 }]);
-    });
-
-    it('inserts a polyline point with Alt+click on a segment and allows dragging it', () => {
-        const host = createHost(400, 300);
-        const editview = new TestDiagramEditView('demo', host);
-        const layer = editview.upsertLayer('main');
-        // Points: (20,20) -> (120,20) -> (120,120). Segment midpoint at (70,20).
         const polyline: INode = {
             id: 'polyline-1',
             type: 'polyline',
@@ -805,107 +650,43 @@ describe('DiagramEditable', () => {
 
         editview.upsertNode(polyline);
         layer.nodes.push(polyline.id);
+        editview.render();
         editview.select(polyline);
-        // Mock MOVE handle at the segment midpoint (70,20) and NONE elsewhere.
-        editview.setHitNodesMock((x: number, y: number) => (x === 70 && y === 20) ? [polyline] : []);
-        editview.setHitHandleMock((x: number, y: number) => (x === 70 && y === 20) ? NodeHandle.MOVE : NodeHandle.NONE);
 
-        // Alt+click on the segment between point[0] and point[1].
         editview.triggerPointerDown({
             button: 0,
             buttons: 1,
             altKey: true,
-            offsetX: 70,
+            offsetX: 20,
             offsetY: 20,
             pointerId: 1,
             preventDefault() { },
             stopImmediatePropagation() { },
         } as PointerEvent);
 
-        // After insert a new point at (70,20) is at index 1. Drag it to (70,40).
-        editview.setHitHandleMock((x: number, y: number) => NodeHandle.POINT); // dragging a point now
         editview.triggerPointerMove({
             buttons: 1,
-            offsetX: 70,
-            offsetY: 40,
+            offsetX: 45,
+            offsetY: 55,
         } as PointerEvent);
 
         editview.triggerPointerUp({
             button: 0,
             buttons: 0,
-            offsetX: 70,
-            offsetY: 40,
+            altKey: true,
+            offsetX: 45,
+            offsetY: 55,
             pointerId: 1,
             preventDefault() { },
             stopImmediatePropagation() { },
         } as PointerEvent);
 
         expect(polyline.points).toEqual([
-            { x: 20, y: 20 },
-            { x: 70, y: 40 },
+            { x: 45, y: 55 },
             { x: 120, y: 20 },
             { x: 120, y: 120 },
         ]);
         expect(editview.selection().map(node => node.id)).toEqual(['polyline-1']);
-    });
-
-    it('removes an inner polyline point with Alt+click on an existing point', () => {
-        const host = createHost(400, 300);
-        const editview = new TestDiagramEditView('demo', host);
-        const layer = editview.upsertLayer('main');
-        // 4-point polyline; point[1]=(70,20) is an inner point.
-        const polyline: INode = {
-            id: 'polyline-1',
-            type: 'polyline',
-            points: [{ x: 20, y: 20 }, { x: 70, y: 20 }, { x: 120, y: 20 }, { x: 120, y: 120 }],
-            hollow: true,
-            text: '',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: true,
-            transparent: true,
-            strokeStyle: '#000000',
-            fillStyle: 'transparent',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
-
-        editview.upsertNode(polyline);
-        layer.nodes.push(polyline.id);
-        editview.select(polyline);
-        editview.setHitNodesMock(() => [polyline]);
-        editview.setHitHandleMock(() => NodeHandle.POINT);
-
-        editview.triggerPointerDown({
-            button: 0,
-            buttons: 1,
-            altKey: true,
-            offsetX: 70,
-            offsetY: 20,
-            pointerId: 1,
-            preventDefault() { },
-            stopImmediatePropagation() { },
-        } as PointerEvent);
-
-        editview.triggerPointerUp({
-            button: 0,
-            buttons: 0,
-            offsetX: 70,
-            offsetY: 20,
-            pointerId: 1,
-            preventDefault() { },
-            stopImmediatePropagation() { },
-        } as PointerEvent);
-
-        expect(polyline.points).toEqual([
-            { x: 20, y: 20 },
-            { x: 120, y: 20 },
-            { x: 120, y: 120 },
-        ]);
     });
 
     it('emits tool-changed when selecting a tool and when reverting to select', async () => {

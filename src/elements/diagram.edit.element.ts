@@ -1,5 +1,5 @@
 import type { Diagram } from "../model/diagram";
-import { DiagramEditView } from "../control/diagram.edit.view";
+import { DiagramEditView } from "../editview/diagram.edit.view";
 
 export const DIAGRAM_EDIT_TAG = 'pz-diagram-edit';
 

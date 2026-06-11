@@ -14,6 +14,12 @@ import type { HollowMode, INodeAdapter, TextOverflowMode } from "../../factory/n
  */
 export class PolylineAdapter implements INodeAdapter {
 
+    public static NAME = 'polyline';
+
+    public get name(): string {
+        return (this.constructor as typeof PolylineAdapter).NAME;
+    }
+
     protected readonly hitStrokePadding = 8;
 
     hollow_mode: HollowMode = 'always';
@@ -23,8 +29,9 @@ export class PolylineAdapter implements INodeAdapter {
     has_text = false;
     text_overflow: TextOverflowMode = 'visible';
 
-    public static NAME = 'polyline';
-    protected name = PolylineAdapter.NAME;
+    static register() {
+        NodeRegistry.register(this.NAME, this);
+    }
 
     register() {
         NodeRegistry.register(this.name, this);

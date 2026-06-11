@@ -1,5 +1,5 @@
 // import type { Illustration } from '../src/illustration/illustration';
-import { HistoryStack } from '../src/control/history';
+import { HistoryStack } from '../src/editview/history';
 import type { ISerializer } from '../src/io/serialized.types';
 
 interface LayerState {

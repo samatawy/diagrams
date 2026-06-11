@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+    <title>Decision Tree Demo</title>
+    <link rel="stylesheet"
+          href="./demo.css" />
+</head>
+
+<body>
+    <main class="page">
+        <div class="shell">
+            <header class="topbar">
+                <div class="brand">Decision Tree Viewer</div>
+                <nav class="nav">
+                    <a href="./index.html">All demos</a>
+                    <a href="../index.html">Docs</a>
+                </nav>
+            </header>
+
+            <section class="canvas-card">
+                <h2>Decision Tree Viewer</h2>
+                <p>A compact branching example using DiagramView, box nodes, and anchored lines to show a simple
+                    underwriting-style flow.</p>
+                <div class="facts">
+                    <div class="fact"><strong>Mode</strong><span>Read-only viewer with pan and zoom.</span></div>
+                    <div class="fact"><strong>Focus</strong><span>Anchored edges, branching, and fit-to-content
+                            layout.</span></div>
+                    <div class="fact"><strong>Use Case</strong><span>Decision trees, questionnaire flows, triage
+                            logic.</span></div>
+                </div>
+                <div id="decision-tree-demo"
+                     class="canvas-frame"></div>
+                <p class="note">Tip: drag empty space to pan, wheel to zoom, and use the docs link above to compare the
+                    API surface with the live result.</p>
+            </section>
+        </div>
+    </main>
+    <script type="module"
+            src="./decision-tree.js"></script>
+</body>
+
+</html>
