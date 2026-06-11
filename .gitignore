@@ -1,0 +1,20 @@
+dist
+docs
+coverage
+node_modules
+*.tgz
+*.log
+*.tsbuildinfo
+*.*profile
+tmp
+logs
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+.VolumeIcon.icns

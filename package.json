@@ -1,0 +1,61 @@
+{
+  "name": "@samatawy/diagrams",
+  "version": "0.1.0",
+  "description": "Browser-first TypeScript primitives for diagram models and viewport transforms.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "browser": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "clean": "rimraf dist docs",
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean --platform browser",
+    "dev": "tsup src/index.ts --format esm,cjs --dts --watch --platform browser",
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "docs": "typedoc",
+    "prepublishOnly": "npm run lint && npm run test && npm run build && npm run docs"
+  },
+  "keywords": [
+    "typescript",
+    "browser",
+    "diagram",
+    "viewport",
+    "svg",
+    "canvas"
+  ],
+  "author": "Sam Atawy <sam.atawy@gmail.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.3.1",
+    "jsdom": "^26.1.0",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.5.0",
+    "typedoc": "^0.28.14",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "uuid": "^14.0.0"
+  }
+}
