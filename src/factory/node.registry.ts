@@ -1,4 +1,5 @@
 import type { INodeAdapter } from "./node.adapter";
+import { IconRegistry } from "./icon.registry";
 
 /**
  * NodeRegistry is a central registry for managing different types of node handlers.
@@ -29,6 +30,10 @@ export class NodeRegistry {
     public static register(type: string, handler: INodeAdapter | (new () => INodeAdapter)): void {
         handler = typeof handler === 'function' ? new handler() : handler;
         this._nodes.set(type, handler);
+
+        if (handler.icon && !IconRegistry.has(type)) {
+            IconRegistry.register(type, handler.icon);
+        }
     }
 
     /**

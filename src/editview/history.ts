@@ -78,6 +78,22 @@ export class HistoryStack {
     }
 
     /**
+     * Indicates whether there are any states in the undo stack that can be undone. Returns true if there is at least one state in the undo stack, false otherwise.
+     * @returns true if undo is possible, false otherwise.
+     */
+    public get canUndo(): boolean {
+        return this.undoList.length > 0;
+    }
+
+    /**
+     * Indicates whether there are any states in the redo stack that can be redone. Returns true if there is at least one state in the redo stack, false otherwise.
+     * @returns true if redo is possible, false otherwise.
+     */
+    public get canRedo(): boolean {
+        return this.redoList.length > 0;
+    }
+
+    /**
      * Clears the history stacks for both undo and redo, effectively resetting the history of changes.
      */
     public clear() {

@@ -7,7 +7,7 @@ import { shadowStyles, type ShadowStyle } from "../shadows";
 import { isConnection, isNode } from "../guards";
 
 import { NodeBasics } from "../nodes/node.basics";
-import { ConnectorBasics } from "../nodes/connector.basics";
+import { ConnectionBasics } from "../nodes/connection.basics";
 import { SelectionBasics } from "../nodes/selection.basics";
 import { jsonSerializer } from "../io/json.serializer";
 
@@ -77,6 +77,7 @@ export class DiagramEditView extends DiagramView {
         shadowStyle: ShadowStyle;
         fontFace: string;
         fontSize: number;
+        textColor: string;
         textAlign: ITextAlign;
         textBaseline: ITextBaseline;
         nodeText?: string;
@@ -87,6 +88,7 @@ export class DiagramEditView extends DiagramView {
             shadowStyle: shadowStyles[0]!,
             fontFace: 'Tahoma',
             fontSize: 16,
+            textColor: '#000000',
             textAlign: 'center',
             textBaseline: 'middle',
             nodeText: undefined,
@@ -172,6 +174,10 @@ export class DiagramEditView extends DiagramView {
 
     public set fillColor(value: string) {
         this.setFillColor(value);
+    }
+
+    public set textColor(value: string) {
+        this.setTextColor(value);
     }
 
     public get shadowStyle(): ShadowStyle {
@@ -294,6 +300,20 @@ export class DiagramEditView extends DiagramView {
         }
         this.color_palette.refresh();
 
+        this.render('all');
+        this.renderPreview();
+    }
+
+    public setTextColor(color: string): void {
+        if (this.selection().length) {
+            this.addUndo();
+        }
+
+        this.settings.textColor = color;
+
+        for (let node of this.selection()) {
+            node.textColor = color;
+        }
         this.render('all');
         this.renderPreview();
     }
@@ -438,12 +458,30 @@ export class DiagramEditView extends DiagramView {
     // ==================================================
 
     /**
-     * 
+     * Take a snapshot of the current diagram state and push it onto the undo stack. 
+     * This should be called before making any changes to the diagram that should be undoable. 
+     * After calling this method, the `canUndo` property will return true, indicating that there is now an action in the undo stack that can be undone.
      */
     protected addUndo(): void {
         this.history?.addUndo();
 
         this.dirty = true;
+    }
+
+    /**
+     * Returns true if there are actions in the undo stack that can be undone, false otherwise.
+     * @returns A boolean indicating whether an undo operation can be performed.
+     */
+    public get canUndo(): boolean {
+        return this.history?.canUndo ?? false;
+    }
+
+    /**
+     * Returns true if there are actions in the redo stack that can be redone, false otherwise.
+     * @returns A boolean indicating whether a redo operation can be performed.
+     */
+    public get canRedo(): boolean {
+        return this.history?.canRedo ?? false;
     }
 
     /**
@@ -1346,12 +1384,12 @@ export class DiagramEditView extends DiagramView {
         const insertPointGesture = !!this.downShape
             && this.downHandle == NodeHandle.MOVE
             && event.altKey
-            && ConnectorBasics.supportsMutablePoints(this.downShape);
+            && ConnectionBasics.supportsMutablePoints(this.downShape);
 
         const removePointGesture = !!this.downShape
             && this.downHandle == NodeHandle.POINT
             && event.altKey
-            && ConnectorBasics.supportsMutablePoints(this.downShape);
+            && ConnectionBasics.supportsMutablePoints(this.downShape);
 
         if (rectSelectionGesture) this.downHandle = NodeHandle.NONE;
 
@@ -1367,7 +1405,7 @@ export class DiagramEditView extends DiagramView {
         if (isConnection(this.downShape) && this.downHandle == NodeHandle.POINT) {
             this.connectionBeforeEdit = this.captureConnectionState(this.downShape);
             // Prepare to move the anchor point..
-            ConnectorBasics.disconnect(this.downShape, event.offsetX, event.offsetY);
+            ConnectionBasics.disconnect(this.downShape, event.offsetX, event.offsetY);
             this.emitConnectionChanges(this.downShape, this.connectionBeforeEdit);
             // this.downShape.disconnect(event.offsetX, event.offsetY);
         }
@@ -1376,7 +1414,7 @@ export class DiagramEditView extends DiagramView {
 
         if (removePointGesture && this.downShape) {
             const beforeCount = this.downShape.points.length;
-            ConnectorBasics.removePoint(this.downShape, event.offsetX, event.offsetY);
+            ConnectionBasics.removePoint(this.downShape, event.offsetX, event.offsetY);
             removedPoint = this.downShape.points.length < beforeCount;
             if (removedPoint) {
                 this.pointChangedNodes.add(this.downShape);
@@ -1386,7 +1424,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (insertPointGesture && this.downShape && (!removePointGesture || !removedPoint)) {
-            ConnectorBasics.insertPoint(this.downShape, event.offsetX, event.offsetY);
+            ConnectionBasics.insertPoint(this.downShape, event.offsetX, event.offsetY);
             this.pointChangedNodes.add(this.downShape);
             // After insertion the new point is at the cursor; treat it as a POINT drag.
             this.downHandle = NodeHandle.POINT;
@@ -1549,7 +1587,7 @@ export class DiagramEditView extends DiagramView {
 
             if (event.altKey) {
                 const hoverNode = this.hitNode(event.offsetX, event.offsetY);
-                if (hoverNode && ConnectorBasics.supportsMutablePoints(hoverNode)) {
+                if (hoverNode && ConnectionBasics.supportsMutablePoints(hoverNode)) {
                     if (handle == NodeHandle.POINT) {
                         this.canvas.style.cursor = 'not-allowed'; // indicate remove
                     } else if (handle == NodeHandle.MOVE) {
@@ -1589,7 +1627,7 @@ export class DiagramEditView extends DiagramView {
 
         if (this.downPos && isConnection(this.downShape)) {
             if (this.downHandle == NodeHandle.POINT) {
-                ConnectorBasics.reconnect(this.downShape, this.downPos.x, this.downPos.y);
+                ConnectionBasics.reconnect(this.downShape, this.downPos.x, this.downPos.y);
                 this.emitConnectionChanges(this.downShape, this.connectionBeforeEdit);
             }
         }
@@ -1644,7 +1682,7 @@ export class DiagramEditView extends DiagramView {
             this.upsertNode(draft);
 
             if (this.isConnectorType(draft.type)) {
-                ConnectorBasics.reconnect(draft as INode & IConnection, event.offsetX, event.offsetY);
+                ConnectionBasics.reconnect(draft as INode & IConnection, event.offsetX, event.offsetY);
                 this.updateConnectorDraftReadiness(draft as INode & IConnection);
             }
 
@@ -1665,7 +1703,7 @@ export class DiagramEditView extends DiagramView {
             const movingIndex = draft.points.length - 1;
             draft.points[movingIndex] = { ...point };
 
-            ConnectorBasics.reconnect(draft, event.offsetX, event.offsetY);
+            ConnectionBasics.reconnect(draft, event.offsetX, event.offsetY);
             this.updateConnectorDraftReadiness(draft);
 
             if (!draft.ready && this.isMultistepCreate(draft.type)) {
@@ -1848,6 +1886,7 @@ export class DiagramEditView extends DiagramView {
             transparent: false,
             strokeStyle: this.strokeColor,
             fillStyle,
+            textColor: this.textColor,
             lineWidth: this.lineWidth,
             shadowStyle: this.shadowStyle,
             angle: 0,

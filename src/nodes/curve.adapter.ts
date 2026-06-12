@@ -1,11 +1,11 @@
-import { NodeRegistry } from "../../factory/node.registry";
-import { type INode } from "../../interfaces";
-import { type IPoint } from "../../types";
-import { isConnectionNode, isDiagramViewLike } from "../../guards";
-import type { INodeCached } from "../../view/view.cache";
-import { ConnectionBasics } from "../connection.basics";
+import { NodeRegistry } from "../factory/node.registry";
+import { type INode } from "../interfaces";
+import { type IPoint } from "../types";
+import { isConnectionNode, isDiagramViewLike } from "../guards";
+import type { INodeCached } from "../view/view.cache";
+import { ConnectionBasics } from "./connection.basics";
 import { PolylineAdapter } from "./polyline.adapter";
-import { RenderBasics } from "../render.basics";
+import { RenderBasics } from "./render.basics";
 
 /**
  * CurveAdapter is a node adapter responsible for rendering curve nodes in the diagram. 
@@ -18,6 +18,11 @@ import { RenderBasics } from "../render.basics";
 export class CurveAdapter extends PolylineAdapter {
 
     public static NAME = 'curve';
+    public name = CurveAdapter.NAME;
+
+    register() {
+        NodeRegistry.register(this.name, this);
+    }
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

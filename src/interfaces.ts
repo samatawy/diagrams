@@ -98,6 +98,11 @@ export interface INode {
     fillStyle: string;
 
     /**
+     * The text color of the node, which can be used to control the color of the text displayed within the node.
+     */
+    textColor: string;
+
+    /**
      * The line width of the node's border, which can be used to control the thickness of the node's outline.
      */
     lineWidth: number;

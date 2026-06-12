@@ -10,7 +10,7 @@ type InteractiveDiagram = INode['owner'] & {
     hitHandle(x: number, y: number, target?: INode): NodeHandle;
 };
 
-export class ConnectorBasics {
+export class ConnectionBasics {
 
     static supportsMutablePoints(node: INode): boolean {
         return NodeRegistry.isMultistepCreate(node.type);

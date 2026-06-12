@@ -25,18 +25,27 @@
                 <h2>State Machine Viewer</h2>
                 <p>A state machine example using DiagramView with ellipses, rounded rectangles, and anchored transition
                     lines.</p>
-                <div class="facts">
-                    <div class="fact"><strong>Mode</strong><span>Read-only viewer with initial fit-to-content.</span>
-                    </div>
-                    <div class="fact"><strong>Focus</strong><span>State transitions, feedback loops, and directional
-                            arrows.</span></div>
-                    <div class="fact"><strong>Use Case</strong><span>Workflow engines, lifecycle views, runtime
-                            states.</span></div>
-                </div>
                 <div id="state-machine-demo"
                      class="canvas-frame"></div>
-                <p class="note">This example intentionally uses different node types from the decision tree so the docs
-                    and demos cover more of the rendering surface.</p>
+                <section class="demo-hints"
+                         aria-label="State machine usage hints">
+                    <article class="demo-hint-card">
+                        <h3>Navigate</h3>
+                        <p>Pan by dragging empty space and zoom with wheel/pinch to inspect transition density.</p>
+                    </article>
+                    <article class="demo-hint-card">
+                        <h3>Trace States</h3>
+                        <p>Follow transition arrows from start states through intermediate steps to terminal outcomes.</p>
+                    </article>
+                    <article class="demo-hint-card">
+                        <h3>Loop Awareness</h3>
+                        <p>Feedback and retry paths are intentionally visible to demonstrate recurring machine cycles.</p>
+                    </article>
+                    <article class="demo-hint-card">
+                        <h3>Rendering Coverage</h3>
+                        <p>This sample mixes node shapes to show different view adapters under a single read-only interaction model.</p>
+                    </article>
+                </section>
             </section>
         </div>
     </main>

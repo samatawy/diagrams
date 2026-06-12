@@ -2,7 +2,7 @@ import { NodeRegistry } from "../../factory/node.registry";
 import { type INode } from "../../interfaces";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
-import { ConnectorBasics } from "../connector.basics";
+import { ConnectionBasics } from "../connection.basics";
 import { PolylineAdapter } from "./polyline.adapter";
 import { RenderBasics } from "../render.basics";
 import type { HollowMode } from "../../factory/node.adapter";
@@ -30,14 +30,14 @@ export class LineAdapter extends PolylineAdapter {
             context.save();
             RenderBasics.prepare(node, context);
             if (isConnectionNode(node)) {
-                ConnectorBasics.syncEndpoints(node);
+                ConnectionBasics.syncEndpoints(node);
             }
 
             const path = new Path2D();
             this.renderLine(node, path);
             context.stroke(path);
             if (isConnectionNode(node)) {
-                ConnectorBasics.renderArrows(node, context);
+                ConnectionBasics.renderArrows(node, context);
             }
 
             cached.path = path;

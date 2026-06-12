@@ -1,5 +1,5 @@
 import type { IConnection, INode } from '../src/interfaces';
-import { ConnectorBasics } from '../src/nodes/connector.basics';
+import { ConnectionBasics } from '../src/nodes/connection.basics';
 import { LineAdapter } from '../src/nodes/polyline/line.adapter';
 import { NodeHandle } from '../src/types';
 
@@ -47,6 +47,7 @@ function createNode(owner: any, overrides: Partial<INode & IConnection> = {}): I
         transparent: overrides.transparent ?? false,
         strokeStyle: overrides.strokeStyle || '#111827',
         fillStyle: overrides.fillStyle || '#dbeafe',
+        textColor: overrides.textColor || '#111827',
         lineWidth: overrides.lineWidth || 2,
         shadowStyle: overrides.shadowStyle,
         angle: overrides.angle || 0,
@@ -116,7 +117,7 @@ describe('LineHandler', () => {
 
         owner.nodes.push(target, line);
 
-        ConnectorBasics.syncEndpoints(line);
+        ConnectionBasics.syncEndpoints(line);
         expect(line.points[0]).toEqual({ x: 60, y: 35 });
 
         const strokes: unknown[] = [];

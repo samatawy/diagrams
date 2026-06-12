@@ -25,17 +25,29 @@
                 <h2>Decision Tree Viewer</h2>
                 <p>A compact branching example using DiagramView, box nodes, and anchored lines to show a simple
                     underwriting-style flow.</p>
-                <div class="facts">
-                    <div class="fact"><strong>Mode</strong><span>Read-only viewer with pan and zoom.</span></div>
-                    <div class="fact"><strong>Focus</strong><span>Anchored edges, branching, and fit-to-content
-                            layout.</span></div>
-                    <div class="fact"><strong>Use Case</strong><span>Decision trees, questionnaire flows, triage
-                            logic.</span></div>
-                </div>
                 <div id="decision-tree-demo"
                      class="canvas-frame"></div>
-                <p class="note">Tip: drag empty space to pan, wheel to zoom, and use the docs link above to compare the
-                    API surface with the live result.</p>
+                <section class="demo-hints"
+                         aria-label="Decision tree usage hints">
+                    <article class="demo-hint-card">
+                        <h3>Navigate</h3>
+                        <p>Drag empty canvas space to pan. Use the mouse wheel or trackpad pinch to zoom in and out.</p>
+                    </article>
+                    <article class="demo-hint-card">
+                        <h3>Read Flow</h3>
+                        <p>Start from the top node and follow arrow direction through yes/no style branch decisions.</p>
+                    </article>
+                    <article class="demo-hint-card">
+                        <h3>Inspect Layout</h3>
+                        <p>This view emphasizes anchored connectors and spacing, so branches stay attached while panning
+                            or zooming.</p>
+                    </article>
+                    <article class="demo-hint-card">
+                        <h3>Compare APIs</h3>
+                        <p>Open the docs link above and compare this rendered graph with the node and line adapter
+                            behaviors.</p>
+                    </article>
+                </section>
             </section>
         </div>
     </main>

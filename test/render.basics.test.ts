@@ -7,7 +7,7 @@ class FakePath2D {
 }
 
 describe('RenderBasics', () => {
-    it('renders text using the node stroke color instead of the node fill color', () => {
+    it('renders text using node textColor instead of fill or stroke color', () => {
         const originalPath2D = globalThis.Path2D;
         globalThis.Path2D = FakePath2D as unknown as typeof Path2D;
 
@@ -62,6 +62,7 @@ describe('RenderBasics', () => {
             transparent: false,
             strokeStyle: '#334155',
             fillStyle: '#dbeafe',
+            textColor: '#000000',
             lineWidth: 2,
             shadowStyle: { name: 'test-shadow', color: '#00000033', offset: { x: 2, y: 2 }, blur: 4 },
             angle: 0,
@@ -74,7 +75,7 @@ describe('RenderBasics', () => {
             globalThis.Path2D = originalPath2D;
         }
 
-        expect(fillStyles).toEqual(['#334155']);
+        expect(fillStyles).toEqual(['#000000']);
     });
 
     it('loads image-backed node assets and triggers a rerender', () => {
@@ -157,6 +158,7 @@ describe('RenderBasics', () => {
             fillStyle: 'transparent',
             lineWidth: 2,
             shadowStyle: undefined,
+            textColor: '#000000',
             angle: 0,
             owner,
         };

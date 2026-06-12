@@ -1,5 +1,8 @@
 import type { IGrid, INode } from "../interfaces";
 import type { IPoint, NodeHandle } from "../types";
+import type { IconSource } from "./icon.registry";
+
+export type { IconSource };
 
 export type HollowMode = 'always' | 'never' | 'if_transparent';
 
@@ -10,6 +13,35 @@ export type TextOverflowMode = 'visible' | 'hidden' | 'ellipsis';
  * It includes methods for hit testing, rendering, and serialization/deserialization of nodes.
  */
 export interface INodeAdapter {
+
+    /**
+     * The unique name of the adapter, which is used to associate it with nodes of a specific type.
+     * This name is typically registered with the NodeRegistry to enable the diagram control to find the appropriate adapter for each node.
+     */
+    name: string;
+
+    /**
+     * Optional icon for this tool shown in the tool palette and any icon-aware UI.
+     *
+     * Two formats are supported:
+     *
+     * - **SVG string** — provide the full `<svg>` markup for the icon:
+     *   ```ts
+     *   icon: {
+     *     type: 'svg',
+     *     markup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">...</svg>',
+     *   }
+     *   ```
+     *
+     * - **Image URL** — provide any resolvable URL (data URL, CDN, relative path):
+     *   ```ts
+     *   icon: { type: 'url', src: 'https://example.com/my-tool.svg' }
+     *   ```
+     *
+     * When omitted the palette falls back to the built-in `IconRegistry` entry
+     * matching this adapter's `name`, then to a text label.
+     */
+    icon?: IconSource;
 
     /**
      * Indicates whether the adapter is for a connector node, which may require special handling for rendering and hit testing.

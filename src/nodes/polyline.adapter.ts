@@ -1,11 +1,11 @@
-import { NodeRegistry } from "../../factory/node.registry";
-import { type IGrid, type INode } from "../../interfaces";
-import { NodeHandle, type IPoint } from "../../types";
-import { isConnectionNode, isDiagramViewLike } from "../../guards";
-import type { INodeCached } from "../../view/view.cache";
-import { ConnectionBasics } from "../connection.basics";
-import { RenderBasics } from "../render.basics";
-import type { HollowMode, INodeAdapter, TextOverflowMode } from "../../factory/node.adapter";
+import { NodeRegistry } from "../factory/node.registry";
+import { type IGrid, type INode } from "../interfaces";
+import { NodeHandle, type IPoint } from "../types";
+import { isConnectionNode, isDiagramViewLike } from "../guards";
+import type { INodeCached } from "../view/view.cache";
+import { ConnectionBasics } from "./connection.basics";
+import { RenderBasics } from "./render.basics";
+import type { HollowMode, INodeAdapter, TextOverflowMode } from "../factory/node.adapter";
 
 /**
  * PolylineAdapter is a node adapter responsible for rendering polyline nodes in the diagram. 
@@ -14,12 +14,6 @@ import type { HollowMode, INodeAdapter, TextOverflowMode } from "../../factory/n
  */
 export class PolylineAdapter implements INodeAdapter {
 
-    public static NAME = 'polyline';
-
-    public get name(): string {
-        return (this.constructor as typeof PolylineAdapter).NAME;
-    }
-
     protected readonly hitStrokePadding = 8;
 
     hollow_mode: HollowMode = 'always';
@@ -27,11 +21,10 @@ export class PolylineAdapter implements INodeAdapter {
     is_connector = true;
     multistep_create = true;
     has_text = false;
-    text_overflow: TextOverflowMode = 'visible';
+    text_overflow: TextOverflowMode = 'hidden';
 
-    static register() {
-        NodeRegistry.register(this.NAME, this);
-    }
+    public static NAME = 'polyline';
+    public name = PolylineAdapter.NAME;
 
     register() {
         NodeRegistry.register(this.name, this);

@@ -12,8 +12,10 @@ const toolList = document.getElementById('editor-tool-list');
 const actionButtons = document.querySelectorAll('button[data-action]');
 const fontFaceSelect = document.getElementById('font-face-select');
 const fontSizeSelect = document.getElementById('font-size-select');
+const textPresetSelect = document.getElementById('text-preset-select');
 const strokePresetSelect = document.getElementById('stroke-preset-select');
 const fillPresetSelect = document.getElementById('fill-preset-select');
+const textColorInput = document.getElementById('text-color-input');
 const strokeColorInput = document.getElementById('stroke-color-input');
 const fillColorInput = document.getElementById('fill-color-input');
 const lineWidthPresetSelect = document.getElementById('line-width-select');
@@ -344,6 +346,18 @@ const strokePresetControl = createColorPresetControl(strokePresetSelect, (color)
     }
 });
 
+const textPresetControl = createColorPresetControl(textPresetSelect, (color) => {
+    if (!editor) {
+        return;
+    }
+
+    const normalized = normalizeColorPreset(color, '#111827');
+    editor.setTextColor(normalized);
+    if (textColorInput) {
+        textColorInput.value = normalized === 'transparent' ? '#111827' : normalized;
+    }
+});
+
 const fillPresetControl = createColorPresetControl(fillPresetSelect, (color) => {
     if (!editor) {
         return;
@@ -374,6 +388,10 @@ function syncStyleControls() {
 
     const stroke = normalizeColorPreset(editor.strokeColor, '#111827');
     const fill = normalizeColorPreset(editor.fillColor, '#ffffff');
+    const text = normalizeColorPreset(editor.textColor, '#111827');
+    if (textColorInput) {
+        textColorInput.value = text === 'transparent' ? '#111827' : text;
+    }
     if (strokeColorInput) {
         strokeColorInput.value = stroke === 'transparent' ? '#111827' : stroke;
     }
@@ -383,6 +401,7 @@ function syncStyleControls() {
 
     const frequentColors = editor.getFrequentColors();
     const frequent = Array.isArray(frequentColors) ? frequentColors : [];
+    textPresetControl.setOptions([text, ...frequent], text);
     strokePresetControl.setOptions([stroke, ...frequent], stroke);
     fillPresetControl.setOptions([fill, ...frequent], fill);
     lineWidthPresetControl.setValue(editor.lineWidth ?? 1);
@@ -614,6 +633,16 @@ fontSizeSelect?.addEventListener('change', () => {
     if (Number.isFinite(next) && next > 0) {
         editor.setFontSize(next);
     }
+});
+
+textColorInput?.addEventListener('input', () => {
+    if (!editor) {
+        return;
+    }
+
+    const color = toHexColor(textColorInput.value);
+    editor.setTextColor(color);
+    textPresetControl.setValue(color);
 });
 
 strokeColorInput?.addEventListener('input', () => {

@@ -93,6 +93,7 @@ describe('DiagramViewElement', () => {
                 transparent: false,
                 strokeStyle: '#000000',
                 fillStyle: '#ffffff',
+                textColor: '#000000',
                 lineWidth: 1,
                 shadowStyle: undefined,
                 angle: 0,

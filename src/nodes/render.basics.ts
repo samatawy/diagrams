@@ -191,8 +191,6 @@ export class RenderBasics {
 
     private static renderLines(node: INode, context: CanvasRenderingContext2D, rect: IRect) {
         if (!context) return;
-        // const diagram = node.owner;
-        // if (!isDiagramViewLike(diagram)) return;
 
         const { lines, lineHeight, startline } = this.getTextLayout(node, context, rect);
 
@@ -213,26 +211,6 @@ export class RenderBasics {
                     break;
             }
         }
-        // context.fill(this.path);
-        // context.stroke(this.path);
-
-        // context.fillText(this.text, rect.left, rect.top, rect.width);
-        // context.strokeText(this.text, rect.left, rect.top, rect.width);
-        /*
-        switch (this.textAlign) {
-            case ShapeTextAlign.LEFT:
-                context.fillText(this.text, rect.left, rect.top + rect.height / 2);
-                break;
-            case ShapeTextAlign.CENTER:
-                context.fillText(this.text, rect.left + rect.width / 2, rect.top + rect.height / 2);
-                break;
-            case ShapeTextAlign.RIGHT:
-                context.fillText(this.text, rect.left + rect.width, rect.top + rect.height / 2);
-                break;
-        }
-        */
-        // context.fillText(this.text, rect.left + rect.width / 2, rect.top + rect.height / 2);
-        // context.strokeText(this.text, rect.left + rect.width / 2, rect.top + rect.height / 2, rect.width);
     }
 
     private static getTextLayout(node: INode, context: CanvasRenderingContext2D, rect: IRect) {
@@ -245,7 +223,7 @@ export class RenderBasics {
         context.shadowColor = 'transparent';
         context.fillStyle = node.transparent && diagram.render_mode == 'view'
             ? 'transparent'
-            : (node.strokeStyle || '#111827');
+            : (node.textColor || node.strokeStyle || '#111827');
 
         context.textAlign = node.textAlign || 'center';
         context.textBaseline = node.textBaseline || 'middle';

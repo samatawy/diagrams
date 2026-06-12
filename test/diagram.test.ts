@@ -20,6 +20,7 @@ function createNode(id: string, text: string, x: number, y: number): INode {
         transparent: false,
         strokeStyle: '#000000',
         fillStyle: '#ffffff',
+        textColor: '#000000',
         lineWidth: 1,
         shadowStyle: undefined,
         angle: 0,
