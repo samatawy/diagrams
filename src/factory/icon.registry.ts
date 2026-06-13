@@ -2,11 +2,18 @@ export type IconSource =
     | { type: 'svg'; markup: string }
     | { type: 'url'; src: string };
 
+/**
+ * Registry of icon sources used by editor and toolbar components.
+ */
 export class IconRegistry {
 
     private static readonly icons = new Map<string, IconSource>();
 
-    /** Register an icon by a short key, without the 'icon-' prefix. */
+    /** 
+     * Register an icon by a short key, without the 'icon-' prefix.
+     * @param id The icon identifier.
+     * @param source The icon source.
+     */
     public static register(id: string, source: IconSource): void {
         this.icons.set(id, source);
     }
@@ -14,6 +21,9 @@ export class IconRegistry {
     /**
      * Register a symbol-defined icon. The symbol markup is converted to an
      * inline SVG so no sprite injection is needed.
+     * @param id The icon identifier.
+     * @param _symbolId The symbol identifier (unused).
+     * @param symbolMarkup The SVG symbol markup.
      */
     public static registerSymbol(id: string, _symbolId: string, symbolMarkup: string): void {
         // Convert <symbol ...>body</symbol> → <svg ...>body</svg> for inline rendering.
@@ -24,25 +34,48 @@ export class IconRegistry {
         this.icons.set(id, { type: 'svg', markup: svg });
     }
 
-    /** Register a standalone SVG string as an icon. */
+    /** 
+     * Register a standalone SVG string as an icon.
+     * @param id The icon identifier.
+     * @param markup The SVG markup string.
+     */
     public static registerSvg(id: string, markup: string): void {
         this.icons.set(id, { type: 'svg', markup });
     }
 
-    /** Register an external URL as an icon. */
+    /** 
+     * Register an external URL as an icon. 
+     * @param id The icon identifier.
+     * @param src The URL of the icon.
+     */
     public static registerUrl(id: string, src: string): void {
         this.icons.set(id, { type: 'url', src });
     }
 
+    /**
+     * Checks if an icon with the given identifier is registered.
+     * @param id The icon identifier.
+     * @returns True if the icon is registered, false otherwise.
+     */
     public static has(id: string): boolean {
         return this.icons.has(id);
     }
 
+    /**
+     * Retrieves the icon source for the given identifier.
+     * @param id The icon identifier.
+     * @returns The icon source if found, undefined otherwise.
+     */
     public static get(id: string): IconSource | undefined {
         return this.icons.get(id);
     }
 
-    /** Returns an Element rendering the icon inline, or null if not found. */
+    /** 
+     * Returns an Element rendering the icon inline, or null if not found.
+     * @param id The icon identifier.
+     * @param size The desired size of the icon in pixels.
+     * @returns An Element representing the icon, or null if not found.
+     */
     public static createElement(id: string, size = 18): Element | null {
         const source = this.icons.get(id);
         if (!source) {
@@ -80,6 +113,12 @@ export class IconRegistry {
 const STROKE_ATTRS = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
 const VB = 'viewBox="0 0 24 24"';
 
+/**
+ * Wraps icon path markup in a default inline SVG shell used by built-in icons.
+ * @param id The SVG id attribute.
+ * @param body SVG path/body markup.
+ * @returns Full inline SVG markup.
+ */
 function sym(id: string, body: string): string {
     return `<svg id="${id}" ${VB} ${STROKE_ATTRS}>${body}</svg>`;
 }

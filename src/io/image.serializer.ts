@@ -7,6 +7,12 @@ import type { BrowserImageMimeType, ImageSerializer, ImageWriteOptions } from ".
  */
 export class CanvasImageSerializer implements ImageSerializer {
 
+    /**
+     * Serializes the given canvas or canvas wrapper to a Blob.
+     * @param source The source canvas or an object containing a canvas.
+     * @param options Optional image write options, including MIME type and quality.
+     * @returns A promise that resolves to a Blob representing the serialized image.
+     */
     public async write(source: HTMLCanvasElement | { canvas: HTMLCanvasElement }, options: ImageWriteOptions = {}): Promise<Blob> {
         const canvas = unwrapCanvas(source);
         const requestedMime = options.mimeType ?? 'image/png';

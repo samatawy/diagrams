@@ -49,6 +49,9 @@ export class Diagram implements IDiagram {
 
     private readonly assetStore = new AssetStore();
 
+    /**
+     * Returns a snapshot of registered image assets keyed by asset id.
+     */
     public get image_assets(): Record<string, string> {
         return this.assetStore.snapshot() ?? {};
     }

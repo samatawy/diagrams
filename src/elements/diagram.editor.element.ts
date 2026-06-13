@@ -1,36 +1,36 @@
-import type { Diagram } from "../model/diagram";
-import { DiagramEditView } from "../editview/diagram.edit.view";
+import { Diagram } from "../model/diagram";
+import { DiagramEditor } from "../editor/diagram.editor";
 
-/** Default custom element tag name for the editable diagram host. */
-export const DIAGRAM_EDIT_TAG = 'pz-diagram-edit';
+/** Default custom element tag name for the diagram editor host. */
+export const DIAGRAM_EDITOR_TAG = 'pz-diagram-editor';
 
 /**
- * Custom element wrapper that hosts a {@link DiagramEditView} instance.
+ * Custom element wrapper that hosts a {@link DiagramEditor} instance.
  *
  * The element recreates its internal view when input properties change,
  * allowing declarative usage through attributes/properties.
  */
-export class DiagramEditElement extends HTMLElement {
+export class DiagramEditorElement extends HTMLElement {
 
     /** Attributes observed by the custom element runtime. */
     static get observedAttributes(): string[] {
         return ['diagram-id'];
     }
 
-    private editInstance?: DiagramEditView;
+    private editorInstance?: DiagramEditor;
 
-    private editId = 'diagram';
+    private editorId = 'diagram';
 
     private initialState?: Partial<Omit<Diagram, 'id'>>;
 
-    /** Returns the current DiagramEditView instance when initialized. */
-    public get edit(): DiagramEditView | undefined {
-        return this.editInstance;
+    /** Returns the current DiagramEditor instance when initialized. */
+    public get editor(): DiagramEditor | undefined {
+        return this.editorInstance;
     }
 
-    /** Gets the diagram identifier used to initialize the internal edit view. */
+    /** Gets the diagram identifier used to initialize the internal editor view. */
     public get diagramId(): string {
-        return this.editId;
+        return this.editorId;
     }
 
     /**
@@ -39,9 +39,9 @@ export class DiagramEditElement extends HTMLElement {
      */
     public set diagramId(value: string) {
         const nextId = value?.trim() || 'diagram';
-        if (nextId === this.editId) return;
-        this.editId = nextId;
-        this.recreateEdit();
+        if (nextId === this.editorId) return;
+        this.editorId = nextId;
+        this.recreateEditor();
     }
 
     /** Gets the initial diagram state used when creating the internal view. */
@@ -55,7 +55,7 @@ export class DiagramEditElement extends HTMLElement {
      */
     public set diagram(value: Partial<Omit<Diagram, 'id'>> | undefined) {
         this.initialState = value;
-        this.recreateEdit();
+        this.recreateEditor();
     }
 
     /**
@@ -65,14 +65,14 @@ export class DiagramEditElement extends HTMLElement {
         if (!this.style.display) {
             this.style.display = 'block';
         }
-        this.ensureEdit();
+        this.ensureEditor();
     }
 
     /**
      * Lifecycle callback fired when the element is detached from the DOM.
      */
     public disconnectedCallback(): void {
-        this.destroyEdit();
+        this.destroyEditor();
     }
 
     /**
@@ -87,41 +87,44 @@ export class DiagramEditElement extends HTMLElement {
         }
     }
 
-    /** Recreates the internal edit view when the element is connected. */
-    private recreateEdit(): void {
+    /** Recreates the internal editor view when the element is connected. */
+    private recreateEditor(): void {
         if (!this.isConnected) return;
-        this.destroyEdit();
-        this.ensureEdit();
+        this.destroyEditor();
+        this.ensureEditor();
     }
 
-    /** Creates the internal edit view if it does not yet exist. */
-    private ensureEdit(): void {
-        if (this.editInstance) return;
-        this.editInstance = new DiagramEditView(this.editId, this, this.initialState);
+    /** Creates the internal editor view if it does not yet exist. */
+    private ensureEditor(): void {
+        if (this.editorInstance) return;
+        const diagram = this.initialState
+            ? new Diagram(this.editorId, this.initialState)
+            : undefined;
+        this.editorInstance = new DiagramEditor(this, undefined, diagram);
     }
 
-    /** Destroys and clears the internal edit view instance. */
-    private destroyEdit(): void {
-        this.editInstance?.destroy();
-        this.editInstance = undefined;
+    /** Destroys and clears the internal editor view instance. */
+    private destroyEditor(): void {
+        this.editorInstance?.destroy();
+        this.editorInstance = undefined;
     }
 }
 
 /**
- * Registers the diagram edit custom element if not already registered.
+ * Registers the diagram editor custom element if not already registered.
  * @param tagName The custom element tag name to register.
- * @returns The DiagramEditElement constructor.
+ * @returns The DiagramEditorElement constructor.
  */
-export function registerDiagramEditElement(tagName: string = DIAGRAM_EDIT_TAG): typeof DiagramEditElement {
+export function registerDiagramEditorElement(tagName: string = DIAGRAM_EDITOR_TAG): typeof DiagramEditorElement {
     if (typeof customElements === 'undefined') {
         throw new Error('Custom elements are not available in this environment.');
     }
 
     const existing = customElements.get(tagName);
     if (existing) {
-        return existing as typeof DiagramEditElement;
+        return existing as typeof DiagramEditorElement;
     }
 
-    customElements.define(tagName, DiagramEditElement);
-    return DiagramEditElement;
+    customElements.define(tagName, DiagramEditorElement);
+    return DiagramEditorElement;
 }

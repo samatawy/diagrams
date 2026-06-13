@@ -61,22 +61,33 @@ export class NodeRegistry {
         return Array.from(this._nodes.keys());
     }
 
+    /**
+     * Checks if the node type represents a connection.
+     * @param type The type of the node.
+     * @returns True if the node type is a connection, false otherwise.
+     */
     public static isConnection(type: string): boolean {
         const handler = this._nodes.get(type);
         return handler ? handler.is_connector : false;
     }
 
+    /**
+     * Checks if the node type has text.
+     * @param type The type of the node.
+     * @returns True if the node type has text, false otherwise.
+     */
     public static hasText(type: string): boolean {
         const handler = this._nodes.get(type);
         return handler ? handler.has_text : false;
     }
 
+    /**
+     * Checks if the node type requires a multistep creation process.
+     * @param type The type of the node.
+     * @returns True if the node type requires multistep creation, false otherwise.
+     */
     public static isMultistepCreate(type: string): boolean {
         const handler = this._nodes.get(type);
         return handler ? handler.multistep_create === true : false;
     }
 }
-
-// export function nodeAdapter(type: string): INodeAdapter | undefined {
-//     return NodeRegistry.adapter(type);
-// }

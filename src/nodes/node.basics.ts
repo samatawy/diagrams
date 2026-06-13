@@ -3,9 +3,22 @@ import { NodeHandle, type IRect } from "../types";
 import { isDiagramViewLike, isNode } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 
+/**
+ * Provides basic operations for manipulating nodes, such as moving, resizing, rotating, and checking for overlaps or containment.
+ * These utilities are designed to work with nodes in a diagram editor, allowing for transformations and hit testing based on the node's geometry and the diagram's coordinate system.
+ * The methods take into account the node's points, angle, and bounding rectangle to perform accurate calculations for movement, resizing, and selection.
+ * This class can be used as a foundation for implementing more complex node behaviors in a diagram editing application.
+ */
 export class NodeBasics {
 
-    static moveBy(node: INode, byX: number, byY: number, flags?: null | 'ignore_scale') {
+    /**
+     * Moves a node by the specified deltas.
+     * @param node The node to move.
+     * @param byX The horizontal delta.
+     * @param byY The vertical delta.
+     * @param flags Optional flags for movement behavior.
+     */
+    public static moveBy(node: INode, byX: number, byY: number, flags?: null | 'ignore_scale') {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
@@ -21,7 +34,14 @@ export class NodeBasics {
         }
     }
 
-    static resizeBy(node: INode, byX: number, byY: number, preserveAspect?: boolean) {
+    /**
+     * Resizes a node by the specified deltas.
+     * @param node The node to resize.
+     * @param byX The horizontal delta.
+     * @param byY The vertical delta.
+     * @param preserveAspect Whether to preserve the aspect ratio.
+     */
+    public static resizeBy(node: INode, byX: number, byY: number, preserveAspect?: boolean): void {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
@@ -57,7 +77,15 @@ export class NodeBasics {
         }
     }
 
-    static resizeHandle(node: INode, handle: NodeHandle, byX: number, byY: number, preserveAspect?: boolean) {
+    /**
+     * Resizes a node based on the specified handle and movement deltas.
+     * @param node The node to resize.
+     * @param handle The handle being used for resizing.
+     * @param byX The horizontal movement delta.
+     * @param byY The vertical movement delta.
+     * @param preserveAspect Whether to preserve the aspect ratio during resizing.
+     */
+    public static resizeHandle(node: INode, handle: NodeHandle, byX: number, byY: number, preserveAspect?: boolean): void {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
@@ -153,7 +181,13 @@ export class NodeBasics {
         }
     }
 
-    static rotateTo(node: INode, degrees: number, kind: 'degrees' | 'radians' = 'degrees') {
+    /**
+     * Rotates a node to the specified angle.
+     * @param node The node to rotate.
+     * @param degrees The angle to rotate the node to.
+     * @param kind The unit of the angle, either 'degrees' or 'radians'.
+     */
+    public static rotateTo(node: INode, degrees: number, kind: 'degrees' | 'radians' = 'degrees'): void {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const cache = diagram.getCache();
@@ -167,7 +201,13 @@ export class NodeBasics {
         cache.setNode(node, cached);
     }
 
-    static overlaps(node: INode, target: IRect | INode): boolean {
+    /**
+     * Checks if a node overlaps with a target rectangle or another node's bounding rectangle.
+     * @param node The node to check.
+     * @param target The target rectangle or node to check against.
+     * @returns True if the node overlaps with the target, false otherwise.
+     */
+    public static overlaps(node: INode, target: IRect | INode): boolean {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return false;
         const coordinates = diagram.getCoordinates();
@@ -238,7 +278,13 @@ export class NodeBasics {
         }
     }
 
-    static inside(node: INode, target: IRect | INode): boolean {
+    /**
+     * Checks if a node is fully inside a target rectangle or another node's bounding rectangle.
+     * @param node The node to check.
+     * @param target The target rectangle or node to check against.
+     * @returns True if the node is fully inside the target, false otherwise.
+     */
+    public static inside(node: INode, target: IRect | INode): boolean {
         if (!target) return false;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return false;

@@ -9,9 +9,19 @@ export interface TextOptions {
     path?: Path2D;
 }
 
+/**
+ * Provides basic rendering utilities for diagram nodes, including preparation of the canvas context for drawing nodes and their text.
+ * It handles setting up styles, shadows, and transformations based on node properties such as angle and transparency.
+ * The class also includes logic for rendering multi-line text within nodes, taking into account text alignment and baseline settings.
+ */
 export class RenderBasics {
 
-    static prepare(node: INode, context: CanvasRenderingContext2D) {
+    /**
+     * Prepares the canvas context for rendering a node, including setting styles, shadows, and transformations.
+     * @param node The node to prepare for rendering.
+     * @param context The canvas rendering context.
+     */
+    public static prepare(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -127,7 +137,12 @@ export class RenderBasics {
         img.src = imageSource;
     }
 
-    static prepareHandles(node: INode, context: CanvasRenderingContext2D) {
+    /**
+     * Prepares the canvas context for rendering node handles, including setting styles and transformations based on node properties.
+     * @param node The node for which to prepare handles.
+     * @param context The canvas rendering context.
+     */
+    public static prepareHandles(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -155,7 +170,13 @@ export class RenderBasics {
         }
     }
 
-    static renderText(node: INode, context: CanvasRenderingContext2D, options: TextOptions): void {
+    /**
+     * Renders the text for a node, taking into account text alignment, overflow, and clipping options.
+     * @param node The node for which to render text.
+     * @param context The canvas rendering context.
+     * @param options Options for text rendering, including overflow and clipping path.
+     */
+    public static renderText(node: INode, context: CanvasRenderingContext2D, options: TextOptions): void {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
@@ -273,7 +294,14 @@ export class RenderBasics {
         return lines;
     }
 
-    static getTextHitPath(node: INode, context: CanvasRenderingContext2D, padding = 4): Path2D | undefined {
+    /**
+     * Returns a Path2D object representing the hit area for the text of a node, including optional padding.
+     * @param node The node for which to get the text hit path.
+     * @param context The canvas rendering context.
+     * @param padding The padding to apply around the text hit area.
+     * @returns A Path2D object representing the text hit area, or undefined if the node has insufficient points.
+     */
+    public static getTextHitPath(node: INode, context: CanvasRenderingContext2D, padding = 4): Path2D | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
         const coordinates = diagram.getCoordinates();

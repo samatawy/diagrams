@@ -144,90 +144,166 @@ export class DiagramEditView extends DiagramView {
     // ========== Getters and Setters ==========
     // ==================================================
 
+    /**
+     * Gets the active render mode for this view.
+     */
     public get render_mode(): 'view' | 'editing' {
         return 'editing';
     }
 
+    /**
+     * Gets the current default line width for borders and connections.
+     */
     public get lineWidth(): number {
         return this.settings.lineWidth;
     }
 
+    /**
+     * Sets the default line width and applies it to current selection.
+     * @param value Line width value.
+     */
     public set lineWidth(value: number) {
         this.setLineWidth(value);
     }
 
+    /**
+     * Gets the current default stroke color.
+     */
     public get strokeColor(): string {
         return this.settings.strokeColor;
     }
 
+    /**
+     * Sets the default stroke color and applies it to current selection.
+     * @param value Stroke color value.
+     */
     public set strokeColor(value: string) {
         this.setStrokeColor(value);
     }
 
+    /**
+     * Gets the current default fill color.
+     */
     public get fillColor(): string {
         return this.settings.fillColor;
     }
 
+    /**
+     * Sets the default fill color and applies it to current selection.
+     * @param value Fill color value.
+     */
     public set fillColor(value: string) {
         this.setFillColor(value);
     }
 
+    /**
+     * Gets the current default text color.
+     */
     public get textColor(): string {
         return this.settings.textColor;
     }
 
+    /**
+     * Sets the default text color and applies it to current selection.
+     * @param value Text color value.
+     */
     public set textColor(value: string) {
         this.setTextColor(value);
     }
 
+    /**
+     * Gets the current default shadow style.
+     */
     public get shadowStyle(): ShadowStyle {
         return this.settings.shadowStyle;
     }
 
+    /**
+     * Sets the default shadow style and applies it to current selection.
+     * @param value Shadow style value.
+     */
     public set shadowStyle(value: ShadowStyle) {
         this.setShadowStyle(value);
     }
 
+    /**
+     * Gets the current default font family.
+     */
     public get fontFace(): string {
         return this.settings.fontFace;
     }
 
+    /**
+     * Sets the default font family and applies it to current selection.
+     * @param value Font family value.
+     */
     public set fontFace(value: string) {
         this.setFontFace(value);
     }
 
+    /**
+     * Gets the current default font size.
+     */
     public get fontSize(): number {
         return this.settings.fontSize;
     }
 
+    /**
+     * Sets the default font size and applies it to current selection.
+     * @param value Font size value.
+     */
     public set fontSize(value: number) {
         this.setFontSize(value);
     }
 
+    /**
+     * Gets the current default horizontal text alignment.
+     */
     public get textAlign(): ITextAlign {
         return this.settings.textAlign;
     }
 
+    /**
+     * Sets the default horizontal text alignment and applies it to current selection.
+     * @param value Text alignment value.
+     */
     public set textAlign(value: ITextAlign) {
         this.setTextAlign(value);
     }
 
+    /**
+     * Gets the current default vertical text baseline.
+     */
     public get textBaseline(): ITextBaseline {
         return this.settings.textBaseline;
     }
 
+    /**
+     * Sets the default vertical text baseline and applies it to current selection.
+     * @param value Text baseline value.
+     */
     public set textBaseline(value: ITextBaseline) {
         this.setTextBaseline(value);
     }
 
+    /**
+     * Gets the default node text for newly created text-capable nodes.
+     */
     public get nodeText(): string | undefined {
         return this.settings.nodeText;
     }
 
+    /**
+     * Sets the default node text for newly created text-capable nodes.
+     * @param value Text value.
+     */
     public set nodeText(value: string | undefined) {
         this.setNodeText(value || '');
     }
 
+    /**
+     * Gets the currently active tool identifier.
+     */
     public get currentTool(): string {
         return this.current.tool || 'select';
     }
@@ -304,6 +380,10 @@ export class DiagramEditView extends DiagramView {
         this.renderPreview();
     }
 
+    /**
+     * Sets the text color for the selected nodes and default style state.
+     * @param color The text color to apply.
+     */
     public setTextColor(color: string): void {
         if (this.selection().length) {
             this.addUndo();
@@ -457,6 +537,9 @@ export class DiagramEditView extends DiagramView {
     // ======== Undo/Redo methods ==========
     // ==================================================
 
+    /**
+     * Indicates whether the diagram contains unsaved modifications.
+     */
     public isModified(): boolean {
         return this.modified;
     }
@@ -1946,6 +2029,10 @@ export class DiagramEditView extends DiagramView {
         this.modified = false;
     }
 
+    /**
+     * Renders preview output for the provided layer.
+     * @param layer Optional layer to preview.
+     */
     public renderPreview(layer?: ILayer): void {
     }
 
@@ -2356,6 +2443,10 @@ export class DiagramEditView extends DiagramView {
     // ====== Image management methods ======
     // ========================================
 
+    /**
+     * Exports the diagram image data.
+     * @returns Image payload with data URL and dimensions, or null when unavailable.
+     */
     public getImage(): { dataurl: string, width: number, height: number } | null {
         /*if (!this.model || !this.canvas) return null;
 
@@ -2383,6 +2474,9 @@ export class DiagramEditView extends DiagramView {
         return null;
     }
 
+    /**
+     * Opens SVG tool/image selection workflow.
+     */
     public pickSVG(): void {
         // let ref = this.dialog.open(StencilDialog, {});
         // ref.afterClosed().subscribe(choice => {
@@ -2398,6 +2492,9 @@ export class DiagramEditView extends DiagramView {
         // })
     }
 
+    /**
+     * Opens image selection workflow for the current node selection.
+     */
     public pickNodeImage(): void {
         if (!this.current.layer) return;
 
@@ -2406,6 +2503,10 @@ export class DiagramEditView extends DiagramView {
         // }
     }
 
+    /**
+     * Applies a selected image file to the current node selection.
+     * @param event File input event or undefined to trigger picker flow.
+     */
     public setNodeImage(event?: any): void {
         if (!event) {
             this.pickNodeImage();
@@ -2716,6 +2817,9 @@ export class DiagramEditView extends DiagramView {
         this.playing = false;
     }
 
+    /**
+     * Opens the actions dialog for the currently selected node.
+     */
     public showActions(): void {
         // if (!this.model) return;
 
@@ -2793,15 +2897,14 @@ export class DiagramEditView extends DiagramView {
     //     })
     // }
 
-    previewLink(event: { uri: string, html?: string }) {
-        if (event && event.uri) {
-            if (event.uri.includes('://')) {
-                // AppComponent.instance.openUrl(event.uri);
-            } else if (event.html) {
-                this.snackbar.open(event.html);
-            }
-        }
-    }
-        */
+    // previewLink(event: { uri: string, html?: string }) {
+    //     if (event && event.uri) {
+    //         if (event.uri.includes('://')) {
+    //             // AppComponent.instance.openUrl(event.uri);
+    //         } else if (event.html) {
+    //             this.snackbar.open(event.html);
+    //         }
+    //     }
+    // }
 
 }

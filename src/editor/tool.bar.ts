@@ -1,20 +1,66 @@
+/** 
+ * Configuration options for the toolbar.
+ * Provide only the properties you want to customize. All other properties will use default values.
+ */
 export interface ToolBarConfig {
+    /**
+     * Optional CSS class name to apply to the toolbar host element. This allows for custom styling of the toolbar.
+     */
     hostClassName?: string;
+    /**
+     * Optional CSS class name to apply to toolbar buttons. This allows for custom styling of the buttons.
+     */
     buttonClassName?: string;
+    /**
+     * Optional CSS class name to apply to active toolbar buttons. This allows for custom styling of active buttons.
+     */
     activeClassName?: string;
+    /**
+     * Optional CSS class name to apply to disabled toolbar buttons. This allows for custom styling of disabled buttons.
+     */
     disabledClassName?: string;
+    /**
+     * Optional CSS class name to apply to toolbar separators. This allows for custom styling of separators.
+     */
     separatorClassName?: string;
+    /**
+     * Optional attribute name to use for tooltips. This allows for custom tooltip behavior.
+     */
     tooltipAttribute?: string;
 }
 
+/** 
+ * Definition of a toolbar button.
+ * Provide only the properties you want to customize. All other properties will use default values.
+ */
 export interface ToolButtonDef {
+    /** 
+     * Unique identifier for the button. This is used to reference the button in the toolbar. 
+     */
     id: string;
-    /** SVG use href (e.g. '#icon-undo'), URL string, or an Element */
+    /** 
+     * SVG use href (e.g. '#icon-undo'), URL string, or an Element 
+     */
     icon?: string | Element;
+    /** 
+     * Optional label for the button. This is used for accessibility and tooltips.
+     */
     label?: string;
+    /** 
+     * Optional tooltip text for the button. This is displayed on hover. 
+     */
     tooltip?: string;
+    /** 
+     * Indicates if the button is a toggle button.
+     */
     toggle?: boolean;
+    /** 
+     * Indicates if the button is disabled.
+     */
     disabled?: boolean;
+    /**
+     * Click event handler for the button.
+     */
     onClick: (event: MouseEvent) => void | Promise<void>;
 }
 
@@ -118,6 +164,12 @@ const DEFAULT_TOOLBAR_CONFIG: Required<ToolBarConfig> = {
     tooltipAttribute: 'title',
 };
 
+/**
+ * A simple toolbar component that can be used to create a toolbar with buttons and separators.
+ * The toolbar can be customized with CSS classes and tooltip attributes.
+ * Buttons can be added with icons, labels, tooltips, and click event handlers.
+ * Buttons can also be toggled on/off and enabled/disabled.
+ */
 export class ToolBar {
 
     protected host: HTMLElement;
@@ -133,11 +185,19 @@ export class ToolBar {
         setClasses(this.host, 'toolbar', this.config.hostClassName);
     }
 
+    /**
+     * Clears toolbar DOM and internal button references.
+     */
     public destroy(): void {
         this.host.innerHTML = '';
         this.buttons.clear();
     }
 
+    /**
+     * Manually adds a button to the toolbar. This is useful for dynamically adding buttons after the toolbar has been created.
+     * @param def The definition of the button to add.
+     * @returns The HTMLButtonElement that was created and added to the toolbar.
+     */
     public addButton(def: ToolButtonDef): HTMLButtonElement {
         const btn = this.buildButton(def);
         this.host.appendChild(btn);
@@ -145,6 +205,10 @@ export class ToolBar {
         return btn;
     }
 
+    /**
+     * Manually adds a separator to the toolbar. This is useful for dynamically adding separators after the toolbar has been created.
+     * @returns The HTMLDivElement that was created and added to the toolbar.
+     */
     public addSeparator(): HTMLDivElement {
         const sep = document.createElement('div');
         setClasses(sep, DEFAULT_TOOLBAR_CONFIG.separatorClassName, this.config.separatorClassName);
@@ -154,6 +218,11 @@ export class ToolBar {
         return sep;
     }
 
+    /**
+     * Sets the active state of a button.
+     * @param id The ID of the button.
+     * @param active Whether the button should be active.
+     */
     public setActive(id: string, active: boolean): void {
         const btn = this.buttons.get(id);
         if (!btn) {
@@ -163,6 +232,11 @@ export class ToolBar {
         btn.setAttribute('aria-pressed', String(active));
     }
 
+    /**
+     * Sets the enabled state of a button.
+     * @param id The ID of the button.
+     * @param enabled Whether the button should be enabled.
+     */
     public setEnabled(id: string, enabled: boolean): void {
         const btn = this.buttons.get(id);
         if (!btn) {
@@ -173,6 +247,11 @@ export class ToolBar {
         btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
     }
 
+    /**
+     * Gets a button by its ID.
+     * @param id The ID of the button.
+     * @returns The HTMLButtonElement if found, otherwise undefined.
+     */
     public getButton(id: string): HTMLButtonElement | undefined {
         return this.buttons.get(id);
     }

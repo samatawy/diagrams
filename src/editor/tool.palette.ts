@@ -7,10 +7,19 @@ export const TOOL_PALETTE_TOOL_SELECTED_EVENT = 'tool-selected';
 
 export type ToolPaletteLayoutItem = string | '*';
 
+/**
+ * Configuration options for the ToolPalette component.
+ * Provide only the properties you want to customize. All other properties will use default values.
+ */
 export interface ToolPaletteConfig {
-    hostClassName?: string;
-    /** Ordered layout. '*' means insert all remaining tools at this position. */
+    /**
+     * Ordered layout of tools in the palette. '*' means insert all remaining tools at this position.
+     */
     layout?: ToolPaletteLayoutItem[];
+    /**
+     * Optional CSS class name to apply to the host element of the tool palette. This allows for custom styling of the entire palette.
+     */
+    hostClassName?: string;
 }
 
 export const DEFAULT_TOOL_LAYOUT: ToolPaletteLayoutItem[] = [
@@ -77,12 +86,23 @@ function ensureDefaultStyles(): void {
     injectStyles(STYLE_ID, DEFAULT_STYLES);
 }
 
+/**
+ * Converts a tool key into a display label.
+ * @param name The raw tool key.
+ * @returns A human-readable tool label.
+ */
 function prettyToolName(name: string): string {
     return name
         .replace(/_/g, ' ')
         .replace(/\b\w/g, (m) => m.toUpperCase());
 }
 
+/**
+ * A toolbar component that displays a list of tools for the diagram editor.
+ * It allows users to select a tool, and the selected tool is highlighted.
+ * The component emits a 'tool-selected' event when a tool is selected.
+ * The layout of the tools can be customized via the configuration options.
+ */
 export class ToolPalette {
 
     protected host: HTMLElement;
@@ -94,13 +114,6 @@ export class ToolPalette {
     protected manualTools = new Map<string, string>();
 
     protected renderedTools: string[] = [];
-
-    protected readonly onDiagramToolChanged = (event: Event): void => {
-        const nextTool = event instanceof CustomEvent
-            ? ((event as CustomEvent<DiagramToolChange>).detail?.tool || this.diagram.currentTool)
-            : this.diagram.currentTool;
-        this.highlight(nextTool || 'select');
-    };
 
     constructor(host: HTMLElement, diagram: DiagramEditView, config: ToolPaletteConfig = {}) {
         ensureDefaultStyles();
@@ -117,6 +130,9 @@ export class ToolPalette {
         this.refresh();
     }
 
+    /**
+     * Cleans up the palette and detaches diagram listeners.
+     */
     public destroy(): void {
         this.unbindDiagramEvents();
         this.host.innerHTML = '';
@@ -124,6 +140,9 @@ export class ToolPalette {
         this.renderedTools = [];
     }
 
+    /**
+     * Rebuilds and re-renders the tool list from the current registry and layout.
+     */
     public refresh(): void {
         this.host.innerHTML = '';
         this.renderedTools = [];
@@ -151,6 +170,9 @@ export class ToolPalette {
         this.refresh();
     }
 
+    /**
+     * Removes all manually added tools and clears the rendered palette.
+     */
     public clearTools(): void {
         this.manualTools.clear();
         this.host.innerHTML = '';
@@ -164,6 +186,17 @@ export class ToolPalette {
         this.bindDiagramEvents();
         this.refresh();
     }
+
+    /**
+     * Handles the diagram tool change event.
+     * @param event The event object containing the tool change details.
+     */
+    protected readonly onDiagramToolChanged = (event: Event): void => {
+        const nextTool = event instanceof CustomEvent
+            ? ((event as CustomEvent<DiagramToolChange>).detail?.tool || this.diagram.currentTool)
+            : this.diagram.currentTool;
+        this.highlight(nextTool || 'select');
+    };
 
     protected bindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;

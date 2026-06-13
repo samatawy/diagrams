@@ -147,6 +147,9 @@ export class DiagramView extends Diagram implements HasSelection {
         super.clear();
     }
 
+    /**
+     * Indicates the rendering mode of this diagram instance.
+     */
     public get render_mode(): 'view' | 'editing' {
         return 'view';
     }

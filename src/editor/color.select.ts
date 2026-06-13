@@ -1,21 +1,80 @@
+import { injectStyles, setClasses, toggleClasses, removeClasses } from './editor.utils';
+
+/**
+ * Configuration options for the ColorSelect control.
+ * Provide only the properties you want to override; defaults will be used for the rest.
+ */
 export interface ColorSelectConfig {
+    /**
+     * Whether to show a color swatch in the trigger button. Default is true.
+     */
     showSwatch?: boolean;
+    /**
+     * Whether to show a color label in the trigger button. Default is true.
+     * The label will display the color value or 'clear' for transparent.
+     */
     showLabel?: boolean;
+    /**
+     * Whether to show the native color input. Default is 'option'.
+     * 'start' - show at the start of the trigger button
+     * 'end' - show at the end of the trigger button
+     * 'option' - show as an option in the menu
+     * 'none' - do not show
+     */
     showNativeInput?: 'start' | 'end' | 'option' | 'none';
+    /**
+     * Aria label for the native color input. Default is 'Custom color'.
+     */
     nativeInputAriaLabel?: string;
+    /**
+     * Optional class name for the host element.
+     */
     hostClassName?: string;
+    /**
+     * Optional class name for the trigger button.
+     */
     triggerClassName?: string;
+    /**
+     * Optional class name for the menu element.
+     */
     menuClassName?: string;
+    /**
+     * Optional class name for the option elements.
+     */
     optionClassName?: string;
+    /**
+     * Optional class name for the color swatch elements.
+     */
     swatchClassName?: string;
+    /**
+     * Optional class name for the label elements.
+     */
     labelClassName?: string;
+    /**
+     * Optional class name for the native input element.
+     */
     nativeInputClassName?: string;
+    /**
+     * Optional class name for the selected state.
+     */
     selectedClassName?: string;
+    /**
+     * Optional class name for the open state.
+     */
     openClassName?: string;
 }
 
+/**
+ * Input shape for adding a color option with an optional display label.
+ */
 export interface ColorOptionInput {
+    /**
+     * The color value to display. Can be any valid CSS color string.
+     */
     color: string;
+    /**
+     * Optional label to display for the color option. If not provided, the color value will be used.
+     */
     label?: string;
 }
 
@@ -204,12 +263,15 @@ const DEFAULT_STYLES = `
 }
 `;
 
-import { injectStyles, setClasses, toggleClasses, removeClasses } from './editor.utils';
-
 function ensureDefaultStyles(): void {
     injectStyles(STYLE_ID, DEFAULT_STYLES);
 }
 
+/**
+ * A color selection control that supports predefined options and an optional native color picker input. 
+ * The control can be configured to show color swatches, labels, and the native input in different arrangements. 
+ * It dispatches a 'colorchange' event with the selected color whenever the selection changes.
+ */
 export class ColorSelect {
 
     protected host: HTMLElement;
@@ -310,6 +372,9 @@ export class ColorSelect {
         this.syncTrigger();
     }
 
+    /**
+     * Releases DOM/event resources owned by the control.
+     */
     public destroy(): void {
         this.trigger.removeEventListener('click', this.onTriggerClick);
         this.menu.removeEventListener('click', this.onOptionClick);
@@ -319,14 +384,25 @@ export class ColorSelect {
         this.host.innerHTML = '';
     }
 
+    /**
+     * Gets the currently selected color value.
+     */
     public get value(): string {
         return this.selected;
     }
 
+    /**
+     * Sets the selected color value.
+     */
     public set value(color: string) {
         this.selectColor(color);
     }
 
+    /**
+     * Manually adds a color option to the menu. This is useful when the color options are dynamic or not known upfront.
+     * @param color The color value to add. Any web color or hexadecimal value including alpha channel.
+     * @param label An optional label for the color option.
+     */
     public addOption(color: string, label?: string): void {
         const option = this.buildOption(color, label);
         if (this.customOption && this.customOption.parentElement === this.menu) {
@@ -338,6 +414,10 @@ export class ColorSelect {
         this.syncSelectedOption();
     }
 
+    /**
+     * Manually adds multiple color options to the menu. This is useful when the color options are dynamic or not known upfront.
+     * @param colors An array of color values or objects containing color and optional label.
+     */
     public addOptions(colors: (string | ColorOptionInput)[]): void {
         colors.forEach((entry) => {
             if (typeof entry === 'string') {
@@ -348,11 +428,18 @@ export class ColorSelect {
         });
     }
 
+    /**
+     * Removes all color options from the menu, including the transparent 'clear' and custom options if present. 
+     * The menu will be left empty and the custom option will need to be re-added manually if desired.
+     */
     public clearOptions(): void {
         this.menu.innerHTML = '';
         this.placeCustomOption();
     }
 
+    /**
+     * Handles the click event on the trigger element. Opens or closes the menu based on its current state.
+     */
     protected readonly onTriggerClick = (): void => {
         if (this.host.classList.contains(DEFAULT_CONFIG.openClassName)) {
             this.closeMenu();
@@ -361,6 +448,9 @@ export class ColorSelect {
         this.openMenu();
     };
 
+    /**
+     * Handles the click event on the document. Closes the menu if the click is outside the host element.
+     */
     protected readonly onDocumentClick = (event: Event): void => {
         const target = event.target as Node | null;
         if (target && !this.host.contains(target)) {
@@ -368,6 +458,9 @@ export class ColorSelect {
         }
     };
 
+    /**
+     * Handles the click event on a color option. Selects the color and closes the menu.
+     */
     protected readonly onOptionClick = (event: Event): void => {
         const target = event.target as HTMLElement | null;
         const action = target?.closest<HTMLElement>('[data-action]');
@@ -386,6 +479,9 @@ export class ColorSelect {
         this.closeMenu();
     };
 
+    /**
+     * Handles the input event on the native color input. Selects the color without closing the menu.
+     */
     protected readonly onNativeInput = (): void => {
         if (!this.nativeInput) {
             return;
@@ -393,6 +489,9 @@ export class ColorSelect {
         this.selectColor(this.nativeInput.value);
     };
 
+    /**
+     * Handles the input event on the custom color input. Selects the color and closes the menu.
+     */
     protected readonly onCustomInput = (): void => {
         if (!this.customInput) {
             return;
@@ -406,6 +505,10 @@ export class ColorSelect {
         this.closeMenu();
     };
 
+    /**
+     * Selects a color and updates the UI accordingly.
+     * @param color The color to select.
+     */
     protected selectColor(color: string): void {
         this.selected = color;
         this.syncTrigger();

@@ -1,9 +1,21 @@
+/**
+ * Stores image asset sources and stable asset identifiers for diagram nodes.
+ *
+ * This cache supports registration, lookup by id, bulk load/snapshot,
+ * and deterministic id generation for non-URL sources.
+ */
 export class AssetStore {
 
     private assetsById = new Map<string, string>();
 
     private assetIdBySource = new Map<string, string>();
 
+    /**
+     * Registers an asset source and returns its asset id.
+     * @param source Asset source URL or serialized value.
+     * @param preferredId Optional preferred id if it is available.
+     * @returns The assigned asset id, or an empty string for blank input.
+     */
     public register(source: string, preferredId?: string): string {
         const normalizedSource = source.trim();
         if (!normalizedSource) {
@@ -28,6 +40,11 @@ export class AssetStore {
         return assetId;
     }
 
+    /**
+     * Resolves an asset id to its source value.
+     * @param imageId Asset id to resolve.
+     * @returns Asset source when present; otherwise undefined.
+     */
     public resolve(imageId?: string): string | undefined {
         if (!imageId) {
             return undefined;
@@ -36,6 +53,10 @@ export class AssetStore {
         return this.assetsById.get(imageId);
     }
 
+    /**
+     * Replaces the store contents from a serialized asset map.
+     * @param assets Serialized assets keyed by id.
+     */
     public load(assets?: Record<string, string>): void {
         this.clear();
 
@@ -55,6 +76,10 @@ export class AssetStore {
         }
     }
 
+    /**
+     * Creates a serializable snapshot of the current asset map.
+     * @returns Asset map when non-empty; otherwise undefined.
+     */
     public snapshot(): Record<string, string> | undefined {
         if (!this.assetsById.size) {
             return undefined;
@@ -63,11 +88,17 @@ export class AssetStore {
         return Object.fromEntries(this.assetsById.entries());
     }
 
+    /**
+     * Clears all cached asset mappings.
+     */
     public clear(): void {
         this.assetsById.clear();
         this.assetIdBySource.clear();
     }
 
+    /**
+     * Releases store resources.
+     */
     public destroy(): void {
         this.clear();
     }

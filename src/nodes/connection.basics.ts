@@ -10,14 +10,30 @@ type InteractiveDiagram = INode['owner'] & {
     hitHandle(x: number, y: number, target?: INode): NodeHandle;
 };
 
+/**
+ * Provides basic utilities for handling connections between nodes in a diagram. 
+ * This includes logic for reconnecting and disconnecting endpoints of connections, inserting and removing intermediate points on connections, 
+ * synchronizing connection endpoints with their attached nodes, and rendering arrowheads on connections. 
+ * The methods in this class are designed to work with the diagram's coordinate system and node structure to ensure accurate manipulation of connections within the diagram editor.
+ */
 export class ConnectionBasics {
 
-    static supportsMutablePoints(node: INode): boolean {
+    /**
+     * Determines if a node supports mutable points, which allows for dynamic modification of its points.
+     * @param node The node to check.
+     * @returns True if the node supports mutable points, false otherwise.
+     */
+    public static supportsMutablePoints(node: INode): boolean {
         return NodeRegistry.isMultistepCreate(node.type);
-        // return node.type === 'polyline' || node.type === 'polygon' || node.type === 'curve';
     }
 
-    static reconnect(node: INode & IConnection, x: number, y: number): void {
+    /**
+     * Reconnects a connection node to a new target based on the specified coordinates.
+     * @param node The connection node to reconnect.
+     * @param x The x-coordinate of the new target.
+     * @param y The y-coordinate of the new target.
+     */
+    public static reconnect(node: INode & IConnection, x: number, y: number): void {
         const diagram = this.getInteractiveDiagram(node);
         if (!diagram) return;
 
@@ -54,7 +70,13 @@ export class ConnectionBasics {
         }
     }
 
-    static disconnect(node: INode & IConnection, x: number, y: number): void {
+    /**
+     * Disconnects a connection node from its target based on the specified coordinates.
+     * @param node The connection node to disconnect.
+     * @param x The x-coordinate of the target to disconnect from.
+     * @param y The y-coordinate of the target to disconnect from.
+     */
+    public static disconnect(node: INode & IConnection, x: number, y: number): void {
         if (!node.from && !node.to) return;
 
         const anchor = this.getMouseAnchor(node, x, y);
@@ -72,7 +94,13 @@ export class ConnectionBasics {
         }
     }
 
-    static insertPoint(node: INode, x: number, y: number): void {
+    /**
+     * Inserts a new point into a connection node at the specified coordinates.
+     * @param node The connection node to modify.
+     * @param x The x-coordinate of the new point.
+     * @param y The y-coordinate of the new point.
+     */
+    public static insertPoint(node: INode, x: number, y: number): void {
         if (!this.supportsMutablePoints(node)) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -107,7 +135,13 @@ export class ConnectionBasics {
         }
     }
 
-    static removePoint(node: INode, x: number, y: number): void {
+    /**
+     * Removes a point from a connection node at the specified coordinates.
+     * @param node The connection node to modify.
+     * @param x The x-coordinate of the point to remove.
+     * @param y The y-coordinate of the point to remove.
+     */
+    public static removePoint(node: INode, x: number, y: number): void {
         if (!this.supportsMutablePoints(node)) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -124,7 +158,11 @@ export class ConnectionBasics {
         }
     }
 
-    static syncEndpoints(node: INode & IConnection): void {
+    /**
+     * Synchronizes the endpoints of a connection node with its anchors.
+     * @param node The connection node to synchronize.
+     */
+    public static syncEndpoints(node: INode & IConnection): void {
         if (node.points.length === 0) return;
 
         if (node.from) {
@@ -142,7 +180,12 @@ export class ConnectionBasics {
         }
     }
 
-    static renderArrows(node: INode & IConnection, context: CanvasRenderingContext2D): void {
+    /**
+     * Renders the arrows for a connection node.
+     * @param node The connection node to render arrows for.
+     * @param context The canvas rendering context.
+     */
+    public static renderArrows(node: INode & IConnection, context: CanvasRenderingContext2D): void {
         if (node.points.length < 2) return;
 
         if (node.startArrow) {
@@ -154,7 +197,13 @@ export class ConnectionBasics {
         }
     }
 
-    static getAnchorPoint(node: INode, anchor: IConnectionAnchor): IPoint | undefined {
+    /**
+     * Gets the anchor point for a connection node.
+     * @param node The connection node.
+     * @param anchor The connection anchor.
+     * @returns The anchor point or undefined if not found.
+     */
+    public static getAnchorPoint(node: INode, anchor: IConnectionAnchor): IPoint | undefined {
         const target = this.resolveAnchorNode(node, anchor);
         if (!target) return undefined;
 

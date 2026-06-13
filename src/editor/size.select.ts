@@ -1,14 +1,51 @@
+/**
+ * Configuration options for the SizeSelect control.
+ * Provide only the properties you want to customize. All other properties will use default values.
+ */
 export interface SizeSelectConfig {
+    /**
+     * Optional array of sizes to display in the dropdown. If not provided, a default set of sizes will be used.
+     */
     sizes?: number[];
+    /**
+     * Optional unit to display next to the size values (e.g., 'px', 'pt'). Defaults to 'px'.
+     */
     unit?: string;
+    /**
+     * Whether to show the unit label next to the size values. Defaults to true.
+     */
     showLabel?: boolean;
+    /**
+     * Optional CSS class name to apply to the host element of the SizeSelect control. This allows for custom styling.
+     */
     hostClassName?: string;
+    /**
+     * Optional CSS class name to apply to the trigger button of the SizeSelect control. This allows for custom styling.
+     */
     triggerClassName?: string;
+    /**
+     * Optional CSS class name to apply to the dropdown menu of the SizeSelect control. This allows for custom styling.
+     */
     menuClassName?: string;
+    /**
+     * Optional CSS class name to apply to each option in the dropdown menu. This allows for custom styling.
+     */
     optionClassName?: string;
+    /**
+     * Optional CSS class name to apply to the preview element that shows the selected size. This allows for custom styling.
+     */
     previewClassName?: string;
+    /**
+     * Optional CSS class name to apply to the label element that shows the unit. This allows for custom styling.
+     */
     labelClassName?: string;
+    /**
+     * Optional CSS class name to apply to the selected option. This allows for custom styling.
+     */
     selectedClassName?: string;
+    /**
+     * Optional CSS class name to apply when the dropdown is open. This allows for custom styling.
+     */
     openClassName?: string;
 }
 
@@ -113,6 +150,11 @@ function ensureDefaultStyles(): void {
     injectStyles(STYLE_ID, DEFAULT_STYLES);
 }
 
+/**
+ * Normalizes size values by filtering invalid entries, rounding, and removing duplicates.
+ * @param sizes Candidate size values.
+ * @returns A non-empty normalized size list.
+ */
 function normalizeSizes(sizes: number[]): number[] {
     const seen = new Set<number>();
     const result: number[] = [];
@@ -129,6 +171,17 @@ function normalizeSizes(sizes: number[]): number[] {
     return result.length ? result : [...DEFAULT_SIZES];
 }
 
+/**
+ * A dropdown control for selecting sizes (e.g., font sizes, line widths).
+ * Emits a 'sizechange' event when the selected size changes.
+ * Example usage:
+ * 
+ * const sizeSelect = new SizeSelect(document.getElementById('size-select'), {
+ *     sizes: [8, 10, 12, 14, 16, 18, 20],
+ *     unit: 'px',
+ *     showLabel: true,
+ * });
+ */
 export class SizeSelect {
 
     protected host: HTMLElement;
@@ -183,6 +236,9 @@ export class SizeSelect {
         this.rebuildOptions(this.config.sizes);
     }
 
+    /**
+     * Releases DOM/event resources owned by the control.
+     */
     public destroy(): void {
         this.trigger.removeEventListener('click', this.onTriggerClick);
         this.menu.removeEventListener('click', this.onOptionClick);
@@ -192,14 +248,25 @@ export class SizeSelect {
         this.host.innerHTML = '';
     }
 
+    /**
+     * Gets the currently selected size value.
+     */
     public get value(): number {
         return this.selected;
     }
 
+    /**
+     * Sets the currently selected size value.
+     */
     public set value(size: number) {
         this.selectSize(size, false);
     }
 
+    /**
+     * Sets the available size options and optionally selects a size.
+     * @param sizes - An array of sizes.
+     * @param selectedSize - The size to select. Defaults to the first size in the array.
+     */
     public setOptions(sizes: number[], selectedSize?: number): void {
         const normalized = normalizeSizes(sizes);
         this.config.sizes = normalized;
@@ -207,6 +274,9 @@ export class SizeSelect {
         this.selectSize(selectedSize || normalized[0] || 16, false);
     }
 
+    /**
+     * Handles the click event on the trigger button. Toggles the open/closed state of the dropdown menu.
+     */
     protected readonly onTriggerClick = (): void => {
         if (this.host.classList.contains(DEFAULT_CONFIG.openClassName)) {
             this.closeMenu();
@@ -215,6 +285,10 @@ export class SizeSelect {
         this.openMenu();
     };
 
+    /**
+     * Handles the click event on the document. Closes the dropdown menu if the click is outside the host element.
+     * @param event - The click event.
+     */
     protected readonly onDocumentClick = (event: Event): void => {
         const target = event.target as Node | null;
         if (target && !this.host.contains(target)) {
@@ -222,6 +296,10 @@ export class SizeSelect {
         }
     };
 
+    /**
+     * Handles the click event on an option. Selects the clicked size and closes the dropdown menu.
+     * @param event - The click event.
+     */
     protected readonly onOptionClick = (event: Event): void => {
         const target = event.target as HTMLElement | null;
         const option = target?.closest<HTMLElement>('[data-size]');

@@ -16,6 +16,9 @@ export class PolylineAdapter implements INodeAdapter {
 
     public static NAME = 'polyline';
 
+    /**
+     * Gets the registry name for this adapter.
+     */
     public get name(): string {
         return (this.constructor as typeof PolylineAdapter).NAME;
     }
@@ -29,15 +32,21 @@ export class PolylineAdapter implements INodeAdapter {
     has_text = false;
     text_overflow: TextOverflowMode = 'visible';
 
-    static register() {
+    /**
+     * Registers the PolylineAdapter with the NodeRegistry.
+     */
+    public static register() {
         NodeRegistry.register(this.NAME, this);
     }
 
-    register() {
+    /**
+     * Registers the PolylineAdapter instance with the NodeRegistry.
+     */
+    public register() {
         NodeRegistry.register(this.name, this);
     }
 
-    hitTest(node: INode, point: IPoint): NodeHandle | undefined {
+    public hitTest(node: INode, point: IPoint): NodeHandle | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return NodeHandle.NONE;
         const coordinates = diagram.getCoordinates();
@@ -68,7 +77,7 @@ export class PolylineAdapter implements INodeAdapter {
         return NodeHandle.NONE;
     }
 
-    snapToGrid(node: INode, grid: IGrid): void {
+    public snapToGrid(node: INode, grid: IGrid): void {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
@@ -81,7 +90,7 @@ export class PolylineAdapter implements INodeAdapter {
         }
     }
 
-    render(node: INode, context: CanvasRenderingContext2D): void {
+    public render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -113,7 +122,7 @@ export class PolylineAdapter implements INodeAdapter {
         }
     }
 
-    renderSelection(node: INode, context: CanvasRenderingContext2D): void {
+    public renderSelection(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -132,18 +141,18 @@ export class PolylineAdapter implements INodeAdapter {
         }
     }
 
-    write(node: INode, serializer: any): any {
+    public write(node: INode, serializer: any): any {
         return serializer.write({
             ...node,
             type: this.name,
         });
     }
 
-    onCreateMove(node: INode, point: IPoint): void {
+    public onCreateMove(node: INode, point: IPoint): void {
         node.points[node.points.length - 1] = { ...point };
     }
 
-    async read(json: any, serializer: any): Promise<INode> {
+    public async read(json: any, serializer: any): Promise<INode> {
         return serializer.read(json);
     }
 }

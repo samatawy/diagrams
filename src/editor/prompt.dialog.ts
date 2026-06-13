@@ -1,15 +1,42 @@
 import { injectStyles, setClasses } from "./editor.utils";
 
+/**
+ * A single action in a prompt dialog, consisting of a value, label, and optional primary flag.
+ */
 export type PromptDialogAction<T extends string> = {
+    /**
+     * The value associated with this action. This value will be returned when the action is selected.
+     */
     value: T;
+    /**
+     * The label displayed on the button for this action.
+     */
     label: string;
+    /**
+     * Whether this action is the primary action. Primary actions are typically highlighted.
+     */
     primary?: boolean;
 };
 
+/**
+ * Options for configuring a prompt dialog, including title, prompt message, optional icon, and a list of actions.
+ */
 export type PromptDialogOptions<T extends string> = {
+    /**
+     * The title of the prompt dialog.
+     */
     title?: string;
+    /**
+     * The message or question to display in the prompt dialog.
+     */
     prompt: string;
+    /**
+     * An optional icon to display in the prompt dialog.
+     */
     icon?: string;
+    /**
+     * The list of actions available in the prompt dialog.
+     */
     actions: PromptDialogAction<T>[];
 };
 
@@ -82,8 +109,18 @@ const STYLES = `
 }
 `;
 
+/**
+ * A simple prompt dialog component that can be used to display a message and a set of actions to the user.
+ * It uses the native HTML <dialog> element if available, and falls back to a confirm dialog if not.
+ * The component returns a promise that resolves with the value of the selected action.
+ */
 export class PromptDialog {
 
+    /**
+     * Displays a prompt dialog with the specified options.
+     * @param input The options for configuring the prompt dialog.
+     * @returns A promise that resolves with the value of the selected action.
+     */
     public static show<T extends string>(input: PromptDialogOptions<T>): Promise<T> {
         if (!this.supportsDialog()) {
             return Promise.resolve(this.fallback(input));

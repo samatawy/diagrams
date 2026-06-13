@@ -109,6 +109,11 @@ function ensureEditorStyles(): void {
     injectStyles(DIAGRAM_EDITOR_STYLE_ID, DIAGRAM_EDITOR_STYLES);
 }
 
+/**
+ * A composed diagram editing component that wires a {@link DiagramEditView} together with
+ * a tool palette, action toolbars, and style controls.
+ * It provides a ready-to-mount editor surface with optional prompts for unsaved-change flows.
+ */
 export class DiagramEditor {
 
     protected host: HTMLElement;
@@ -148,6 +153,12 @@ export class DiagramEditor {
 
     protected syncingControls: boolean = false;
 
+    /**
+     * Creates an instance of DiagramEditor.
+     * @param host The container element that will receive the editor layout.
+     * @param config Optional configuration for layout, controls, toolbars, and prompts.
+     * @param diagram Optional initial diagram to load into the editor.
+     */
     constructor(host: HTMLElement, config?: DiagramEditorConfig, diagram?: Diagram) {
         this.host = host;
         this.config = config || {};
@@ -157,6 +168,9 @@ export class DiagramEditor {
         this.diagram = this.getDiagramView();
     }
 
+    /**
+     * Cleans up the editor and all owned child controls.
+     */
     public destroy(): void {
         this.detachListeners();
         this.diagram.destroy();
@@ -176,6 +190,10 @@ export class DiagramEditor {
         this.host.innerHTML = '';
     }
 
+    /**
+     * Clears the current diagram after resolving any unsaved-change prompt.
+     * @returns True when a new empty diagram was created; otherwise false.
+     */
     public async newDiagram(): Promise<boolean> {
         if (!(await this.confirmUnsavedIfNeeded('new'))) {
             return false;
@@ -186,6 +204,11 @@ export class DiagramEditor {
         return true;
     }
 
+    /**
+     * Loads a diagram from a live diagram instance, a serialized JSON string, or a deserialized payload.
+     * @param source The diagram source to load.
+     * @returns True when the source was loaded; otherwise false when loading was canceled.
+     */
     public async loadDiagram(source: string | ISerializedDiagram | Diagram): Promise<boolean> {
         if (!(await this.confirmUnsavedIfNeeded('load'))) {
             return false;
@@ -212,6 +235,11 @@ export class DiagramEditor {
         }
     }
 
+    /**
+     * Saves the current diagram using the underlying {@link DiagramEditView}.
+     * @param options Optional serialization settings.
+     * @returns The serialized diagram string, or undefined when saving was canceled.
+     */
     public async saveDiagram(options?: DiagramSaveOptions): Promise<string | undefined> {
         if (!this.diagram.isModified()) {
             const proceed = this.config.prompts?.onNoChangesSave
@@ -224,6 +252,10 @@ export class DiagramEditor {
         return this.diagram.save(options);
     }
 
+    /**
+     * Closes the current diagram after resolving any unsaved-change prompt.
+     * @returns True when the diagram was closed; otherwise false.
+     */
     public async close(): Promise<boolean> {
         if (!(await this.confirmUnsavedIfNeeded('close'))) {
             return false;
@@ -234,54 +266,75 @@ export class DiagramEditor {
         return true;
     }
 
-    // public addToolbar(toolbar: DiagramToolBar): void {
-    //     this.toolbars.push(toolbar);
-    // }
-
-    // public removeToolbar(toolbar: DiagramToolBar): void {
-    //     const index = this.toolbars.indexOf(toolbar);
-    //     if (index !== -1) {
-    //         this.toolbars.splice(index, 1);
-    //         toolbar.destroy();
-    //     }
-    // }
-
+    /**
+     * Returns the owned diagram editing view.
+     */
     public getDiagramView(): DiagramEditView {
         return this.diagram;
     }
 
+    /**
+     * Returns the action toolbars created for this editor.
+     */
     public getToolbars(): DiagramToolBar[] {
         return this.toolbars;
     }
 
+    /**
+     * Returns the tool palette instance when available.
+     */
     public getToolbox(): ToolPalette | undefined {
         return this.toolbox;
     }
 
+    /**
+     * Returns the font family selector control when available.
+     */
     public getFontSelect(): FontSelect | undefined {
         return this.fontSelect;
     }
 
+    /**
+     * Returns the font size selector control when available.
+     */
     public getFontSizeSelect(): SizeSelect | undefined {
         return this.fontSizeSelect;
     }
 
+    /**
+     * Returns the text color selector control when available.
+     */
     public getTextColorSelect(): ColorSelect | undefined {
         return this.textColorSelect;
     }
 
+    /**
+     * Returns the stroke color selector control when available.
+     */
     public getStrokeColorSelect(): ColorSelect | undefined {
         return this.strokeColorSelect;
     }
 
+    /**
+     * Returns the stroke width selector control when available.
+     */
     public getStrokeWidthSelect(): WidthSelect | undefined {
         return this.strokeWidthSelect;
     }
 
+    /**
+     * Returns the fill color selector control when available.
+     */
     public getFillStyleSelect(): ColorSelect | undefined {
         return this.fillStyleSelect;
     }
 
+    /**
+     * Builds the editor layout and initializes all owned controls.
+     * @param host The editor host element.
+     * @param config The editor configuration.
+     * @param diagram Optional initial diagram to load.
+     */
     protected initialize(host: HTMLElement, config: DiagramEditorConfig, diagram?: Diagram): void {
         ensureEditorStyles();
 
@@ -328,28 +381,17 @@ export class DiagramEditor {
         if (config.toolbars) {
             for (const toolbarConfig of config.toolbars) {
                 const barHost = this.createToolbar(this.toolbarsHost);
-                // const barHost = document.createElement('div');
-                // setClasses(barHost, 'toolbar');
-                // this.toolbarsHost.appendChild(barHost);
                 const toolbar = new DiagramToolBar(barHost, this.diagram, toolbarConfig);
                 this.toolbars.push(toolbar);
-                // this.addToolbar(toolbar);
             }
         } else {
             const barHost = this.createToolbar(this.toolbarsHost);
-            // const barHost = document.createElement('div');
-            // setClasses(barHost, 'toolbar');
-            // this.toolbarsHost.appendChild(barHost);
             const defaultToolbar = new DiagramToolBar(barHost, this.diagram);
             this.toolbars.push(defaultToolbar);
-            // this.addToolbar(defaultToolbar);
         }
 
         // Initialize font toolbar
         this.fontToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-font-toolbar');
-        // this.fontToolbar = document.createElement('div');
-        // setClasses(this.fontToolbar, 'toolbar', 'diagram-editor-font-toolbar');
-        // this.toolbarsHost.appendChild(this.fontToolbar);
 
         this.fontSelectHost = this.createControlHost(this.fontToolbar, 'diagram-editor-font-face-select', 'Font');
         this.fontSizeSelectHost = this.createControlHost(this.fontToolbar, 'diagram-editor-font-size-select');
@@ -361,9 +403,6 @@ export class DiagramEditor {
 
         // Initialize stroke toolbar
         this.strokeToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-stroke-toolbar');
-        // this.strokeToolbar = document.createElement('div');
-        // setClasses(this.strokeToolbar, 'toolbar', 'diagram-editor-stroke-toolbar');
-        // this.toolbarsHost.appendChild(this.strokeToolbar);
 
         this.strokeColorSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-color-select', 'Line');
         this.strokeWidthSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-width-select');
@@ -373,9 +412,6 @@ export class DiagramEditor {
 
         // Initialize fill toolbar
         this.fillToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-fill-toolbar');
-        // this.fillToolbar = document.createElement('div');
-        // setClasses(this.fillToolbar, 'toolbar', 'diagram-editor-fill-toolbar');
-        // this.toolbarsHost.appendChild(this.fillToolbar);
 
         this.fillStyleSelectHost = this.createControlHost(this.fillToolbar, 'diagram-editor-fill-color-select', 'Fill');
         this.fillStyleSelect = new ColorSelect(this.fillStyleSelectHost, config.fillColor || {});
@@ -384,6 +420,9 @@ export class DiagramEditor {
         this.reflectStyles();
     }
 
+    /**
+     * Connects editor controls to the underlying diagram view and change events.
+     */
     protected attachListeners(): void {
         if (this.fontSelectHost) {
             this.addManagedListener<string>(this.fontSelectHost, 'fontchange', (font) => {
@@ -444,6 +483,9 @@ export class DiagramEditor {
         });
     }
 
+    /**
+     * Removes all event listeners previously registered by the editor.
+     */
     protected detachListeners(): void {
         for (const dispose of this.listenerDisposers) {
             dispose();
@@ -451,6 +493,9 @@ export class DiagramEditor {
         this.listenerDisposers = [];
     }
 
+    /**
+     * Synchronizes the style controls with the current style state of the diagram.
+     */
     protected reflectStyles(): void {
         this.syncingControls = true;
         try {
@@ -537,6 +582,10 @@ export class DiagramEditor {
         });
     }
 
+    /**
+     * Shows the default prompt used when a save is requested without any pending changes.
+     * @returns True when saving should continue; otherwise false.
+     */
     protected async promptNoChangesSave(): Promise<boolean> {
         const choice = await PromptDialog.show<'save' | 'cancel'>({
             title: 'Nothing changed',
@@ -551,6 +600,11 @@ export class DiagramEditor {
         return choice === 'save';
     }
 
+    /**
+     * Shows the default unsaved-changes prompt for the requested action.
+     * @param reason The operation that triggered the prompt.
+     * @returns The action selected by the user.
+     */
     protected async promptUnsavedChanges(reason: DiagramEditorPromptReason): Promise<DiagramEditorUnsavedAction> {
         const reasonLabel = reason === 'new'
             ? 'starting a new diagram'
