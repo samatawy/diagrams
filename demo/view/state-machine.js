@@ -1,4 +1,4 @@
-import { mountView, makeBox, makeLine, NodeHandle } from './demo-common.js';
+import { mountView, makeBox, makeLine, NodeHandle } from '../demo-common.js';
 
 mountView('state-machine-demo', {
     id: 'state-machine-demo',

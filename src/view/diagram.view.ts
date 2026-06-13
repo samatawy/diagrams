@@ -8,23 +8,18 @@ import { FitViewport } from "../layout/fit.viewport";
 import { Diagram } from "../model/diagram";
 import type { IRect } from "../types";
 import { NodeHandle } from "../types";
+import {
+    type DiagramViewportChange,
+} from "../events/diagram.events";
+import { EventDispatcher } from "../events/event.dispatcher";
 import { CoordinateSystem } from "./coordinate.system";
 import { ViewCache } from "./view.cache";
 import {
-    DIAGRAM_BACKGROUND_CLICK_EVENT,
-    DIAGRAM_NODE_CLICK_EVENT,
-    DIAGRAM_PAN_EVENT,
-    DIAGRAM_SELECTION_EVENT,
-    DIAGRAM_VIEWPORT_EVENT,
-    DIAGRAM_ZOOM_EVENT,
-    type DiagramBackgroundClick,
     type FitAlign,
     type DiagramInitialView,
-    type DiagramSelectionChange,
     type DiagramViewOptions,
-    type DiagramViewportChange,
     type DiagramSelectionOptions,
-} from "./dto";
+} from "./view.options";
 
 
 /**
@@ -47,6 +42,8 @@ export class DiagramView extends Diagram implements HasSelection {
     protected canvas: HTMLCanvasElement;
 
     protected context: CanvasRenderingContext2D;
+
+    protected readonly eventDispatcher: EventDispatcher;
 
     protected resizeObserver?: ResizeObserver;
 
@@ -103,6 +100,7 @@ export class DiagramView extends Diagram implements HasSelection {
         this.ownsCanvas = !(target instanceof HTMLCanvasElement);
         this.canvas = target instanceof HTMLCanvasElement ? target : this.createCanvas(target);
         this.context = this.canvas.getContext('2d')!;
+        this.eventDispatcher = new EventDispatcher(this.host);
         this.coordinates = new CoordinateSystem(this.context);
         this.coordinates.attach(this);
         this.cache = new ViewCache();
@@ -142,6 +140,11 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         super.destroy();
+    }
+
+    public override clear(): void {
+        this.clearSelection();
+        super.clear();
     }
 
     public get render_mode(): 'view' | 'editing' {
@@ -902,21 +905,6 @@ export class DiagramView extends Diagram implements HasSelection {
         event.stopImmediatePropagation();
     }
 
-    /**
-     * Dispatch a custom diagram event from the host element.
-     * @param eventName The name of the event.
-     * @param detail The event detail.
-     * @param cancelable Whether the event is cancelable.
-     * @returns True if the event was not canceled, false if it was.
-     */
-    protected dispatchDiagramEvent<T>(eventName: string, detail: T, cancelable: boolean = false): boolean {
-        return this.host.dispatchEvent(new CustomEvent<T>(eventName, {
-            detail,
-            bubbles: true,
-            cancelable,
-        }));
-    }
-
     // ================================================
     // ========== Helper methods for wiring. ==========
     // ================================================
@@ -968,7 +956,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     private emitSelectionChange(): void {
         const selectedNodes = this.selection();
-        this.dispatchDiagramEvent<DiagramSelectionChange>(DIAGRAM_SELECTION_EVENT, {
+        this.eventDispatcher.selectionChanged({
             node: selectedNodes[0],
             nodeId: selectedNodes[0]?.id,
             nodes: selectedNodes,
@@ -978,7 +966,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     private emitNodeClick(node: INode): void {
         const selectedNodes = this.selection();
-        this.dispatchDiagramEvent<DiagramSelectionChange>(DIAGRAM_NODE_CLICK_EVENT, {
+        this.eventDispatcher.nodeClicked({
             node,
             nodeId: node.id,
             nodes: selectedNodes,
@@ -987,7 +975,7 @@ export class DiagramView extends Diagram implements HasSelection {
     }
 
     private emitBackgroundClick(x: number, y: number): void {
-        this.dispatchDiagramEvent<DiagramBackgroundClick>(DIAGRAM_BACKGROUND_CLICK_EVENT, {
+        this.eventDispatcher.backgroundClicked({
             canvas: { x, y },
             world: this.coordinates.getPoint(x, y, 'ignore_grid'),
         });
@@ -1004,14 +992,7 @@ export class DiagramView extends Diagram implements HasSelection {
             zoom: this.coordinates.zoom,
         } satisfies DiagramViewportChange;
 
-        if (panChanged) {
-            this.dispatchDiagramEvent<DiagramViewportChange>(DIAGRAM_PAN_EVENT, detail);
-        }
-        if (zoomChanged) {
-            this.dispatchDiagramEvent<DiagramViewportChange>(DIAGRAM_ZOOM_EVENT, detail);
-        }
-
-        this.dispatchDiagramEvent<DiagramViewportChange>(DIAGRAM_VIEWPORT_EVENT, detail);
+        this.eventDispatcher.viewportChanged(detail);
     }
 
     // ==================================================

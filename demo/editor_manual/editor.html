@@ -7,7 +7,9 @@
           content="width=device-width, initial-scale=1" />
     <title>Editor Demo</title>
     <link rel="stylesheet"
-          href="./demo.css" />
+            href="../demo.css" />
+    <link rel="stylesheet"
+            href="./demo-editor.css" />
 </head>
 
 <body>
@@ -16,8 +18,8 @@
             <header class="topbar">
                 <div class="brand">Kitchen Sink Editor</div>
                 <nav class="nav">
-                    <a href="./index.html">All demos</a>
-                    <a href="../index.html">Docs</a>
+                    <a href="../index.html">All demos</a>
+                    <a href="../../index.html">Docs</a>
                 </nav>
             </header>
 
@@ -819,12 +821,12 @@
                     <div class="editor-toolbar-group editor-toolbar-group-controls"
                          aria-label="Line controls">
                         <label>
-                            Stroke
+                            Line
                             <div id="stroke-preset-select"></div>
                         </label>
                         <input id="stroke-color-input"
                                type="color"
-                               aria-label="Custom stroke color" />
+                               aria-label="Custom line color" />
                         <label>
                             Width
                             <div id="line-width-select"></div>
@@ -851,23 +853,27 @@
                     <div id="editor-demo"
                          class="canvas-frame tall"></div>
                 </div>
-                <section class="editor-hints"
+                <section class="hint-grid"
                          aria-label="Editor usage hints">
-                    <article class="editor-hint-card">
+                    <article class="hint-card">
                         <h3>Selection & Move</h3>
-                        <p>Click a node to select it. Drag to move. Hold Shift and drag for marquee selection. Hold Space and drag to pan the canvas.</p>
+                        <p>Click a node to select it. Drag to move. Hold Shift and drag for marquee selection. Hold
+                            Space and drag to pan the canvas.</p>
                     </article>
-                    <article class="editor-hint-card">
+                    <article class="hint-card">
                         <h3>Shape Editing</h3>
-                        <p>Use corner and edge handles to resize. Use the rotate handle on the right side to rotate. Hold Alt while rotating to snap angles.</p>
+                        <p>Use corner and edge handles to resize. Use the rotate handle on the right side to rotate.
+                            Hold Alt while rotating to snap angles.</p>
                     </article>
-                    <article class="editor-hint-card">
+                    <article class="hint-card">
                         <h3>Lines & Points</h3>
-                        <p>For polyline-like tools, hold Alt and click a segment to insert a point. Hold Alt and click an inner point to remove it.</p>
+                        <p>For polyline-like tools, hold Alt and click a segment to insert a point. Hold Alt and click
+                            an inner point to remove it.</p>
                     </article>
-                    <article class="editor-hint-card">
+                    <article class="hint-card">
                         <h3>Text & Shortcuts</h3>
-                        <p>Press Enter to edit text on a selected text-capable shape. Use Cmd/Ctrl+C, X, V, Z, Shift+Z/Y, and Delete/Backspace as expected.</p>
+                        <p>Press Enter to edit text on a selected text-capable shape. Use Cmd/Ctrl+C, X, V, Z,
+                            Shift+Z/Y, and Delete/Backspace as expected.</p>
                     </article>
                 </section>
             </section>

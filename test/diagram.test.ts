@@ -1,4 +1,4 @@
-import { Diagram, type ILayer, type INode } from '../src/index';
+import { Diagram, type ILayer, type INode, type ISerializedDiagram } from '../src/index';
 import { jsonSerializer } from '../src/io/json.serializer';
 
 function createNode(id: string, text: string, x: number, y: number): INode {
@@ -70,6 +70,7 @@ describe('Diagram', () => {
                     transparent: false,
                     strokeStyle: '#000000',
                     fillStyle: '#ffffff',
+                    textColor: '#000000',
                     lineWidth: 1,
                     angle: 0,
                 },
@@ -90,6 +91,7 @@ describe('Diagram', () => {
                     transparent: false,
                     strokeStyle: '#000000',
                     fillStyle: '#ffffff',
+                    textColor: '#000000',
                     lineWidth: 1,
                     angle: 0,
                 },
@@ -110,6 +112,7 @@ describe('Diagram', () => {
                     transparent: true,
                     strokeStyle: '#2563eb',
                     fillStyle: 'transparent',
+                    textColor: '#000000',
                     lineWidth: 2,
                     angle: 0,
                     from: { node: 'source', handle: 8 },
@@ -133,7 +136,7 @@ describe('Diagram', () => {
                 width: 20,
                 height: 20,
             },
-        };
+        } as ISerializedDiagram;
 
         const restored = await new Diagram('empty').read(source, jsonSerializer);
 

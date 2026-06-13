@@ -222,18 +222,44 @@ export class Diagram implements IDiagram {
         this.assetStore.clear();
     }
 
+    /**
+     * Clears all nodes, layers, metadata, and assets from the diagram, effectively resetting it to an empty state while retaining the same ID. 
+     * Intended for reuse scenarios where the diagram instance should be preserved but its content should be cleared.
+     */
+    public clear(): void {
+        this.nodes = [];
+        this.layers = [];
+        this.meta = undefined;
+        this.grid = { ...defaultGrid };
+        this.assetStore.clear();
+    }
 
     // I/O methods
 
     /**
-     * Reads the diagram data from the specified source.
-     * @param data The data to read.
-     * @param serializer The serializer to use for reading the data.
-     * @returns A promise that resolves to the diagram instance.
+     * Loads the diagram data from a serialized JSON object.
+     * @param source The serialized diagram data.
+     * @param serializer The serializer to use for reading the data (optional if source is already an object).
+     * @returns The diagram instance.
+     * @throws An error if the input is an invalid JSON string or if the parsed JSON is null or undefined.
      */
-    public async read(data: unknown, serializer: ISerializer): Promise<this> {
-        const payload = typeof data === 'string' ? data : JSON.stringify(data);
-        const json = await serializer.read<ISerializedDiagram>(payload);
+    public async read(source: string | ISerializedDiagram, serializer?: ISerializer): Promise<this> {
+        let json: ISerializedDiagram;
+        if (typeof source === 'string') {
+            try {
+                serializer = serializer ?? jsonSerializer;
+                json = await serializer.read<ISerializedDiagram>(source);
+                if (!json) {
+                    throw new Error('Parsed JSON is null or undefined');
+                }
+            } catch (e) {
+                const msg = e instanceof Error ? e.message : String(e);
+                throw new Error(`Invalid JSON string provided for diagram loading, ${msg}`);
+            }
+        } else {
+            json = source;
+        }
+
         this.id = json.id;
         this.assetStore.load(json.image_assets);
         this.nodes = (json.nodes ?? []).map(node => this.hydrateNode(node));

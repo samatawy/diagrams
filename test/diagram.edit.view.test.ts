@@ -14,7 +14,7 @@ import {
     type DiagramDeleteRequest,
     type DiagramNodeChange,
     type DiagramToolChange,
-} from '../src/view/dto';
+} from '../src/events/diagram.events';
 
 function createHost(width: number, height: number): HTMLDivElement {
     const host = document.createElement('div');

@@ -1,5 +1,14 @@
+// Unbound components
 export * from './color.select';
 export * from './width.select';
+export * from './font.select';
+export * from './size.select';
+export * from './prompt.dialog';
+
+// Bound components
+export * from './tool.palette';
 export * from './tool.bar';
 export * from './diagram.tool.bar';
-export * from './tool.palette';
+
+// Editor component
+export * from './diagram.editor';

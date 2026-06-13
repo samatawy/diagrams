@@ -1,7 +1,7 @@
 import { DiagramView } from '../src/view/diagram.view';
 import { NodeHandle } from '../src/types';
 import type { ILayer, INode } from '../src/interfaces';
-import { DIAGRAM_BACKGROUND_CLICK_EVENT, DIAGRAM_NODE_CLICK_EVENT, DIAGRAM_PAN_EVENT, DIAGRAM_SELECTION_EVENT, DIAGRAM_VIEWPORT_EVENT, DIAGRAM_ZOOM_EVENT } from '../src';
+import { DIAGRAM_BACKGROUND_CLICK_EVENT, DIAGRAM_NODE_CLICK_EVENT, DIAGRAM_SELECTION_EVENT, DIAGRAM_VIEWPORT_EVENT } from '../src';
 
 class TestDiagramView extends DiagramView {
     private hitNodeMock?: (x: number, y: number) => INode | undefined;
@@ -151,7 +151,7 @@ describe('DiagramView', () => {
         globalThis.ResizeObserver = originalResizeObserver;
     });
 
-    it('emits node click, background click, selection, pan, zoom and viewport events', () => {
+    it('emits node click, background click, selection and viewport events', () => {
         const host = createHost(400, 300);
         const view = new TestDiagramView('demo', host);
         const layer = view.upsertLayer('main');
@@ -162,15 +162,11 @@ describe('DiagramView', () => {
         const selectionEvents: unknown[] = [];
         const nodeClickEvents: unknown[] = [];
         const backgroundEvents: unknown[] = [];
-        const panEvents: unknown[] = [];
-        const zoomEvents: unknown[] = [];
         const viewportEvents: unknown[] = [];
 
         host.addEventListener(DIAGRAM_SELECTION_EVENT, event => selectionEvents.push((event as CustomEvent).detail));
         host.addEventListener(DIAGRAM_NODE_CLICK_EVENT, event => nodeClickEvents.push((event as CustomEvent).detail));
         host.addEventListener(DIAGRAM_BACKGROUND_CLICK_EVENT, event => backgroundEvents.push((event as CustomEvent).detail));
-        host.addEventListener(DIAGRAM_PAN_EVENT, event => panEvents.push((event as CustomEvent).detail));
-        host.addEventListener(DIAGRAM_ZOOM_EVENT, event => zoomEvents.push((event as CustomEvent).detail));
         host.addEventListener(DIAGRAM_VIEWPORT_EVENT, event => viewportEvents.push((event as CustomEvent).detail));
 
         view.setHitNodeMock(() => node);
@@ -212,8 +208,6 @@ describe('DiagramView', () => {
             { nodeId: 'node-1', node, nodeIds: ['node-1'], nodes: [node] },
             { nodeId: undefined, node: undefined, nodeIds: [], nodes: [] },
         ]);
-        expect(panEvents).toHaveLength(2);
-        expect(zoomEvents).toHaveLength(1);
         expect(viewportEvents).toHaveLength(2);
     });
 
@@ -388,15 +382,15 @@ describe('DiagramView', () => {
     it('supports setting zoom directly with zoomTo', () => {
         const host = createHost(400, 300);
         const view = new DiagramView('demo', host);
-        const zoomEvents: unknown[] = [];
+        const viewportEvents: unknown[] = [];
 
-        host.addEventListener(DIAGRAM_ZOOM_EVENT, event => zoomEvents.push((event as CustomEvent).detail));
+        host.addEventListener(DIAGRAM_VIEWPORT_EVENT, event => viewportEvents.push((event as CustomEvent).detail));
 
         view.setViewport({ zoom: 2 });
         view.zoomTo(1);
 
         expect(view.getCoordinates().zoom).toBeCloseTo(1);
-        expect(zoomEvents.length).toBeGreaterThanOrEqual(2);
+        expect(viewportEvents.length).toBeGreaterThanOrEqual(2);
     });
 
     it('cleans up listeners, observer and owned canvas on destroy', () => {

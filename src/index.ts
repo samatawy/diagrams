@@ -10,6 +10,9 @@ export * from './model/diagram';
 // io
 export * from './io/index';
 
+// events
+export * from './events/index';
+
 // nodes
 export * from './nodes/index';
 

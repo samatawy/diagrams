@@ -4,8 +4,8 @@ import {
     makeLine,
     NodeHandle,
     EDITOR_TOOL_DEFS,
-    DIAGRAM_TOOL_CHANGED_EVENT,
-} from './demo-common.js';
+    DIAGRAM_CHANGED_EVENT,
+} from '../demo-common.js';
 
 const host = document.getElementById('editor-demo');
 const toolList = document.getElementById('editor-tool-list');
@@ -714,23 +714,8 @@ requestAnimationFrame(() => {
     syncStyleControls();
 });
 
-host?.addEventListener(DIAGRAM_TOOL_CHANGED_EVENT, (event) => {
-    const nextTool = event instanceof CustomEvent && event.detail?.tool
-        ? event.detail.tool
-        : editor?.currentTool || 'select';
-    highlightActiveTool(nextTool);
+host?.addEventListener(DIAGRAM_CHANGED_EVENT, () => {
+    highlightActiveTool(editor?.currentTool || 'select');
+    refreshActionState();
+    syncStyleControls();
 });
-
-for (const eventName of [
-    'selection',
-    'node-added',
-    'node-deleted',
-    'node-moved',
-    'node-resized',
-    'node-points-changed',
-]) {
-    host?.addEventListener(eventName, () => {
-        refreshActionState();
-        syncStyleControls();
-    });
-}

@@ -11,10 +11,9 @@ import {
     DIAGRAM_NODE_DELETED_EVENT,
     DIAGRAM_NODE_MOVED_EVENT,
     DIAGRAM_TOOL_CHANGED_EVENT,
-    type DiagramDeleteRequest,
     type DiagramNodeChange,
     type DiagramToolChange,
-} from '../src/view/dto';
+} from '../src/events/diagram.events';
 
 function createHost(width: number, height: number): HTMLDivElement {
     const host = document.createElement('div');

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+    <title>Editor Demo (Components)</title>
+    <link rel="stylesheet"
+            href="../demo.css" />
+    <link rel="stylesheet"
+            href="./demo-components.css" />
+</head>
+
+<body>
+    <main class="page">
+        <div class="shell">
+            <header class="topbar">
+                <div class="brand">Kitchen Sink Editor (Components)</div>
+                <nav class="nav">
+                    <a href="../index.html">All demos</a>
+                    <a href="../editor_manual/editor.html">Classic kitchen sink</a>
+                    <a href="../../index.html">Docs</a>
+                </nav>
+            </header>
+
+            <section class="canvas-card">
+                <p class="note">This page mirrors the kitchen sink editor but delegates most toolbar/palette behavior to
+                    library components.</p>
+
+                <div id="component-action-toolbar"
+                     class="editor-top-toolbar"
+                     aria-label="Editor actions"></div>
+
+                <div class="editor-top-toolbar"
+                     aria-label="Style controls">
+                    <div class="editor-toolbar-group editor-toolbar-group-controls"
+                         aria-label="Font controls">
+                        <label>
+                            Font
+                            <div id="font-face-select"></div>
+                        </label>
+                        <label>
+                            <div id="font-size-select"></div>
+                        </label>
+                        <label>
+                            <div id="text-preset-select"></div>
+                        </label>
+                    </div>
+                    <div class="editor-toolbar-group editor-toolbar-group-controls"
+                         aria-label="Line controls">
+                        <label>
+                            Line
+                            <div id="stroke-preset-select"></div>
+                        </label>
+                        <label>
+                            Width
+                            <div id="line-width-select"></div>
+                        </label>
+                    </div>
+                    <div class="editor-toolbar-group editor-toolbar-group-controls"
+                         aria-label="Fill controls">
+                        <label>
+                            Fill
+                            <div id="fill-preset-select"></div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="editor-workbench">
+                    <aside class="editor-toolbar"
+                           aria-label="Tool palette">
+                        <div id="component-tool-list"
+                             class="editor-tool-list"></div>
+                    </aside>
+                    <div id="editor-components-demo"
+                         class="canvas-frame tall"></div>
+                </div>
+
+                <section class="hint-grid"
+                         aria-label="Editor usage hints">
+                    <article class="hint-card">
+                        <h3>Selection & Move</h3>
+                        <p>Click a node to select it. Drag to move. Hold Shift and drag for marquee selection. Hold
+                            Space and drag to pan the canvas.</p>
+                    </article>
+                    <article class="hint-card">
+                        <h3>Shape Editing</h3>
+                        <p>Use corner and edge handles to resize. Use the rotate handle on the right side to rotate.
+                            Hold Alt while rotating to snap angles.</p>
+                    </article>
+                    <article class="hint-card">
+                        <h3>Lines & Points</h3>
+                        <p>For polyline-like tools, hold Alt and click a segment to insert a point. Hold Alt and click
+                            an inner point to remove it.</p>
+                    </article>
+                    <article class="hint-card">
+                        <h3>Text & Shortcuts</h3>
+                        <p>Press Enter to edit text on a selected text-capable shape. Use Cmd/Ctrl+C, X, V, Z,
+                            Shift+Z/Y, and Delete/Backspace as expected.</p>
+                    </article>
+                </section>
+            </section>
+        </div>
+    </main>
+    <script type="module"
+            src="./editor-components.js"></script>
+</body>
+
+</html>

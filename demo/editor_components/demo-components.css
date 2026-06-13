@@ -1,0 +1,73 @@
+/* Styles specific to the component-based kitchen-sink demo (editor-components.html).
+   Does NOT override any component control styling — components bring their own CSS. */
+
+.editor-workbench {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 14px;
+    align-items: stretch;
+    margin-top: 14px;
+}
+
+.editor-top-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 14px;
+}
+
+.editor-toolbar-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.65);
+}
+
+.editor-toolbar-group-controls {
+    gap: 10px;
+    align-items: center;
+}
+
+.editor-toolbar-group-controls label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 12px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #475569;
+}
+
+.editor-top-toolbar input[type='color'] {
+    appearance: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.88);
+    color: #1f2937;
+    width: 34px;
+    height: 32px;
+    padding: 3px;
+    cursor: pointer;
+}
+
+.editor-toolbar {
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.65);
+    width: max-content;
+    padding: 8px;
+    display: grid;
+    grid-auto-rows: min-content;
+    gap: 8px;
+}
+
+@media (max-width: 900px) {
+    .editor-workbench {
+        grid-template-columns: 1fr;
+    }
+
+    .editor-top-toolbar {
+        flex-direction: column;
+    }
+}

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+    <title>DiagramEditor (Default Config)</title>
+    <link rel="stylesheet"
+          href="../demo.css" />
+    <style>
+        #diagram-editor-host {
+            position: relative;
+            height: 640px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+        <div class="shell">
+            <header class="topbar">
+                <div class="brand">DiagramEditor (Default Config)</div>
+                <nav class="nav">
+                    <a href="../editor_components/editor-components.html">Components demo</a>
+                    <a href="../editor_manual/editor.html">Classic editor</a>
+                    <a href="../index.html">All demos</a>
+                    <a href="../../index.html">Docs</a>
+                </nav>
+            </header>
+
+            <section class="canvas-card">
+                <p class="note">
+                    The <code>DiagramEditor</code> component wired with default config only —
+                    no custom toolbar, no manual event listeners, no hand-rolled controls.
+                    Everything (toolbar, tool palette, color selects, font/size selects, undo, prompts)
+                    is handled by the component.
+                </p>
+
+                <div id="diagram-editor-host"></div>
+
+                <section class="hint-grid"
+                         aria-label="Editor usage hints">
+                    <article class="hint-card">
+                        <h3>Selection &amp; Move</h3>
+                        <p>Click a node to select it. Drag to move. Hold Shift and drag for marquee selection. Hold
+                            Space and drag to pan the canvas.</p>
+                    </article>
+                    <article class="hint-card">
+                        <h3>Shape Editing</h3>
+                        <p>Use corner and edge handles to resize. Use the rotate handle on the right side to rotate.
+                            Hold Alt while rotating to snap angles.</p>
+                    </article>
+                    <article class="hint-card">
+                        <h3>Lines &amp; Points</h3>
+                        <p>For polyline-like tools, hold Alt and click a segment to insert a point. Hold Alt and click
+                            an inner point to remove it.</p>
+                    </article>
+                    <article class="hint-card">
+                        <h3>Text &amp; Shortcuts</h3>
+                        <p>Press Enter to edit text on a selected text-capable shape. Use Cmd/Ctrl+C, X, V, Z,
+                            Shift+Z/Y, and Delete/Backspace as expected.</p>
+                    </article>
+                </section>
+            </section>
+        </div>
+    </main>
+    <script type="module"
+            src="./diagram-editor.js"></script>
+</body>
+
+</html>

@@ -1,4 +1,5 @@
 import type { DiagramEditView } from '../editview/diagram.edit.view';
+import { DIAGRAM_CHANGED_EVENT } from '../events/diagram.events';
 import { IconRegistry } from '../factory/icon.registry';
 import { ToolBar, type ToolBarConfig } from './tool.bar';
 
@@ -231,6 +232,10 @@ export class DiagramToolBar extends ToolBar {
 
     protected actions: DiagramAction[] = [];
 
+    protected readonly onDiagramChanged = (): void => {
+        this.refresh();
+    };
+
     constructor(
         target: HTMLElement,
         diagram: DiagramEditView,
@@ -238,10 +243,13 @@ export class DiagramToolBar extends ToolBar {
     ) {
         super(target, config);
         this.diagram = diagram;
+        this.bindDiagramEvents();
         this.build(config);
+        this.refresh();
     }
 
     public destroy(): void {
+        this.unbindDiagramEvents();
         super.destroy();
     }
 
@@ -255,8 +263,20 @@ export class DiagramToolBar extends ToolBar {
 
     /** Swap the underlying diagram view (e.g. after remounting). */
     public setDiagramView(diagram: DiagramEditView): void {
+        this.unbindDiagramEvents();
         this.diagram = diagram;
+        this.bindDiagramEvents();
         this.refresh();
+    }
+
+    protected bindDiagramEvents(): void {
+        const source = (this.diagram as any).host as HTMLElement | undefined;
+        source?.addEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
+    }
+
+    protected unbindDiagramEvents(): void {
+        const source = (this.diagram as any).host as HTMLElement | undefined;
+        source?.removeEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
     }
 
     protected build(config: DiagramToolBarConfig): void {

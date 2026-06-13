@@ -36,7 +36,8 @@ const DEFAULT_STYLES = `
 	min-width: 90px;
 	max-width: 130px;
 }
-.line-width-control .color-preset-trigger {
+.line-width-control .color-preset-trigger,
+.line-width-control button[aria-haspopup='listbox'] {
 	width: 100%;
 	display: grid;
 	grid-template-columns: 1fr auto auto;
@@ -44,14 +45,23 @@ const DEFAULT_STYLES = `
 	gap: 8px;
 	padding: 6px 8px;
 	cursor: pointer;
-	border: none;
-	background: transparent;
-	font: inherit;
+    appearance: none;
+    border: 1px solid rgba(15, 23, 42, 0.15);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.88);
+    color: #1f2937;
+    font: 600 12px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 .line-width-control .color-preset-trigger::after {
 	content: '▾';
 	font-size: 12px;
 	color: #334155;
+}
+.line-width-control .color-preset-trigger:hover,
+.line-width-control .color-preset-trigger:focus-visible,
+.line-width-control button[aria-haspopup='listbox']:hover,
+.line-width-control button[aria-haspopup='listbox']:focus-visible {
+    border-color: rgba(15, 118, 110, 0.45);
 }
 .line-width-swatch {
 	width: 100%;
@@ -108,14 +118,10 @@ const DEFAULT_STYLES = `
 }
 `;
 
+import { injectStyles, setClasses, toggleClasses, removeClasses } from './editor.utils';
+
 function ensureDefaultStyles(): void {
-    if (typeof document === 'undefined' || document.getElementById(STYLE_ID)) {
-        return;
-    }
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = DEFAULT_STYLES;
-    document.head.appendChild(style);
+    injectStyles(STYLE_ID, DEFAULT_STYLES);
 }
 
 function normalizeWidths(widths: number[]): number[] {
@@ -165,26 +171,26 @@ export class WidthSelect {
         this.selected = this.config.widths[0] || 1;
 
         this.host.innerHTML = '';
-        this.host.classList.add('color-preset-control', this.config.hostClassName);
+        setClasses(this.host, 'color-preset-control', DEFAULT_CONFIG.hostClassName, this.config.hostClassName);
 
         this.trigger = document.createElement('button');
         this.trigger.type = 'button';
-        this.trigger.className = this.config.triggerClassName;
+        setClasses(this.trigger, DEFAULT_CONFIG.triggerClassName, this.config.triggerClassName);
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
 
         this.triggerSwatch = document.createElement('div');
-        this.triggerSwatch.className = this.config.swatchClassName;
+        setClasses(this.triggerSwatch, DEFAULT_CONFIG.swatchClassName, this.config.swatchClassName);
         this.trigger.appendChild(this.triggerSwatch);
 
         if (this.config.showLabel) {
             this.triggerLabel = document.createElement('span');
-            this.triggerLabel.className = this.config.labelClassName;
+            setClasses(this.triggerLabel, DEFAULT_CONFIG.labelClassName, this.config.labelClassName);
             this.trigger.appendChild(this.triggerLabel);
         }
 
         this.menu = document.createElement('div');
-        this.menu.className = this.config.menuClassName;
+        setClasses(this.menu, DEFAULT_CONFIG.menuClassName, this.config.menuClassName);
         this.menu.setAttribute('role', 'listbox');
 
         this.host.appendChild(this.trigger);
@@ -224,7 +230,7 @@ export class WidthSelect {
     }
 
     protected readonly onTriggerClick = (): void => {
-        if (this.host.classList.contains(this.config.openClassName)) {
+        if (this.host.classList.contains(DEFAULT_CONFIG.openClassName)) {
             this.closeMenu();
             return;
         }
@@ -262,18 +268,18 @@ export class WidthSelect {
     protected buildOption(width: number): HTMLButtonElement {
         const option = document.createElement('button');
         option.type = 'button';
-        option.className = this.config.optionClassName;
+        setClasses(option, DEFAULT_CONFIG.optionClassName, this.config.optionClassName);
         option.setAttribute('role', 'option');
         option.dataset.width = String(width);
 
         const swatch = document.createElement('div');
-        swatch.className = this.config.swatchClassName;
+        setClasses(swatch, DEFAULT_CONFIG.swatchClassName, this.config.swatchClassName);
         swatch.appendChild(this.createWidthSvg(width));
         option.appendChild(swatch);
 
         if (this.config.showLabel) {
             const label = document.createElement('span');
-            label.className = this.config.labelClassName;
+            setClasses(label, DEFAULT_CONFIG.labelClassName, this.config.labelClassName);
             label.textContent = `${width}px`;
             option.appendChild(label);
         }
@@ -323,18 +329,18 @@ export class WidthSelect {
         const options = this.menu.querySelectorAll<HTMLElement>('[data-width]');
         options.forEach((option) => {
             const isSelected = Number(option.dataset.width) === this.selected;
-            option.classList.toggle(this.config.selectedClassName, isSelected);
+            toggleClasses(option, isSelected, DEFAULT_CONFIG.selectedClassName, this.config.selectedClassName);
             option.setAttribute('aria-selected', String(isSelected));
         });
     }
 
     protected openMenu(): void {
-        this.host.classList.add(this.config.openClassName);
+        setClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'true');
     }
 
     protected closeMenu(): void {
-        this.host.classList.remove(this.config.openClassName);
+        removeClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'false');
     }
 }

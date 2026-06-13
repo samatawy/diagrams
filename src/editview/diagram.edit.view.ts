@@ -15,25 +15,13 @@ import { NodeRegistry } from "../factory/node.registry";
 import { ZOrder, type ZOrderHost } from "../layout/z.order";
 import { ColorPalette } from "./color.palette";
 import {
-    DIAGRAM_CONNECTION_CONNECTED_EVENT,
-    DIAGRAM_CONNECTION_DISCONNECTED_EVENT,
-    DIAGRAM_DELETE_REQUEST_EVENT,
     DIAGRAM_EDIT_CONTEXT_MENU_EVENT,
-    DIAGRAM_NODE_ADDED_EVENT,
-    DIAGRAM_NODE_DELETED_EVENT,
-    DIAGRAM_NODE_MOVED_EVENT,
-    DIAGRAM_NODE_POINTS_CHANGED_EVENT,
-    DIAGRAM_NODE_RESIZED_EVENT,
-    DIAGRAM_TOOL_CHANGED_EVENT,
-    type DiagramConnectionChange,
     type DiagramDeleteRequest,
     type DiagramEditContextMenu,
-    type DiagramNodeChange,
-    type DiagramToolChange,
-} from "../view/dto";
+} from "../events/diagram.events";
 
 
-export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../view/dto";
+export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
 
 /**
  * A class representing a diagram in edit mode.
@@ -96,7 +84,7 @@ export class DiagramEditView extends DiagramView {
 
     protected palette_mode: 'stroke' | 'fill' = 'stroke';
 
-    protected dirty: boolean = false;
+    protected modified: boolean = false;
 
     protected can_paste: boolean = false;
 
@@ -112,7 +100,6 @@ export class DiagramEditView extends DiagramView {
         element: HTMLTextAreaElement;
         nodeId: string;
         originalText: string;
-        // initializing: boolean;
     };
 
     /**
@@ -139,8 +126,17 @@ export class DiagramEditView extends DiagramView {
      * Cleans up resources used by the diagram, such as event listeners and active text editors.
      */
     public override destroy(): void {
-        this.closeTextEditor(true);
+        this.clear();
         super.destroy();
+    }
+
+    public override clear(): void {
+        this.closeTextEditor(true);
+
+        super.clear();
+        this.history.clear();
+        this.color_palette.refresh();
+        this.modified = false;
     }
 
 
@@ -174,6 +170,10 @@ export class DiagramEditView extends DiagramView {
 
     public set fillColor(value: string) {
         this.setFillColor(value);
+    }
+
+    public get textColor(): string {
+        return this.settings.textColor;
     }
 
     public set textColor(value: string) {
@@ -252,7 +252,7 @@ export class DiagramEditView extends DiagramView {
         this.current.draft = undefined;
 
         if (previousTool !== nextTool) {
-            this.dispatchDiagramEvent<DiagramToolChange>(DIAGRAM_TOOL_CHANGED_EVENT, {
+            this.eventDispatcher.toolChanged({
                 tool: nextTool,
                 previousTool,
             });
@@ -457,6 +457,10 @@ export class DiagramEditView extends DiagramView {
     // ======== Undo/Redo methods ==========
     // ==================================================
 
+    public isModified(): boolean {
+        return this.modified;
+    }
+
     /**
      * Take a snapshot of the current diagram state and push it onto the undo stack. 
      * This should be called before making any changes to the diagram that should be undoable. 
@@ -465,7 +469,7 @@ export class DiagramEditView extends DiagramView {
     protected addUndo(): void {
         this.history?.addUndo();
 
-        this.dirty = true;
+        this.modified = true;
     }
 
     /**
@@ -819,7 +823,7 @@ export class DiagramEditView extends DiagramView {
             nodeIds: selected.map(node => node.id),
         } satisfies DiagramDeleteRequest;
 
-        if (!this.dispatchDiagramEvent<DiagramDeleteRequest>(DIAGRAM_DELETE_REQUEST_EVENT, request, true)) {
+        if (!this.eventDispatcher.deleteRequested(request)) {
             return;
         }
 
@@ -834,11 +838,11 @@ export class DiagramEditView extends DiagramView {
         for (const node of selected) {
             this.getCache().deleteNode(node);
             this.deleteNode(node.id);
-            this.emitNodeChange(DIAGRAM_NODE_DELETED_EVENT, node);
+            this.emitNodeDeleted(node);
         }
 
         for (const node of affectedConnections) {
-            this.emitConnectionChange(DIAGRAM_CONNECTION_DISCONNECTED_EVENT, node);
+            this.emitConnectionDisconnected(node);
         }
 
         this.render('all');
@@ -1291,7 +1295,7 @@ export class DiagramEditView extends DiagramView {
             this.selectDown(event);
         }
 
-        this.dispatchDiagramEvent<DiagramEditContextMenu>(DIAGRAM_EDIT_CONTEXT_MENU_EVENT, {
+        this.eventDispatcher.editContextMenu({
             event,
             canvas: { x: event.offsetX, y: event.offsetY },
             world: this.getCoordinates().getPoint(event.offsetX, event.offsetY, 'ignore_grid'),
@@ -1299,7 +1303,7 @@ export class DiagramEditView extends DiagramView {
             nodeId: this.downShape?.id,
             nodes: this.selection(),
             nodeIds: this.selection().map(node => node.id),
-        });
+        } satisfies DiagramEditContextMenu);
     }
 
     // ==================================================
@@ -1915,9 +1919,9 @@ export class DiagramEditView extends DiagramView {
         this.render('all');
         this.renderPreview();
 
-        this.emitNodeChange(DIAGRAM_NODE_ADDED_EVENT, created);
+        this.emitNodeAdded(created);
         if (this.isConnectorType(created.type) && (created as INode & IConnection).from || (created as INode & IConnection).to) {
-            this.emitConnectionChange(DIAGRAM_CONNECTION_CONNECTED_EVENT, created as INode & IConnection);
+            this.emitConnectionConnected(created as INode & IConnection);
         }
 
         this.setTool('select');
@@ -1939,7 +1943,7 @@ export class DiagramEditView extends DiagramView {
 
         this.current.layer = this.layers[0];
 
-        this.dirty = false;
+        this.modified = false;
     }
 
     public renderPreview(layer?: ILayer): void {
@@ -2226,13 +2230,13 @@ export class DiagramEditView extends DiagramView {
 
     private emitPendingMutationEvents(): void {
         for (const node of this.movedNodes) {
-            this.emitNodeChange(DIAGRAM_NODE_MOVED_EVENT, node);
+            this.emitNodeMoved(node);
         }
         for (const node of this.resizedNodes) {
-            this.emitNodeChange(DIAGRAM_NODE_RESIZED_EVENT, node);
+            this.emitNodeResized(node);
         }
         for (const node of this.pointChangedNodes) {
-            this.emitNodeChange(DIAGRAM_NODE_POINTS_CHANGED_EVENT, node);
+            this.emitNodePointsChanged(node);
         }
 
         this.movedNodes.clear();
@@ -2240,15 +2244,52 @@ export class DiagramEditView extends DiagramView {
         this.pointChangedNodes.clear();
     }
 
-    private emitNodeChange(eventName: string, node: INode): void {
-        this.dispatchDiagramEvent<DiagramNodeChange>(eventName, {
+    private emitNodeAdded(node: INode): void {
+        this.eventDispatcher.nodeAdded({
             node,
             nodeId: node.id,
         });
     }
 
-    private emitConnectionChange(eventName: string, node: INode & IConnection): void {
-        this.dispatchDiagramEvent<DiagramConnectionChange>(eventName, {
+    private emitNodeDeleted(node: INode): void {
+        this.eventDispatcher.nodeDeleted({
+            node,
+            nodeId: node.id,
+        });
+    }
+
+    private emitNodeMoved(node: INode): void {
+        this.eventDispatcher.nodeMoved({
+            node,
+            nodeId: node.id,
+        });
+    }
+
+    private emitNodeResized(node: INode): void {
+        this.eventDispatcher.nodeResized({
+            node,
+            nodeId: node.id,
+        });
+    }
+
+    private emitNodePointsChanged(node: INode): void {
+        this.eventDispatcher.nodePointsChanged({
+            node,
+            nodeId: node.id,
+        });
+    }
+
+    private emitConnectionConnected(node: INode & IConnection): void {
+        this.eventDispatcher.connectionConnected({
+            node,
+            nodeId: node.id,
+            from: node.from,
+            to: node.to,
+        });
+    }
+
+    private emitConnectionDisconnected(node: INode & IConnection): void {
+        this.eventDispatcher.connectionDisconnected({
             node,
             nodeId: node.id,
             from: node.from,
@@ -2263,10 +2304,10 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (before.from || before.to) {
-            this.emitConnectionChange(DIAGRAM_CONNECTION_DISCONNECTED_EVENT, node);
+            this.emitConnectionDisconnected(node);
         }
         if (node.from || node.to) {
-            this.emitConnectionChange(DIAGRAM_CONNECTION_CONNECTED_EVENT, node);
+            this.emitConnectionConnected(node);
         }
     }
 
@@ -2300,6 +2341,7 @@ export class DiagramEditView extends DiagramView {
             this.settings.lineWidth = shape.lineWidth;
             this.settings.strokeColor = shape.strokeStyle;
             this.settings.fillColor = shape.fillStyle;
+            this.settings.textColor = shape.textColor;
 
             let fparts = shape.font.split('px');
             this.settings.fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || 16 : 16;
@@ -2444,10 +2486,6 @@ export class DiagramEditView extends DiagramView {
         }
     }
 
-    // public setPaletteColor(event: string): void {
-    //     if (this.palette_mode == 'stroke') this.setStrokeColor(event);
-    //     if (this.palette_mode == 'fill') this.setFillColor(event);
-    // }
 
     // =========================================
     // ====== Preview and export methods ======
@@ -2542,7 +2580,7 @@ export class DiagramEditView extends DiagramView {
                     this.colorPalette.extractColors(this.model);
                     this.current.layer = this.model.layers[0];
 
-                    this.dirty = false;
+                    this.modified = false;
                     this.history?.clear();
                     // this.undoList = [];
                     // this.redoList = [];

@@ -7,7 +7,9 @@
           content="width=device-width, initial-scale=1" />
     <title>Decision Tree Demo</title>
     <link rel="stylesheet"
-          href="./demo.css" />
+            href="../demo.css" />
+    <link rel="stylesheet"
+            href="./demo-viewer.css" />
 </head>
 
 <body>
@@ -16,8 +18,8 @@
             <header class="topbar">
                 <div class="brand">Decision Tree Viewer</div>
                 <nav class="nav">
-                    <a href="./index.html">All demos</a>
-                    <a href="../index.html">Docs</a>
+                    <a href="../index.html">All demos</a>
+                    <a href="../../index.html">Docs</a>
                 </nav>
             </header>
 
@@ -27,22 +29,22 @@
                     underwriting-style flow.</p>
                 <div id="decision-tree-demo"
                      class="canvas-frame"></div>
-                <section class="demo-hints"
+                <section class="hint-grid"
                          aria-label="Decision tree usage hints">
-                    <article class="demo-hint-card">
+                    <article class="hint-card">
                         <h3>Navigate</h3>
                         <p>Drag empty canvas space to pan. Use the mouse wheel or trackpad pinch to zoom in and out.</p>
                     </article>
-                    <article class="demo-hint-card">
+                    <article class="hint-card">
                         <h3>Read Flow</h3>
                         <p>Start from the top node and follow arrow direction through yes/no style branch decisions.</p>
                     </article>
-                    <article class="demo-hint-card">
+                    <article class="hint-card">
                         <h3>Inspect Layout</h3>
                         <p>This view emphasizes anchored connectors and spacing, so branches stay attached while panning
                             or zooming.</p>
                     </article>
-                    <article class="demo-hint-card">
+                    <article class="hint-card">
                         <h3>Compare APIs</h3>
                         <p>Open the docs link above and compare this rendered graph with the node and line adapter
                             behaviors.</p>

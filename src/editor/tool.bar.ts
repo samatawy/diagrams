@@ -29,60 +29,84 @@ const TOOLBAR_DEFAULT_STYLES = `
     padding: 4px;
     box-sizing: border-box;
 }
-.toolbar-button {
+.toolbar .toolbar-button,
+.toolbar button[data-toolbar-button='true'] {
+    appearance: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    background: transparent;
+    min-width: 32px;
+    min-height: 32px;
+    width: auto;
+    height: auto;
+    padding: 6px 8px;
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.88);
     cursor: pointer;
-    color: inherit;
+    color: #334155;
+    font: 600 12px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    line-height: 0;
     flex-shrink: 0;
-    transition: background 80ms ease, border-color 80ms ease;
+    transition: border-color 100ms ease, background-color 100ms ease, color 100ms ease;
 }
-.toolbar-button:hover {
-    background: rgba(15, 23, 42, 0.06);
-    border-color: rgba(15, 23, 42, 0.12);
-}
-.toolbar-button.is-active {
-    background: rgba(15, 118, 110, 0.12);
-    border-color: rgba(15, 118, 110, 0.3);
+.toolbar .toolbar-button:hover,
+.toolbar .toolbar-button:focus-visible,
+.toolbar button[data-toolbar-button='true']:hover,
+.toolbar button[data-toolbar-button='true']:focus-visible {
+    border-color: rgba(15, 118, 110, 0.45);
     color: #0f766e;
 }
-.toolbar-button:disabled,
-.toolbar-button.is-disabled {
-    opacity: 0.38;
-    cursor: default;
+.toolbar .toolbar-button.is-active,
+.toolbar .toolbar-button[data-toggle='true'].is-active,
+.toolbar button[data-toolbar-button='true'].is-active,
+.toolbar button[data-toolbar-button='true'][data-toggle='true'].is-active {
+    background: #0f766e;
+    border-color: #0f766e;
+    color: #ffffff;
+}
+.toolbar .toolbar-button:disabled,
+.toolbar .toolbar-button.is-disabled,
+.toolbar button[data-toolbar-button='true']:disabled,
+.toolbar button[data-toolbar-button='true'].is-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    color: #64748b;
+    border-color: rgba(15, 23, 42, 0.12);
     pointer-events: none;
 }
-.toolbar-button svg,
-.toolbar-button img {
+.toolbar .toolbar-button svg,
+.toolbar .toolbar-button img,
+.toolbar button[data-toolbar-button='true'] svg,
+.toolbar button[data-toolbar-button='true'] img {
     width: 18px;
     height: 18px;
     display: block;
     pointer-events: none;
 }
-.toolbar-separator {
+.toolbar .toolbar-separator,
+.toolbar [data-toolbar-separator='true'] {
     width: 1px;
     height: 20px;
     background: rgba(15, 23, 42, 0.15);
     flex-shrink: 0;
     margin: 0 4px;
+    align-self: center;
+}
+.toolbar [role='separator'] {
+    width: 1px;
+    height: 20px;
+    background: rgba(15, 23, 42, 0.15);
+    flex-shrink: 0;
+    margin: 0 4px;
+    align-self: center;
 }
 `;
 
+import { injectStyles, setClasses, toggleClasses } from './editor.utils';
+
 function ensureToolbarStyles(): void {
-    if (typeof document === 'undefined' || document.getElementById(TOOLBAR_STYLE_ID)) {
-        return;
-    }
-    const style = document.createElement('style');
-    style.id = TOOLBAR_STYLE_ID;
-    style.textContent = TOOLBAR_DEFAULT_STYLES;
-    document.head.appendChild(style);
+    injectStyles(TOOLBAR_STYLE_ID, TOOLBAR_DEFAULT_STYLES);
 }
 
 const DEFAULT_TOOLBAR_CONFIG: Required<ToolBarConfig> = {
@@ -106,7 +130,7 @@ export class ToolBar {
         ensureToolbarStyles();
         this.host = target;
         this.config = { ...DEFAULT_TOOLBAR_CONFIG, ...config };
-        this.host.classList.add(this.config.hostClassName);
+        setClasses(this.host, 'toolbar', this.config.hostClassName);
     }
 
     public destroy(): void {
@@ -123,18 +147,20 @@ export class ToolBar {
 
     public addSeparator(): HTMLDivElement {
         const sep = document.createElement('div');
-        sep.className = this.config.separatorClassName;
+        setClasses(sep, DEFAULT_TOOLBAR_CONFIG.separatorClassName, this.config.separatorClassName);
         sep.setAttribute('role', 'separator');
+        sep.dataset.toolbarSeparator = 'true';
         this.host.appendChild(sep);
         return sep;
     }
 
     public setActive(id: string, active: boolean): void {
         const btn = this.buttons.get(id);
-        btn?.classList.toggle(this.config.activeClassName, active);
-        if (btn) {
-            btn.setAttribute('aria-pressed', String(active));
+        if (!btn) {
+            return;
         }
+        toggleClasses(btn, active, DEFAULT_TOOLBAR_CONFIG.activeClassName, this.config.activeClassName);
+        btn.setAttribute('aria-pressed', String(active));
     }
 
     public setEnabled(id: string, enabled: boolean): void {
@@ -143,7 +169,7 @@ export class ToolBar {
             return;
         }
         btn.disabled = !enabled;
-        btn.classList.toggle(this.config.disabledClassName, !enabled);
+        toggleClasses(btn, !enabled, DEFAULT_TOOLBAR_CONFIG.disabledClassName, this.config.disabledClassName);
         btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
     }
 
@@ -154,8 +180,9 @@ export class ToolBar {
     protected buildButton(def: ToolButtonDef): HTMLButtonElement {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = this.config.buttonClassName;
+        setClasses(btn, DEFAULT_TOOLBAR_CONFIG.buttonClassName, this.config.buttonClassName);
         btn.dataset.id = def.id;
+        btn.dataset.toolbarButton = 'true';
 
         if (def.tooltip) {
             btn.setAttribute(this.config.tooltipAttribute, def.tooltip);

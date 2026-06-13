@@ -1,13 +1,14 @@
 import { DiagramEditView } from '../editview/diagram.edit.view';
 import { NodeRegistry } from '../factory/node.registry';
 import { IconRegistry } from '../factory/icon.registry';
-import { DIAGRAM_TOOL_CHANGED_EVENT, type DiagramToolChange } from '../view/dto';
+import { DIAGRAM_TOOL_CHANGED_EVENT, type DiagramToolChange } from '../events/diagram.events';
 
 export const TOOL_PALETTE_TOOL_SELECTED_EVENT = 'tool-selected';
 
 export type ToolPaletteLayoutItem = string | '*';
 
 export interface ToolPaletteConfig {
+    hostClassName?: string;
     /** Ordered layout. '*' means insert all remaining tools at this position. */
     layout?: ToolPaletteLayoutItem[];
 }
@@ -70,14 +71,10 @@ const DEFAULT_STYLES = `
 }
 `;
 
+import { injectStyles, setClasses } from './editor.utils';
+
 function ensureDefaultStyles(): void {
-    if (typeof document === 'undefined' || document.getElementById(STYLE_ID)) {
-        return;
-    }
-    const style = document.createElement('style');
-    style.id = STYLE_ID;
-    style.textContent = DEFAULT_STYLES;
-    document.head.appendChild(style);
+    injectStyles(STYLE_ID, DEFAULT_STYLES);
 }
 
 function prettyToolName(name: string): string {
@@ -110,7 +107,11 @@ export class ToolPalette {
         this.host = host;
         this.diagram = diagram;
         this.config = config;
-        this.host.classList.add('editor-tool-list');
+        if (config.hostClassName) {
+            setClasses(this.host, 'editor-tool-list', config.hostClassName);
+        } else {
+            setClasses(this.host, 'editor-tool-list');
+        }
 
         this.bindDiagramEvents();
         this.refresh();

@@ -1,6 +1,6 @@
 import type { Diagram } from "../model/diagram";
 import { DiagramView } from "../view/diagram.view";
-import type { DiagramViewOptions } from "../view/dto";
+import type { DiagramViewOptions } from "../view/view.options";
 
 export const DIAGRAM_VIEW_TAG = 'pz-diagram-view';
 

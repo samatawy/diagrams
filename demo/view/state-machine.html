@@ -7,7 +7,9 @@
           content="width=device-width, initial-scale=1" />
     <title>State Machine Demo</title>
     <link rel="stylesheet"
-          href="./demo.css" />
+            href="../demo.css" />
+    <link rel="stylesheet"
+            href="./demo-viewer.css" />
 </head>
 
 <body>
@@ -16,8 +18,8 @@
             <header class="topbar">
                 <div class="brand">State Machine Viewer</div>
                 <nav class="nav">
-                    <a href="./index.html">All demos</a>
-                    <a href="../index.html">Docs</a>
+                    <a href="../index.html">All demos</a>
+                    <a href="../../index.html">Docs</a>
                 </nav>
             </header>
 
@@ -27,21 +29,21 @@
                     lines.</p>
                 <div id="state-machine-demo"
                      class="canvas-frame"></div>
-                <section class="demo-hints"
+                <section class="hint-grid"
                          aria-label="State machine usage hints">
-                    <article class="demo-hint-card">
+                    <article class="hint-card">
                         <h3>Navigate</h3>
                         <p>Pan by dragging empty space and zoom with wheel/pinch to inspect transition density.</p>
                     </article>
-                    <article class="demo-hint-card">
+                    <article class="hint-card">
                         <h3>Trace States</h3>
                         <p>Follow transition arrows from start states through intermediate steps to terminal outcomes.</p>
                     </article>
-                    <article class="demo-hint-card">
+                    <article class="hint-card">
                         <h3>Loop Awareness</h3>
                         <p>Feedback and retry paths are intentionally visible to demonstrate recurring machine cycles.</p>
                     </article>
-                    <article class="demo-hint-card">
+                    <article class="hint-card">
                         <h3>Rendering Coverage</h3>
                         <p>This sample mixes node shapes to show different view adapters under a single read-only interaction model.</p>
                     </article>

@@ -1,5 +1,5 @@
 import type { IRect } from "../types";
-import type { FitAlign, HorizontalAlign, VerticalAlign } from "../view/dto";
+import type { FitAlign, HorizontalAlign, VerticalAlign } from "../view/view.options";
 import type { DiagramView } from "../view/diagram.view";
 
 /**
