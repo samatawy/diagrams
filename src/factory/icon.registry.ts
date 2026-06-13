@@ -123,17 +123,35 @@ function sym(id: string, body: string): string {
     return `<svg id="${id}" ${VB} ${STROKE_ATTRS}>${body}</svg>`;
 }
 
-IconRegistry.registerSymbol('new', 'new',
-    sym('new', '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>'));
+IconRegistry.registerSymbol('new', 'new', sym('new', `<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+  <polyline points="14 2 14 8 20 8"/>
+  <line x1="12" y1="18" x2="12" y2="12"/>
+  <line x1="9" y1="15" x2="15" y2="15"/>`));
 
-IconRegistry.registerSymbol('open', 'open',
-    sym('open', '<path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/>'));
+// Open (Open Folder)
+IconRegistry.registerSymbol('open', 'open', sym('open', `<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>`));
 
-IconRegistry.registerSymbol('save', 'save',
-    sym('save', '<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3"/><rect x="8" y="14" width="8" height="6" rx="1"/>'));
+// Save (Floppy Disk)
+IconRegistry.registerSymbol('save', 'save', sym('save', `<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+  <polyline points="17 21 17 13 7 13 7 21"/>
+  <polyline points="7 3 7 8 15 8"/>`));
 
-IconRegistry.registerSymbol('export', 'export',
-    sym('export', '<path d="M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 8 12 3 17 8"/>'));
+// Export (Arrow pointing out of a tray/box)
+IconRegistry.registerSymbol('export', 'export', sym('export', `<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+  <polyline points="16 6 12 2 8 6"/>
+  <line x1="12" y1="2" x2="12" y2="15"/>`));
+
+// IconRegistry.registerSymbol('new', 'new',
+//     sym('new', '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>'));
+
+// IconRegistry.registerSymbol('open', 'open',
+//     sym('open', '<path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/>'));
+
+// IconRegistry.registerSymbol('save', 'save',
+//     sym('save', '<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3"/><rect x="8" y="14" width="8" height="6" rx="1"/>'));
+
+// IconRegistry.registerSymbol('export', 'export',
+//     sym('export', '<path d="M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 8 12 3 17 8"/>'));
 
 IconRegistry.registerSymbol('undo', 'undo',
     sym('undo', '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'));
@@ -151,10 +169,12 @@ IconRegistry.registerSymbol('delete', 'delete',
     sym('delete', '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6m4-6v6"/><path d="M9 6V4h6v2"/>'));
 
 IconRegistry.registerSymbol('duplicate', 'duplicate',
-    sym('duplicate', '<rect x="8" y="8" width="13" height="13" rx="1"/><path d="M4 15.5V4a1 1 0 0 1 1-1h11.5"/><line x1="14" y1="12" x2="14" y2="18"/><line x1="11" y1="15" x2="17" y2="15"/>'));
+    sym('duplicate', `<rect x="8" y="8" width="13" height="13" rx="1"/><path d="M4 15.5V4a1 1 0 0 1 1-1h11.5"/>
+        <line x1="14" y1="12" x2="14" y2="18"/><line x1="11" y1="15" x2="17" y2="15"/>`));
 
 IconRegistry.registerSymbol('cut', 'cut',
-    sym('cut', '<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>'));
+    sym('cut', `<circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/>
+        <line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/>`));
 
 IconRegistry.registerSymbol('copy', 'copy',
     sym('copy', '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'));
@@ -181,10 +201,12 @@ IconRegistry.registerSymbol('align-bottom', 'align-bottom',
     sym('align-bottom', '<line x1="4" y1="20" x2="20" y2="20"/><rect x="6" y="4" width="4" height="14" rx="1"/><rect x="13" y="10" width="4" height="8" rx="1"/>'));
 
 IconRegistry.registerSymbol('distribute-h', 'distribute-h',
-    sym('distribute-h', '<rect x="2" y="8" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="8" rx="1"/><rect x="18" y="8" width="4" height="8" rx="1"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="18" y2="12"/>'));
+    sym('distribute-h', `<rect x="2" y="8" width="4" height="8" rx="1"/><rect x="10" y="8" width="4" height="8" rx="1"/>
+        <rect x="18" y="8" width="4" height="8" rx="1"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="14" y1="12" x2="18" y2="12"/>`));
 
 IconRegistry.registerSymbol('distribute-v', 'distribute-v',
-    sym('distribute-v', '<rect x="8" y="2" width="8" height="4" rx="1"/><rect x="8" y="10" width="8" height="4" rx="1"/><rect x="8" y="18" width="8" height="4" rx="1"/><line x1="12" y1="6" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/>'));
+    sym('distribute-v', `<rect x="8" y="2" width="8" height="4" rx="1"/><rect x="8" y="10" width="8" height="4" rx="1"/>
+        <rect x="8" y="18" width="8" height="4" rx="1"/><line x1="12" y1="6" x2="12" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/>`));
 
 IconRegistry.registerSymbol('zoom-in', 'zoom-in',
     sym('zoom-in', '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>'));
@@ -193,7 +215,8 @@ IconRegistry.registerSymbol('zoom-out', 'zoom-out',
     sym('zoom-out', '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/>'));
 
 IconRegistry.registerSymbol('fit-width', 'fit-width',
-    sym('fit-width', '<line x1="3" y1="5" x2="3" y2="19"/><line x1="21" y1="5" x2="21" y2="19"/><line x1="7" y1="12" x2="17" y2="12"/><polyline points="10 9 7 12 10 15"/><polyline points="14 9 17 12 14 15"/>'));
+    sym('fit-width', `<line x1="3" y1="5" x2="3" y2="19"/><line x1="21" y1="5" x2="21" y2="19"/><line x1="7" y1="12" x2="17" y2="12"/>
+        <polyline points="10 9 7 12 10 15"/><polyline points="14 9 17 12 14 15"/>`));
 
 IconRegistry.registerSymbol('fit-all', 'fit-all',
     sym('fit-all', '<polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/>'));

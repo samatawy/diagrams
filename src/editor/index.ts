@@ -3,6 +3,7 @@ export * from './color.select';
 export * from './width.select';
 export * from './font.select';
 export * from './size.select';
+export * from './integer.range.select';
 export * from './prompt.dialog';
 
 // Bound components

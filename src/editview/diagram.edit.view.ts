@@ -3,7 +3,9 @@ import type { IConnection, IConnectionAnchor, IGrid, ILayer, INode } from "../in
 import { DiagramView } from "../view/diagram.view";
 import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline } from "../types";
 import { HistoryStack } from "./history";
-import { shadowStyles, type ArrowDirection, type ShadowStyle } from "../shadows";
+import type { ArrowDirection, ShadowStyle } from "../shadows";
+
+const SHADOW_NONE: ShadowStyle = { name: 'No Shadow', color: 'transparent', blur: 0, offset: { x: 0, y: 0 } };
 import { isConnection, isNode } from "../guards";
 
 import { NodeBasics } from "../nodes/node.basics";
@@ -96,7 +98,7 @@ export class DiagramEditView extends DiagramView {
             endArrow: true,
             strokeColor: '#000000',
             fillColor: '#00000016',
-            shadowStyle: shadowStyles[0]!,
+            shadowStyle: SHADOW_NONE,
             fontFace: 'Tahoma',
             fontSize: 16,
             textColor: '#000000',
@@ -166,6 +168,8 @@ export class DiagramEditView extends DiagramView {
         this.history.clear();
         this.color_palette.refresh();
         this.modified = false;
+
+        this.ensureCurrentLayer();
 
         this.render('all');
         this.renderPreview();
@@ -315,6 +319,7 @@ export class DiagramEditView extends DiagramView {
 
         this.modified = false;
         this.history.clear();
+        this.ensureCurrentLayer();
         this.render('all');
         this.renderPreview();
     }
@@ -1228,15 +1233,13 @@ export class DiagramEditView extends DiagramView {
     public async cloneSelected(): Promise<void> {
         this.addUndo();
 
-        if (!this.current.layer) {
-            this.current.layer = this.createLayerAt('top');
-        }
+        const layer = this.ensureCurrentLayer();
         for (let node of this.selection()) {
             const clone = this.cloneNode(node);
 
             NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
             this.nodes.push(clone);
-            this.current.layer.nodes.push(clone.id);
+            layer.nodes.push(clone.id);
 
             this.deselect(node);
             this.select(clone);
@@ -2044,9 +2047,7 @@ export class DiagramEditView extends DiagramView {
     private createDown(event: PointerEvent): void {
         if (!this.current.tool || this.current.tool === 'select' || event.button !== 0) return;
 
-        if (!this.current.layer) {
-            this.current.layer = this.createLayerAt('top');
-        }
+        const layer = this.ensureCurrentLayer();
 
         const point = this.getCoordinates().getPointFromEvent(event, this.grid);
 
@@ -2067,8 +2068,8 @@ export class DiagramEditView extends DiagramView {
                 this.updateConnectorDraftReadiness(draft as INode & IConnection);
             }
 
-            if (this.current.layer && !this.current.layer.nodes.includes(draft.id)) {
-                this.current.layer.nodes.push(draft.id);
+            if (!layer.nodes.includes(draft.id)) {
+                layer.nodes.push(draft.id);
             }
 
             this.canvas.style.cursor = 'crosshair';
@@ -2357,6 +2358,17 @@ export class DiagramEditView extends DiagramView {
             this.layers.push(created);
         }
         return created;
+    }
+
+    private ensureCurrentLayer(): ILayer {
+        if (!this.current.layer || !this.layer(this.current.layer.id)) {
+            if (!this.layers.length) {
+                this.createLayerAt('top');
+            }
+            this.current.layer = this.layers[0]!;
+        }
+
+        return this.current.layer;
     }
 
     private generateLayerId(prefix: string = 'layer'): string {
@@ -2745,7 +2757,7 @@ export class DiagramEditView extends DiagramView {
             this.settings.fontFace = (fparts.length > 1) ? fparts[1]!.trim() || 'Tahoma' : 'Tahoma';
             this.settings.nodeText = shape.text || '';
 
-            this.settings.shadowStyle = shape.shadowStyle || this.settings.shadowStyle;
+            this.settings.shadowStyle = shape.shadowStyle ?? SHADOW_NONE;
         }
     }
 

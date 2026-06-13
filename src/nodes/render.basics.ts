@@ -40,10 +40,15 @@ export class RenderBasics {
             context.fillStyle = context.createPattern(cached.img, 'repeat') || '';
         }
         if (node.shadowStyle) {
-            context.shadowColor = node.shadowStyle.color || node.fillStyle;
+            context.shadowColor = this.resolveShadowColor(node);
             context.shadowOffsetX = node.shadowStyle.offset.x;
             context.shadowOffsetY = node.shadowStyle.offset.y;
             context.shadowBlur = node.shadowStyle.blur;
+        } else {
+            context.shadowColor = 'transparent';
+            context.shadowOffsetX = 0;
+            context.shadowOffsetY = 0;
+            context.shadowBlur = 0;
         }
 
         // Transparent shapes (hot spots) should not viewable in 'view' mode..
@@ -135,6 +140,17 @@ export class RenderBasics {
             cache.setNode(node, cached);
         };
         img.src = imageSource;
+    }
+
+    /**
+     * Skips shadow for subsequent draw calls on the context.
+     * Call this after fill and before stroke when shadow should not apply to the stroke.
+     */
+    public static skipShadow(context: CanvasRenderingContext2D): void {
+        context.shadowColor = 'transparent';
+        context.shadowOffsetX = 0;
+        context.shadowOffsetY = 0;
+        context.shadowBlur = 0;
     }
 
     /**
@@ -292,6 +308,51 @@ export class RenderBasics {
             lines.push(currentLine!);
         }
         return lines;
+    }
+
+    private static resolveShadowColor(node: INode): string {
+        const explicit = (node.shadowStyle?.color ?? '').trim();
+        if (explicit) {
+            return explicit;
+        }
+        // No explicit color: derive from node visual colors.
+        if (node.transparent) return 'transparent';
+        if (node.strokeStyle) return this.toAlphaColor(node.strokeStyle, 0.35);
+        if (node.fillStyle) return this.toAlphaColor(node.fillStyle, 0.35);
+        return 'rgba(0, 0, 0, 0.35)';
+    }
+
+    private static toAlphaColor(color: string, alpha: number): string {
+        const a = Math.max(0, Math.min(1, alpha));
+
+        const hex = color.trim();
+        const hexMatch = /^#([a-f\d]{3}|[a-f\d]{4}|[a-f\d]{6}|[a-f\d]{8})$/i.exec(hex);
+        if (hexMatch) {
+            const value = hexMatch[1]!;
+            const expand = (part: string) => (part.length === 1 ? part + part : part);
+
+            if (value.length === 3 || value.length === 4) {
+                const r = parseInt(expand(value.slice(0, 1)), 16);
+                const g = parseInt(expand(value.slice(1, 2)), 16);
+                const b = parseInt(expand(value.slice(2, 3)), 16);
+                return `rgba(${r}, ${g}, ${b}, ${a})`;
+            }
+
+            const r = parseInt(value.slice(0, 2), 16);
+            const g = parseInt(value.slice(2, 4), 16);
+            const b = parseInt(value.slice(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${a})`;
+        }
+
+        const rgbMatch = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*[\d.]+)?\s*\)$/i.exec(color.trim());
+        if (rgbMatch) {
+            const r = Math.max(0, Math.min(255, Number(rgbMatch[1])));
+            const g = Math.max(0, Math.min(255, Number(rgbMatch[2])));
+            const b = Math.max(0, Math.min(255, Number(rgbMatch[3])));
+            return `rgba(${r}, ${g}, ${b}, ${a})`;
+        }
+
+        return 'rgba(0, 0, 0, 0.35)';
     }
 
     /**

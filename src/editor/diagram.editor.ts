@@ -22,6 +22,7 @@ import { DIAGRAM_CHANGED_EVENT } from "../events/diagram.events";
 import { WidthSelect, type WidthSelectConfig } from "./width.select";
 import { ArrowSelect, type ArrowSelectConfig } from "./arrow.select";
 import type { ArrowDirection } from "../shadows";
+import { IntegerRangeSelect, type IntegerRangeSelectConfig } from "./integer.range.select";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
@@ -49,6 +50,9 @@ export type DiagramEditorConfig = {
     strokeColor?: ColorSelectConfig;
     strokeWidth?: WidthSelectConfig;
     arrowSelect?: ArrowSelectConfig;
+    shadowOffsetX?: IntegerRangeSelectConfig;
+    shadowOffsetY?: IntegerRangeSelectConfig;
+    shadowBlur?: IntegerRangeSelectConfig;
     fillColor?: ColorSelectConfig;
 
     fileDialogs?: DiagramEditorFileDialogsConfig;
@@ -107,6 +111,7 @@ const DIAGRAM_EDITOR_STYLES = `
 }
 .diagram-editor-font-toolbar,
 .diagram-editor-stroke-toolbar,
+.diagram-editor-shadow-toolbar,
 .diagram-editor-fill-toolbar {
     display: inline-flex;
     flex-wrap: wrap;
@@ -123,6 +128,32 @@ const DIAGRAM_EDITOR_STYLES = `
     margin-inline-start: 4px;
     font: 600 12px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
     color: #475569;
+}
+.diagram-editor-shadow-enable-label {
+    display: inline-flex;
+    align-items: normal;
+    gap: 4px;
+    margin-inline-start: 4px;
+    font: 600 12px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #475569;
+    cursor: pointer;
+    user-select: none;
+}
+.diagram-editor-shadow-enable-label input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: #0f766e;
+    margin: 0;
+}
+.diagram-editor-shadow-toolbar {
+    gap: 4px;
+}
+.diagram-editor-shadow-toolbar .diagram-editor-control-label {
+    min-width: 30px;
+    justify-content: flex-end;
+    margin-inline-start: 6px;
+    gap: 4px;
 }
 `;
 
@@ -168,6 +199,16 @@ export class DiagramEditor {
     protected strokeWidthSelect?: WidthSelect;
     protected arrowSelect?: ArrowSelect;
 
+    protected shadowToolbar?: HTMLElement;
+    protected shadowEnableCheckbox?: HTMLInputElement;
+    protected shadowOffsetXHost?: HTMLElement;
+    protected shadowOffsetYHost?: HTMLElement;
+    protected shadowBlurHost?: HTMLElement;
+    protected shadowOffsetXSelect?: IntegerRangeSelect;
+    protected shadowOffsetYSelect?: IntegerRangeSelect;
+    protected shadowBlurSelect?: IntegerRangeSelect;
+
+
     protected fillToolbar?: HTMLElement;
     protected fillStyleSelectHost?: HTMLElement;
     protected fillStyleSelect?: ColorSelect;
@@ -209,6 +250,9 @@ export class DiagramEditor {
         this.strokeColorSelect?.destroy();
         this.strokeWidthSelect?.destroy();
         this.arrowSelect?.destroy();
+        this.shadowOffsetXSelect?.destroy();
+        this.shadowOffsetYSelect?.destroy();
+        this.shadowBlurSelect?.destroy();
         this.fillStyleSelect?.destroy();
 
         this.host.innerHTML = '';
@@ -450,6 +494,47 @@ export class DiagramEditor {
         this.fillStyleSelectHost = this.createControlHost(this.fillToolbar, 'diagram-editor-fill-color-select', 'Fill');
         this.fillStyleSelect = new ColorSelect(this.fillStyleSelectHost, config.fillColor || {});
 
+        // Initialize shadow toolbar
+        this.shadowToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-shadow-toolbar');
+
+        // Shadow enable checkbox — must be the first element in the group
+        const shadowEnableLabel = document.createElement('label');
+        setClasses(shadowEnableLabel, 'diagram-editor-shadow-enable-label');
+        this.shadowEnableCheckbox = document.createElement('input');
+        this.shadowEnableCheckbox.type = 'checkbox';
+        const shadowEnableText = document.createElement('span');
+        shadowEnableText.textContent = 'Shadow';
+        shadowEnableLabel.appendChild(shadowEnableText);
+        shadowEnableLabel.appendChild(this.shadowEnableCheckbox);
+        this.shadowToolbar.appendChild(shadowEnableLabel);
+
+        this.shadowOffsetXHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-x', 'X');
+        this.shadowOffsetYHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-y', 'Y');
+        this.shadowBlurHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-blur', 'Blur');
+
+        this.shadowOffsetXSelect = new IntegerRangeSelect(this.shadowOffsetXHost, {
+            min: -16,
+            max: 16,
+            step: 1,
+            ...(config.shadowOffsetX || {}),
+            unit: 'px',
+        });
+        this.shadowOffsetYSelect = new IntegerRangeSelect(this.shadowOffsetYHost, {
+            min: -16,
+            max: 16,
+            step: 1,
+            ...(config.shadowOffsetY || {}),
+            unit: 'px',
+        });
+        this.shadowBlurSelect = new IntegerRangeSelect(this.shadowBlurHost, {
+            min: 0,
+            max: 32,
+            step: 1,
+            ...(config.shadowBlur || {}),
+            unit: 'px',
+        });
+
+
         this.attachListeners();
         this.reflectStyles();
     }
@@ -512,6 +597,55 @@ export class DiagramEditor {
             });
         }
 
+        if (this.shadowEnableCheckbox) {
+            this.addManagedEventListener(this.shadowEnableCheckbox, 'change', () => {
+                if (this.syncingControls) return;
+                this.applyShadowEnabledState(this.shadowEnableCheckbox!.checked);
+            });
+        }
+
+        if (this.shadowOffsetXHost) {
+            this.addManagedListener<number>(this.shadowOffsetXHost, 'valuechange', (value) => {
+                if (this.syncingControls) return;
+                const current = this.diagram.shadowStyle;
+                this.diagram.setShadowStyle({
+                    ...current,
+                    color: undefined,
+                    offset: {
+                        ...current.offset,
+                        x: value,
+                    },
+                });
+            });
+        }
+
+        if (this.shadowOffsetYHost) {
+            this.addManagedListener<number>(this.shadowOffsetYHost, 'valuechange', (value) => {
+                if (this.syncingControls) return;
+                const current = this.diagram.shadowStyle;
+                this.diagram.setShadowStyle({
+                    ...current,
+                    color: undefined,
+                    offset: {
+                        ...current.offset,
+                        y: value,
+                    },
+                });
+            });
+        }
+
+        if (this.shadowBlurHost) {
+            this.addManagedListener<number>(this.shadowBlurHost, 'valuechange', (value) => {
+                if (this.syncingControls) return;
+                const current = this.diagram.shadowStyle;
+                this.diagram.setShadowStyle({
+                    ...current,
+                    color: undefined,
+                    blur: value,
+                });
+            });
+        }
+
         if (this.fillStyleSelectHost) {
             this.addManagedListener<string>(this.fillStyleSelectHost, 'colorchange', (color) => {
                 if (this.syncingControls) return;
@@ -570,6 +704,30 @@ export class DiagramEditor {
                 this.strokeWidthSelect.value = this.diagram.lineWidth;
             }
 
+            if (this.shadowEnableCheckbox || this.shadowOffsetXSelect || this.shadowOffsetYSelect || this.shadowBlurSelect) {
+                const shadow = this.diagram.shadowStyle;
+                const enabled = shadow.color !== 'transparent';
+
+                if (this.shadowEnableCheckbox) {
+                    this.shadowEnableCheckbox.checked = enabled;
+                }
+
+                if (this.shadowOffsetXSelect) {
+                    this.shadowOffsetXSelect.value = shadow.offset.x;
+                    this.shadowOffsetXSelect.disabled = !enabled;
+                }
+
+                if (this.shadowOffsetYSelect) {
+                    this.shadowOffsetYSelect.value = shadow.offset.y;
+                    this.shadowOffsetYSelect.disabled = !enabled;
+                }
+
+                if (this.shadowBlurSelect) {
+                    this.shadowBlurSelect.value = shadow.blur;
+                    this.shadowBlurSelect.disabled = !enabled;
+                }
+            }
+
             if (this.fillStyleSelect) {
                 const color = this.diagram.fillColor;
                 this.fillStyleSelect.clearOptions();
@@ -601,6 +759,18 @@ export class DiagramEditor {
         container.appendChild(host);
         parent.appendChild(container);
         return host;
+    }
+
+    private applyShadowEnabledState(enabled: boolean): void {
+        const current = this.diagram.shadowStyle;
+        this.diagram.setShadowStyle({
+            ...current,
+            color: enabled ? undefined : 'transparent',
+        });
+
+        if (this.shadowOffsetXSelect) this.shadowOffsetXSelect.disabled = !enabled;
+        if (this.shadowOffsetYSelect) this.shadowOffsetYSelect.disabled = !enabled;
+        if (this.shadowBlurSelect) this.shadowBlurSelect.disabled = !enabled;
     }
 
     private addManagedListener<T>(element: HTMLElement, eventName: string, handler: (detail: T) => void): void {

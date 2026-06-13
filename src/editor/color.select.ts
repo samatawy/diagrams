@@ -434,6 +434,7 @@ export class ColorSelect {
      */
     public clearOptions(): void {
         this.menu.innerHTML = '';
+        this.placeTransparentOption();
         this.placeCustomOption();
     }
 
@@ -644,14 +645,32 @@ export class ColorSelect {
             return;
         }
 
-        const afterColor = this.normalizeComparableColor('transparent');
-        const options = Array.from(this.menu.querySelectorAll<HTMLElement>('[data-color]'));
-        const anchor = options.find((option) => this.normalizeComparableColor(option.dataset.color ?? '') === afterColor);
-        if (anchor && anchor.nextSibling) {
-            this.menu.insertBefore(this.customOption, anchor.nextSibling);
+        const clearOption = this.menu.querySelector<HTMLElement>('[data-color="transparent"]');
+        if (clearOption && clearOption.nextSibling) {
+            this.menu.insertBefore(this.customOption, clearOption.nextSibling);
+        } else if (clearOption) {
+            this.menu.appendChild(this.customOption);
+        } else {
+            this.menu.appendChild(this.customOption);
+        }
+
+        // const afterColor = this.normalizeComparableColor('transparent');
+        // const options = Array.from(this.menu.querySelectorAll<HTMLElement>('[data-color]'));
+        // const anchor = options.find((option) => this.normalizeComparableColor(option.dataset.color ?? '') === afterColor);
+        // if (anchor && anchor.nextSibling) {
+        //     this.menu.insertBefore(this.customOption, anchor.nextSibling);
+        //     return;
+        // }
+        // this.menu.appendChild(this.customOption);
+    }
+
+    protected placeTransparentOption(): void {
+        const transparentColor = 'transparent';
+        if (this.hasOption(transparentColor)) {
             return;
         }
-        this.menu.appendChild(this.customOption);
+        const option = this.buildOption(transparentColor, 'clear');
+        this.menu.insertBefore(option, this.menu.firstChild);
     }
 
     protected hasOption(color: string): boolean {

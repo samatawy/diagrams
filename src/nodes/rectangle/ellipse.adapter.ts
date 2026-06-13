@@ -55,6 +55,9 @@ export class EllipseAdapter extends RectangleAdapter {
             } else {
                 context.fill(path);
             }
+            if (!node.hollow) {
+                RenderBasics.skipShadow(context);
+            }
             context.stroke(path);
 
             RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
