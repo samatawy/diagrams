@@ -3,25 +3,44 @@ import type { IConnection, IConnectionAnchor, IGrid, ILayer, INode } from "../in
 import { DiagramView } from "../view/diagram.view";
 import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline } from "../types";
 import { HistoryStack } from "./history";
-import { shadowStyles, type ShadowStyle } from "../shadows";
+import { shadowStyles, type ArrowDirection, type ShadowStyle } from "../shadows";
 import { isConnection, isNode } from "../guards";
 
 import { NodeBasics } from "../nodes/node.basics";
 import { ConnectionBasics } from "../nodes/connection.basics";
 import { SelectionBasics } from "../nodes/selection.basics";
-import { jsonSerializer } from "../io/json.serializer";
+import { downloadBlob, exportTextBlob, jsonSerializer, writeBlobToFileHandle, writeTextToFileHandle } from "../io";
+import type {
+    DiagramExportOptions,
+    DiagramExportResult,
+    DiagramFileDialogs,
+    DiagramOpenOptions,
+    DiagramOpenSource,
+    DiagramSaveOptions,
+    DiagramSaveResult,
+} from "../io";
 
 import { NodeRegistry } from "../factory/node.registry";
 import { ZOrder, type ZOrderHost } from "../layout/z.order";
 import { ColorPalette } from "./color.palette";
 import {
-    DIAGRAM_EDIT_CONTEXT_MENU_EVENT,
     type DiagramDeleteRequest,
+    type DiagramClipboardOperation,
     type DiagramEditContextMenu,
 } from "../events/diagram.events";
+import type { ISerializedNode } from "../io";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
+
+export type DiagramEditViewUnsavedAction = 'save' | 'discard' | 'cancel';
+
+export type DiagramEditViewPromptReason = 'new' | 'open' | 'load';
+
+export type DiagramEditViewPrompts = {
+    onUnsavedChanges?: (context: { reason: DiagramEditViewPromptReason }) => DiagramEditViewUnsavedAction | Promise<DiagramEditViewUnsavedAction>;
+    onNoChangesSave?: () => boolean | Promise<boolean>;
+};
 
 /**
  * A class representing a diagram in edit mode.
@@ -60,6 +79,8 @@ export class DiagramEditView extends DiagramView {
 
     protected settings: {
         lineWidth: number;
+        startArrow: boolean,
+        endArrow: boolean,
         strokeColor: string;
         fillColor: string;
         shadowStyle: ShadowStyle;
@@ -71,6 +92,8 @@ export class DiagramEditView extends DiagramView {
         nodeText?: string;
     } = {
             lineWidth: 1,
+            startArrow: false,
+            endArrow: true,
             strokeColor: '#000000',
             fillColor: '#00000016',
             shadowStyle: shadowStyles[0]!,
@@ -88,6 +111,8 @@ export class DiagramEditView extends DiagramView {
 
     protected can_paste: boolean = false;
 
+    private clipboardSnapshot: string = '';
+
     private movedNodes = new Set<INode>();
 
     private resizedNodes = new Set<INode>();
@@ -101,6 +126,10 @@ export class DiagramEditView extends DiagramView {
         nodeId: string;
         originalText: string;
     };
+
+    public fileDialogs?: DiagramFileDialogs;
+
+    public prompts?: DiagramEditViewPrompts;
 
     /**
      * Creates an instance of DiagramEditView.
@@ -137,8 +166,191 @@ export class DiagramEditView extends DiagramView {
         this.history.clear();
         this.color_palette.refresh();
         this.modified = false;
+
+        this.render('all');
+        this.renderPreview();
     }
 
+    // ===================================================
+    // ========== File methods ==========
+    // ===================================================
+
+    public get canOpenDiagram(): boolean {
+        return !!this.fileDialogs;
+    }
+
+    /**
+     * Clears the current diagram after resolving any unsaved-change prompt.
+     * A prompt will be shown if the diagram has unsaved changes.
+     * @returns True when a new empty diagram was created; otherwise false.
+     */
+    public async newDiagram(): Promise<boolean> {
+        if (!(await this.confirmReplaceIfNeeded('new'))) {
+            return false;
+        }
+
+        this.clear();
+        this.id = `diagram-${Date.now()}`;
+        return true;
+    }
+
+    /**
+     * Loads a diagram from a live diagram instance, a serialized JSON string, or a deserialized payload.
+     * A prompt will be shown if the diagram has unsaved changes.
+     * @param source The diagram source to load.
+     * @returns True when the source was loaded; otherwise false when loading was canceled.
+     */
+    public async loadDiagram(source: DiagramOpenSource): Promise<boolean> {
+        if (!(await this.confirmReplaceIfNeeded('load'))) {
+            return false;
+        }
+
+        await this.applyDiagramSource(source);
+        return true;
+    }
+
+    /**
+     * Opens a diagram using configured file dialog behavior after resolving unsaved-change prompts.
+     * @param options Optional open options or source overrides.
+     * @returns True when a diagram was opened; otherwise false.
+     */
+    public async openDiagram(options?: DiagramOpenOptions): Promise<boolean> {
+        if (options?.source) {
+            return await this.loadDiagram(options.source);
+        }
+
+        if (!(await this.confirmReplaceIfNeeded('open'))) {
+            return false;
+        }
+
+        const resolved = options?.source
+            ? { source: options.source }
+            : await this.fileDialogs?.openDiagram(options);
+        if (!resolved) {
+            return false;
+        }
+
+        await this.applyDiagramSource(resolved.source);
+        return true;
+    }
+
+    public async saveDiagram(options: DiagramSaveOptions = {}): Promise<string | undefined> {
+        if (!(await this.confirmSaveWithoutChangesIfNeeded())) {
+            return undefined;
+        }
+
+        const resolved: DiagramSaveResult | undefined = this.fileDialogs
+            ? await this.fileDialogs.saveDiagram(options)
+            : { ...options };
+        if (!resolved) {
+            return undefined;
+        }
+
+        const content = this.export('json', resolved.pretty ?? true, resolved.serializer ?? jsonSerializer) as string;
+        if (resolved.handle) {
+            return await writeTextToFileHandle(resolved.handle, content, resolved.mimeType ?? 'application/json');
+        }
+
+        return this.save(resolved);
+    }
+
+    public async exportDiagram(options: DiagramExportOptions = {}): Promise<string | Uint8Array | Blob | undefined> {
+        const resolved: DiagramExportResult | undefined = this.fileDialogs
+            ? await this.fileDialogs.exportDiagram(options)
+            : { ...options };
+        if (!resolved) {
+            return undefined;
+        }
+
+        const format = resolved.format ?? 'json';
+        const mimeType = resolved.mimeType ?? 'application/json';
+        const payload = this.export(format, resolved.pretty ?? true, resolved.serializer ?? jsonSerializer);
+
+        if (resolved.handle) {
+            if (typeof payload === 'string') {
+                return await writeTextToFileHandle(resolved.handle, payload, mimeType);
+            }
+
+            if (payload instanceof Blob) {
+                return await writeBlobToFileHandle(resolved.handle, payload);
+            }
+
+            const bytes = new Uint8Array(payload.byteLength);
+            bytes.set(payload);
+            const blob = new Blob([bytes], { type: mimeType });
+            return await writeBlobToFileHandle(resolved.handle, blob);
+        }
+
+        if (format === 'json') {
+            return this.save({
+                fileName: resolved.fileName,
+                mimeType: mimeType,
+                pretty: resolved.pretty,
+                serializer: resolved.serializer,
+            });
+        }
+
+        if (payload instanceof Blob) {
+            return downloadBlob(payload, resolved.fileName ?? 'diagram.bin');
+        }
+
+        if (typeof payload === 'string') {
+            const blob = exportTextBlob(payload, mimeType);
+            return downloadBlob(blob, resolved.fileName ?? 'diagram.json');
+        }
+
+        const bytes = new Uint8Array(payload.byteLength);
+        bytes.set(payload);
+        return downloadBlob(new Blob([bytes], { type: mimeType }), resolved.fileName ?? 'diagram.bin');
+    }
+
+    private async applyDiagramSource(source: DiagramOpenSource): Promise<void> {
+        if (source instanceof Diagram) {
+            await this.read(source.write(jsonSerializer), jsonSerializer);
+        } else if (typeof source === 'string') {
+            await this.read(source, jsonSerializer);
+        } else {
+            await this.read(source, jsonSerializer);
+        }
+
+        this.modified = false;
+        this.history.clear();
+        this.render('all');
+        this.renderPreview();
+    }
+
+    private async confirmReplaceIfNeeded(reason: DiagramEditViewPromptReason): Promise<boolean> {
+        if (!this.modified) {
+            return true;
+        }
+
+        const action = this.prompts?.onUnsavedChanges
+            ? await this.prompts.onUnsavedChanges({ reason })
+            : undefined;
+
+        if (!action || action === 'discard') {
+            return true;
+        }
+
+        if (action === 'cancel') {
+            return false;
+        }
+
+        const saved = await this.saveDiagram();
+        return typeof saved === 'string' && saved.length > 0;
+    }
+
+    private async confirmSaveWithoutChangesIfNeeded(): Promise<boolean> {
+        if (this.modified) {
+            return true;
+        }
+
+        if (!this.prompts?.onNoChangesSave) {
+            return true;
+        }
+
+        return await this.prompts.onNoChangesSave();
+    }
 
     // ==================================================
     // ========== Getters and Setters ==========
@@ -164,6 +376,14 @@ export class DiagramEditView extends DiagramView {
      */
     public set lineWidth(value: number) {
         this.setLineWidth(value);
+    }
+
+    /**
+     * Sets the default arrow direction and applies it to current selection.
+     * @param value Arrow direction value.
+     */
+    public set arrow(value: ArrowDirection) {
+        this.setArrow(value);
     }
 
     /**
@@ -417,6 +637,28 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Sets the arrow direction for the selected nodes and new nodes to be created.
+     * @param arrow The arrow direction to set.
+     */
+    public setArrow(arrow: ArrowDirection): void {
+        if (this.selection().length) {
+            this.addUndo();
+        }
+
+        this.settings.startArrow = arrow == 'start' || arrow == 'both';
+        this.settings.endArrow = arrow == 'end' || arrow == 'both';
+
+        for (let node of this.selection()) {
+            if (isConnection(node)) {
+                (node as IConnection).startArrow = this.settings.startArrow;
+                (node as IConnection).endArrow = this.settings.endArrow;
+            }
+        }
+        this.render('all');
+        this.renderPreview();
+    }
+
+    /**
      * Sets the shadow style for the selected nodes and new nodes to be created.
      * @param style The shadow style to set.
      */
@@ -607,7 +849,7 @@ export class DiagramEditView extends DiagramView {
      * Cuts the selected nodes, copying them to the clipboard and then deleting them from the diagram.
      */
     public cutSelected(): void {
-        this.copySelected();
+        this.copySelected('cut');
         this.deleteSelected();
     }
 
@@ -616,46 +858,52 @@ export class DiagramEditView extends DiagramView {
      * The copied data includes all properties of the nodes, allowing for accurate reconstruction when pasted. 
      * After copying, the `canPaste` flag is set to true, indicating that there is data available in the clipboard that can be pasted into the diagram.
      */
-    public copySelected(): void {
-        let json: any[] = [];
-        let nodes = this.selection();
-        if (nodes.length) {
-            for (let node of nodes) {
-                json.push(jsonSerializer.write(node));
+    public copySelected(operation: DiagramClipboardOperation = 'copy'): void {
+        const nodes = this.selection();
+        let json: ISerializedNode[] = [];
 
-                this.can_paste = true;
-            }
+        if (nodes.length) {
+            json = nodes.map(node => this.serializeNode(node));
+
+            this.can_paste = true;
+            this.emitClipboardChange(operation, nodes);
         }
-        navigator.clipboard.writeText(JSON.stringify(json));
+
+        // console.log('Copying ', JSON.stringify(json, null, '  '));
+        void this.writeClipboardText(jsonSerializer.write(json));
     }
 
     /**
      * Pastes nodes from the clipboard into the diagram.
      */
     public pasteNodes(): void {
-        navigator.clipboard.readText()
+        void this.readClipboardText()
             .then(async (json) => {
+
                 if (json && json.length) try {
-                    let nodes = JSON.parse(json);
+                    const nodes = JSON.parse(json);
                     if (Array.isArray(nodes)) {
                         this.addUndo();
+                        const pastedNodes: INode[] = [];
 
-                        this.current.layer = this.current.layer || this.createLayerAt('top');
-                        this.clearSelection();
+                        for (let node of nodes) {
+                            const clone = this.cloneNode(node);
+                            this.upsertNode(clone);
+                            this.current.layer?.nodes.push(clone.id);
 
-                        for (let one of nodes) {
-                            let node = await jsonSerializer.read<INode>(one);  // this.crea model.readShape(one);
-                            if (node) {
-                                this.upsertNode(node);
-                                this.current.layer.nodes.push(node.id)
-                                this.select(node);
-                            }
+                            NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
+                            this.select(clone);
+                            pastedNodes.push(clone);
                         }
+
+                        this.emitClipboardChange('paste', pastedNodes);
                     }
                     this.render('all');
                     this.renderPreview();
 
-                } catch (e) { }
+                } catch (e) {
+                    console.error('Failed to paste nodes from clipboard', e);
+                }
             })
     }
 
@@ -663,7 +911,7 @@ export class DiagramEditView extends DiagramView {
      * Checks if the clipboard contains nodes that can be pasted into the diagram.
      */
     public clipboardHasNodes(): void {
-        navigator.clipboard.readText()
+        void this.readClipboardText()
             .then(async (json) => {
                 this.can_paste = false;
 
@@ -673,8 +921,49 @@ export class DiagramEditView extends DiagramView {
                         this.can_paste = true;
                     }
 
-                } catch (e) { }
+                } catch (e) {
+                    console.error('Failed to check clipboard nodes', e);
+                }
             })
+    }
+
+    private async writeClipboardText(value: string): Promise<void> {
+        this.clipboardSnapshot = value;
+
+        try {
+            if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(value);
+            }
+        } catch (e) {
+            console.error('Failed to write clipboard text', e);
+        }
+    }
+
+    private async readClipboardText(): Promise<string> {
+        try {
+            if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
+                const value = await navigator.clipboard.readText();
+                if (typeof value === 'string' && value.length) {
+                    this.clipboardSnapshot = value;
+                    return value;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to read clipboard text', e);
+        }
+
+        return this.clipboardSnapshot || '';
+    }
+
+    private emitClipboardChange(operation: DiagramClipboardOperation, nodes: INode[] = []): void {
+        this.eventDispatcher.clipboardChanged({
+            operation,
+            canPaste: this.can_paste,
+            node: nodes[0],
+            nodeId: nodes[0]?.id,
+            nodes,
+            nodeIds: nodes.map(node => node.id),
+        });
     }
 
     // ================================================
@@ -943,11 +1232,8 @@ export class DiagramEditView extends DiagramView {
             this.current.layer = this.createLayerAt('top');
         }
         for (let node of this.selection()) {
-            const clone = {
-                ...node,
-                id: `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-                points: node.points.map(p => ({ ...p })),
-            };
+            const clone = this.cloneNode(node);
+
             NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
             this.nodes.push(clone);
             this.current.layer.nodes.push(clone.id);
@@ -957,6 +1243,14 @@ export class DiagramEditView extends DiagramView {
         }
         this.render('all');
         this.renderPreview();
+    }
+
+    protected cloneNode(node: INode, id?: string): INode {
+        return {
+            ...node,
+            id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            points: node.points.map(p => ({ ...p })),
+        };
     }
 
     /**
@@ -1980,6 +2274,11 @@ export class DiagramEditView extends DiagramView {
             owner: this,
         };
 
+        if (this.isConnectorType(tool)) {
+            (draft as INode & IConnection).startArrow = this.settings.startArrow;
+            (draft as INode & IConnection).endArrow = this.settings.endArrow;
+        }
+
         if (tool === 'svg' && options?.url) {
             this.applyNodeImageSource(draft, options.url, 'frame');
         }
@@ -2071,6 +2370,17 @@ export class DiagramEditView extends DiagramView {
 
         return id;
     }
+
+    // private generateNodeId(seed: string): string {
+    //     const base = (seed || 'node').replace(/-clone-\d+-[a-z0-9]+$/i, '');
+    //     let id = `${base}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+    //     while (this.node(id)) {
+    //         id = `${base}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    //     }
+
+    //     return id;
+    // }
 
     private exitDrawing(): boolean {
         // End drawing polylines..
@@ -2443,36 +2753,35 @@ export class DiagramEditView extends DiagramView {
     // ====== Image management methods ======
     // ========================================
 
-    /**
-     * Exports the diagram image data.
-     * @returns Image payload with data URL and dimensions, or null when unavailable.
-     */
-    public getImage(): { dataurl: string, width: number, height: number } | null {
-        /*if (!this.model || !this.canvas) return null;
+    // /**
+    //  * Exports the diagram image data.
+    //  * @returns Image payload with data URL and dimensions, or null when unavailable.
+    //  */
+    // public getImage(): { dataurl: string, width: number, height: number } | null {
 
-        let target = this.canvas? this.canvas.nativeElement : null;
-        if (!target) return null;
+    //     if (!this.model || !this.canvas) return null;
 
-        let w = target.width;
-        let h = target.height;
+    //     let target = this.canvas? this.canvas.nativeElement : null;
+    //     if (!target) return null;
 
-        // Draw all layers on one canvas..
-        let full = new FullPreview();
-        let ok = full.renderFull(this.model, target);
+    //     let w = target.width;
+    //     let h = target.height;
 
-        if (!ok) return null;
-        // let context = target.getContext('2d');
-        // this.model.render(context);
-        let src = target.toDataURL();
+    //     // Draw all layers on one canvas..
+    //     let full = new FullPreview();
+    //     let ok = full.renderFull(this.model, target);
 
-        // Clear after export..
-        target.width = w;
-        target.height = h;
+    //     if (!ok) return null;
+    //     // let context = target.getContext('2d');
+    //     // this.model.render(context);
+    //     let src = target.toDataURL();
 
-        return {dataurl: src, width: full.width || 400, height: full.height || 300};
-        */
-        return null;
-    }
+    //     // Clear after export..
+    //     target.width = w;
+    //     target.height = h;
+
+    //     return {dataurl: src, width: full.width || 400, height: full.height || 300};
+    // }
 
     /**
      * Opens SVG tool/image selection workflow.

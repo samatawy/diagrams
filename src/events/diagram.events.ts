@@ -22,6 +22,7 @@ export const DIAGRAM_CONNECTION_CONNECTED_EVENT = "connection-connected";
 export const DIAGRAM_CONNECTION_DISCONNECTED_EVENT = "connection-disconnected";
 export const DIAGRAM_EDIT_CONTEXT_MENU_EVENT = "diagram-edit-contextmenu";
 export const DIAGRAM_TOOL_CHANGED_EVENT = "tool-changed";
+export const DIAGRAM_CLIPBOARD_EVENT = "clipboard-change";
 
 /**
  * Broad compatibility event.
@@ -199,4 +200,40 @@ export interface DiagramToolChange {
      * This property represents the tool that was being used before the current tool was selected or activated.
      */
     previousTool: string;
+}
+
+/**
+ * Clipboard operations emitted by the editor.
+ */
+export type DiagramClipboardOperation = "copy" | "cut" | "paste";
+
+/**
+ * Defines the structure of a diagram clipboard event.
+ */
+export interface DiagramClipboardEventDetail {
+    /**
+     * The clipboard operation that produced this event.
+     * Can be one of "copy", "cut", or "paste".
+     */
+    operation: DiagramClipboardOperation;
+    /**
+     * Whether a paste action is currently possible.
+     */
+    canPaste: boolean;
+    /**
+     * The first node involved in the operation, if any.
+     */
+    node?: INode;
+    /**
+     * The ID of the first node involved in the operation, if any.
+     */
+    nodeId?: string;
+    /**
+     * All nodes involved in the operation.
+     */
+    nodes: INode[];
+    /**
+     * IDs of nodes involved in the operation.
+     */
+    nodeIds: string[];
 }

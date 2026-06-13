@@ -189,3 +189,31 @@ export function downloadBlob(blob: Blob, fileName: string): string {
 
     return fileName;
 }
+
+/**
+ * Writes a blob to a browser file-system access handle.
+ * @param handle Target browser file handle.
+ * @param blob Blob payload to write.
+ * @returns The written file name.
+ */
+export async function writeBlobToFileHandle(handle: FileSystemFileHandle, blob: Blob): Promise<string> {
+    const writable = await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    return handle.name;
+}
+
+/**
+ * Writes text content to a browser file-system access handle.
+ * @param handle Target browser file handle.
+ * @param content Text payload to write.
+ * @param mimeType Optional MIME type.
+ * @returns The written file name.
+ */
+export async function writeTextToFileHandle(
+    handle: FileSystemFileHandle,
+    content: string,
+    mimeType: string = 'application/json',
+): Promise<string> {
+    return writeBlobToFileHandle(handle, exportTextBlob(content, mimeType));
+}

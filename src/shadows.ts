@@ -1,5 +1,7 @@
 import type { IPoint } from "./types";
 
+export type ArrowDirection = 'start' | 'end' | 'both' | 'none';
+
 /**
  * ShadowStyle defines the properties of a shadow effect that can be applied to nodes in the diagram.
  */

@@ -107,6 +107,8 @@ export interface INode {
      */
     lineWidth: number;
 
+    arrow?: 'forward' | 'backward' | 'both' | 'none';
+
     /**
      * The shadow style of the node, which can be used to apply a shadow effect to the node.
      */

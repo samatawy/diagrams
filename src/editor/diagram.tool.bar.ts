@@ -1,5 +1,5 @@
 import type { DiagramEditView } from '../editview/diagram.edit.view';
-import { DIAGRAM_CHANGED_EVENT } from '../events/diagram.events';
+import { DIAGRAM_CHANGED_EVENT, DIAGRAM_CLIPBOARD_EVENT } from '../events/diagram.events';
 import { IconRegistry } from '../factory/icon.registry';
 import { ToolBar, type ToolBarConfig } from './tool.bar';
 
@@ -58,11 +58,16 @@ export interface DiagramToolBarConfig extends ToolBarConfig {
 /**
  * Available built-in diagram actions. These can be used in the toolbar layout.
  */
-export type DiagramToolBarLayoutItem = '|' | 'undo' | 'redo' | 'front' | 'back' | 'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' |
+export type DiagramToolBarLayoutItem = '|' | 'new' | 'open' | 'save' | 'export' | 'undo' | 'redo' | 'front' | 'back' | 'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' |
     'align-left' | 'align-center' | 'align-right' | 'align-top' | 'align-middle' | 'align-bottom' | 'distribute-h' | 'distribute-v' |
     'zoom-in' | 'zoom-out' | 'fit-width' | 'fit-all' | 'show-grid' | 'snap-grid';
 
 export const DEFAULT_LAYOUT: DiagramToolBarLayoutItem[] = [
+    'new',
+    'open',
+    'save',
+    'export',
+    '|',
     'undo',
     'redo',
     '|',
@@ -97,6 +102,31 @@ export const DEFAULT_LAYOUT: DiagramToolBarLayoutItem[] = [
  * Full catalogue of built-in diagram actions.
  */
 export const DIAGRAM_ACTIONS: DiagramAction[] = [
+    {
+        id: 'new',
+        label: 'New Diagram',
+        tooltip: 'Create a new diagram',
+        execute: async (d) => { await d.newDiagram(); },
+    },
+    {
+        id: 'open',
+        label: 'Open Diagram',
+        tooltip: 'Open an existing diagram',
+        execute: async (d) => { await d.openDiagram(); },
+        isEnabled: (d) => d.canOpenDiagram,
+    },
+    {
+        id: 'save',
+        label: 'Save Diagram',
+        tooltip: 'Save the current diagram',
+        execute: async (d) => { await d.saveDiagram(); },
+    },
+    {
+        id: 'export',
+        label: 'Export Diagram',
+        tooltip: 'Export the diagram as an image or file',
+        execute: async (d) => { await d.exportDiagram(); },
+    },
     {
         id: 'undo',
         label: 'Undo',
@@ -286,6 +316,11 @@ export class DiagramToolBar extends ToolBar {
         this.refresh();
     };
 
+    // TODO: This may be redundant if we decide to keep clipboard events in DiagramChangedEvent.
+    protected readonly onClipboardChanged = (): void => {
+        this.setEnabled('paste', !!this.diagram.canPaste);
+    };
+
     constructor(
         target: HTMLElement,
         diagram: DiagramEditView,
@@ -329,11 +364,17 @@ export class DiagramToolBar extends ToolBar {
     protected bindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.addEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
+
+        // TODO: This may be redundant if we decide to keep clipboard events in DiagramChangedEvent.
+        source?.addEventListener(DIAGRAM_CLIPBOARD_EVENT, this.onClipboardChanged);
     }
 
     protected unbindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.removeEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
+
+        // TODO: This may be redundant if we decide to keep clipboard events in DiagramChangedEvent.
+        source?.removeEventListener(DIAGRAM_CLIPBOARD_EVENT, this.onClipboardChanged);
     }
 
     protected build(config: DiagramToolBarConfig): void {

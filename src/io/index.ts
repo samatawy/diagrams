@@ -3,4 +3,5 @@ export * from './export.types';
 export * from './browser.support';
 export * from './node.support';
 export * from './image.serializer';
+export * from './diagram.file.dialogs';
 export * from './json.serializer';

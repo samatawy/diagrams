@@ -1,5 +1,6 @@
 import {
     DIAGRAM_BACKGROUND_CLICK_EVENT,
+    DIAGRAM_CLIPBOARD_EVENT,
     DIAGRAM_CHANGED_EVENT,
     DIAGRAM_CONNECTION_CONNECTED_EVENT,
     DIAGRAM_CONNECTION_DISCONNECTED_EVENT,
@@ -15,6 +16,7 @@ import {
     DIAGRAM_TOOL_CHANGED_EVENT,
     DIAGRAM_VIEWPORT_EVENT,
     type DiagramBackgroundClick,
+    type DiagramClipboardEventDetail,
     type DiagramChanged,
     type DiagramChangeScope,
     type DiagramConnectionChange,
@@ -155,6 +157,14 @@ export class EventDispatcher {
         this.dispatchInternal(DIAGRAM_TOOL_CHANGED_EVENT, detail);
     }
 
+    /**
+     * Emits the clipboard-change event.
+     * @param detail Clipboard payload.
+     */
+    public clipboardChanged(detail: DiagramClipboardEventDetail): void {
+        this.dispatchInternal(DIAGRAM_CLIPBOARD_EVENT, detail);
+    }
+
     private dispatchInternal<T>(eventName: string, detail: T, cancelable: boolean = false): boolean {
         const dispatched = this.host.dispatchEvent(new CustomEvent<T>(eventName, {
             detail,
@@ -187,6 +197,7 @@ export class EventDispatcher {
                 return "model";
             case DIAGRAM_SELECTION_EVENT:
             case DIAGRAM_VIEWPORT_EVENT:
+            case DIAGRAM_CLIPBOARD_EVENT:
                 return "view";
             case DIAGRAM_TOOL_CHANGED_EVENT:
                 return "style";

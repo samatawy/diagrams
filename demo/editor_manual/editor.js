@@ -5,6 +5,7 @@ import {
     NodeHandle,
     EDITOR_TOOL_DEFS,
     DIAGRAM_CHANGED_EVENT,
+    DIAGRAM_CLIPBOARD_EVENT,
 } from '../demo-common.js';
 
 const host = document.getElementById('editor-demo');
@@ -718,4 +719,8 @@ host?.addEventListener(DIAGRAM_CHANGED_EVENT, () => {
     highlightActiveTool(editor?.currentTool || 'select');
     refreshActionState();
     syncStyleControls();
+});
+
+host?.addEventListener(DIAGRAM_CLIPBOARD_EVENT, () => {
+    setActionEnabled('paste', editor.canPaste);
 });

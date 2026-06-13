@@ -1,5 +1,15 @@
-import { DiagramEditView } from "../editview/diagram.edit.view";
-import { jsonSerializer, type DiagramSaveOptions, type ISerializedDiagram } from "../io";
+import { DiagramEditView, type DiagramEditViewPrompts } from "../editview/diagram.edit.view";
+import {
+    DiagramFileDialogs,
+    jsonSerializer,
+    type DiagramExportOptions,
+    type DiagramExportHandler,
+    type DiagramOpenHandler,
+    type DiagramOpenOptions,
+    type DiagramSaveOptions,
+    type DiagramSaveHandler,
+    type ISerializedDiagram,
+} from "../io";
 import { Diagram } from "../model/diagram";
 import { ColorSelect, type ColorSelectConfig } from "./color.select";
 import { DiagramToolBar, type DiagramToolBarConfig } from "./diagram.tool.bar";
@@ -10,6 +20,8 @@ import { SizeSelect, type SizeSelectConfig } from "./size.select";
 import { ToolPalette, type ToolPaletteConfig } from "./tool.palette";
 import { DIAGRAM_CHANGED_EVENT } from "../events/diagram.events";
 import { WidthSelect, type WidthSelectConfig } from "./width.select";
+import { ArrowSelect, type ArrowSelectConfig } from "./arrow.select";
+import type { ArrowDirection } from "../shadows";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
@@ -18,6 +30,12 @@ export type DiagramEditorPromptReason = 'new' | 'load' | 'close';
 export type DiagramEditorPrompts = {
     onUnsavedChanges?: (context: { reason: DiagramEditorPromptReason }) => DiagramEditorUnsavedAction | Promise<DiagramEditorUnsavedAction>;
     onNoChangesSave?: () => boolean | Promise<boolean>;
+};
+
+export type DiagramEditorFileDialogsConfig = {
+    onOpenDiagram?: DiagramOpenHandler;
+    onSaveDiagram?: DiagramSaveHandler;
+    onExportDiagram?: DiagramExportHandler;
 };
 
 export type DiagramEditorConfig = {
@@ -30,7 +48,10 @@ export type DiagramEditorConfig = {
     textColor?: ColorSelectConfig;
     strokeColor?: ColorSelectConfig;
     strokeWidth?: WidthSelectConfig;
+    arrowSelect?: ArrowSelectConfig;
     fillColor?: ColorSelectConfig;
+
+    fileDialogs?: DiagramEditorFileDialogsConfig;
 }
 
 const DIAGRAM_EDITOR_STYLE_ID = 'diagram-editor-layout';
@@ -142,8 +163,10 @@ export class DiagramEditor {
     protected strokeToolbar?: HTMLElement;
     protected strokeColorSelectHost?: HTMLElement;
     protected strokeWidthSelectHost?: HTMLElement;
+    protected arrowSelectHost?: HTMLElement;
     protected strokeColorSelect?: ColorSelect;
     protected strokeWidthSelect?: WidthSelect;
+    protected arrowSelect?: ArrowSelect;
 
     protected fillToolbar?: HTMLElement;
     protected fillStyleSelectHost?: HTMLElement;
@@ -185,6 +208,7 @@ export class DiagramEditor {
         this.textColorSelect?.destroy();
         this.strokeColorSelect?.destroy();
         this.strokeWidthSelect?.destroy();
+        this.arrowSelect?.destroy();
         this.fillStyleSelect?.destroy();
 
         this.host.innerHTML = '';
@@ -192,72 +216,70 @@ export class DiagramEditor {
 
     /**
      * Clears the current diagram after resolving any unsaved-change prompt.
+     * A prompt will be shown if the diagram has unsaved changes.
      * @returns True when a new empty diagram was created; otherwise false.
      */
     public async newDiagram(): Promise<boolean> {
-        if (!(await this.confirmUnsavedIfNeeded('new'))) {
-            return false;
+        const created = await this.diagram.newDiagram();
+        if (created) {
+            this.reflectStyles();
         }
-
-        this.diagram.clear();
-        this.reflectStyles();
-        return true;
+        return created;
     }
 
     /**
      * Loads a diagram from a live diagram instance, a serialized JSON string, or a deserialized payload.
+     * A prompt will be shown if the diagram has unsaved changes.
      * @param source The diagram source to load.
      * @returns True when the source was loaded; otherwise false when loading was canceled.
      */
     public async loadDiagram(source: string | ISerializedDiagram | Diagram): Promise<boolean> {
-        if (!(await this.confirmUnsavedIfNeeded('load'))) {
-            return false;
+        const loaded = await this.diagram.loadDiagram(source);
+        if (loaded) {
+            this.reflectStyles();
         }
+        return loaded;
+    }
 
-        if (source instanceof Diagram) {
-            // Populate this diagram with the data from the source diagram
-            const serialized = source.write(jsonSerializer);
-            await this.diagram.read(serialized, jsonSerializer);
+    /**
+     * Opens a diagram using configured file dialog behavior after resolving unsaved-change prompts.
+     * @param options Optional open options or source overrides.
+     * @returns True when a diagram was opened; otherwise false.
+     */
+    public async openDiagram(options?: DiagramOpenOptions): Promise<boolean> {
+        const opened = await this.diagram.openDiagram(options);
+        if (opened) {
             this.reflectStyles();
-            return true;
-
-        } else if (typeof source === 'string') {
-            // Assume it's a serialized diagram in JSON format
-            await this.diagram.read(source, jsonSerializer);
-            this.reflectStyles();
-            return true;
-
-        } else {
-            // Assume its been already deserialized but not yet loaded into the diagram view (e.g. from a file input or other source)
-            await this.diagram.read(source, jsonSerializer);
-            this.reflectStyles();
-            return true;
         }
+        return opened;
     }
 
     /**
      * Saves the current diagram using the underlying {@link DiagramEditView}.
+     * A prompt will be shown if the diagram has no changes to save.
      * @param options Optional serialization settings.
      * @returns The serialized diagram string, or undefined when saving was canceled.
      */
     public async saveDiagram(options?: DiagramSaveOptions): Promise<string | undefined> {
-        if (!this.diagram.isModified()) {
-            const proceed = this.config.prompts?.onNoChangesSave
-                ? await this.config.prompts.onNoChangesSave()
-                : await this.promptNoChangesSave();
-            if (!proceed) {
-                return undefined;
-            }
-        }
-        return this.diagram.save(options);
+        return await this.diagram.saveDiagram(options);
+    }
+
+    /**
+     * Exports the current diagram using the underlying {@link DiagramEditView}.
+     * @param options Optional export settings.
+     * @returns The export result, or undefined when export was canceled.
+     */
+    public async exportDiagram(options?: DiagramExportOptions): Promise<string | Uint8Array | Blob | undefined> {
+        return await this.diagram.exportDiagram(options);
     }
 
     /**
      * Closes the current diagram after resolving any unsaved-change prompt.
+     * A prompt will be shown if the diagram has unsaved changes.
      * @returns True when the diagram was closed; otherwise false.
      */
     public async close(): Promise<boolean> {
-        if (!(await this.confirmUnsavedIfNeeded('close'))) {
+        if (!(await this.confirmCloseIfNeeded())) {
             return false;
         }
 
@@ -323,6 +345,13 @@ export class DiagramEditor {
     }
 
     /**
+     * Returns the arrow selector control when available.
+     */
+    public getArrowSelect(): ArrowSelect | undefined {
+        return this.arrowSelect;
+    }
+
+    /**
      * Returns the fill color selector control when available.
      */
     public getFillStyleSelect(): ColorSelect | undefined {
@@ -371,6 +400,9 @@ export class DiagramEditor {
         // Create the local diagram edit view and load the provided diagram if any
         const id = diagram?.id || `diagram-${Date.now()}`;
         this.diagram = new DiagramEditView(id, canvasHost);
+        this.diagram.fileDialogs = this.createFileDialogs();
+        this.diagram.prompts = this.createDiagramPrompts();
+
         if (diagram) this.diagram.read(diagram);
 
         // Initialize the tool palette
@@ -406,9 +438,11 @@ export class DiagramEditor {
 
         this.strokeColorSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-color-select', 'Line');
         this.strokeWidthSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-width-select');
+        this.arrowSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
 
         this.strokeColorSelect = new ColorSelect(this.strokeColorSelectHost, config.strokeColor || {});
         this.strokeWidthSelect = new WidthSelect(this.strokeWidthSelectHost, config.strokeWidth || {});
+        this.arrowSelect = new ArrowSelect(this.arrowSelectHost, config.arrowSelect || {});
 
         // Initialize fill toolbar
         this.fillToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-fill-toolbar');
@@ -465,6 +499,15 @@ export class DiagramEditor {
                 if (this.syncingControls) return;
                 if (Number.isFinite(width) && width > 0) {
                     this.diagram.setLineWidth(width);
+                }
+            });
+        }
+
+        if (this.arrowSelectHost) {
+            this.addManagedListener<ArrowDirection>(this.arrowSelectHost, 'arrowchange', (arrow) => {
+                if (this.syncingControls) return;
+                if (arrow) {
+                    this.diagram.setArrow(arrow);
                 }
             });
         }
@@ -582,6 +625,60 @@ export class DiagramEditor {
         });
     }
 
+    private createFileDialogs(): DiagramFileDialogs {
+        const dialogs = new DiagramFileDialogs();
+
+        const configured = this.config.fileDialogs;
+        if (configured?.onOpenDiagram) {
+            dialogs.onOpenDiagram = configured.onOpenDiagram;
+        }
+        if (configured?.onSaveDiagram) {
+            dialogs.onSaveDiagram = configured.onSaveDiagram;
+        }
+        if (configured?.onExportDiagram) {
+            dialogs.onExportDiagram = configured.onExportDiagram;
+        }
+
+        return dialogs;
+    }
+
+    private createDiagramPrompts(): DiagramEditViewPrompts {
+        return {
+            onUnsavedChanges: async ({ reason }) => {
+                const mappedReason: DiagramEditorPromptReason = reason === 'open' ? 'load' : reason;
+                return this.config.prompts?.onUnsavedChanges
+                    ? await this.config.prompts.onUnsavedChanges({ reason: mappedReason })
+                    : await this.promptUnsavedChanges(mappedReason);
+            },
+            onNoChangesSave: async () => {
+                return this.config.prompts?.onNoChangesSave
+                    ? await this.config.prompts.onNoChangesSave()
+                    : await this.promptNoChangesSave();
+            },
+        };
+    }
+
+    private async confirmCloseIfNeeded(): Promise<boolean> {
+        if (!this.diagram.isModified()) {
+            return true;
+        }
+
+        const action = this.config.prompts?.onUnsavedChanges
+            ? await this.config.prompts.onUnsavedChanges({ reason: 'close' })
+            : await this.promptUnsavedChanges('close');
+
+        if (action === 'cancel') {
+            return false;
+        }
+
+        if (action === 'save') {
+            const saved = await this.saveDiagram();
+            return typeof saved === 'string' && saved.length > 0;
+        }
+
+        return true;
+    }
+
     /**
      * Shows the default prompt used when a save is requested without any pending changes.
      * @returns True when saving should continue; otherwise false.
@@ -624,24 +721,4 @@ export class DiagramEditor {
         });
     }
 
-    private async confirmUnsavedIfNeeded(reason: DiagramEditorPromptReason): Promise<boolean> {
-        if (!this.diagram.isModified()) {
-            return true;
-        }
-
-        const action = this.config.prompts?.onUnsavedChanges
-            ? await this.config.prompts.onUnsavedChanges({ reason })
-            : await this.promptUnsavedChanges(reason);
-
-        if (action === 'cancel') {
-            return false;
-        }
-
-        if (action === 'save') {
-            const saved = await this.saveDiagram();
-            return typeof saved === 'string' && saved.length > 0;
-        }
-
-        return true;
-    }
 }

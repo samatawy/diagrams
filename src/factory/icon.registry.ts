@@ -123,6 +123,18 @@ function sym(id: string, body: string): string {
     return `<svg id="${id}" ${VB} ${STROKE_ATTRS}>${body}</svg>`;
 }
 
+IconRegistry.registerSymbol('new', 'new',
+    sym('new', '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>'));
+
+IconRegistry.registerSymbol('open', 'open',
+    sym('open', '<path d="M3 7h6l2 2h10v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 7V5a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v2"/>'));
+
+IconRegistry.registerSymbol('save', 'save',
+    sym('save', '<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3"/><rect x="8" y="14" width="8" height="6" rx="1"/>'));
+
+IconRegistry.registerSymbol('export', 'export',
+    sym('export', '<path d="M4 14v5a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/><line x1="12" y1="3" x2="12" y2="15"/><polyline points="7 8 12 3 17 8"/>'));
+
 IconRegistry.registerSymbol('undo', 'undo',
     sym('undo', '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'));
 

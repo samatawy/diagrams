@@ -4,6 +4,7 @@ import {
     makeLine,
     NodeHandle,
     DIAGRAM_CHANGED_EVENT,
+    DIAGRAM_CLIPBOARD_EVENT,
 } from '../demo-common.js';
 
 import {
@@ -289,6 +290,9 @@ requestAnimationFrame(() => {
 });
 
 host?.addEventListener(DIAGRAM_CHANGED_EVENT, refreshState);
+host?.addEventListener(DIAGRAM_CLIPBOARD_EVENT, () => {
+    actionToolbar?.setEnabled('paste', !!editor.canPaste);
+});
 
 toolListHost?.addEventListener('tool-selected', () => {
     scheduleRefreshState();

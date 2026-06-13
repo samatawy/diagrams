@@ -1,6 +1,7 @@
 import {
     DiagramView,
     DiagramEditView,
+    DIAGRAM_CLIPBOARD_EVENT,
     DIAGRAM_CHANGED_EVENT,
     NodeHandle,
     RectangleAdapter,
@@ -187,5 +188,6 @@ export {
     DiagramView,
     DiagramEditView,
     NodeHandle,
+    DIAGRAM_CLIPBOARD_EVENT,
     DIAGRAM_CHANGED_EVENT,
 };

@@ -151,12 +151,9 @@ export class Diagram implements IDiagram {
         }
 
         this.nodes = this.nodes.filter(node => node.id !== nodeId);
-        this.layers = this.layers.map(layer => this.createLayer(
-            layer.id,
-            layer.name,
-            layer.visible,
-            layer.nodes.filter(id => id !== nodeId),
-        ));
+        for (const layer of this.layers) {
+            layer.nodes = layer.nodes.filter(id => id !== nodeId);
+        }
     }
 
     /**
@@ -401,7 +398,7 @@ export class Diagram implements IDiagram {
             .filter((node): node is INode => !!node);
     }
 
-    private serializeNode(node: INode): ISerializedNode {
+    protected serializeNode(node: INode): ISerializedNode {
         const serialized: ISerializedNode = {
             ...node,
             points: node.points.map(point => ({ ...point })),
