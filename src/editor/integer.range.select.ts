@@ -30,11 +30,11 @@ const DEFAULT_STYLES = `
     min-width: 116px;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--diagram-ui-control-gap, 6px);
 }
 .integer-range-select .integer-range-select-track {
     width: 84px;
-    accent-color: #0f766e;
+    accent-color: var(--diagram-ui-accent, #0f766e);
 }
 .integer-range-select .integer-range-select-track:disabled {
     opacity: 0.4;
@@ -43,8 +43,8 @@ const DEFAULT_STYLES = `
 .integer-range-select .integer-range-select-value {
     min-width: 28px;
     text-align: right;
-    font: 600 11px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #334155;
+    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    color: var(--diagram-ui-text-muted, #334155);
 }
 .integer-range-select--disabled .integer-range-select-value {
     opacity: 0.4;

@@ -83,38 +83,38 @@ const DEFAULT_STYLES = `
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
+    gap: var(--diagram-ui-control-gap, 8px);
+    padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
     cursor: pointer;
     appearance: none;
-    border: 1px solid rgba(15, 23, 42, 0.15);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.88);
-    color: #1f2937;
-    font: 600 12px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 10px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text, #1f2937);
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
 }
 .font-select-control .font-select-trigger::after {
     content: '▾';
-    font-size: 12px;
-    color: #334155;
+    font-size: var(--diagram-ui-font-size, 12px);
+    color: var(--diagram-ui-text-muted, #334155);
 }
 .font-select-control .font-select-trigger:hover,
 .font-select-control .font-select-trigger:focus-visible,
 .font-select-control button[aria-haspopup='listbox']:hover,
 .font-select-control button[aria-haspopup='listbox']:focus-visible {
-    border-color: rgba(15, 118, 110, 0.45);
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
 }
 .font-select-preview {
-    font-size: 13px;
+    font-size: var(--diagram-ui-font-size, 13px);
     line-height: 1.2;
-    color: #1f2937;
+    color: var(--diagram-ui-text, #1f2937);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .font-select-control .font-select-label {
-    font: 600 11px/1.1 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #334155;
+    font: 600 var(--diagram-ui-label-font-size, 11px)/1.1 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    color: var(--diagram-ui-text-muted, #334155);
     text-transform: lowercase;
     justify-self: end;
     white-space: nowrap;
@@ -123,20 +123,20 @@ const DEFAULT_STYLES = `
     position: absolute;
     left: 0;
     right: 0;
-    top: calc(100% + 6px);
+    top: calc(100% + var(--diagram-ui-control-gap, 6px));
     z-index: 40;
-    border: 1px solid rgba(15, 23, 42, 0.15);
-    border-radius: 10px;
-    background: #ffffff;
-    padding: 6px;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-panel-radius, 10px);
+    background: var(--diagram-ui-surface-elevated, #ffffff);
+    padding: var(--diagram-ui-panel-padding, 6px);
     display: none;
     max-height: 240px;
     overflow: auto;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+    box-shadow: 0 10px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
 }
 .font-select-control.is-open .font-select-menu {
     display: grid;
-    gap: 4px;
+    gap: var(--diagram-ui-group-gap, 4px);
 }
 .font-select-control .font-select-option {
     width: 100%;
@@ -144,16 +144,16 @@ const DEFAULT_STYLES = `
     grid-template-columns: 1fr;
     align-items: center;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--diagram-ui-control-radius, 6px);
     background: transparent;
-    padding: 5px 8px;
+    padding: var(--diagram-ui-group-gap, 5px) var(--diagram-ui-control-padding-x, 8px);
     cursor: pointer;
     font: inherit;
     text-align: left;
 }
 .font-select-control .font-select-option:hover,
 .font-select-control .font-select-option.is-selected {
-    background: rgba(15, 118, 110, 0.1);
+    background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
 }
 `;
 

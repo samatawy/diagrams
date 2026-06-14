@@ -85,31 +85,31 @@ const TOOLBAR_DEFAULT_STYLES = `
     min-height: 32px;
     width: auto;
     height: auto;
-    padding: 6px 8px;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.88);
+    padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    border-radius: var(--diagram-ui-control-radius, 10px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     cursor: pointer;
-    color: #334155;
-    font: 600 12px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: var(--diagram-ui-text-muted, #334155);
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
     line-height: 0;
     flex-shrink: 0;
-    transition: border-color 100ms ease, background-color 100ms ease, color 100ms ease;
+    transition: border-color var(--diagram-ui-transition-fast, 100ms ease), background-color var(--diagram-ui-transition-fast, 100ms ease), color var(--diagram-ui-transition-fast, 100ms ease);
 }
 .toolbar .toolbar-button:hover,
 .toolbar .toolbar-button:focus-visible,
 .toolbar button[data-toolbar-button='true']:hover,
 .toolbar button[data-toolbar-button='true']:focus-visible {
-    border-color: rgba(15, 118, 110, 0.45);
-    color: #0f766e;
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    color: var(--diagram-ui-accent, #0f766e);
 }
 .toolbar .toolbar-button.is-active,
 .toolbar .toolbar-button[data-toggle='true'].is-active,
 .toolbar button[data-toolbar-button='true'].is-active,
 .toolbar button[data-toolbar-button='true'][data-toggle='true'].is-active {
-    background: #0f766e;
-    border-color: #0f766e;
-    color: #ffffff;
+    background: var(--diagram-ui-accent, #0f766e);
+    border-color: var(--diagram-ui-accent, #0f766e);
+    color: var(--diagram-ui-accent-contrast, #ffffff);
 }
 .toolbar .toolbar-button:disabled,
 .toolbar .toolbar-button.is-disabled,
@@ -117,16 +117,16 @@ const TOOLBAR_DEFAULT_STYLES = `
 .toolbar button[data-toolbar-button='true'].is-disabled {
     opacity: 0.45;
     cursor: not-allowed;
-    color: #64748b;
-    border-color: rgba(15, 23, 42, 0.12);
+    color: var(--diagram-ui-text-muted, #64748b);
+    border-color: var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
     pointer-events: none;
 }
 .toolbar .toolbar-button svg,
 .toolbar .toolbar-button img,
 .toolbar button[data-toolbar-button='true'] svg,
 .toolbar button[data-toolbar-button='true'] img {
-    width: 18px;
-    height: 18px;
+    width: var(--diagram-ui-icon-size, 18px);
+    height: var(--diagram-ui-icon-size, 18px);
     display: block;
     pointer-events: none;
 }
@@ -134,17 +134,17 @@ const TOOLBAR_DEFAULT_STYLES = `
 .toolbar [data-toolbar-separator='true'] {
     width: 1px;
     height: 20px;
-    background: rgba(15, 23, 42, 0.15);
+    background: var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
     flex-shrink: 0;
-    margin: 0 4px;
+    margin: 0 var(--diagram-ui-control-gap, 4px);
     align-self: center;
 }
 .toolbar [role='separator'] {
     width: 1px;
     height: 20px;
-    background: rgba(15, 23, 42, 0.15);
+    background: var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
     flex-shrink: 0;
-    margin: 0 4px;
+    margin: 0 var(--diagram-ui-control-gap, 4px);
     align-self: center;
 }
 `;

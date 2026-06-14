@@ -52,4 +52,8 @@ export interface DiagramViewOptions {
     selectedNodeId?: string;
     selectedNodeIds?: string[];
     selection?: DiagramSelectionOptions;
+    /**
+     * Canvas background color for DiagramView rendering. Use 'transparent' to keep the canvas clear.
+     */
+    canvasBackgroundColor?: string;
 }

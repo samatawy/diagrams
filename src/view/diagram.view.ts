@@ -44,6 +44,8 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected context: CanvasRenderingContext2D;
 
+    protected canvasBackgroundColor: string = DiagramConstants.CANVAS_BACKGROUND_COLOR;
+
     protected readonly eventDispatcher: EventDispatcher;
 
     protected resizeObserver?: ResizeObserver;
@@ -106,6 +108,9 @@ export class DiagramView extends Diagram implements HasSelection {
         this.coordinates.attach(this);
         this.cache = new ViewCache();
         this.fitViewport = new FitViewport(this);
+        if (options?.canvasBackgroundColor !== undefined) {
+            this.canvasBackgroundColor = options.canvasBackgroundColor;
+        }
         this.selectionOptions = {
             ...this.selectionOptions,
             ...options?.selection,
@@ -479,6 +484,14 @@ export class DiagramView extends Diagram implements HasSelection {
 
         this.coordinates.resetTransform(this.context);
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (this.canvasBackgroundColor && this.canvasBackgroundColor !== 'transparent') {
+            this.context.save();
+            this.context.fillStyle = this.canvasBackgroundColor;
+            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.context.restore();
+        }
+
         this.coordinates.applyViewportTransform(this.context);
 
         if (this.grid?.visible && (what === 'grid' || what === 'all')) {

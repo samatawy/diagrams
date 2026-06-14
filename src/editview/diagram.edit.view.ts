@@ -100,7 +100,7 @@ export class DiagramEditView extends DiagramView {
             strokeColor: DiagramConstants.DEFAULT_STROKE_STYLE,
             fillColor: DiagramConstants.DEFAULT_FILL_STYLE,
             shadowStyle: DiagramConstants.NO_SHADOW,
-            fontFace: DiagramConstants.DEFAULT_NODE_FONT,
+            fontFace: this.parseFontFace(DiagramConstants.DEFAULT_NODE_FONT),
             fontSize: DiagramConstants.DEFAULT_NODE_FONT_SIZE,
             textColor: DiagramConstants.DEFAULT_NODE_TEXT_COLOR,
             textAlign: DiagramConstants.DEFAULT_NODE_TEXT_ALIGN,
@@ -2288,19 +2288,15 @@ export class DiagramEditView extends DiagramView {
             points,
             hollow,
             text: tool === 'text' ? (this.nodeText || 'New Text') : (this.nodeText || ''),
-            textAlign: this.textAlign,  // as unknown as INode['textAlign'],
-            textBaseline: this.textBaseline,    // as unknown as INode['textBaseline'],
+            textAlign: this.textAlign,
+            textBaseline: this.textBaseline,
             font: `${this.fontSize}px ${this.fontFace}`,
-            // image_id: undefined,
-            // img_mode: 'none',
             ready: false,
-            // transparent: false,
             strokeStyle: this.strokeColor,
             fillStyle,
             textColor: this.textColor,
             lineWidth: this.lineWidth,
             shadowStyle: this.shadowStyle,
-            // angle: 0,
             owner: this,
         };
 
@@ -2788,7 +2784,7 @@ export class DiagramEditView extends DiagramView {
             this.settings.fillColor = shape.fillStyle || 'transparent';
             this.settings.textColor = shape.textColor || shape.strokeStyle || '#111827';
 
-            const default_font = DiagramConstants.DEFAULT_NODE_FONT;
+            const default_font = this.parseFontFace(DiagramConstants.DEFAULT_NODE_FONT);
             const default_size = DiagramConstants.DEFAULT_NODE_FONT_SIZE;
             if (shape.font) {
                 let fparts = shape.font.split('px');
@@ -2802,6 +2798,11 @@ export class DiagramEditView extends DiagramView {
 
             this.settings.shadowStyle = shape.shadowStyle ?? DiagramConstants.NO_SHADOW;
         }
+    }
+
+    private parseFontFace(font: string): string {
+        const parts = font.split('px');
+        return (parts.length > 1 ? parts[1]!.trim() : font).trim() || 'Tahoma';
     }
 
     // ========================================

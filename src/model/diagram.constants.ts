@@ -17,6 +17,7 @@ export const GRID_CELL_HEIGHT = 'GRID_CELL_HEIGHT';
 export const FIT_IMAGE_PADDING = 'FIT_IMAGE_PADDING';
 export const EXPORT_IMAGE_PADDING = 'EXPORT_IMAGE_PADDING';
 export const EXPORT_IMAGE_BACKGROUND_COLOR = 'EXPORT_IMAGE_BACKGROUND_COLOR';
+export const CANVAS_BACKGROUND_COLOR = 'CANVAS_BACKGROUND_COLOR';
 
 // ========= Selection ==========
 
@@ -64,7 +65,7 @@ export class DiagramConstants {
 
         // ========== Grid ==========
 
-        GRID_LINE_COLOR: 'lightgray',
+        GRID_LINE_COLOR: '#c6c6c6', // 'lightgray',
         GRID_CELL_WIDTH: 16,
         GRID_CELL_HEIGHT: 16,
 
@@ -73,6 +74,7 @@ export class DiagramConstants {
         FIT_IMAGE_PADDING: 32,
         EXPORT_IMAGE_PADDING: 16,
         EXPORT_IMAGE_BACKGROUND_COLOR: '#ffffff',
+        CANVAS_BACKGROUND_COLOR: '#faf8f2',
 
         // ========== Selection ==========
 
@@ -161,6 +163,10 @@ export class DiagramConstants {
 
     public static get EXPORT_IMAGE_BACKGROUND_COLOR(): string {
         return this.get(EXPORT_IMAGE_BACKGROUND_COLOR);
+    }
+
+    public static get CANVAS_BACKGROUND_COLOR(): string {
+        return this.get(CANVAS_BACKGROUND_COLOR);
     }
 
     // ========== Selection ==========

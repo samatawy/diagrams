@@ -37,27 +37,28 @@ const STYLE_ID = 'tool-palette-defaults';
 
 const DEFAULT_STYLES = `
 .editor-tool-list {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--diagram-ui-toolbar-gap, 6px);
 }
 
 .editor-tool-list button {
     appearance: none;
-    width: 40px;
-    height: 40px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.88);
-    padding: 9px;
+    width: var(--diagram-ui-palette-button-size, 40px);
+    height: var(--diagram-ui-palette-button-size, 40px);
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    border-radius: var(--diagram-ui-control-radius, 10px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    padding: var(--diagram-ui-palette-button-padding, 9px);
     display: flex;
     align-items: center;
     justify-content: center;
     line-height: 0;
-    font: 600 13px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #334155;
+    font: 600 var(--diagram-ui-font-size, 13px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    color: var(--diagram-ui-text-muted, #334155);
     cursor: pointer;
-    transition: border-color 100ms ease, background-color 100ms ease, color 100ms ease;
+    transition: border-color var(--diagram-ui-transition-fast, 100ms ease), background-color var(--diagram-ui-transition-fast, 100ms ease), color var(--diagram-ui-transition-fast, 100ms ease);
 }
 
 .editor-tool-list button svg {
@@ -69,14 +70,14 @@ const DEFAULT_STYLES = `
 
 .editor-tool-list button:hover,
 .editor-tool-list button:focus-visible {
-    border-color: rgba(15, 118, 110, 0.45);
-    color: #0f766e;
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    color: var(--diagram-ui-accent, #0f766e);
 }
 
 .editor-tool-list button.is-active {
-    background: #0f766e;
-    border-color: #0f766e;
-    color: #ffffff;
+    background: var(--diagram-ui-accent, #0f766e);
+    border-color: var(--diagram-ui-accent, #0f766e);
+    color: var(--diagram-ui-accent-contrast, #ffffff);
 }
 `;
 

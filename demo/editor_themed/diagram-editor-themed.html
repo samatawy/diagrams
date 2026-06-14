@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+    <title>DiagramEditor (Custom Theme)</title>
+    <link rel="stylesheet"
+          href="../demo.css" />
+    <style>
+        #diagram-editor-host {
+            position: relative;
+            height: 800px;
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <main class="page">
+        <div class="shell">
+            <header class="topbar">
+                <div class="brand">DiagramEditor (Custom Theme)</div>
+                <nav class="nav">
+                    <a href="../editor_simple/diagram-editor.html">Default theme</a>
+                    <a href="../view/decision-tree.html">View demo</a>
+                    <a href="../index.html">Demo gallery</a>
+                    <a href="../../index.html">Docs</a>
+                </nav>
+            </header>
+
+            <section class="canvas-card">
+                <p class="note">
+                    Same <code>DiagramEditor</code> as the default demo, but with a custom
+                    <code>ThemeRegistry</code> theme applied to the host before mount.
+                    No CSS overrides — only CSS variable tokens set on the container element.
+                </p>
+
+                <div id="diagram-editor-host"></div>
+
+                <section class="hint-grid"
+                         aria-label="Editor usage hints">
+                    <article class="hint-card">
+                        <h3>Theme via ThemeRegistry</h3>
+                        <p>Call <code>ThemeRegistry.apply(host, 'my-theme')</code> before or after mounting
+                            the editor. All components inside inherit the CSS variables automatically.</p>
+                    </article>
+                    <article class="hint-card">
+                        <h3>Partial Themes</h3>
+                        <p>Themes only need to specify the tokens they change. Every unset token falls back
+                            to the built-in default, so a theme that only tweaks accent color is one line.</p>
+                    </article>
+                    <article class="hint-card">
+                        <h3>Custom Layouts Too</h3>
+                        <p>Apply the theme to any wrapper div, not just a DiagramEditor host. Hand-wired
+                            standalone controls inside that div will also pick up the theme automatically.</p>
+                    </article>
+                    <article class="hint-card">
+                        <h3>Custom Toolbar Layout</h3>
+                        <p>This demo removes the first toolbar section (the file actions and their separator)
+                            by passing a custom <code>layout</code> into <code>DiagramEditor</code>. We start from
+                            <code>DEFAULT_LAYOUT</code>, drop everything through the first <code>|</code>, and keep the
+                            rest.
+                        </p>
+                    </article>
+                </section>
+            </section>
+        </div>
+    </main>
+    <script type="module"
+            src="./diagram-editor-themed.js"></script>
+</body>
+
+</html>

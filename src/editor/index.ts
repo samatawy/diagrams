@@ -14,3 +14,6 @@ export * from './diagram.tool.bar';
 
 // Editor component
 export * from './diagram.editor';
+
+// Theming
+export * from './theme.registry';

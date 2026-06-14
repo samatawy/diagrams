@@ -4,6 +4,7 @@ children:
   - ./use-model.md
   - ./use-view.md
   - ./use-editor.md
+  - ./customize-appearance.md
   - ./build-your-own-editor.md
   - ./operate-the-editor.md
 ---
@@ -19,6 +20,7 @@ This package intentionally starts small. It gives browser applications a typed m
 - [Use the model](use-model.md)
 - [Use the view](use-view.md)
 - [Use the editor](use-editor.md)
+- [Customize appearance](customize-appearance.md)
 - [Build your own editor](build-your-own-editor.md)
 - [Operate the editor](operate-the-editor.md)
 

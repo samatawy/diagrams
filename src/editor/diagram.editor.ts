@@ -67,21 +67,21 @@ const DIAGRAM_EDITOR_STYLES = `
     height: 100%;
     min-height: 0;
     box-sizing: border-box;
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    background: rgba(255, 255, 255, 0.82);
+    font-family: var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
 }
 .diagram-editor-header {
     flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--diagram-ui-control-gap, 4px);
     padding: 8px 8px 0;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+    border-bottom: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
 }
 .diagram-editor-toolbars {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: var(--diagram-ui-control-gap, 4px);
     align-items: flex-start;
     padding-bottom: 8px;
 }
@@ -93,8 +93,8 @@ const DIAGRAM_EDITOR_STYLES = `
     overflow: hidden;
 }
 .diagram-editor-tool-palette {
-    border-right: 1px solid rgba(15, 23, 42, 0.12);
-    padding: 8px 6px;
+    border-right: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    padding: 8px var(--diagram-ui-panel-padding, 6px);
     overflow-y: auto;
 }
 .diagram-editor-canvas {
@@ -115,26 +115,26 @@ const DIAGRAM_EDITOR_STYLES = `
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    padding: 6px 8px;
-    border: 1px solid rgba(15, 23, 42, 0.12);
-    border-radius: 12px;
+    gap: var(--diagram-ui-toolbar-gap, 6px);
+    padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    border-radius: var(--diagram-ui-panel-radius, 12px);
 }
 .diagram-editor-control-label {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--diagram-ui-toolbar-gap, 6px);
     margin-inline-start: 4px;
-    font: 600 12px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #475569;
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    color: var(--diagram-ui-text-muted, #475569);
 }
 .diagram-editor-shadow-enable-label {
     display: inline-flex;
     align-items: normal;
-    gap: 4px;
+    gap: var(--diagram-ui-control-gap, 4px);
     margin-inline-start: 4px;
-    font: 600 12px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #475569;
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    color: var(--diagram-ui-text-muted, #475569);
     cursor: pointer;
     user-select: none;
 }
@@ -142,17 +142,17 @@ const DIAGRAM_EDITOR_STYLES = `
     width: 14px;
     height: 14px;
     cursor: pointer;
-    accent-color: #0f766e;
+    accent-color: var(--diagram-ui-accent, #0f766e);
     margin: 0;
 }
 .diagram-editor-shadow-toolbar {
-    gap: 4px;
+    gap: var(--diagram-ui-control-gap, 4px);
 }
 .diagram-editor-shadow-toolbar .diagram-editor-control-label {
     min-width: 30px;
     justify-content: flex-end;
     margin-inline-start: 6px;
-    gap: 4px;
+    gap: var(--diagram-ui-control-gap, 4px);
 }
 `;
 

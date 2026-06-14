@@ -1,6 +1,5 @@
-import { NodeRegistry } from "../../factory/node.registry";
 import type { INode } from "../../interfaces";
-import { NodeHandle, type IPoint, type IRect } from "../../types";
+import type { IPoint, IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
@@ -143,7 +142,7 @@ export class ParallelogramAdapter extends RectangleAdapter {
         handles.lineTo(alter_rect.left + alter_rect.width - epsilon / 2, alter_rect.top + alter_rect.height);
         handles.lineTo(alter_rect.left, alter_rect.top + alter_rect.height);
         handles.closePath();
-        // handles.rect(alter_rect.left, alter_rect.top, alter_rect.width, alter_rect.height);
+
         context.fill(handles);
         context.stroke(handles);
     }

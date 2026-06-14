@@ -1,6 +1,5 @@
-import { NodeRegistry } from "../../factory/node.registry";
 import type { INode } from "../../interfaces";
-import { NodeHandle, type IPoint, type IRect } from "../../types";
+import type { IPoint, IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
@@ -37,10 +36,6 @@ export class RoundRectangleAdapter extends RectangleAdapter {
             let rect: IRect = { left: from.x, top: from.y, width: to.x - from.x, height: to.y - from.y }
 
             const radius = this.getCornerRadius(node, rect);
-            // let min_radius = Math.min(rect.width, rect.height) / 2;
-            // let max_radius = Math.max(rect.width, rect.height) / 4;
-            // let radius = Math.min(max_radius, min_radius);
-            // radius = Math.min(radius, 20);
 
             context.save();
             RenderBasics.prepare(node, context);

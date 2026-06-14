@@ -44,3 +44,21 @@ export function removeClasses(el: Element, ...names: string[]): void {
         el.classList.remove(name);
     }
 }
+
+/**
+ * Applies CSS custom properties to an element.
+ * Variable names may include or omit the leading `--`.
+ */
+export function applyCssVars(el: HTMLElement, vars?: Record<string, string | number>): void {
+    if (!vars) {
+        return;
+    }
+
+    for (const [name, value] of Object.entries(vars)) {
+        if (!name) {
+            continue;
+        }
+        const cssVarName = name.startsWith('--') ? name : `--${name}`;
+        el.style.setProperty(cssVarName, String(value));
+    }
+}

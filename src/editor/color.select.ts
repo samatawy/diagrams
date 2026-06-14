@@ -107,16 +107,16 @@ const DEFAULT_STYLES = `
     align-items: center;
     gap: 0;
     min-width: 172px;
-    border: 1px solid rgba(15, 23, 42, 0.15);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.88);
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 10px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
 }
 .color-preset-control.with-native-input.native-end {
     grid-template-columns: minmax(0, 1fr) 34px;
 }
 .color-preset-control.with-native-input:hover,
 .color-preset-control.with-native-input:focus-within {
-    border-color: rgba(15, 118, 110, 0.45);
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
 }
 .color-preset-trigger,
 .color-preset-control button[aria-haspopup='listbox'] {
@@ -124,26 +124,26 @@ const DEFAULT_STYLES = `
     display: grid;
     grid-template-columns: 1fr auto auto;
     align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
+    gap: var(--diagram-ui-control-gap, 8px);
+    padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
     cursor: pointer;
     appearance: none;
-    border: 1px solid rgba(15, 23, 42, 0.15);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.88);
-    color: #1f2937;
-    font: 600 12px/1.2 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 10px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text, #1f2937);
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
 }
 .color-preset-trigger::after {
     content: '▾';
-    font-size: 12px;
-    color: #334155;
+    font-size: var(--diagram-ui-font-size, 12px);
+    color: var(--diagram-ui-text-muted, #334155);
 }
 .color-preset-trigger:hover,
 .color-preset-trigger:focus-visible,
 .color-preset-control button[aria-haspopup='listbox']:hover,
 .color-preset-control button[aria-haspopup='listbox']:focus-visible {
-    border-color: rgba(15, 118, 110, 0.45);
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
 }
 .color-preset-swatch {
     width: 100%;
@@ -151,11 +151,11 @@ const DEFAULT_STYLES = `
     border-radius: 5px;
 }
 .color-preset-trigger .color-preset-swatch {
-    border: 1px solid rgba(15, 23, 42, 0.2);
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.2));
 }
 .color-preset-label {
-    font: 600 11px/1.1 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    color: #334155;
+    font: 600 var(--diagram-ui-label-font-size, 11px)/1.1 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    color: var(--diagram-ui-text-muted, #334155);
     text-transform: lowercase;
     justify-self: end;
 }
@@ -163,20 +163,20 @@ const DEFAULT_STYLES = `
     position: absolute;
     left: 0;
     right: 0;
-    top: calc(100% + 6px);
+    top: calc(100% + var(--diagram-ui-control-gap, 6px));
     z-index: 40;
-    border: 1px solid rgba(15, 23, 42, 0.15);
-    border-radius: 10px;
-    background: #ffffff;
-    padding: 6px;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-panel-radius, 10px);
+    background: var(--diagram-ui-surface-elevated, #ffffff);
+    padding: var(--diagram-ui-panel-padding, 6px);
     display: none;
     max-height: 220px;
     overflow: auto;
-    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+    box-shadow: 0 10px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
 }
 .color-preset-control.is-open .color-preset-menu {
     display: grid;
-    gap: 6px;
+    gap: var(--diagram-ui-group-gap, 6px);
 }
 .color-preset-control.with-native-input.native-end .color-preset-menu {
     right: 40px;
@@ -189,30 +189,30 @@ const DEFAULT_STYLES = `
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
-    gap: 8px;
+    gap: var(--diagram-ui-group-gap, 8px);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--diagram-ui-control-radius, 6px);
     background: transparent;
-    padding: 4px 6px;
+    padding: var(--diagram-ui-group-gap, 4px) var(--diagram-ui-control-padding-x, 6px);
     cursor: pointer;
     font: inherit;
 }
 .color-preset-option:hover,
 .color-preset-option.is-selected {
-    background: rgba(15, 118, 110, 0.1);
+    background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
 }
 .color-preset-custom-option {
     text-transform: lowercase;
 }
 .color-preset-custom-option .color-preset-swatch {
     background: linear-gradient(90deg, #ff0000 0%, #00ff00 50%, #0000ff 100%);
-    border: 1px solid rgba(15, 23, 42, 0.16);
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.16));
 }
 .color-preset-native-input {
-    border: 1px solid rgba(15, 23, 42, 0.15);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.88);
-    color: #1f2937;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 10px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text, #1f2937);
     width: 34px;
     height: 32px;
     padding: 2px;
@@ -241,25 +241,25 @@ const DEFAULT_STYLES = `
     padding: 5px;
 }
 .color-preset-control.with-native-input.native-start .color-preset-native-input {
-    border-right: 1px solid rgba(15, 23, 42, 0.12);
+    border-right: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
 }
 .color-preset-control.with-native-input.native-end .color-preset-native-input {
-    border-left: 1px solid rgba(15, 23, 42, 0.12);
+    border-left: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
 }
 .color-preset-native-input:hover,
 .color-preset-native-input:focus-visible {
-    border-color: rgba(15, 118, 110, 0.45);
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
 }
 .color-preset-native-input::-webkit-color-swatch-wrapper {
     padding: 1px;
 }
 .color-preset-native-input::-webkit-color-swatch {
     border: none;
-    border-radius: 6px;
+    border-radius: var(--diagram-ui-control-radius, 6px);
 }
 .color-preset-native-input::-moz-color-swatch {
     border: none;
-    border-radius: 6px;
+    border-radius: var(--diagram-ui-control-radius, 6px);
 }
 `;
 
