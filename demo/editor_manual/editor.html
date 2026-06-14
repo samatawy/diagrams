@@ -7,9 +7,9 @@
           content="width=device-width, initial-scale=1" />
     <title>Editor Demo</title>
     <link rel="stylesheet"
-            href="../demo.css" />
+          href="../demo.css" />
     <link rel="stylesheet"
-            href="./demo-editor.css" />
+          href="./demo-editor.css" />
 </head>
 
 <body>
@@ -18,7 +18,8 @@
             <header class="topbar">
                 <div class="brand">Kitchen Sink Editor</div>
                 <nav class="nav">
-                    <a href="../index.html">All demos</a>
+                    <a href="../view/decision-tree.html">View demo</a>
+                    <a href="../index.html">Demo gallery</a>
                     <a href="../../index.html">Docs</a>
                 </nav>
             </header>
@@ -856,24 +857,25 @@
                 <section class="hint-grid"
                          aria-label="Editor usage hints">
                     <article class="hint-card">
-                        <h3>Selection & Move</h3>
-                        <p>Click a node to select it. Drag to move. Hold Shift and drag for marquee selection. Hold
-                            Space and drag to pan the canvas.</p>
+                        <h3>Navigate Fast</h3>
+                        <p>Hold <strong>Space</strong> + pointer drag to pan. Use wheel/pinch to zoom and use
+                            <strong>Fit all</strong> if you lose your place.
+                        </p>
                     </article>
                     <article class="hint-card">
-                        <h3>Shape Editing</h3>
-                        <p>Use corner and edge handles to resize. Use the rotate handle on the right side to rotate.
-                            Hold Alt while rotating to snap angles.</p>
+                        <h3>Create & Transform</h3>
+                        <p>Select a shape tool and drag to create. Use corner/edge handles to resize and the right-side
+                            rotate handle to rotate; hold <strong>Alt</strong> to snap angles.</p>
                     </article>
                     <article class="hint-card">
-                        <h3>Lines & Points</h3>
-                        <p>For polyline-like tools, hold Alt and click a segment to insert a point. Hold Alt and click
-                            an inner point to remove it.</p>
+                        <h3>Selection Tricks</h3>
+                        <p>Shift+drag creates a marquee. Cmd/Ctrl+click toggles nodes in selection so you can align,
+                            distribute, and move groups precisely.</p>
                     </article>
                     <article class="hint-card">
-                        <h3>Text & Shortcuts</h3>
-                        <p>Press Enter to edit text on a selected text-capable shape. Use Cmd/Ctrl+C, X, V, Z,
-                            Shift+Z/Y, and Delete/Backspace as expected.</p>
+                        <h3>Keyboard Workflow</h3>
+                        <p>Press <strong>Enter</strong> to edit text on selected nodes. Use Cmd/Ctrl+C, X, V, Z,
+                            Shift+Z/Y, Delete/Backspace, and <strong>Esc</strong> to finish active drawing.</p>
                     </article>
                 </section>
             </section>

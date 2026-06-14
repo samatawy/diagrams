@@ -1,7 +1,7 @@
 {
   "name": "@samatawy/diagrams",
   "version": "0.1.0",
-  "description": "Browser-first TypeScript primitives for diagram models and viewport transforms.",
+  "description": "TypeScript library for designing, viewing, and managing diagrams.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -40,14 +40,23 @@
   },
   "keywords": [
     "typescript",
-    "browser",
+    "viewer",
+    "editor",
     "diagram",
-    "viewport",
-    "svg",
+    "graph",
+    "illustration",
     "canvas"
   ],
   "author": "Sam Atawy <sam.atawy@gmail.com>",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samatawy/diagrams.git"
+  },
+  "bugs": {
+    "url": "https://github.com/samatawy/diagrams/issues"
+  },
+  "homepage": "https://samatawy.github.io/diagrams/",
   "devDependencies": {
     "@types/node": "^24.3.1",
     "jsdom": "^26.1.0",
