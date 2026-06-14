@@ -5,6 +5,7 @@ export * from './selection.basics';
 
 export * from './rectangle/rectangle.adapter';
 export * from './rectangle/round.rectangle.adapter';
+export * from './rectangle/parallelogram.adapter';
 export * from './rectangle/ellipse.adapter';
 export * from './rectangle/rhombus.adapter';
 export * from './rectangle/text.adapter';

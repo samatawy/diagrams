@@ -1,6 +1,6 @@
 import { NodeRegistry } from "../../factory/node.registry";
 import type { IGrid, INode } from "../../interfaces";
-import { NodeHandle, type IPoint } from "../../types";
+import { NodeHandle, type IPoint, type IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RenderBasics } from "../render.basics";
@@ -42,7 +42,7 @@ export class RectangleAdapter implements INodeAdapter {
         NodeRegistry.register(this.name, this);
     }
 
-    public hitTest(node: INode, point: IPoint): NodeHandle | undefined {
+    public hitTest(node: INode, point: IPoint): NodeHandle {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return NodeHandle.NONE;
         const coordinates = diagram.getCoordinates();
@@ -73,6 +73,10 @@ export class RectangleAdapter implements INodeAdapter {
             if (Math.abs(rect.left + rect.width + 8 + epsilon - x) <= epsilon &&
                 Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.ROTATE;
 
+            if (this.hitTestAlter(node, rect, { x, y })) {
+                return NodeHandle.ALTER;
+            }
+
             if (cached?.text_path && coordinates.isPointInPath(cached.text_path, x, y)) {
                 return NodeHandle.MOVE;
             }
@@ -88,6 +92,30 @@ export class RectangleAdapter implements INodeAdapter {
             return inpath ? NodeHandle.MOVE : NodeHandle.NONE;
         }
         return NodeHandle.NONE;
+    }
+
+    /**
+     * Child adapters can override this method to provide custom hit testing logic for the ALTER handle.
+     * This method is called during hit testing to determine if the point is within the ALTER handle's bounding rectangle.
+     * No transformation necessary here (already performed).
+     * @param node The node being tested.
+     * @param rect The bounding rectangle of the node.
+     * @param point The point to test.
+     * @returns True if the point is within the ALTER handle's bounding rectangle, false otherwise.
+     */
+    protected hitTestAlter(node: INode, rect: IRect, point: IPoint): boolean {
+        return false;
+    }
+
+    /**
+     * Renders the node on the provided canvas context. It draws the rectangle shape, applies fill and stroke styles, and renders any text associated with the node.
+     * This method is called while rendering selection.
+     * No transformation necessary here (already performed).
+     * @param node The node to render.
+     * @param context The canvas rendering context.
+     * @param rect The bounding rectangle of the node.
+     */
+    protected renderAlterHandle(node: INode, context: CanvasRenderingContext2D, rect: IRect): void {    //}, angle: number, cos: number, sin: number): void {
     }
 
     public onCreateMove(node: INode, point: IPoint): void {
@@ -202,6 +230,8 @@ export class RectangleAdapter implements INodeAdapter {
 
             context.fill(handles);
             context.stroke(handles);
+
+            this.renderAlterHandle(node, context, rect);
 
             context.restore();
         }

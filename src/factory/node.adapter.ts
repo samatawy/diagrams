@@ -78,12 +78,20 @@ export interface INodeAdapter {
     onCreateMove(node: INode, point: IPoint): void;
 
     /**
+     * Updates a custom handle position while the user is dragging it.
+     * Called on every pointermove while a handle drag is active.
+     * @param node The node being altered.
+     * @param point The current world-space cursor position.
+     */
+    onAlterMove?(node: INode, point: IPoint): void;
+
+    /**
      * Performs a hit test on the given node with the specified point.
      * @param node The node to test.
      * @param point The point to test against the node.
-     * @returns The handle of the node that was hit, or undefined if no hit occurred.
+     * @returns The handle of the node that was hit, or NodeHandle.NONE if no hit occurred.
      */
-    hitTest(node: INode, point: IPoint): NodeHandle | undefined;
+    hitTest(node: INode, point: IPoint): NodeHandle;
 
     /**
      * Snaps the given node to the specified grid by modifying its points.

@@ -6,6 +6,7 @@ import { isNodeRuntime, writeTextFile } from '../io/node.support';
 import type { DiagramExportFormat, DiagramSaveOptions } from "../io/export.types";
 import { AssetStore } from "../view/asset.store";
 import { DiagramConstants, GRID_LINE_COLOR, GRID_CELL_HEIGHT, GRID_CELL_WIDTH } from "./diagram.constants";
+import type { ImageMode } from "../types";
 
 const defaultGrid: IGrid = {
     forced: false,
@@ -161,7 +162,7 @@ export class Diagram implements IDiagram {
     /**
      * Assigns an image source to a node for background/content rendering.
      */
-    public setNodeImageSource(node: string | INode, imageSrc: string, mode: 'pattern' | 'frame' = 'frame', imageId?: string): INode | undefined {
+    public setNodeImageSource(node: string | INode, imageSrc: string, mode: ImageMode = 'frame', imageId?: string): INode | undefined {
         const target = this.resolveNode(node);
         if (!target || !imageSrc) {
             return target;
@@ -175,7 +176,7 @@ export class Diagram implements IDiagram {
      * Assigns SVG markup or SVG source URL/data URL to a node.
      * Raw SVG markup is converted to a data URL.
      */
-    public setNodeSvgSource(node: string | INode, svgOrSrc: string, mode: 'pattern' | 'frame' = 'frame', imageId?: string): INode | undefined {
+    public setNodeSvgSource(node: string | INode, svgOrSrc: string, mode: ImageMode = 'frame', imageId?: string): INode | undefined {
         const source = this.toSvgSource(svgOrSrc);
         return this.setNodeImageSource(node, source, mode, imageId);
     }
@@ -376,7 +377,7 @@ export class Diagram implements IDiagram {
         return `data:image/svg+xml;utf8,${encodeURIComponent(trimmed)}`;
     }
 
-    protected applyNodeImageSource(target: INode, imageSrc: string, mode: 'pattern' | 'frame' = 'frame', imageId?: string): void {
+    protected applyNodeImageSource(target: INode, imageSrc: string, mode: ImageMode = 'frame', imageId?: string): void {
         target.image_id = this.assetStore.register(imageSrc, imageId);
         target.img_mode = mode;
     }

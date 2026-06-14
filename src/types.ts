@@ -41,10 +41,30 @@ export type ITextAlign = 'left' | 'center' | 'right';
 export type ITextBaseline = 'top' | 'middle' | 'bottom';
 
 /**
+ * ImageMode defines how an image is rendered within a node. The options are:
+ * - 'pattern': The image is repeated to fill the node's area, creating a pattern effect.
+ * - 'frame': The image is drawn once and scaled to fit the node's area, maintaining its aspect ratio.
+ * - 'none': The image is not rendered within the node.
+ * This property allows for flexible use of images in nodes, enabling both decorative patterns and single-image frames depending on the desired visual style.
+ */
+export type ImageMode = 'pattern' | 'frame' | 'none';
+
+/**
+ * ArrowDirection defines the possible directions for arrows on connections between nodes. The options are:
+ * - 'start': An arrow is drawn at the starting point of the connection.
+ * - 'end': An arrow is drawn at the ending point of the connection.
+ * - 'both': Arrows are drawn at both the starting and ending points of the connection.
+ * - 'none': No arrows are drawn on the connection.
+ * This property allows for clear visual indication of the directionality of connections between nodes in the diagram, which can be important for understanding flow and relationships.
+ */
+export type ArrowDirection = 'start' | 'end' | 'both' | 'none';
+
+/**
  * NodeHandle represents the different types of handles that can be used for manipulating nodes in the diagram.
  * - MOVE: A handle for moving the entire node.
  * - POINT: A handle for manipulating individual points of a node (e.g., for a polyline).
  * - ROTATE: A handle for rotating the node.
+ * - ALTER: A handle for altering the geometry of the node.
  * - N, S, E, W: Handles for resizing the node from the north, south, east, and west sides, respectively.
  * - NE, NW, SE, SW: Handles for resizing the node from the northeast, northwest, southeast, and southwest corners, respectively.
  * - NONE: Indicates that no handle is active or selected.
@@ -64,5 +84,6 @@ export enum NodeHandle {
     NW = 'nw',
     SE = 'se',
     SW = 'sw',
+    ALTER = 'alter',
     NONE = 'none'
 }

@@ -48,7 +48,7 @@ export class PolylineAdapter implements INodeAdapter {
         NodeRegistry.register(this.name, this);
     }
 
-    public hitTest(node: INode, point: IPoint): NodeHandle | undefined {
+    public hitTest(node: INode, point: IPoint): NodeHandle {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return NodeHandle.NONE;
         const coordinates = diagram.getCoordinates();

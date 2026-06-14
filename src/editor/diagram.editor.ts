@@ -1,7 +1,6 @@
 import { DiagramEditView, type DiagramEditViewPrompts } from "../editview/diagram.edit.view";
 import {
     DiagramFileDialogs,
-    jsonSerializer,
     type DiagramExportOptions,
     type DiagramExportHandler,
     type DiagramOpenHandler,
@@ -21,7 +20,7 @@ import { ToolPalette, type ToolPaletteConfig } from "./tool.palette";
 import { DIAGRAM_CHANGED_EVENT } from "../events/diagram.events";
 import { WidthSelect, type WidthSelectConfig } from "./width.select";
 import { ArrowSelect, type ArrowSelectConfig } from "./arrow.select";
-import type { ArrowDirection } from "../shadows";
+import type { ArrowDirection } from "../types";
 import { IntegerRangeSelect, type IntegerRangeSelectConfig } from "./integer.range.select";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';

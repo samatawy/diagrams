@@ -1,4 +1,5 @@
 import type { Serializable } from "./io/serialized.types";
+import type { ArrowDirection, ImageMode } from "./types";
 import type { ShadowStyle } from "./shadows";
 import type { IPoint, ITextAlign, ITextBaseline, NodeHandle } from "./types";
 
@@ -69,7 +70,7 @@ export interface INode {
      * - 'frame' to draw the image once within the node's bounding box, or
      * - 'none' to not render the image at all.
      */
-    img_mode?: 'pattern' | 'frame' | 'none';
+    img_mode?: ImageMode;
 
     /**
      * Indicates whether the node is ready to be rendered, which can be used to control the creation process
@@ -107,7 +108,7 @@ export interface INode {
      */
     lineWidth?: number;
 
-    arrow?: 'forward' | 'backward' | 'both' | 'none';
+    arrow?: ArrowDirection;
 
     /**
      * The shadow style of the node, which can be used to apply a shadow effect to the node.
@@ -121,6 +122,10 @@ export interface INode {
     // The following are cached in the diagram's ViewCache
     // cos?: number;
     // sin?: number;
+
+    geometry?: Record<string, number>;
+
+    meta?: Record<string, unknown>;
 }
 
 /**
@@ -268,8 +273,8 @@ export interface IDiagram extends Serializable {
     upsertLayer(layer: string | ILayer): ILayer;
     deleteLayer(id: string): void;
 
-    setNodeImageSource(node: string | INode, imageSrc: string, mode?: 'pattern' | 'frame', imageId?: string): INode | undefined;
-    setNodeSvgSource(node: string | INode, svgOrSrc: string, mode?: 'pattern' | 'frame', imageId?: string): INode | undefined;
+    setNodeImageSource(node: string | INode, imageSrc: string, mode?: ImageMode, imageId?: string): INode | undefined;
+    setNodeSvgSource(node: string | INode, svgOrSrc: string, mode?: ImageMode, imageId?: string): INode | undefined;
     clearNodeImageSource(node: string | INode): INode | undefined;
     resolveNodeImageSource(node: string | INode): string | undefined;
     destroy(): void;

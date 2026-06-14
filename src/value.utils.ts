@@ -1,6 +1,6 @@
 import type { INode } from "./interfaces";
 import type { ShadowStyle } from "./shadows";
-import type { ITextAlign, ITextBaseline } from "./types";
+import type { ImageMode, ITextAlign, ITextBaseline } from "./types";
 
 export function textAlign(node: INode): ITextAlign {
     return node.textAlign || 'center';
@@ -46,7 +46,7 @@ export function isHollow(node: INode): boolean {
     }
 }
 
-export function imageMode(node: INode): 'pattern' | 'frame' | 'none' {
+export function imageMode(node: INode): ImageMode {
     return node.img_mode || 'none';
 }
 

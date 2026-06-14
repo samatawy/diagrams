@@ -240,12 +240,15 @@ IconRegistry.registerSymbol('rectangle', 'tool-rectangle',
 IconRegistry.registerSymbol('round_rectangle', 'tool-round-rect',
     sym('tool-round-rect', '<rect x="3" y="5" width="18" height="14" rx="5"/>'));
 
+
+IconRegistry.registerSymbol('parallelogram', 'tool-parallelogram',
+    sym('tool-parallelogram', '<polygon points="6 5 21 5 18 19 3 19"/>'));
+
 IconRegistry.registerSymbol('ellipse', 'tool-ellipse',
     sym('tool-ellipse', '<ellipse cx="12" cy="12" rx="10" ry="7"/>'));
 
 IconRegistry.registerSymbol('rhombus', 'tool-rhombus',
     sym('tool-rhombus', '<polygon points="12 2 22 12 12 22 2 12"/>'));
-
 IconRegistry.registerSymbol('text', 'tool-text',
     sym('tool-text', '<line x1="4" y1="6" x2="20" y2="6"/><line x1="12" y1="6" x2="12" y2="20"/>'));
 

@@ -1,9 +1,9 @@
 import { Diagram } from "../model/diagram";
 import type { IConnection, IConnectionAnchor, IGrid, ILayer, INode } from "../interfaces";
 import { DiagramView } from "../view/diagram.view";
-import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline } from "../types";
+import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode } from "../types";
 import { HistoryStack } from "./history";
-import type { ArrowDirection, ShadowStyle } from "../shadows";
+import type { ShadowStyle } from "../shadows";
 
 import { isConnection, isNode } from "../guards";
 
@@ -1962,6 +1962,14 @@ export class DiagramEditView extends DiagramView {
                     }
                     break;
 
+                case NodeHandle.ALTER:
+                    if (this.downShape) {
+                        const movePos = { x: event.offsetX, y: event.offsetY };
+                        NodeRegistry.adapter(this.downShape.type)?.onAlterMove?.(this.downShape, movePos);
+                        this.render('all');
+                    }
+                    break;
+
                 case NodeHandle.NONE:
                     if (this.downRect) {
                         let movePos = { x: event.offsetX, y: event.offsetY }
@@ -2893,7 +2901,7 @@ export class DiagramEditView extends DiagramView {
     /**
      * Applies an image source to all currently selected nodes.
      */
-    public setSelectedNodeImageSource(imageSrc: string, mode: 'pattern' | 'frame' = 'frame', imageId?: string): void {
+    public setSelectedNodeImageSource(imageSrc: string, mode: ImageMode = 'frame', imageId?: string): void {
         if (!imageSrc) {
             return;
         }
@@ -2913,7 +2921,7 @@ export class DiagramEditView extends DiagramView {
     /**
      * Applies SVG markup or source URL/data URL to all currently selected nodes.
      */
-    public setSelectedNodeSvgSource(svgOrSrc: string, mode: 'pattern' | 'frame' = 'frame', imageId?: string): void {
+    public setSelectedNodeSvgSource(svgOrSrc: string, mode: ImageMode = 'frame', imageId?: string): void {
         if (!svgOrSrc) {
             return;
         }

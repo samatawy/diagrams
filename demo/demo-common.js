@@ -6,6 +6,7 @@ import {
     NodeHandle,
     RectangleAdapter,
     RoundRectangleAdapter,
+    ParallelogramAdapter,
     EllipseAdapter,
     RhombusAdapter,
     TextAdapter,
@@ -23,6 +24,7 @@ export const EDITOR_TOOL_DEFS = [
     { key: 'rectangle', label: 'Rectangle' },
     { key: 'round_rectangle', label: 'Round Rect' },
     { key: 'ellipse', label: 'Ellipse' },
+    { key: 'parallelogram', label: 'Parallelogram' },
     { key: 'rhombus', label: 'Rhombus' },
     { key: 'text', label: 'Text' },
     { key: 'svg', label: 'Svg' },
@@ -38,6 +40,7 @@ export function registerAdapters() {
 
     RectangleAdapter.register();
     RoundRectangleAdapter.register();
+    ParallelogramAdapter.register();
     // EllipseAdapter.register();
     RhombusAdapter.register();
     TextAdapter.register();

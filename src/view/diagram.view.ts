@@ -6,7 +6,7 @@ import { isNodeRuntime, writeBinaryFile } from "../io/node.support";
 import { CanvasImageSerializer } from "../io/image.serializer";
 import { FitViewport } from "../layout/fit.viewport";
 import { Diagram } from "../model/diagram";
-import type { IRect } from "../types";
+import type { ImageMode, IRect } from "../types";
 import { NodeHandle } from "../types";
 import {
     type DiagramViewportChange,
@@ -432,7 +432,7 @@ export class DiagramView extends Diagram implements HasSelection {
         this.render();
     }
 
-    public override setNodeImageSource(node: string | INode, imageSrc: string, mode: 'pattern' | 'frame' = 'frame', imageId?: string): INode | undefined {
+    public override setNodeImageSource(node: string | INode, imageSrc: string, mode: ImageMode = 'frame', imageId?: string): INode | undefined {
         const updated = super.setNodeImageSource(node, imageSrc, mode, imageId);
         if (!updated) {
             return updated;
@@ -443,7 +443,7 @@ export class DiagramView extends Diagram implements HasSelection {
         return updated;
     }
 
-    public override setNodeSvgSource(node: string | INode, svgOrSrc: string, mode: 'pattern' | 'frame' = 'frame', imageId?: string): INode | undefined {
+    public override setNodeSvgSource(node: string | INode, svgOrSrc: string, mode: ImageMode = 'frame', imageId?: string): INode | undefined {
         const updated = super.setNodeSvgSource(node, svgOrSrc, mode, imageId);
         if (!updated) {
             return updated;
@@ -672,7 +672,6 @@ export class DiagramView extends Diagram implements HasSelection {
     protected hitNode(x: number, y: number): INode | undefined {
         for (let layer of this.layers) {
             if (!layer.visible) continue;
-            const context = this.cache.getLayer(layer)?.context;
 
             const nodes = this.layerNodes(layer);
 
@@ -757,6 +756,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
             case NodeHandle.POINT: return 'move';
             case NodeHandle.ROTATE: return 'pointer';
+            case NodeHandle.ALTER: return 'pointer';
         }
     }
 
