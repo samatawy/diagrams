@@ -128,6 +128,7 @@ describe('DiagramEditable', () => {
 
     class FakePath2D {
         rect(): void { }
+        roundRect(): void { }
         arc(): void { }
         moveTo(): void { }
         lineTo(): void { }

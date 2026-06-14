@@ -69,6 +69,16 @@ function createContext(): CanvasRenderingContext2D {
     } as unknown as CanvasRenderingContext2D;
 }
 
+function makeNode(id: string, x1: number, y1: number, x2: number, y2: number, owner: DiagramEditView): INode {
+    return {
+        id,
+        type: 'rectangle',
+        points: [{ x: x1, y: y1 }, { x: x2, y: y2 }],
+        strokeStyle: '#000000',
+        owner,
+    };
+}
+
 function nodeAt(node: INode, x: number, y: number): boolean {
     const left = Math.min(node.points[0]!.x, node.points[1]!.x);
     const right = Math.max(node.points[0]!.x, node.points[1]!.x);
@@ -133,6 +143,7 @@ describe('DiagramEditable', () => {
 
     class FakePath2D {
         rect(): void { }
+        roundRect(): void { }
         arc(): void { }
         moveTo(): void { }
         lineTo(): void { }
@@ -203,26 +214,7 @@ describe('DiagramEditable', () => {
         const host = createHost(400, 300);
         const editable = new TestDiagramEditView('demo', host);
         const layer = editable.upsertLayer('main');
-        const node: INode = {
-            id: 'node-1',
-            type: 'rectangle',
-            points: [{ x: 10, y: 20 }, { x: 110, y: 80 }],
-            hollow: false,
-            text: 'Node',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editable,
-        };
+        const node = makeNode('node-1', 10, 20, 110, 80, editable);
 
         editable.upsertNode(node);
         layer.nodes.push(node.id);
@@ -249,26 +241,7 @@ describe('DiagramEditable', () => {
         host.addEventListener(DIAGRAM_NODE_DELETED_EVENT, event => {
             deleted.push((event as CustomEvent<DiagramNodeChange>).detail.nodeId);
         });
-        const node: INode = {
-            id: 'node-1',
-            type: 'rectangle',
-            points: [{ x: 10, y: 20 }, { x: 110, y: 80 }],
-            hollow: false,
-            text: 'Node',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editable,
-        };
+        const node = makeNode('node-1', 10, 20, 110, 80, editable);
 
         editable.upsertNode(node);
         layer.nodes.push(node.id);
@@ -290,46 +263,8 @@ describe('DiagramEditable', () => {
         const host = createHost(400, 300);
         const editview = new TestDiagramEditView('demo', host);
         const layer = editview.upsertLayer('main');
-        const first: INode = {
-            id: 'node-1',
-            type: 'rectangle',
-            points: [{ x: 10, y: 20 }, { x: 110, y: 80 }],
-            hollow: false,
-            text: 'One',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
-        const second: INode = {
-            id: 'node-2',
-            type: 'rectangle',
-            points: [{ x: 140, y: 20 }, { x: 240, y: 80 }],
-            hollow: false,
-            text: 'Two',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
+        const first = makeNode('node-1', 10, 20, 110, 80, editview);
+        const second = makeNode('node-2', 140, 20, 240, 80, editview);
 
         editview.upsertNode(first);
         editview.upsertNode(second);
@@ -472,46 +407,8 @@ describe('DiagramEditable', () => {
         const host = createHost(400, 300);
         const editview = new TestDiagramEditView('demo', host);
         const layer = editview.upsertLayer('main');
-        const first: INode = {
-            id: 'node-1',
-            type: 'rectangle',
-            points: [{ x: 10, y: 20 }, { x: 110, y: 80 }],
-            hollow: false,
-            text: 'One',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
-        const second: INode = {
-            id: 'node-2',
-            type: 'rectangle',
-            points: [{ x: 140, y: 20 }, { x: 240, y: 80 }],
-            hollow: false,
-            text: 'Two',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
+        const first = makeNode('node-1', 10, 20, 110, 80, editview);
+        const second = makeNode('node-2', 140, 20, 240, 80, editview);
 
         editview.upsertNode(first);
         editview.upsertNode(second);
@@ -585,26 +482,7 @@ describe('DiagramEditable', () => {
         host.addEventListener(DIAGRAM_NODE_MOVED_EVENT, event => {
             moved.push((event as CustomEvent<DiagramNodeChange>).detail.nodeId);
         });
-        const node: INode = {
-            id: 'node-1',
-            type: 'rectangle',
-            points: [{ x: 10, y: 20 }, { x: 110, y: 80 }],
-            hollow: false,
-            text: 'Node',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
+        const node = makeNode('node-1', 10, 20, 110, 80, editview);
 
         editview.upsertNode(node);
         layer.nodes.push(node.id);
@@ -645,46 +523,8 @@ describe('DiagramEditable', () => {
         const host = createHost(400, 300);
         const editview = new TestDiagramEditView('demo', host);
         const layer = editview.upsertLayer('main');
-        const first: INode = {
-            id: 'node-1',
-            type: 'rectangle',
-            points: [{ x: 10, y: 20 }, { x: 110, y: 80 }],
-            hollow: false,
-            text: 'One',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
-        const second: INode = {
-            id: 'node-2',
-            type: 'rectangle',
-            points: [{ x: 140, y: 20 }, { x: 240, y: 80 }],
-            hollow: false,
-            text: 'Two',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
+        const first = makeNode('node-1', 10, 20, 110, 80, editview);
+        const second = makeNode('node-2', 140, 20, 240, 80, editview);
 
         editview.upsertNode(first);
         editview.upsertNode(second);
@@ -729,26 +569,7 @@ describe('DiagramEditable', () => {
         const host = createHost(400, 300);
         const editview = new TestDiagramEditView('demo', host);
         const layer = editview.upsertLayer('main');
-        const node: INode = {
-            id: 'node-1',
-            type: 'rectangle',
-            points: [{ x: 10, y: 20 }, { x: 110, y: 80 }],
-            hollow: false,
-            text: 'One',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: false,
-            transparent: false,
-            strokeStyle: '#000000',
-            fillStyle: '#ffffff',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
-            owner: editview,
-        };
+        const node = makeNode('node-1', 10, 20, 110, 80, editview);
 
         editview.upsertNode(node);
         layer.nodes.push(node.id);
@@ -800,19 +621,9 @@ describe('DiagramEditable', () => {
             type: 'polyline',
             points: [{ x: 20, y: 20 }, { x: 120, y: 20 }, { x: 120, y: 120 }],
             hollow: true,
-            text: '',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: true,
             transparent: true,
+            ready: true,
             strokeStyle: '#000000',
-            fillStyle: 'transparent',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
             owner: editview,
         };
 
@@ -872,19 +683,9 @@ describe('DiagramEditable', () => {
             type: 'polyline',
             points: [{ x: 20, y: 20 }, { x: 70, y: 20 }, { x: 120, y: 20 }, { x: 120, y: 120 }],
             hollow: true,
-            text: '',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            font: '16px Tahoma',
-            img_mode: 'none',
-            ready: true,
             transparent: true,
+            ready: true,
             strokeStyle: '#000000',
-            fillStyle: 'transparent',
-            textColor: '#000000',
-            lineWidth: 1,
-            shadowStyle: undefined,
-            angle: 0,
             owner: editview,
         };
 

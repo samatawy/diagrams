@@ -2,6 +2,7 @@ import type { INode } from "../interfaces";
 import { NodeHandle, type IRect } from "../types";
 import { isDiagramViewLike, isNode } from "../guards";
 import type { INodeCached } from "../view/view.cache";
+import { isHollow } from "../value.utils";
 
 /**
  * Provides basic operations for manipulating nodes, such as moving, resizing, rotating, and checking for overlaps or containment.
@@ -261,7 +262,7 @@ export class NodeBasics {
                     let inpath: boolean = false;
                     if (cached.path && coordinates) {
                         // this.owner.context.lineWidth = 25;
-                        inpath = (node.hollow) ?
+                        inpath = isHollow(node) ?
                             coordinates.isPointInStroke(cached.path, x, y) :
                             coordinates.isPointInPath(cached.path, x, y);
                     }

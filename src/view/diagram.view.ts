@@ -20,6 +20,7 @@ import {
     type DiagramViewOptions,
     type DiagramSelectionOptions,
 } from "./view.options";
+import { DiagramConstants } from "../model/diagram.constants";
 
 
 /**
@@ -331,8 +332,8 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param padding The padding to apply around the content.
      * @param alignment The alignment of the content within the viewport.
      */
-    public fitToWidth(padding: number = 32, alignment?: FitAlign): void {
-        this.fitViewport.fitToWidth(padding, alignment);
+    public fitToWidth(options?: { padding?: number, alignment?: FitAlign }): void {
+        this.fitViewport.fitToWidth(options);
         this.emitViewportEvents(true, true);
         this.render();
     }
@@ -342,8 +343,8 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param padding The padding to apply around the content.
      * @param alignment The alignment of the content within the viewport.
      */
-    public fitToNodes(padding: number = 32, alignment?: FitAlign): void {
-        this.fitViewport.fitToNodes(padding, alignment);
+    public fitToNodes(options?: { padding?: number, alignment?: FitAlign }): void {
+        this.fitViewport.fitToNodes(options);
         this.emitViewportEvents(true, true);
         this.render();
     }
@@ -506,8 +507,8 @@ export class DiagramView extends Diagram implements HasSelection {
 
     private renderGrid(context: CanvasRenderingContext2D): void {
         const { zoom, pan } = this.coordinates;
-        const cellW = (this.grid.width || 20) * zoom;
-        const cellH = (this.grid.height || 20) * zoom;
+        const cellW = (this.grid.width || DiagramConstants.GRID_CELL_WIDTH) * zoom;
+        const cellH = (this.grid.height || DiagramConstants.GRID_CELL_HEIGHT) * zoom;
         const canvasW = this.canvas!.width;
         const canvasH = this.canvas!.height;
 
@@ -516,7 +517,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
         context.save();
         context.setTransform(1, 0, 0, 1, 0, 0);
-        context.strokeStyle = this.grid.color || 'lightgray';
+        context.strokeStyle = this.grid.color || DiagramConstants.GRID_LINE_COLOR;   // lightgray
         context.lineWidth = 0.5;
         context.globalAlpha = 0.6;
         context.beginPath();
@@ -554,7 +555,7 @@ export class DiagramView extends Diagram implements HasSelection {
      * @returns A promise that resolves to a Blob containing the exported image.
      */
     public async exportImage(options: ImageWriteOptions = {}, serializer: ImageSerializer = new CanvasImageSerializer()): Promise<Blob> {
-        const padding = Number.isFinite(options.padding) ? Math.max(0, options.padding!) : 16;
+        const padding = Number.isFinite(options.padding) ? Math.max(0, options.padding!) : DiagramConstants.EXPORT_IMAGE_PADDING;
         const exportCanvas = this.createExportCanvas(padding);
         return serializer.write(exportCanvas, options);
     }
@@ -1007,12 +1008,12 @@ export class DiagramView extends Diagram implements HasSelection {
         const mode = initialView?.mode || 'saved';
 
         if (mode === 'fit-all') {
-            this.fitViewport.fitToNodes(initialView?.padding, initialView?.alignment);
+            this.fitViewport.fitToNodes({ padding: initialView?.padding, alignment: initialView?.alignment });
             return;
         }
 
         if (mode === 'fit-width') {
-            this.fitViewport.fitToWidth(initialView?.padding, initialView?.alignment);
+            this.fitViewport.fitToWidth({ padding: initialView?.padding, alignment: initialView?.alignment });
             return;
         }
 

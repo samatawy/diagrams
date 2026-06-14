@@ -4,6 +4,7 @@ import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
+import { imageMode, isHollow } from "../../value.utils";
 
 /**
  * RhombusAdapter is a node adapter responsible for rendering rhombus nodes in the diagram. 
@@ -44,7 +45,7 @@ export class RhombusAdapter extends RectangleAdapter {
             path.lineTo(rect.left, rect.top + rect.height / 2);
             path.closePath();
 
-            if (cached.img && node.img_mode == 'frame') {
+            if (cached.img && imageMode(node) == 'frame') {
                 context.fill(path);
 
                 context.save();
@@ -54,7 +55,7 @@ export class RhombusAdapter extends RectangleAdapter {
             } else {
                 context.fill(path);
             }
-            if (!node.hollow) {
+            if (!isHollow(node)) {
                 RenderBasics.skipShadow(context);
             }
             context.stroke(path);

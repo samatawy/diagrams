@@ -1,6 +1,7 @@
 import type { IRect } from "../types";
 import type { FitAlign, HorizontalAlign, VerticalAlign } from "../view/view.options";
 import type { DiagramView } from "../view/diagram.view";
+import { DiagramConstants } from "../model/diagram.constants";
 
 /**
  * FitViewport is a utility class that provides methods to adjust the viewport of a DiagramView to fit its content (nodes) within the visible area. 
@@ -12,8 +13,8 @@ export class FitViewport {
 
     private diagram: DiagramView;
 
-    private minZoom = 0.2;
-    private maxZoom = 4;
+    private minZoom = DiagramConstants.MIN_ZOOM;    // 0.2
+    private maxZoom = DiagramConstants.MAX_ZOOM;    // 4
 
     /**
      * Creates an instance of FitViewport and attaches it to a DiagramView.
@@ -40,13 +41,15 @@ export class FitViewport {
      * @param padding The padding to apply around the content.
      * @param alignment The alignment options for fitting the content.
      */
-    public fitToWidth(padding: number = 32, alignment?: FitAlign): void {
+    public fitToWidth(options?: { padding?: number, alignment?: FitAlign }): void {
         const bounds = this.diagram.getNodeBounds();
         if (!bounds) return;
         const canvas = this.diagram.getCanvas();
+
+        const padding = options?.padding ?? DiagramConstants.FIT_IMAGE_PADDING;
         const fitAlignment: FitAlign = {
-            horizontal: alignment?.horizontal || 'center',
-            vertical: alignment?.vertical || 'top',
+            horizontal: options?.alignment?.horizontal || 'center',
+            vertical: options?.alignment?.vertical || 'top',
         };
 
         const width = Math.max(1, canvas.width - padding * 2);
@@ -59,10 +62,16 @@ export class FitViewport {
      * @param padding The padding to apply around the content.
      * @param alignment The alignment options for fitting the content.
      */
-    public fitToNodes(padding: number = 32, alignment?: FitAlign): void {
+    public fitToNodes(options?: { padding?: number, alignment?: FitAlign }): void {
         const bounds = this.diagram.getNodeBounds();
         if (!bounds) return;
         const canvas = this.diagram.getCanvas();
+
+        const padding = options?.padding ?? DiagramConstants.FIT_IMAGE_PADDING;
+        const alignment = {
+            horizontal: options?.alignment?.horizontal ?? 'center',
+            vertical: options?.alignment?.vertical ?? 'center',
+        };
 
         const availableWidth = Math.max(1, canvas.width - padding * 2);
         const availableHeight = Math.max(1, canvas.height - padding * 2);
@@ -81,7 +90,7 @@ export class FitViewport {
      * @param padding The padding to apply around the content.
      * @param alignment The alignment options for fitting the content.
      */
-    public applyViewportForBounds(bounds: IRect, zoom: number, padding: number = 32, alignment?: FitAlign): void {
+    protected applyViewportForBounds(bounds: IRect, zoom: number, padding: number, alignment?: FitAlign): void {
         const canvas = this.diagram.getCanvas();
         const coordinates = this.diagram.getCoordinates();
         const horizontal = alignment?.horizontal || 'center';

@@ -34,7 +34,7 @@ export const DIAGRAM_CHANGED_EVENT = "diagram-changed";
  * This categorization allows for more specific handling of changes and updates within the diagram system, 
  * enabling developers to optimize performance and user experience by responding appropriately to different types of changes.
  */
-export type DiagramChangeScope = "model" | "view" | "style";
+export type DiagramChangeScope = 'model' | 'view' | 'style';
 
 /**
  * Represents a change in the diagram, including the scope of the change and the source event that triggered it.
@@ -205,7 +205,7 @@ export interface DiagramToolChange {
 /**
  * Clipboard operations emitted by the editor.
  */
-export type DiagramClipboardOperation = "copy" | "cut" | "paste";
+export type DiagramClipboardOperation = 'copy' | 'cut' | 'paste';
 
 /**
  * Defines the structure of a diagram clipboard event.

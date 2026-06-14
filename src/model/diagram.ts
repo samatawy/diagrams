@@ -1,23 +1,11 @@
-import type {
-    IConnection,
-    IConnectionAnchor,
-    IDiagram,
-    IGrid,
-    ILayer,
-    INode,
-} from "../interfaces";
-import type {
-    ISerializer,
-    ISerializedConnectionAnchor,
-    ISerializedDiagram,
-    ISerializedLayer,
-    ISerializedNode,
-} from '../io/serialized.types';
+import type { IConnection, IConnectionAnchor, IDiagram, IGrid, ILayer, INode } from "../interfaces";
+import type { ISerializer, ISerializedConnectionAnchor, ISerializedDiagram, ISerializedLayer, ISerializedNode } from '../io/serialized.types';
 import { jsonSerializer } from '../io/json.serializer';
 import { downloadTextFile, exportTextBlob, isBrowserRuntime } from '../io/browser.support';
 import { isNodeRuntime, writeTextFile } from '../io/node.support';
 import type { DiagramExportFormat, DiagramSaveOptions } from "../io/export.types";
 import { AssetStore } from "../view/asset.store";
+import { DiagramConstants, GRID_LINE_COLOR, GRID_CELL_HEIGHT, GRID_CELL_WIDTH } from "./diagram.constants";
 
 const defaultGrid: IGrid = {
     forced: false,
@@ -47,11 +35,10 @@ export class Diagram implements IDiagram {
 
     public grid: IGrid;
 
+    // protected constants: DiagramConstants;
+
     private readonly assetStore = new AssetStore();
 
-    /**
-     * Returns a snapshot of registered image assets keyed by asset id.
-     */
     public get image_assets(): Record<string, string> {
         return this.assetStore.snapshot() ?? {};
     }
@@ -68,6 +55,10 @@ export class Diagram implements IDiagram {
                 this.upsertNode(node);
             }
         }
+        // this.constants = new DiagramConstants();
+        this.grid.color = DiagramConstants.GRID_LINE_COLOR;
+        this.grid.width = DiagramConstants.GRID_CELL_WIDTH;
+        this.grid.height = DiagramConstants.GRID_CELL_HEIGHT;
     }
 
     /**
@@ -151,9 +142,12 @@ export class Diagram implements IDiagram {
         }
 
         this.nodes = this.nodes.filter(node => node.id !== nodeId);
-        for (const layer of this.layers) {
-            layer.nodes = layer.nodes.filter(id => id !== nodeId);
-        }
+        this.layers = this.layers.map(layer => this.createLayer(
+            layer.id,
+            layer.name,
+            layer.visible,
+            layer.nodes.filter(id => id !== nodeId),
+        ));
     }
 
     /**

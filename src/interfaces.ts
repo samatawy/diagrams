@@ -31,22 +31,22 @@ export interface INode {
     /**
      * The text content of the node, which can be displayed within the node's bounding box. 
      */
-    text: string,
+    text?: string,
 
     /**
      * The horizontal alignment of the text within the node, which can be left-aligned, centered, or right-aligned.
      */
-    textAlign: ITextAlign,
+    textAlign?: ITextAlign,
 
     /**
      * The vertical alignment of the text within the node, which can be top-aligned, middle-aligned, or bottom-aligned.
      */
-    textBaseline: ITextBaseline,
+    textBaseline?: ITextBaseline,
 
     /**
      * The font used for the node's text, which can include font family, size, weight, and other CSS font properties.
      */
-    font: string,
+    font?: string,
 
     // The following are cached in the diagram's ViewCache
     // path?: Path2D;
@@ -75,17 +75,17 @@ export interface INode {
      * Indicates whether the node is ready to be rendered, which can be used to control the creation process
      * and ensure that all necessary information is available before finalizing creation.
      */
-    ready: boolean;
+    ready?: boolean;
 
     /**
      * Indicates whether the whole area of the node is selectable or only its border.
      */
-    hollow: boolean;
+    hollow?: boolean;
 
     /**
      * Indicates whether the node is transparent, which can be used to control the rendering style of the node.
      */
-    transparent: boolean;
+    transparent?: boolean;
 
     /**
      * The stroke style of the node, which can be used to control the color and pattern of the node's border.
@@ -95,17 +95,17 @@ export interface INode {
     /**
      * The fill style of the node, which can be used to control the color and pattern of the node's interior.
      */
-    fillStyle: string;
+    fillStyle?: string;
 
     /**
      * The text color of the node, which can be used to control the color of the text displayed within the node.
      */
-    textColor: string;
+    textColor?: string;
 
     /**
      * The line width of the node's border, which can be used to control the thickness of the node's outline.
      */
-    lineWidth: number;
+    lineWidth?: number;
 
     arrow?: 'forward' | 'backward' | 'both' | 'none';
 
@@ -117,7 +117,7 @@ export interface INode {
     /**
      * The rotation angle of the node, which can be used to rotate the node around its center.
      */
-    angle: number;
+    angle?: number;
     // The following are cached in the diagram's ViewCache
     // cos?: number;
     // sin?: number;

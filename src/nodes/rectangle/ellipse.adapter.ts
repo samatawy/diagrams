@@ -4,6 +4,7 @@ import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
+import { imageMode, isHollow } from "../../value.utils";
 
 /**
  * EllipseAdapter is a node adapter responsible for rendering ellipse nodes in the diagram. 
@@ -45,7 +46,7 @@ export class EllipseAdapter extends RectangleAdapter {
                 rect.height / 2,
                 0, 0, 2 * Math.PI);
 
-            if (cached.img && node.img_mode == 'frame') {
+            if (cached.img && imageMode(node) == 'frame') {
                 context.fill(path);
 
                 context.save();
@@ -55,7 +56,7 @@ export class EllipseAdapter extends RectangleAdapter {
             } else {
                 context.fill(path);
             }
-            if (!node.hollow) {
+            if (!isHollow(node)) {
                 RenderBasics.skipShadow(context);
             }
             context.stroke(path);

@@ -3,6 +3,8 @@ import type { IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
+import { fillStyle, imageMode, imageId, lineWidth, nodeFont, shadowStyle, strokeStyle, textAlign, textBaseline, textColor } from "../value.utils";
+import { DiagramConstants } from "../model/diagram.constants";
 
 export interface TextOptions {
     overflow: TextOverflowMode;
@@ -33,23 +35,29 @@ export class RenderBasics {
 
         context.lineCap = 'round';
         context.lineJoin = 'round';
-        context.lineWidth = node.lineWidth;
-        context.strokeStyle = node.strokeStyle;
-        context.fillStyle = node.fillStyle;
-        if (cached.img && node.img_mode == 'pattern') {
+        context.lineWidth = lineWidth(node);
+        context.strokeStyle = strokeStyle(node);
+        context.fillStyle = fillStyle(node);
+        if (cached.img && imageMode(node) == 'pattern') {
             context.fillStyle = context.createPattern(cached.img, 'repeat') || '';
         }
-        if (node.shadowStyle) {
-            context.shadowColor = this.resolveShadowColor(node);
-            context.shadowOffsetX = node.shadowStyle.offset.x;
-            context.shadowOffsetY = node.shadowStyle.offset.y;
-            context.shadowBlur = node.shadowStyle.blur;
-        } else {
-            context.shadowColor = 'transparent';
-            context.shadowOffsetX = 0;
-            context.shadowOffsetY = 0;
-            context.shadowBlur = 0;
-        }
+        const shadow = shadowStyle(node);
+        context.shadowColor = this.resolveShadowColor(node);
+        context.shadowOffsetX = shadow.offset.x;
+        context.shadowOffsetY = shadow.offset.y;
+        context.shadowBlur = shadow.blur;
+
+        // if (node.shadowStyle) {
+        //     context.shadowColor = this.resolveShadowColor(node);
+        //     context.shadowOffsetX = node.shadowStyle.offset.x;
+        //     context.shadowOffsetY = node.shadowStyle.offset.y;
+        //     context.shadowBlur = node.shadowStyle.blur;
+        // } else {
+        //     context.shadowColor = 'transparent';
+        //     context.shadowOffsetX = 0;
+        //     context.shadowOffsetY = 0;
+        //     context.shadowBlur = 0;
+        // }
 
         // Transparent shapes (hot spots) should not viewable in 'view' mode..
         if (node.transparent) {
@@ -94,13 +102,13 @@ export class RenderBasics {
                 imageSource = resolver.resolveNodeImageSource(node);
             } catch {
                 // Some test doubles use DiagramView prototype without full Diagram initialization.
-                imageSource = node.image_id;
+                imageSource = imageId(node);
             }
         } else {
-            imageSource = node.image_id;
+            imageSource = imageId(node);
         }
 
-        if (!imageSource || node.img_mode == 'none') {
+        if (!imageSource || imageMode(node) == 'none') {
             if (cached.img || cached.image_loading) {
                 cached.img = undefined;
                 cached.pattern = undefined;
@@ -165,8 +173,8 @@ export class RenderBasics {
         const coordinates = diagram.getCoordinates();
 
         context.lineWidth = 1;
-        context.strokeStyle = 'gray';
-        context.fillStyle = 'transparent';
+        context.strokeStyle = DiagramConstants.SELECTION_ANCHOR_STROKESTYLE;
+        context.fillStyle = DiagramConstants.SELECTION_ANCHOR_FILLSTYLE;
 
         context.shadowColor = 'transparent';
 
@@ -236,7 +244,8 @@ export class RenderBasics {
             let y = startline + (i * lineHeight);
             // let y = rect.top + 6 + (i * lineHeight);    // MAGIC NUMBER !
 
-            switch (node.textAlign) {
+            const align = textAlign(node);
+            switch (align) {
                 case 'left':
                     context.fillText(lines[i]!, x, y);
                     break;
@@ -256,28 +265,35 @@ export class RenderBasics {
             return { lines: [], lineHeight: 0, startline: 0 };
         }
 
+        if (!node.text?.length) {
+            return { lines: [], lineHeight: 0, startline: 0 };
+        }
+
         // Text should remain legible against the node fill and should not inherit shape shadows.
         context.shadowColor = 'transparent';
         context.fillStyle = node.transparent && diagram.render_mode == 'view'
             ? 'transparent'
-            : (node.textColor || node.strokeStyle || '#111827');
+            : textColor(node);
+        // : (node.textColor || node.strokeStyle || '#111827');
 
-        context.textAlign = node.textAlign || 'center';
-        context.textBaseline = node.textBaseline || 'middle';
-        context.font = node.font;
+        context.textAlign = textAlign(node);    //.textAlign || 'center';
+        context.textBaseline = textBaseline(node); //.textBaseline || 'middle';
 
-        let fparts = node.font.split('px');
-        let fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || 16 : 16;
+        context.font = nodeFont(node);
+
+        let fparts = context.font.split('px');
+        let fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || DiagramConstants.DEFAULT_NODE_FONT_SIZE : DiagramConstants.DEFAULT_NODE_FONT_SIZE;
         let lineHeight = (fontSize * 1.25);
         let lines = this.getLines(node.text, rect.width, context);
         let startline = 0;
 
-        switch (node.textBaseline) {
+        const baseline = textBaseline(node);
+        switch (baseline) {
             case 'top':
-                startline = rect.top + 6;
+                startline = rect.top + (fontSize / 2);  // 6
                 break;
             case 'middle':
-                startline = rect.top + 3 + (rect.height / 2) - (lineHeight * (lines.length - 1) / 2);
+                startline = rect.top + (fontSize / 4) + (rect.height / 2) - (lineHeight * (lines.length - 1) / 2);
                 break;
             case 'bottom':
                 startline = rect.top + rect.height - (lineHeight * (lines.length - 1));
@@ -362,7 +378,7 @@ export class RenderBasics {
      * @param padding The padding to apply around the text hit area.
      * @returns A Path2D object representing the text hit area, or undefined if the node has insufficient points.
      */
-    public static getTextHitPath(node: INode, context: CanvasRenderingContext2D, padding = 4): Path2D | undefined {
+    public static getTextHitPath(node: INode, context: CanvasRenderingContext2D, padding?: number): Path2D | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
         const coordinates = diagram.getCoordinates();
@@ -371,9 +387,13 @@ export class RenderBasics {
             return undefined;
         }
 
+        padding = padding ? padding : DiagramConstants.HANDLE_HIT_EPSILON;  // Or should we use a larger value ? The default was 4
+
         const rect = coordinates.getBoundingRect(node);
         const { lines, lineHeight, startline } = this.getTextLayout(node, context, rect);
         const path = new Path2D();
+
+        const align = textAlign(node), baseline = textBaseline(node);
 
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i] || '';
@@ -381,7 +401,7 @@ export class RenderBasics {
             const y = startline + (i * lineHeight);
 
             let left = rect.left;
-            switch (node.textAlign) {
+            switch (align) {
                 case 'left':
                     left = rect.left;
                     break;
@@ -394,7 +414,7 @@ export class RenderBasics {
             }
 
             let top = y;
-            switch (node.textBaseline) {
+            switch (baseline) {
                 case 'top':
                     top = y;
                     break;

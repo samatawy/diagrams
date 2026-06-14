@@ -5,6 +5,7 @@ import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
+import { imageMode, isHollow } from "../../value.utils";
 
 /**
  * RoundRectangleAdapter is a node adapter responsible for rendering rounded rectangle nodes in the diagram. 
@@ -77,7 +78,7 @@ export class RoundRectangleAdapter extends RectangleAdapter {
             path.arcTo(rect.left, rect.top + rect.height, rect.left, rect.top + rect.height - radius, radius);
             path.closePath();
 
-            if (cached.img && node.img_mode == 'frame') {
+            if (cached.img && imageMode(node) == 'frame') {
                 context.fill(path);
 
                 context.save();
@@ -87,7 +88,7 @@ export class RoundRectangleAdapter extends RectangleAdapter {
             } else {
                 context.fill(path);
             }
-            if (!node.hollow) {
+            if (!isHollow(node)) {
                 RenderBasics.skipShadow(context);
             }
             context.stroke(path);

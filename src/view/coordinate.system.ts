@@ -1,6 +1,7 @@
 import type { IDiagram, IGrid, INode } from "../interfaces";
 import type { IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
+import { nodeAngle } from "../value.utils";
 
 /**
  * CoordinateSystem is a utility class that manages the transformation between diagram coordinates and canvas coordinates, including handling zooming, panning, and grid snapping.
@@ -92,12 +93,10 @@ export class CoordinateSystem {
             if (grid.width) {
                 let dx = pt.x % grid.width;
                 pt.x = (dx > grid.width / 2) ? pt.x - dx + grid.width : pt.x - dx;
-                //  (pt.x + (grid.width / 2)) % grid.width;
             }
             if (grid.height) {
                 let dy = pt.y % grid.height;
                 pt.y = (dy > grid.height / 2) ? pt.y - dy + grid.height : pt.y - dy;
-                // pt.y = pt.y - (pt.y + (grid.height / 2)) % grid.height;  
             }
         }
         return pt;
@@ -249,16 +248,17 @@ export class CoordinateSystem {
                 return rect;
 
             } else {
+                const angle = nodeAngle(node);
                 const cached = cache.getNode(node);
-                const cos = cached?.cos || Math.cos(node.angle);
-                const sin = cached?.sin || Math.sin(node.angle);
+                const cos = cached?.cos || Math.cos(angle);
+                const sin = cached?.sin || Math.sin(angle);
 
                 // Calculate bounding rect after rotation.. 
                 // (Reserved only for previews to prevent clipping off rotated shapes..)
-                let nw = this.getRenderPoint(from, rect, node.angle, cos, sin);
-                let ne = this.getRenderPoint({ x: to.x, y: from.y }, rect, node.angle, cos, sin);
-                let sw = this.getRenderPoint({ x: from.x, y: to.y }, rect, node.angle, cos, sin);
-                let se = this.getRenderPoint(to, rect, node.angle, cos, sin);
+                let nw = this.getRenderPoint(from, rect, angle, cos, sin);
+                let ne = this.getRenderPoint({ x: to.x, y: from.y }, rect, angle, cos, sin);
+                let sw = this.getRenderPoint({ x: from.x, y: to.y }, rect, angle, cos, sin);
+                let se = this.getRenderPoint(to, rect, angle, cos, sin);
 
                 from.x = Math.min(nw.x, ne.x, sw.x, se.x);
                 from.y = Math.min(nw.y, ne.y, sw.y, se.y);

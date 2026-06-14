@@ -57,17 +57,17 @@ export class LineAdapter extends PolylineAdapter {
         context.strokeStyle = 'rgba(0,0,0,.25)';
         context.setLineDash([4, 2]);
 
-        let control = new Path2D();
-        control.moveTo(node.points[0]!.x, node.points[0]!.y);
-        control.lineTo(node.points[1]!.x, node.points[1]!.y);
-        context.stroke(control);
+        const handles = new Path2D();
+
+        handles.moveTo(node.points[0]!.x, node.points[0]!.y);
+        handles.lineTo(node.points[1]!.x, node.points[1]!.y);
 
         if (node.points.length > 3) {
-            control = new Path2D();
-            control.moveTo(node.points[node.points.length - 1]!.x, node.points[node.points.length - 1]!.y);
-            control.lineTo(node.points[node.points.length - 2]!.x, node.points[node.points.length - 2]!.y);
-            context.stroke(control);
+            handles.moveTo(node.points[node.points.length - 1]!.x, node.points[node.points.length - 1]!.y);
+            handles.lineTo(node.points[node.points.length - 2]!.x, node.points[node.points.length - 2]!.y);
         }
+        context.fill(handles);
+        context.stroke(handles);
 
         context.restore();
     }

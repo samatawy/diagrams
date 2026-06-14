@@ -1,4 +1,5 @@
 import type { Diagram } from "../model/diagram";
+import { isHollow, lineWidth, nodeText } from "../value.utils";
 
 /**
  * A class that manages colors frequently used in a diagram.
@@ -38,11 +39,11 @@ export class ColorPalette {
     public refresh(): void {
         this.colors_used.clear();
         for (const node of this.diagram.nodes) {
-            if (node.lineWidth > 0 || node.text?.length) {
-                this.addColor(node.strokeStyle);
+            if (lineWidth(node) > 0 || node.text?.length) {
+                if (node.strokeStyle) this.addColor(node.strokeStyle);
             }
-            if (!node.transparent) {
-                this.addColor(node.fillStyle);
+            if (node.fillStyle && !node.transparent && !isHollow(node)) {
+                if (node.fillStyle) this.addColor(node.fillStyle);
             }
         }
     }

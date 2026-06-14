@@ -1,3 +1,5 @@
+import { DiagramConstants } from "../model/diagram.constants";
+
 export type IconSource =
     | { type: 'svg'; markup: string }
     | { type: 'url'; src: string };
@@ -76,7 +78,9 @@ export class IconRegistry {
      * @param size The desired size of the icon in pixels.
      * @returns An Element representing the icon, or null if not found.
      */
-    public static createElement(id: string, size = 18): Element | null {
+    public static createElement(id: string, size?: number): Element | null {
+        size = size || DiagramConstants.ICON_SIZE;
+
         const source = this.icons.get(id);
         if (!source) {
             return null;

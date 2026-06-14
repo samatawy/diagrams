@@ -156,16 +156,6 @@ export class HistoryStack {
             if (recent) this.undoList.splice(0, 0, recent);
 
             await this.restoreState(state);
-            /*this.zone.run(async ()=> {
-                // TODO: WE MUST remove old canvas elements first..
-                this.diagram = await new Illustration(this.canvas.nativeElement).fromJson(state.json);
-                this.current.layer = this.diagram.layers[state.current.layer];
-                this.current.tool = state.current.tool;
-
-                this.diagram.render(null);
-                this.diagram.renderSelection();
-                this.renderPreview();
-            });*/
             return true;
         } else {
             return false;

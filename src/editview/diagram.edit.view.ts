@@ -5,7 +5,6 @@ import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaselin
 import { HistoryStack } from "./history";
 import type { ArrowDirection, ShadowStyle } from "../shadows";
 
-const SHADOW_NONE: ShadowStyle = { name: 'No Shadow', color: 'transparent', blur: 0, offset: { x: 0, y: 0 } };
 import { isConnection, isNode } from "../guards";
 
 import { NodeBasics } from "../nodes/node.basics";
@@ -31,6 +30,8 @@ import {
     type DiagramEditContextMenu,
 } from "../events/diagram.events";
 import type { ISerializedNode } from "../io";
+import { nodeAngle, nodeText, SHADOW_NONE, strokeStyle, textAlign, textBaseline } from "../value.utils";
+import { DiagramConstants } from "../model/diagram.constants";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -93,17 +94,17 @@ export class DiagramEditView extends DiagramView {
         textBaseline: ITextBaseline;
         nodeText?: string;
     } = {
-            lineWidth: 1,
+            lineWidth: DiagramConstants.DEFAULT_NODE_LINE_WIDTH,
             startArrow: false,
             endArrow: true,
-            strokeColor: '#000000',
-            fillColor: '#00000016',
-            shadowStyle: SHADOW_NONE,
-            fontFace: 'Tahoma',
-            fontSize: 16,
-            textColor: '#000000',
-            textAlign: 'center',
-            textBaseline: 'middle',
+            strokeColor: DiagramConstants.DEFAULT_STROKE_STYLE,
+            fillColor: DiagramConstants.DEFAULT_FILL_STYLE,
+            shadowStyle: DiagramConstants.NO_SHADOW,
+            fontFace: DiagramConstants.DEFAULT_NODE_FONT,
+            fontSize: DiagramConstants.DEFAULT_NODE_FONT_SIZE,
+            textColor: DiagramConstants.DEFAULT_NODE_TEXT_COLOR,
+            textAlign: DiagramConstants.DEFAULT_NODE_TEXT_ALIGN,
+            textBaseline: DiagramConstants.DEFAULT_NODE_TEXT_BASELINE,
             nodeText: undefined,
         };
 
@@ -596,7 +597,7 @@ export class DiagramEditView extends DiagramView {
         for (let node of this.selection()) {
             node.fillStyle = color;
             if (NodeRegistry.adapter(node.type)?.hollow_mode == 'if_transparent') {
-                node.hollow = color == 'transparent' || color == 'transparent';
+                node.hollow = color == 'transparent';
             }
         }
         this.color_palette.refresh();
@@ -865,14 +866,14 @@ export class DiagramEditView extends DiagramView {
      */
     public copySelected(operation: DiagramClipboardOperation = 'copy'): void {
         const nodes = this.selection();
-        let json: ISerializedNode[] = [];
-
-        if (nodes.length) {
-            json = nodes.map(node => this.serializeNode(node));
-
-            this.can_paste = true;
-            this.emitClipboardChange(operation, nodes);
+        if (!nodes.length) {
+            return;
         }
+
+        const json = nodes.map(node => this.serializeNode(node));
+
+        this.can_paste = true;
+        this.emitClipboardChange(operation, nodes);
 
         // console.log('Copying ', JSON.stringify(json, null, '  '));
         void this.writeClipboardText(jsonSerializer.write(json));
@@ -884,31 +885,32 @@ export class DiagramEditView extends DiagramView {
     public pasteNodes(): void {
         void this.readClipboardText()
             .then(async (json) => {
+                const parsed = this.parseClipboardNodes(json)
+                    || this.parseClipboardNodes(this.clipboardSnapshot);
 
-                if (json && json.length) try {
-                    const nodes = JSON.parse(json);
-                    if (Array.isArray(nodes)) {
-                        this.addUndo();
-                        const pastedNodes: INode[] = [];
-
-                        for (let node of nodes) {
-                            const clone = this.cloneNode(node);
-                            this.upsertNode(clone);
-                            this.current.layer?.nodes.push(clone.id);
-
-                            NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
-                            this.select(clone);
-                            pastedNodes.push(clone);
-                        }
-
-                        this.emitClipboardChange('paste', pastedNodes);
-                    }
-                    this.render('all');
-                    this.renderPreview();
-
-                } catch (e) {
-                    console.error('Failed to paste nodes from clipboard', e);
+                if (!parsed || !parsed.length) {
+                    return;
                 }
+
+                this.addUndo();
+                const pastedNodes: INode[] = [];
+                const layer = this.ensureCurrentLayer();
+
+                for (let node of parsed) {
+                    const clone = this.cloneNode(node);
+                    this.upsertNode(clone);
+                    layer.nodes.push(clone.id);
+
+                    NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
+                    this.select(clone);
+                    pastedNodes.push(clone);
+                }
+
+                this.can_paste = true;
+                this.emitClipboardChange('paste', pastedNodes);
+
+                this.render('all');
+                this.renderPreview();
             })
     }
 
@@ -920,14 +922,11 @@ export class DiagramEditView extends DiagramView {
             .then(async (json) => {
                 this.can_paste = false;
 
-                if (json && json.length) try {
-                    let nodes = JSON.parse(json);
-                    if (Array.isArray(nodes)) {
-                        this.can_paste = true;
-                    }
+                const parsed = this.parseClipboardNodes(json)
+                    || this.parseClipboardNodes(this.clipboardSnapshot);
 
-                } catch (e) {
-                    console.error('Failed to check clipboard nodes', e);
+                if (parsed?.length) {
+                    this.can_paste = true;
                 }
             })
     }
@@ -949,7 +948,6 @@ export class DiagramEditView extends DiagramView {
             if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
                 const value = await navigator.clipboard.readText();
                 if (typeof value === 'string' && value.length) {
-                    this.clipboardSnapshot = value;
                     return value;
                 }
             }
@@ -969,6 +967,23 @@ export class DiagramEditView extends DiagramView {
             nodes,
             nodeIds: nodes.map(node => node.id),
         });
+    }
+
+    private parseClipboardNodes(json: string): ISerializedNode[] | undefined {
+        if (!json || !json.length) {
+            return undefined;
+        }
+
+        try {
+            const payload = JSON.parse(json);
+            if (!Array.isArray(payload)) {
+                return undefined;
+            }
+
+            return payload as ISerializedNode[];
+        } catch {
+            return undefined;
+        }
     }
 
     // ================================================
@@ -1248,12 +1263,12 @@ export class DiagramEditView extends DiagramView {
         this.renderPreview();
     }
 
-    protected cloneNode(node: INode, id?: string): INode {
+    protected cloneNode(node: INode | ISerializedNode, id?: string): INode {
         return {
             ...node,
             id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             points: node.points.map(p => ({ ...p })),
-        };
+        } as INode;
     }
 
     /**
@@ -1590,14 +1605,20 @@ export class DiagramEditView extends DiagramView {
 
         if (event.ctrlKey || event.metaKey) {
             if (key == 'c') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
                 this.exitDrawing();
                 this.copySelected();
             }
             if (key == 'v') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
                 this.exitDrawing();
                 this.pasteNodes();
             }
             if (key == 'x') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
                 this.exitDrawing();
                 this.cutSelected();
                 // this.copySelected();
@@ -2259,19 +2280,19 @@ export class DiagramEditView extends DiagramView {
             points,
             hollow,
             text: tool === 'text' ? (this.nodeText || 'New Text') : (this.nodeText || ''),
-            textAlign: this.textAlign as unknown as INode['textAlign'],
-            textBaseline: this.textBaseline as unknown as INode['textBaseline'],
+            textAlign: this.textAlign,  // as unknown as INode['textAlign'],
+            textBaseline: this.textBaseline,    // as unknown as INode['textBaseline'],
             font: `${this.fontSize}px ${this.fontFace}`,
-            image_id: undefined,
-            img_mode: 'none',
+            // image_id: undefined,
+            // img_mode: 'none',
             ready: false,
-            transparent: false,
+            // transparent: false,
             strokeStyle: this.strokeColor,
             fillStyle,
             textColor: this.textColor,
             lineWidth: this.lineWidth,
             shadowStyle: this.shadowStyle,
-            angle: 0,
+            // angle: 0,
             owner: this,
         };
 
@@ -2361,11 +2382,17 @@ export class DiagramEditView extends DiagramView {
     }
 
     private ensureCurrentLayer(): ILayer {
-        if (!this.current.layer || !this.layer(this.current.layer.id)) {
+        const active = this.current.layer ? this.layer(this.current.layer.id) : undefined;
+
+        if (!active) {
             if (!this.layers.length) {
                 this.createLayerAt('top');
             }
             this.current.layer = this.layers[0]!;
+        } else {
+            // Keep the current layer reference synchronized with the live layer
+            // object because some operations rebuild this.layers with new instances.
+            this.current.layer = active;
         }
 
         return this.current.layer;
@@ -2432,14 +2459,15 @@ export class DiagramEditView extends DiagramView {
         const left = canvasRect.left + (rect.left * zoom) - pan.x - 2;
         let top = canvasRect.top + (rect.top * zoom) - pan.y - 2;
 
-        if (node.textBaseline === 'middle') {
+        const baseline = textBaseline(node);
+        if (baseline === 'middle') {
             top = canvasRect.top + ((rect.top + rect.height / 2) * zoom) - pan.y - (editorHeight / 2);
-        } else if (node.textBaseline === 'bottom') {
+        } else if (baseline === 'bottom') {
             top = canvasRect.top + ((rect.top + rect.height) * zoom) - pan.y - editorHeight;
         }
 
         const textarea = document.createElement('textarea');
-        textarea.value = node.text || '';
+        textarea.value = nodeText(node);
         textarea.spellcheck = false;
         textarea.autocomplete = 'off';
         textarea.wrap = 'soft';
@@ -2457,11 +2485,11 @@ export class DiagramEditView extends DiagramView {
         textarea.style.resize = 'none';
         textarea.style.overflow = 'hidden';
         textarea.style.background = 'transparent';
-        textarea.style.color = node.strokeStyle || '#111827';
+        textarea.style.color = strokeStyle(node);   //.strokeStyle || '#111827';
         textarea.style.caretColor = 'currentColor';
         textarea.style.font = font;
         textarea.style.lineHeight = `${lineHeight}px`;
-        textarea.style.textAlign = node.textAlign || 'center';
+        textarea.style.textAlign = textAlign(node); // node.textAlign || 'center';
         textarea.style.transformOrigin = 'center center';
         textarea.style.zIndex = '2147483647';
         textarea.style.cursor = 'text';
@@ -2576,8 +2604,8 @@ export class DiagramEditView extends DiagramView {
 
         context.save();
         coordinates.applyViewportTransform(context);
-        context.strokeStyle = 'rgba(0,0,0,.5)';
-        context.fillStyle = 'rgba(0,0,0,.05)';
+        context.strokeStyle = DiagramConstants.SELECTION_RECT_STROKESTYLE;  //  'rgba(0,0,0,.5)';
+        context.fillStyle = DiagramConstants.SELECTION_RECT_FILLSTYLE;  //  'rgba(0,0,0,.05)';
         context.lineWidth = 1 / coordinates.zoom;
         // context.setLineDash([2,2,1,2]);
         context.setLineDash([4, 4]);
@@ -2624,7 +2652,7 @@ export class DiagramEditView extends DiagramView {
     private moveSelectedPoint(node: INode, x: number, y: number, byX: number, byY: number): void {
         const rect = this.coordinates.getBoundingRect(node);
         const cached = this.getCache().getNode(node);
-        const hit = this.coordinates.getHitPoint({ x, y }, rect, node.angle, cached?.cos, cached?.sin);
+        const hit = this.coordinates.getHitPoint({ x, y }, rect, nodeAngle(node), cached?.cos, cached?.sin);
         const deltaX = byX / this.coordinates.zoom;
         const deltaY = byY / this.coordinates.zoom;
 
@@ -2747,17 +2775,24 @@ export class DiagramEditView extends DiagramView {
 
     private reflectStyles(shape: INode): void {
         if (shape) {
-            this.settings.lineWidth = shape.lineWidth;
+            this.settings.lineWidth = shape.lineWidth || 1;
             this.settings.strokeColor = shape.strokeStyle;
-            this.settings.fillColor = shape.fillStyle;
-            this.settings.textColor = shape.textColor;
+            this.settings.fillColor = shape.fillStyle || 'transparent';
+            this.settings.textColor = shape.textColor || shape.strokeStyle || '#111827';
 
-            let fparts = shape.font.split('px');
-            this.settings.fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || 16 : 16;
-            this.settings.fontFace = (fparts.length > 1) ? fparts[1]!.trim() || 'Tahoma' : 'Tahoma';
+            const default_font = DiagramConstants.DEFAULT_NODE_FONT;
+            const default_size = DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+            if (shape.font) {
+                let fparts = shape.font.split('px');
+                this.settings.fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || default_size : default_size;
+                this.settings.fontFace = (fparts.length > 1) ? fparts[1]!.trim() || default_font : default_font;
+            } else {
+                this.settings.fontSize = default_size;
+                this.settings.fontFace = default_font;
+            }
             this.settings.nodeText = shape.text || '';
 
-            this.settings.shadowStyle = shape.shadowStyle ?? SHADOW_NONE;
+            this.settings.shadowStyle = shape.shadowStyle ?? DiagramConstants.NO_SHADOW;
         }
     }
 

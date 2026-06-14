@@ -206,13 +206,13 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'fit-width',
         label: 'Fit Width',
         tooltip: 'Fit to width',
-        execute: (d) => d.fitToWidth(48),
+        execute: (d) => d.fitToWidth(),
     },
     {
         id: 'fit-all',
         label: 'Fit All',
         tooltip: 'Fit all nodes',
-        execute: (d) => d.fitToNodes(48),
+        execute: (d) => d.fitToNodes(),
     },
     {
         id: 'show-grid',

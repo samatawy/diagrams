@@ -6,6 +6,8 @@ import type { INodeCached } from "../../view/view.cache";
 import { ConnectionBasics } from "../connection.basics";
 import { RenderBasics } from "../render.basics";
 import type { HollowMode, INodeAdapter, TextOverflowMode } from "../../factory/node.adapter";
+import { isHollow, lineWidth, nodeAngle } from "../../value.utils";
+import { DiagramConstants } from "../../model/diagram.constants";
 
 /**
  * PolylineAdapter is a node adapter responsible for rendering polyline nodes in the diagram. 
@@ -23,7 +25,7 @@ export class PolylineAdapter implements INodeAdapter {
         return (this.constructor as typeof PolylineAdapter).NAME;
     }
 
-    protected readonly hitStrokePadding = 8;
+    // protected readonly hitStrokePadding = DiagramConstants.SELECTION_LINE_PADDING;
 
     hollow_mode: HollowMode = 'always';
 
@@ -54,22 +56,25 @@ export class PolylineAdapter implements INodeAdapter {
         const cached = cache.getNode(node) || {} as INodeCached;
 
         if (node.points.length > 1) {
+            const angle = nodeAngle(node);
+            const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
+
             const rect = coordinates.getBoundingRect(node, false);
-            const cos = cached.cos || Math.cos(node.angle);
-            const sin = cached.sin || Math.sin(node.angle);
-            const hitPoint = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, node.angle, cos, sin);
+            const cos = cached.cos || Math.cos(angle);
+            const sin = cached.sin || Math.sin(angle);
+            const hitPoint = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, angle, cos, sin);
 
             for (const sourcePoint of node.points) {
-                if (Math.abs(sourcePoint.x - hitPoint.x) <= 4 && Math.abs(sourcePoint.y - hitPoint.y) <= 4) {
+                if (Math.abs(sourcePoint.x - hitPoint.x) <= epsilon && Math.abs(sourcePoint.y - hitPoint.y) <= epsilon) {
                     return NodeHandle.POINT;
                 }
             }
 
             if (cached.path) {
-                const hitStrokeWidth = Math.max(node.lineWidth + this.hitStrokePadding, 10);
-                const inPath = node.hollow
-                    ? coordinates.isPointInStroke(cached.path, hitPoint.x, hitPoint.y, hitStrokeWidth)
-                    : coordinates.isPointInPath(cached.path, hitPoint.x, hitPoint.y);
+                const hitStrokeWidth = Math.max(lineWidth(node) + DiagramConstants.PATH_HIT_PADDING, 10);
+                const inPath = isHollow(node) ?
+                    coordinates.isPointInStroke(cached.path, hitPoint.x, hitPoint.y, hitStrokeWidth) :
+                    coordinates.isPointInPath(cached.path, hitPoint.x, hitPoint.y);
                 return inPath ? NodeHandle.MOVE : NodeHandle.NONE;
             }
         }
@@ -131,11 +136,13 @@ export class PolylineAdapter implements INodeAdapter {
             context.save();
             RenderBasics.prepareHandles(node, context);
 
+            const handles = new Path2D();
+
             for (const point of node.points) {
-                const handle = new Path2D();
-                handle.rect(point.x - 4, point.y - 4, 8, 8);
-                context.stroke(handle);
+                handles.rect(point.x - 4, point.y - 4, 8, 8);
             }
+            context.fill(handles);
+            context.stroke(handles);
 
             context.restore();
         }

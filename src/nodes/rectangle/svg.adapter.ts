@@ -5,6 +5,7 @@ import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import type { HollowMode } from "../../factory/node.adapter";
+import { imageMode } from "../../value.utils";
 
 /**
  * SvgAdapter is a node adapter responsible for rendering SVG nodes in the diagram. 
@@ -34,7 +35,7 @@ export class SvgAdapter extends RectangleAdapter {
             const path = new Path2D();
             path.rect(rect.left, rect.top, rect.width, rect.height);
 
-            if (cached.img && node.img_mode == 'frame') {
+            if (cached.img && imageMode(node) == 'frame') {
                 context.drawImage(cached.img, rect.left, rect.top, rect.width, rect.height);
             } else {
                 context.fill(path);
