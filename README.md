@@ -1,119 +1,107 @@
 # @samatawy/diagrams
 
-Browser-first TypeScript primitives for diagram documents, immutable graph updates, and viewport transforms.
+Browser-first TypeScript toolkit for diagram editing, model manipulation, and viewport operations.
 
-The package is intentionally renderer-agnostic. It gives you a typed model layer for browser applications that render through SVG, Canvas, WebGL, or a framework-specific view layer.
+It includes a reusable diagram model, node adapters, Canvas-based rendering primitives, and an embeddable editor shell that you can extend for your own application.
 
-## Installation
+## Status
+
+This package is being published as a first public draft.
+
+- Ready for evaluation, prototypes, and internal tooling.
+- Not yet recommended for production workloads.
+- Expect API refinements while customization points stabilize.
+
+## Install
 
 ```bash
 npm install @samatawy/diagrams
 ```
 
-## Quick Start
+## What This Package Is
+
+- A typed diagram model with nodes, connections, layers, styles, and serialization.
+- A browser editor runtime (`DiagramEditView`, `DiagramEditor`, toolbars, controls).
+- Viewport helpers for zoom, pan, and fit operations.
+- Extension points via node adapters and registries.
+
+## Core Features
+
+- Diagram create/open/save/export flows.
+- Selection, move, resize, rotate, align, distribute.
+- Stroke/fill/font/shadow editing controls.
+- Connection anchors and arrow support.
+- Grid visibility and snap-to-grid support.
+- Undo/redo history.
+- SVG/Canvas-friendly data model and rendering pipeline.
+
+## Typical Use Cases
+
+- Workflow or process editors.
+- Architecture and topology sketching tools.
+- Domain-specific visual designers.
+- Internal operational dashboards that need lightweight diagram editing.
+
+## Browser Usage
 
 ```ts
-import {
-  connectNodes,
-  createDiagram,
-  DiagramEditorController,
-  createViewportTransform,
-  toViewportPoint,
-  upsertNode,
-} from '@samatawy/diagrams';
+import { DiagramEditor } from '@samatawy/diagrams';
 
-let document = createDiagram('workflow');
+const host = document.getElementById('editor-host')!;
+const editor = new DiagramEditor(host);
 
-document = upsertNode(document, {
-  id: 'capture',
-  label: 'Capture',
-  width: 160,
-  height: 56,
-  position: { x: 32, y: 48 },
-});
-
-document = upsertNode(document, {
-  id: 'review',
-  label: 'Review',
-  width: 160,
-  height: 56,
-  position: { x: 280, y: 48 },
-});
-
-document = connectNodes(document, {
-  id: 'capture-review',
-  from: 'capture',
-  to: 'review',
-  label: 'next',
-});
-
-const viewport = createViewportTransform({
-  scale: 1.25,
-  offsetX: 24,
-  offsetY: 16,
-});
-
-const screenPoint = toViewportPoint({ x: 32, y: 48 }, viewport);
+const diagram = editor.getDiagramView();
+diagram.setTool('rectangle');
+diagram.newNode(40, 40);
 ```
 
-## Headless Editor Core
+## Node Usage (Model/Transforms)
 
-The package also exposes a framework-agnostic editor controller for browser applications that want to build their own UI layer without depending on Angular or any other framework.
+The model and transform utilities can be used in Node.js workflows (for generation, conversion, tests, or automation) without mounting the browser editor UI.
 
 ```ts
-import { DiagramEditorController } from '@samatawy/diagrams';
+import { createDiagram, upsertNode, connectNodes } from '@samatawy/diagrams';
 
-const editor = DiagramEditorController.create('workflow');
+let doc = createDiagram('pipeline');
 
-editor.pickTool('node');
-editor.upsertNode({
-  id: 'capture',
-  width: 160,
-  height: 56,
-  position: { x: 32, y: 48 },
-  label: 'Capture',
+doc = upsertNode(doc, {
+  id: 'start',
+  label: 'Start',
+  width: 140,
+  height: 52,
+  position: { x: 24, y: 24 },
 });
 
-editor.select(['capture']);
-editor.moveSelection({ x: 24, y: 0 });
-editor.zoomToFit({ width: 960, height: 640 });
+doc = upsertNode(doc, {
+  id: 'next',
+  label: 'Next',
+  width: 140,
+  height: 52,
+  position: { x: 240, y: 24 },
+});
+
+doc = connectNodes(doc, { id: 'start-next', from: 'start', to: 'next' });
 ```
 
-The older Angular editor under `src/diagram/` is currently best treated as a reference implementation while the reusable editor core is extracted into plain TypeScript.
+## Customization
 
-## Browser Focus
+You can tailor the editor for your own product:
 
-- No Node-only runtime APIs are used in the public source.
-- The build is emitted for ESM and CommonJS consumers.
-- The package is meant to sit under a browser renderer rather than dictate one.
+- Register custom node adapters and icons.
+- Override toolbar layouts and actions.
+- Provide custom file dialog handlers for open/save/export.
+- Style and wire custom UI controls around `DiagramEditView`.
 
-## Scripts
+## Documentation And Demo
+
+- API docs (GitHub Pages): https://samatawy.github.io/diagrams/
+- Hosted demos: https://samatawy.github.io/diagrams/demo/
+
+## Development Scripts
 
 - `npm run lint`
 - `npm run test`
 - `npm run build`
 - `npm run docs`
 - `npm run site`
-
-## Documentation
-
-Generated API documentation is produced with TypeDoc into `docs/`.
-
-## Docs And Demo Site
-
-The GitHub Pages site is assembled into `site/` with:
-
-```bash
-npm run site
-```
-
-The published layout is:
-
-- `/` for the generated API docs
-- `/demo/` for the browser demos
-
-For this repository's Pages deployment, that means:
-
-- `https://samatawy.github.io/diagrams/` for the docs landing page
-- `https://samatawy.github.io/diagrams/demo/` for the demo index
 

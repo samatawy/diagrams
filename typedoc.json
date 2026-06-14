@@ -4,8 +4,11 @@
         "src/index.ts"
     ],
     "projectDocuments": [
-        "help/how-to/index.md",
-        "help/reference/index.md"
+        "help/use-model.md",
+        "help/use-view.md",
+        "help/use-editor.md",
+        "help/build-your-own-editor.md",
+        "help/operate-the-editor.md"
     ],
     "tsconfig": "tsconfig.json",
     "out": "docs",

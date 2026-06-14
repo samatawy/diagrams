@@ -259,9 +259,9 @@ export class ArrowSelect {
     }
 
     /**
-     * Sets the available width options and optionally selects a width.
-     * @param widths - An array of widths.
-     * @param selectedWidth - The width to select. Defaults to the first width in the array.
+     * Sets the available arrow options and optionally selects one.
+     * @param arrows - An array of arrow directions.
+     * @param selectedArrow - The arrow direction to select. Defaults to the first option.
      */
     public setOptions(arrows: ArrowDirection[], selectedArrow?: ArrowDirection): void {
         const normalized = arrows.map(arrow => this.normalizeArrow(arrow));
