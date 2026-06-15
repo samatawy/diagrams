@@ -25,6 +25,7 @@ export class RectangleAdapter implements INodeAdapter {
 
     is_connector = false;
     multistep_create = false;
+    drag_create = true;
     has_text = true;
     text_overflow: TextOverflowMode = 'hidden';
 
@@ -116,6 +117,13 @@ export class RectangleAdapter implements INodeAdapter {
      * @param rect The bounding rectangle of the node.
      */
     protected renderAlterHandle(node: INode, context: CanvasRenderingContext2D, rect: IRect): void {    //}, angle: number, cos: number, sin: number): void {
+    }
+
+    public onCreateDraft(tool: string): Partial<INode> | undefined {
+        return {
+            type: this.name,
+            points: [{ x: 0, y: 0 }, { x: 104, y: 40 }],
+        }
     }
 
     public onCreateMove(node: INode, point: IPoint): void {

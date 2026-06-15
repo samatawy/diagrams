@@ -1,5 +1,5 @@
 import type { INode } from "../../interfaces";
-import type { IPoint, IRect } from "../../types";
+import type { IPoint, IRect, NodeHandle } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
@@ -197,6 +197,16 @@ export class DocumentAdapter extends RectangleAdapter {
             if (!node.geometry) node.geometry = {};
             node.geometry.waveheight = new_waveheight;
         }
+    }
+
+    public afterResize(node: INode, _handle: NodeHandle): void {
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return;
+        if (!node.geometry || typeof node.geometry.waveheight !== 'number' || !Number.isFinite(node.geometry.waveheight)) return;
+
+        const rect = diagram.getCoordinates().getBoundingRect(node);
+        const maxWaveheight = rect.height / 2;
+        node.geometry.waveheight = Math.max(0, Math.min(maxWaveheight, node.geometry.waveheight));
     }
 
 }

@@ -45,26 +45,25 @@ export function registerAdapters() {
     RectangleAdapter.register();
     RoundRectangleAdapter.register();
     ParallelogramAdapter.register();
-    // EllipseAdapter.register();
+    TrapezoidAdapter.register();
     RhombusAdapter.register();
+    EllipseAdapter.register();
     TextAdapter.register();
     SvgAdapter.register();
+    LineAdapter.register();
     PolylineAdapter.register();
     // PolygonAdapter.register();
-    CurveAdapter.register();
-    // LineAdapter.register();
+    // CurveAdapter.register();
 
     // new RectangleAdapter().register();
     // new RoundRectangleAdapter().register();
-    new EllipseAdapter().register();
+    // new EllipseAdapter().register();
     // new RhombusAdapter().register();
     // new TextAdapter().register();
     // new SvgAdapter().register();
     // new PolylineAdapter().register();
     new PolygonAdapter().register();
-    // new CurveAdapter().register();
-    new LineAdapter().register();
-    new TrapezoidAdapter().register();
+    new CurveAdapter().register();
     new DocumentAdapter().register();
 }
 

@@ -55,6 +55,12 @@ export interface INodeAdapter {
     multistep_create?: boolean;
 
     /**
+     * Indicates whether the node can be created by dragging from the tool palette onto the canvas.
+     * If true, the adapter should implement the onCreateDraft method to provide the initial geometry of the draft node to be dragged.
+     */
+    drag_create?: boolean;
+
+    /**
      * The hollow mode determines how the node's hollow property is calculated based on its fill style.
      * - 'always': The node is always hollow regardless of its fill style.
      * - 'never': The node is never hollow regardless of its fill style.
@@ -67,6 +73,13 @@ export interface INodeAdapter {
      */
     has_text: boolean;
 
+    /**
+     * The text overflow mode determines how text that exceeds the node's bounding box is handled.
+     * - 'visible': Text is allowed to overflow the node's bounding box and will be fully visible.
+     * - 'hidden': Text that exceeds the node's bounding box is clipped and not visible.
+     * - 'ellipsis': Text that exceeds the node's bounding box is truncated and an ellipsis ("...") is displayed to indicate that there is more text.
+     * This property is used to control the visual appearance of text within the node and how it behaves when the text content is too large for the available space.
+     */
     text_overflow: TextOverflowMode;
 
     /**
@@ -76,6 +89,14 @@ export interface INodeAdapter {
      * @param point The current world-space cursor position.
      */
     onCreateMove(node: INode, point: IPoint): void;
+
+    /**
+     * Creates and returns a new draft node for the given tool when the user initiates a drag-create action from the tool palette.
+     * This will only be called if the adapter's drag_create property is true.
+     * @param tool The tool identifier for which to create the draft node.
+     * @returns The newly created draft node, or undefined if the draft node should not be created.
+     */
+    onCreateDraft?(tool: string): Partial<INode> | undefined;
 
     /**
      * Updates the node's size while the user is dragging a resize handle.

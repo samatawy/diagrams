@@ -254,6 +254,12 @@ export class ToolPalette {
         button.setAttribute('aria-pressed', 'false');
         button.setAttribute('aria-label', label);
 
+        const adapter = NodeRegistry.adapter(tool);
+        if (adapter?.drag_create) {
+            console.log(`Attaching drag-create behavior for tool: ${tool}`);
+            this.attachDragCreateBehavior(button, tool);
+        }
+
         const iconEl = IconRegistry.createElement(tool);
         if (iconEl) {
             button.appendChild(iconEl);
@@ -275,6 +281,43 @@ export class ToolPalette {
 
         this.host.appendChild(button);
         this.renderedTools.push(tool);
+    }
+
+    protected attachDragCreateBehavior(button: HTMLButtonElement, tool: string): void {
+        const adapter = NodeRegistry.adapter(tool);
+        const draft = adapter?.onCreateDraft ? adapter.onCreateDraft(tool) : undefined;
+        if (!draft) {
+            // draft cannot be created, so do not attach drag behavior
+            return;
+        }
+
+        let pointerArmed = false;
+        let draftStarted = false;
+
+        const releasePointerArm = () => {
+            pointerArmed = false;
+            window.removeEventListener('pointerup', releasePointerArm, true);
+            window.removeEventListener('pointercancel', releasePointerArm, true);
+        };
+
+        button.addEventListener('pointerdown', (event: PointerEvent) => {
+            if (event.button !== 0) return;
+            pointerArmed = true;
+            draftStarted = false;
+            window.addEventListener('pointerup', releasePointerArm, true);
+            window.addEventListener('pointercancel', releasePointerArm, true);
+        });
+
+        button.addEventListener('pointerleave', (event: PointerEvent) => {
+            if (!pointerArmed || draftStarted) return;
+            if ((event.buttons & 1) !== 1) return;
+
+            draftStarted = true;
+            const draft = adapter?.onCreateDraft ? adapter.onCreateDraft(tool) : undefined;
+            if (draft) {
+                this.diagram.createDragDraft(draft);
+            }
+        });
     }
 
     protected highlight(tool: string): void {

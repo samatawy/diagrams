@@ -32,6 +32,7 @@ import {
 import type { ISerializedNode } from "../io";
 import { nodeAngle, nodeText, SHADOW_NONE, strokeStyle, textAlign, textBaseline } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
+import { RenderBasics } from "../nodes";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -130,6 +131,12 @@ export class DiagramEditView extends DiagramView {
         originalText: string;
     };
 
+    private dragCreateDraft?: INode;
+
+    protected readonly handleWindowPointerUp = (event: PointerEvent) => this.windowPointerUp(event);
+
+    protected readonly handleWindowPointerCancel = (_event: PointerEvent) => this.cancelDragCreateDraft();
+
     public fileDialogs?: DiagramFileDialogs;
 
     public prompts?: DiagramEditViewPrompts;
@@ -152,18 +159,23 @@ export class DiagramEditView extends DiagramView {
         this.history = new HistoryStack(this);
         this.zOrder = new ZOrder(this.zOrderHost);
         this.color_palette = new ColorPalette(this);
+        window.addEventListener('pointerup', this.handleWindowPointerUp, true);
+        window.addEventListener('pointercancel', this.handleWindowPointerCancel, true);
     }
 
     /**
      * Cleans up resources used by the diagram, such as event listeners and active text editors.
      */
     public override destroy(): void {
+        window.removeEventListener('pointerup', this.handleWindowPointerUp, true);
+        window.removeEventListener('pointercancel', this.handleWindowPointerCancel, true);
         this.clear();
         super.destroy();
     }
 
     public override clear(): void {
         this.closeTextEditor(true);
+        this.clearDragCreateDraft();
 
         super.clear();
         this.history.clear();
@@ -553,6 +565,10 @@ export class DiagramEditView extends DiagramView {
         this.current.toolOptions = options;
         this.current.draft = undefined;
 
+        if (nextTool === 'select') {
+            this.clearDragCreateDraft();
+        }
+
         if (previousTool !== nextTool) {
             this.eventDispatcher.toolChanged({
                 tool: nextTool,
@@ -561,6 +577,33 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (this.current.tool == 'select') return;
+    }
+
+    /**
+     * Starts a local drag-create draft for the provided tool.
+     * The draft is previewed and can be placed by pointer-up on canvas.
+     * @param tool The name of the tool to create a draft for.
+     */
+    public createDragDraft(draft: Partial<INode>): void {
+        if (!draft || !draft.type || draft.type === 'select' || !NodeRegistry.adapter(draft.type)) {
+            return;
+        }
+
+        void this.setTool(draft.type, this.current.toolOptions);
+        const center = this.coordinates.getPoint(this.canvas.width / 2, this.canvas.height / 2, this.grid);
+        const node = this.createDraftFromCurrent(draft.type, this.current.toolOptions, center);
+
+        // Let adapters define drag-draft geometry and optional draft properties.
+        const { owner: _owner, id: _id, ready: _ready, points, ...rest } = draft;
+        Object.assign(node, rest);
+        if (Array.isArray(points) && points.length > 0) {
+            node.points = points.map((pt) => ({ x: pt.x, y: pt.y }));
+        }
+
+        this.centerNodeAt(node, center);
+        node.ready = false;
+        this.dragCreateDraft = node;
+        this.render('all');
     }
 
     /**
@@ -1463,8 +1506,21 @@ export class DiagramEditView extends DiagramView {
     // ==================================================
 
     public override render(what: 'nodes' | 'selection' | 'all' = 'all'): void {
-        // Any additional requirements?
         super.render(what);
+
+        if (!this.dragCreateDraft || !this.context) {
+            return;
+        }
+
+        if (what === 'selection') {
+            return;
+        }
+
+        this.context.save();
+        this.coordinates.applyViewportTransform(this.context);
+        this.context.globalAlpha = 0.65;
+        NodeRegistry.adapter(this.dragCreateDraft.type)?.render(this.dragCreateDraft, this.context);
+        this.context.restore();
     }
 
     /**
@@ -1506,6 +1562,13 @@ export class DiagramEditView extends DiagramView {
     protected override pointerDown(event: PointerEvent): void {
         if (!this.canvas) return;
 
+        if (this.dragCreateDraft && event.button === 0) {
+            // This cshould never happen!
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+        }
+
         if (this.current.tool == 'select' && event.button === 0) {
             this.selectDown(event);
             return;
@@ -1530,6 +1593,12 @@ export class DiagramEditView extends DiagramView {
      */
     protected override pointerMove(event: PointerEvent): void {
         if (!this.canvas) return;
+
+        if (this.dragCreateDraft) {
+            // Creating by dragging from the palette; just update the draft position.
+            this.dragOver(event);
+            return;
+        }
 
         if (this.current.tool == 'select') {
             this.selectMove(event);
@@ -1556,6 +1625,24 @@ export class DiagramEditView extends DiagramView {
      */
     protected override pointerUp(event: PointerEvent): void {
         if (!this.canvas) return;
+
+        if (this.dragCreateDraft) {
+            // DiagramView routes pointerleave with pressed buttons into pointerUp;
+            // do not treat leaving canvas as release/cancel.
+            if (event.type === 'pointerleave') {
+                return;
+            }
+
+            if (!this.isPointerInsideCanvas(event)) {
+                this.cancelDragCreateDraft();
+                return;
+            }
+
+            if (event.button === 0) {
+                this.dropDrop(event);
+            }
+            return;
+        }
 
         if (this.current.tool == 'select') {
             this.selectUp(event);
@@ -2172,6 +2259,83 @@ export class DiagramEditView extends DiagramView {
         this.finishDraftIfReady();
     }
 
+    // ==================================================
+    // ========== Private drag create methods ==========
+    // ==================================================
+
+    private dragOver(event: PointerEvent): void {
+        if (!this.dragCreateDraft) {
+            return;
+        }
+
+        const point = this.coordinates.getPointFromEvent(event, this.grid);
+        this.centerNodeAt(this.dragCreateDraft, point);
+        this.render('all');
+    }
+
+    private dropDrop(event: PointerEvent): void {
+        if (!this.dragCreateDraft) {
+            return;
+        }
+
+        const created = this.dragCreateDraft;
+        const point = this.coordinates.getPointFromEvent(event, this.grid);
+        this.centerNodeAt(created, point);
+        created.ready = true;
+        created.id = `${created.type}-drop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+        const layer = this.ensureCurrentLayer();
+        this.addUndo();
+        this.upsertNode(created);
+        if (!layer.nodes.includes(created.id)) {
+            layer.nodes.push(created.id);
+        }
+
+        NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid);
+
+        this.clearSelection();
+        this.select(created);
+        this.clearDragCreateDraft();
+        this.render('all');
+        this.renderPreview();
+        this.emitNodeAdded(created);
+        void this.setTool('select');
+    }
+
+    private centerNodeAt(node: INode, center: IPoint): void {
+        const rect = this.coordinates.getBoundingRect(node);
+        const deltaX = center.x - (rect.left + rect.width / 2);
+        const deltaY = center.y - (rect.top + rect.height / 2);
+        NodeBasics.moveBy(node, deltaX, deltaY, 'ignore_scale');
+    }
+
+    private clearDragCreateDraft(): void {
+        this.dragCreateDraft = undefined;
+    }
+
+    private cancelDragCreateDraft(): void {
+        if (!this.dragCreateDraft) return;
+        this.clearDragCreateDraft();
+        this.render('all');
+        void this.setTool('select');
+    }
+
+    private isPointerInsideCanvas(event: PointerEvent): boolean {
+        if (!this.canvas) return false;
+
+        const rect = this.canvas.getBoundingClientRect();
+        return event.clientX >= rect.left
+            && event.clientX <= rect.right
+            && event.clientY >= rect.top
+            && event.clientY <= rect.bottom;
+    }
+
+    private windowPointerUp(event: PointerEvent): void {
+        if (!this.dragCreateDraft) return;
+        if (this.isPointerInsideCanvas(event)) return;
+        this.cancelDragCreateDraft();
+    }
+
     // ===================================================
     // ========== Private methods ==========
     // ==========================================================
@@ -2311,6 +2475,10 @@ export class DiagramEditView extends DiagramView {
 
         return draft;
     }
+
+    // ==================================================
+    // ========== Private drag create methods ==========
+    // ==================================================
 
     private finishDraftIfReady(): void {
         if (!this.current.draft?.ready) {
