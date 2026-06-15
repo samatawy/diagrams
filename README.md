@@ -8,9 +8,14 @@ It includes a reusable diagram model, node adapters, Canvas-based rendering prim
 
 This package is being published as a first public draft.
 
-- Ready for evaluation, prototypes, and internal tooling.
+- Ready for evaluation, prototyping, and internal tooling.
 - Not yet recommended for production workloads.
 - Expect API refinements while customization points stabilize.
+
+## Documentation And Demo
+
+- API docs (GitHub Pages): https://samatawy.github.io/diagrams/
+- Hosted demos: https://samatawy.github.io/diagrams/demo/
 
 ## Install
 
@@ -91,11 +96,6 @@ You can tailor the editor for your own product:
 - Override toolbar layouts and actions.
 - Provide custom file dialog handlers for open/save/export.
 - Style and wire custom UI controls around `DiagramEditView`.
-
-## Documentation And Demo
-
-- API docs (GitHub Pages): https://samatawy.github.io/diagrams/
-- Hosted demos: https://samatawy.github.io/diagrams/demo/
 
 ## Development Scripts
 

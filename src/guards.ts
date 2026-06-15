@@ -24,8 +24,8 @@ export function isConnection(value: unknown): value is IConnection {
     return 'from' in value
         || 'to' in value
         || 'startArrow' in value
-        || 'endArrow' in value
-        || 'ready' in value;
+        || 'endArrow' in value;
+    // || 'ready' in value;     Why was this here?
 }
 
 /**

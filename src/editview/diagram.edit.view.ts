@@ -1,6 +1,6 @@
 import { Diagram } from "../model/diagram";
 import type { IConnection, IConnectionAnchor, IGrid, ILayer, INode } from "../interfaces";
-import { DiagramView } from "../view/diagram.view";
+import { DiagramView, type RenderMode, type RenderScope } from "../view/diagram.view";
 import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode } from "../types";
 import { HistoryStack } from "./history";
 import type { ShadowStyle } from "../shadows";
@@ -23,6 +23,7 @@ import type {
 
 import { NodeRegistry } from "../factory/node.registry";
 import { ZOrder, type ZOrderHost } from "../layout/z.order";
+import { Guides, type SnapGuideResult } from "../layout";
 import { ColorPalette } from "./color.palette";
 import {
     type DiagramDeleteRequest,
@@ -30,9 +31,8 @@ import {
     type DiagramEditContextMenu,
 } from "../events/diagram.events";
 import type { ISerializedNode } from "../io";
-import { nodeAngle, nodeText, SHADOW_NONE, strokeStyle, textAlign, textBaseline } from "../value.utils";
+import { nodeAngle, nodeText, strokeStyle, textAlign, textBaseline } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
-import { RenderBasics } from "../nodes";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -123,6 +123,8 @@ export class DiagramEditView extends DiagramView {
 
     private pointChangedNodes = new Set<INode>();
 
+    private pendingGuideSnap?: SnapGuideResult;
+
     private connectionBeforeEdit?: { node: INode & IConnection; from?: string; to?: string };
 
     protected activeTextEditor?: {
@@ -176,6 +178,8 @@ export class DiagramEditView extends DiagramView {
     public override clear(): void {
         this.closeTextEditor(true);
         this.clearDragCreateDraft();
+        this.guides = [];
+        this.pendingGuideSnap = undefined;
 
         super.clear();
         this.history.clear();
@@ -256,9 +260,14 @@ export class DiagramEditView extends DiagramView {
             return undefined;
         }
 
+        const resolvedOptions: DiagramSaveOptions = {
+            ...options,
+            fileName: options.fileName ?? `${this.id}.json`,
+        };
+
         const resolved: DiagramSaveResult | undefined = this.fileDialogs
-            ? await this.fileDialogs.saveDiagram(options)
-            : { ...options };
+            ? await this.fileDialogs.saveDiagram(resolvedOptions)
+            : { ...resolvedOptions };
         if (!resolved) {
             return undefined;
         }
@@ -269,6 +278,44 @@ export class DiagramEditView extends DiagramView {
         }
 
         return this.save(resolved);
+    }
+
+    public async saveImageDiagram(options: { fileName?: string; mimeType?: string; quality?: number; padding?: number } = {}): Promise<string | undefined> {
+        const mimeType = options.mimeType ?? 'image/png';
+        const fileName = options.fileName ?? (() => {
+            switch (mimeType) {
+                case 'image/jpeg': return `${this.id}.jpg`;
+                case 'image/webp': return `${this.id}.webp`;
+                case 'image/avif': return `${this.id}.avif`;
+                case 'image/png':
+                default:
+                    return `${this.id}.png`;
+            }
+        })();
+
+        const resolved: DiagramSaveResult | undefined = this.fileDialogs
+            ? await this.fileDialogs.saveDiagram({ fileName, mimeType })
+            : { fileName, mimeType };
+        if (!resolved) {
+            return undefined;
+        }
+
+        const blob = await this.exportImage({
+            mimeType: mimeType as any,
+            quality: options.quality,
+            padding: options.padding,
+        });
+
+        if (resolved.handle) {
+            return await writeBlobToFileHandle(resolved.handle, blob);
+        }
+
+        return this.saveImage({
+            fileName: resolved.fileName,
+            mimeType: mimeType as any,
+            quality: options.quality,
+            padding: options.padding,
+        });
     }
 
     public async exportDiagram(options: DiagramExportOptions = {}): Promise<string | Uint8Array | Blob | undefined> {
@@ -376,8 +423,10 @@ export class DiagramEditView extends DiagramView {
 
     /**
      * Gets the active render mode for this view.
+     * - 'view': optimized for static viewing of diagrams, with limited interactivity and simplified rendering.
+     * - 'editing': optimized for user interaction and mutation of the diagram.
      */
-    public get render_mode(): 'view' | 'editing' {
+    public get render_mode(): RenderMode {
         return 'editing';
     }
 
@@ -1505,14 +1554,15 @@ export class DiagramEditView extends DiagramView {
     // ========== Rendering methods ==========
     // ==================================================
 
-    public override render(what: 'nodes' | 'selection' | 'all' = 'all'): void {
+    public override render(what: RenderScope = 'all'): void {
         super.render(what);
 
         if (!this.dragCreateDraft || !this.context) {
             return;
         }
 
-        if (what === 'selection') {
+        if (what === 'selection' || what === 'grid' || what === 'guides') {
+            // Already handled by parent.
             return;
         }
 
@@ -1662,87 +1712,38 @@ export class DiagramEditView extends DiagramView {
      * @param event The keyboard event.
      */
     protected override keydown(event: KeyboardEvent): void {
+        const consumeEvent = () => {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        };
+
+        const key = event.key.toLowerCase();
+
         if (this.activeTextEditor) {
-            const key = event.key.toLowerCase();
             if (key === 'enter' && (event.ctrlKey || event.metaKey)) {
-                event.preventDefault();
-                event.stopImmediatePropagation();
+                consumeEvent();
                 this.closeTextEditor(true);
+
             } else if (key === 'escape') {
-                event.preventDefault();
-                event.stopImmediatePropagation();
+                consumeEvent();
                 this.closeTextEditor(false);
+
             } else {
                 this.activeTextEditor.element.focus();
             }
             return;
         }
 
-        super.keydown(event);
-
-        let key = event.key.toLowerCase();
-
-        if ((key == 'delete' || key == 'backspace') && this.selection().length) {
-            event.preventDefault();
-            event.stopImmediatePropagation();
+        if (key === 'escape') {
             this.exitDrawing();
-            this.deleteSelected();
             return;
         }
 
-        if (event.ctrlKey || event.metaKey) {
-            if (key == 'c') {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                this.exitDrawing();
-                this.copySelected();
-            }
-            if (key == 'v') {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                this.exitDrawing();
-                this.pasteNodes();
-            }
-            if (key == 'x') {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                this.exitDrawing();
-                this.cutSelected();
-                // this.copySelected();
-                // this.deleteSelected();
-            }
-            if (key == 'z') {
-                this.exitDrawing();
-                if (event.shiftKey) {
-                    this.redo();
-                } else {
-                    this.undo();
-                }
-            }
-            if (key == 'y') {
-                this.exitDrawing();
-                this.redo();
-            }
-            if (key == 'a') {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                this.exitDrawing();
-                this.selectAll();
-            }
-        }
+        if (key === 'enter') {
+            consumeEvent();
 
-        if (key == 'escape') {
-            this.exitDrawing();
-        }
-        if (key == 'enter') {
-            event.preventDefault();
-            event.stopImmediatePropagation();
-
-            const nodes = this.selection();
-            const selected = nodes.length == 1 ? nodes[0] : undefined;
-
-            // In select mode open editor immediately.
-            if (this.current.tool === 'select' && selected && this.hasTextInput(selected.type)) {
+            const selected = this.selection().length === 1 ? this.selection()[0] : undefined;
+            if (selected && this.current.tool === 'select' && this.hasTextInput(selected.type)) {
                 this.editText(selected);
                 return;
             }
@@ -1750,8 +1751,8 @@ export class DiagramEditView extends DiagramView {
             // In draw/create states finish the gesture first, then open editor.
             if (this.exitDrawing()) {
                 const next = this.selection();
-                const afterExit = next.length == 1 ? next[0] : undefined;
-                if (this.current.tool === 'select' && afterExit && this.hasTextInput(afterExit.type)) {
+                const afterExit = next.length == 1 ? next[0]! : undefined;
+                if (afterExit && this.current.tool === 'select' && this.hasTextInput(afterExit.type)) {
                     this.editText(afterExit);
                 }
                 return;
@@ -1760,7 +1761,119 @@ export class DiagramEditView extends DiagramView {
             if (selected) {
                 this.editText(selected);
             }
+            return;
         }
+
+        if (key === 'delete' || key === 'backspace') {
+            consumeEvent();
+            this.exitDrawing();
+            this.deleteSelected();
+            return;
+        }
+
+        if (key === 'arrowup' || key === 'arrowdown' || key === 'arrowleft' || key === 'arrowright') {
+            if (this.selection().length) {
+                consumeEvent();
+                this.exitDrawing();
+
+                let step = 1;
+                if (event.shiftKey) {
+                    if (key === 'arrowup' || key === 'arrowdown') {
+                        step = this.grid.height || 10;
+                    } else {
+                        step = this.grid.width || 10;
+                    }
+                } else if (event.altKey) {
+                    step = 0.5;
+                }
+
+                let byX = 0;
+                let byY = 0;
+                if (key === 'arrowleft') byX = -step;
+                if (key === 'arrowright') byX = step;
+                if (key === 'arrowup') byY = -step;
+                if (key === 'arrowdown') byY = step;
+
+                this.addUndo();
+                this.moveSelected(byX, byY);
+                for (const node of this.selection()) {
+                    this.movedNodes.add(node);
+                }
+                this.render('all');
+                this.renderPreview();
+                this.emitPendingMutationEvents();
+            }
+            return;
+        }
+
+        if (event.ctrlKey || event.metaKey) {
+            if (key === 'n') {
+                consumeEvent();
+                this.exitDrawing();
+                void this.newDiagram();
+                return;
+            }
+            if (key === 'o') {
+                consumeEvent();
+                this.exitDrawing();
+                void this.openDiagram();
+                return;
+            }
+            if (key === 's') {
+                consumeEvent();
+                this.exitDrawing();
+                void this.saveDiagram();
+                return;
+            }
+            if (key === 'e') {
+                consumeEvent();
+                this.exitDrawing();
+                void this.saveImageDiagram({ mimeType: 'image/png' });
+                return;
+            }
+            if (key === 'c') {
+                consumeEvent();
+                this.exitDrawing();
+                this.copySelected();
+                return;
+            }
+            if (key === 'v') {
+                consumeEvent();
+                this.exitDrawing();
+                this.pasteNodes();
+                return;
+            }
+            if (key === 'x') {
+                consumeEvent();
+                this.exitDrawing();
+                this.cutSelected();
+                return;
+            }
+            if (key === 'z') {
+                consumeEvent();
+                this.exitDrawing();
+                if (event.shiftKey) {
+                    void this.redo();
+                } else {
+                    void this.undo();
+                }
+                return;
+            }
+            if (key === 'y') {
+                consumeEvent();
+                this.exitDrawing();
+                void this.redo();
+                return;
+            }
+            if (key === 'a') {
+                consumeEvent();
+                this.exitDrawing();
+                this.selectAll();
+                return;
+            }
+        }
+
+        super.keydown(event);
     }
 
     protected override keyup(event: KeyboardEvent): void {
@@ -1927,6 +2040,22 @@ export class DiagramEditView extends DiagramView {
             // If we are clicking on an already selected item, only get the handle..
             // the rest will be done by SelectMove..
             this.addUndo();
+            if (this.downHandle === NodeHandle.MOVE || this.downHandle === NodeHandle.N || this.downHandle === NodeHandle.S
+                || this.downHandle === NodeHandle.E || this.downHandle === NodeHandle.W || this.downHandle === NodeHandle.NE
+                || this.downHandle === NodeHandle.NW || this.downHandle === NodeHandle.SE || this.downHandle === NodeHandle.SW) {
+                const guideResult = Guides.computeResult({
+                    diagram: this,
+                    nodes: [this.downShape],
+                    byX: 0,
+                    byY: 0,
+                    downShapeId: this.downShape?.id,
+                });
+                if (guideResult) {
+                    this.guides = guideResult.guides;
+                    this.pendingGuideSnap = guideResult;
+                    this.render('all');
+                }
+            }
             return;
         }
 
@@ -1957,6 +2086,25 @@ export class DiagramEditView extends DiagramView {
             this.canvas.style.cursor = 'grabbing';
         } else if (!this.downShape && !this.downRect) {
             this.canvas.style.cursor = 'grabbing';
+        }
+
+        const handleAllowsGuidePreview = this.downHandle === NodeHandle.MOVE || this.downHandle === NodeHandle.N || this.downHandle === NodeHandle.S
+            || this.downHandle === NodeHandle.E || this.downHandle === NodeHandle.W || this.downHandle === NodeHandle.NE
+            || this.downHandle === NodeHandle.NW || this.downHandle === NodeHandle.SE || this.downHandle === NodeHandle.SW;
+        const shiftToggleGuidePreview = !!event.shiftKey && !!this.downShape;
+
+        if (handleAllowsGuidePreview || shiftToggleGuidePreview) {
+            const guideResult = Guides.computeResult({
+                diagram: this,
+                nodes: shiftToggleGuidePreview ? [this.downShape!] : this.selection(),
+                byX: 0,
+                byY: 0,
+                downShapeId: this.downShape?.id,
+            });
+            if (guideResult) {
+                this.guides = guideResult.guides;
+                this.pendingGuideSnap = guideResult;
+            }
         }
 
         this.render('all');
@@ -2134,6 +2282,12 @@ export class DiagramEditView extends DiagramView {
 
         // removePoint is handled on pointerDown; nothing to do here for points.
 
+        if (this.downHandle === NodeHandle.MOVE || this.downHandle === NodeHandle.N || this.downHandle === NodeHandle.S
+            || this.downHandle === NodeHandle.E || this.downHandle === NodeHandle.W || this.downHandle === NodeHandle.NE
+            || this.downHandle === NodeHandle.NW || this.downHandle === NodeHandle.SE || this.downHandle === NodeHandle.SW) {
+            this.applyPendingGuideSnap(this.downHandle, event.altKey);
+        }
+
         if (this.grid && this.grid.forced && !event.ctrlKey) {
             if (this.downHandle != NodeHandle.ROTATE) {
                 for (let shape of this.selection()) {
@@ -2143,6 +2297,8 @@ export class DiagramEditView extends DiagramView {
             // this.render('all');
         }
 
+        this.guides = [];
+        this.pendingGuideSnap = undefined;
         this.render('all');
 
         this.downHandle = NodeHandle.NONE;
@@ -2594,6 +2750,9 @@ export class DiagramEditView extends DiagramView {
     // }
 
     private exitDrawing(): boolean {
+        this.guides = [];
+        this.pendingGuideSnap = undefined;
+
         // End drawing polylines..
         if (this.current.draft && !this.current.draft.ready) {
             this.current.draft.ready = true;
@@ -2810,16 +2969,70 @@ export class DiagramEditView extends DiagramView {
     }
 
     private moveSelected(byX: number, byY: number): void {
-        for (const node of this.selection()) {
+        const nodes = this.selection();
+        if (!nodes.length) {
+            this.guides = [];
+            this.pendingGuideSnap = undefined;
+            return;
+        }
+
+        for (const node of nodes) {
             NodeBasics.moveBy(node, byX, byY);
+        }
+
+        const guideResult = Guides.computeResult({
+            diagram: this,
+            nodes,
+            byX,
+            byY,
+            downShapeId: this.downShape?.id,
+        });
+        if (guideResult) {
+            this.pendingGuideSnap = guideResult;
+            this.guides = guideResult.guides;
+        } else {
+            this.guides = [];
+            this.pendingGuideSnap = undefined;
         }
     }
 
     private resizeSelected(handle: NodeHandle, byX: number, byY: number, preserveAspect?: boolean): void {
-        for (const node of this.selection()) {
+        const nodes = this.selection();
+        if (!nodes.length) {
+            this.guides = [];
+            this.pendingGuideSnap = undefined;
+            return;
+        }
+
+        for (const node of nodes) {
             NodeBasics.resizeHandle(node, handle, byX, byY, preserveAspect);
             NodeRegistry.adapter(node.type)?.afterResize?.(node, handle);
         }
+
+        const guideResult = Guides.computeResult({
+            diagram: this,
+            nodes,
+            byX,
+            byY,
+            downShapeId: this.downShape?.id,
+        });
+        if (guideResult) {
+            this.pendingGuideSnap = guideResult;
+            this.guides = guideResult.guides;
+        } else {
+            this.guides = [];
+            this.pendingGuideSnap = undefined;
+        }
+    }
+
+    private applyPendingGuideSnap(handle: NodeHandle, preserveAspect?: boolean): void {
+        void Guides.applyPendingToNodes({
+            diagram: this,
+            snap: this.pendingGuideSnap,
+            handle,
+            nodes: this.selection(),
+            preserveAspect,
+        });
     }
 
     private moveSelectedPoint(node: INode, x: number, y: number, byX: number, byY: number): void {

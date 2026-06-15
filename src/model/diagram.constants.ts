@@ -6,11 +6,12 @@ import type { ITextAlign, ITextBaseline } from "../types";
 export const MIN_ZOOM = 'MIN_ZOOM';
 export const MAX_ZOOM = 'MAX_ZOOM';
 
-// ========= Grid ==========
+// ========= Grid and Guides ==========
 
 export const GRID_LINE_COLOR = 'GRID_LINE_COLOR';
 export const GRID_CELL_WIDTH = 'GRID_CELL_WIDTH';
 export const GRID_CELL_HEIGHT = 'GRID_CELL_HEIGHT';
+export const GUIDE_STROKE_STYLE = 'GUIDE_STROKE_STYLE';
 
 // ======== Layout ==========
 
@@ -63,11 +64,12 @@ export class DiagramConstants {
         MIN_ZOOM: 0.2,
         MAX_ZOOM: 4,
 
-        // ========== Grid ==========
+        // ========== Grid and Guides ==========
 
-        GRID_LINE_COLOR: '#c6c6c6', // 'lightgray',
+        GRID_LINE_COLOR: '#c0c0c0',
         GRID_CELL_WIDTH: 16,
         GRID_CELL_HEIGHT: 16,
+        GUIDE_STROKE_STYLE: 'rgba(0, 0, 255, 0.8)',
 
         // ========== Layout ==========
 
@@ -137,7 +139,7 @@ export class DiagramConstants {
         return this.get(MAX_ZOOM);
     }
 
-    // ========== Grid ==========
+    // ========== Grid and Guides ==========
 
     public static get GRID_LINE_COLOR(): string {
         return this.get(GRID_LINE_COLOR);
@@ -149,6 +151,10 @@ export class DiagramConstants {
 
     public static get GRID_CELL_HEIGHT(): number {
         return this.get(GRID_CELL_HEIGHT);
+    }
+
+    public static get GUIDE_STROKE_STYLE(): string {
+        return this.get(GUIDE_STROKE_STYLE);
     }
 
     // ========== Layout ==========

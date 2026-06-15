@@ -21,7 +21,11 @@ import {
     type DiagramSelectionOptions,
 } from "./view.options";
 import { DiagramConstants } from "../model/diagram.constants";
+import type { DiagramGuide } from "../layout";
 
+export type RenderMode = 'view' | 'editing';
+
+export type RenderScope = 'all' | 'nodes' | 'selection' | 'grid' | 'guides';
 
 /**
  * A class representing a diagram in 'view' mode. 
@@ -60,6 +64,8 @@ export class DiagramView extends Diagram implements HasSelection {
     };
 
     protected fitViewport: FitViewport;
+
+    protected guides: DiagramGuide[] = [];
 
     protected isSpacePanning: boolean = false;
 
@@ -154,9 +160,11 @@ export class DiagramView extends Diagram implements HasSelection {
     }
 
     /**
-     * Indicates the rendering mode of this diagram instance.
+     * Gets the active render mode for this view.
+     * - 'view': optimized for static viewing of diagrams, with limited interactivity and simplified rendering.
+     * - 'editing': optimized for user interaction and mutation of the diagram.
      */
-    public get render_mode(): 'view' | 'editing' {
+    public get render_mode(): RenderMode {
         return 'view';
     }
 
@@ -477,9 +485,16 @@ export class DiagramView extends Diagram implements HasSelection {
     /**
      * Renders the diagram onto the canvas, including any selection markers.
      * By default, both nodes and selection markers are rendered, but this can be controlled with the `what` parameter.
-     * @param what A string indicating what to render: 'nodes' to render only nodes, 'selection' to render only selection markers, 'grid' to render only the grid, or 'all' to render everything.
+     * Accepts the following:
+     * - 'nodes' to render only nodes,
+     * - 'selection' to render only selection markers,
+     * - 'grid' to render only the grid,
+     * - 'guides' to render only guides, or
+     * - 'all' to render everything.
+     * 
+    * @param what A RenderScope indicating what to render.
      */
-    public render(what: 'nodes' | 'selection' | 'grid' | 'all' = 'all'): void {
+    public render(what: RenderScope = 'all'): void {
         if (!this.canvas || !this.context) return;
 
         this.coordinates.resetTransform(this.context);
@@ -496,6 +511,10 @@ export class DiagramView extends Diagram implements HasSelection {
 
         if (this.grid?.visible && (what === 'grid' || what === 'all')) {
             this.renderGrid(this.context);
+        }
+
+        if (this.guides.length && (what === 'guides' || what === 'all')) {
+            this.renderGuides(this.context);
         }
 
         for (const layer of this.layers) {
@@ -546,6 +565,47 @@ export class DiagramView extends Diagram implements HasSelection {
 
         context.stroke();
         context.restore();
+    }
+
+    protected renderGuides(context: CanvasRenderingContext2D): void {
+        if (!this.guides.length) {
+            return;
+        }
+
+        const zoom = this.coordinates.zoom || 1;
+        context.save();
+
+        for (const guide of this.guides) {
+            if (guide.kind === 'line' || guide.kind === 'guideline' || guide.kind === undefined) {
+                context.beginPath();
+                context.strokeStyle = guide.color ?? DiagramConstants.GUIDE_STROKE_STYLE;
+                context.globalAlpha = guide.alpha ?? 0.45;
+                context.lineWidth = (guide.width ?? 0.9) / zoom;
+                context.setLineDash(guide.dash ?? [6 / zoom, 4 / zoom]);
+                context.moveTo(guide.from.x, guide.from.y);
+                context.lineTo(guide.to.x, guide.to.y);
+                context.stroke();
+            }
+        }
+
+        context.restore();
+    }
+
+    public setGuides(guides: DiagramGuide[]): void {
+        this.guides = [...guides];
+        this.render('guides');
+    }
+
+    public clearGuides(): void {
+        if (!this.guides.length) {
+            return;
+        }
+        this.guides = [];
+        this.render('guides');
+    }
+
+    public clearGuidelines(): void {
+        this.clearGuides();
     }
 
     /**
