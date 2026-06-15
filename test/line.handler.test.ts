@@ -137,6 +137,7 @@ describe('LineHandler', () => {
             fill() {
                 fillCount += 1;
             },
+            fillRect() { },
         } as unknown as CanvasRenderingContext2D;
 
         try {

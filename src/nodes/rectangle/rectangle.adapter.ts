@@ -150,6 +150,7 @@ export class RectangleAdapter implements INodeAdapter {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
+
         const coordinates = diagram.getCoordinates();
         const cache = diagram.getCache();
         const cached = cache.getNode(node) || {} as INodeCached;

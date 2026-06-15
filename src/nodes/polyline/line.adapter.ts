@@ -1,11 +1,10 @@
-import { NodeRegistry } from "../../factory/node.registry";
 import { type INode } from "../../interfaces";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { ConnectionBasics } from "../connection.basics";
 import { PolylineAdapter } from "./polyline.adapter";
 import { RenderBasics } from "../render.basics";
-import type { HollowMode } from "../../factory/node.adapter";
+import type { HollowMode, TextOverflowMode } from "../../factory/node.adapter";
 
 /**
  * LineAdapter is a node adapter responsible for rendering line nodes in the diagram. 
@@ -18,6 +17,8 @@ export class LineAdapter extends PolylineAdapter {
 
     hollow_mode: HollowMode = 'always';
     multistep_create = false;
+    has_text = true;
+    text_overflow = 'visible' as TextOverflowMode;
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
@@ -38,6 +39,12 @@ export class LineAdapter extends PolylineAdapter {
             context.stroke(path);
             if (isConnectionNode(node)) {
                 ConnectionBasics.renderArrows(node, context);
+            }
+
+            if (node.text) {
+                const from = node.points[0]!;
+                const to = node.points[1]!;
+                RenderBasics.renderText(node, context, { overflow: this.text_overflow, from, to });
             }
 
             cached.path = path;

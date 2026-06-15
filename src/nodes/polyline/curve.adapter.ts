@@ -19,6 +19,8 @@ export class CurveAdapter extends PolylineAdapter {
 
     public static NAME = 'curve';
 
+    has_text = false;
+
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
         const diagram = node.owner;

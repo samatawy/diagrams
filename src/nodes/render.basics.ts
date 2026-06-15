@@ -1,5 +1,5 @@
 import type { INode } from "../interfaces";
-import type { IRect } from "../types";
+import type { IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
@@ -9,6 +9,8 @@ import { DiagramConstants } from "../model/diagram.constants";
 export interface TextOptions {
     overflow: TextOverflowMode;
     path?: Path2D;
+    from?: IPoint,
+    to?: IPoint,
 }
 
 /**
@@ -196,6 +198,10 @@ export class RenderBasics {
 
     /**
      * Renders the text for a node, taking into account text alignment, overflow, and clipping options.
+     * Text options can define 2 points: from and to - if provided, the text is rendered on the slope between them.
+     * 
+     * N.B. After rendering the text path is cached for hit-testing.
+     *  
      * @param node The node for which to render text.
      * @param context The canvas rendering context.
      * @param options Options for text rendering, including overflow and clipping path.
@@ -206,18 +212,36 @@ export class RenderBasics {
         const coordinates = diagram.getCoordinates();
         const cache = diagram.getCache();
         const cached = cache.getNode(node) || {} as INodeCached;
-        cached.text_path = this.getTextHitPath(node, context);
-        if (typeof (cache as { setNode?: unknown }).setNode === 'function') {
-            cache.setNode(node, cached);
+
+        if (options.from || options.to) {
+            // Sloped line betyween 2 points
+
+            let rect: IRect, from: IPoint, to: IPoint;
+            if (options.from && options.to) {
+                from = options.from;
+                to = options.to;
+            } else {
+                rect = coordinates.getBoundingRect(node);
+                from = { x: rect.left, y: rect.top };
+                to = { x: rect.left + rect.width, y: rect.top + rect.height };
+            }
+            // Render and cache text-path from the same geometry pass.
+            cached.text_path = this.renderLineSloped(node, context, from, to);
+            if (typeof (cache as { setNode?: unknown }).setNode === 'function') {
+                cache.setNode(node, cached);
+            }
+            // context.stroke(cached.text_path!);      // DEBUGGING
+            return;
         }
 
         if (node.points.length > 1) {
             let rect = coordinates.getBoundingRect(node);
+            let textPath: Path2D | undefined;
 
             if (options.overflow == 'hidden' && options.path) {
                 context.save();
                 context.clip(options.path);
-                this.renderLines(node, context, rect);
+                textPath = this.renderLines(node, context, rect);
                 context.restore();
 
             } else if (options.overflow == 'hidden') {
@@ -225,26 +249,41 @@ export class RenderBasics {
                 context.beginPath();
                 context.rect(rect.left, rect.top, rect.width, rect.height);
                 context.clip();
-                this.renderLines(node, context, rect);
+                textPath = this.renderLines(node, context, rect);
                 context.restore();
 
             } else if (options.overflow == 'visible') {
-                this.renderLines(node, context, rect);
+                textPath = this.renderLines(node, context, rect);
+            }
+
+            cached.text_path = textPath;
+            if (typeof (cache as { setNode?: unknown }).setNode === 'function') {
+                cache.setNode(node, cached);
             }
         }
     }
 
-    private static renderLines(node: INode, context: CanvasRenderingContext2D, rect: IRect) {
-        if (!context) return;
+    /**
+     * Render text over multiple horizontal lines, taking into account text alignment and baseline settings. 
+     * Returns a Path2D representing the hit area for the text (that can be used for hit testing).
+     * @param node The node for which to render the text.
+     * @param context The canvas rendering context.
+     * @param from The starting point of the sloped line.
+     * @param to The ending point of the sloped line.
+     * @returns A Path2D representing the hit area for the text.
+     */
+    private static renderLines(node: INode, context: CanvasRenderingContext2D, rect: IRect): Path2D | undefined {
+        if (!context) return undefined;
 
         const { lines, lineHeight, startline } = this.getTextLayout(node, context, rect);
+        const path = new Path2D();
+        const padding = DiagramConstants.HANDLE_HIT_EPSILON;
+        const align = textAlign(node);
+        const baseline = textBaseline(node);
 
         for (let i = 0; i < lines.length; i++) {
             let x = rect.left;
             let y = startline + (i * lineHeight);
-            // let y = rect.top + 6 + (i * lineHeight);    // MAGIC NUMBER !
-
-            const align = textAlign(node);
             switch (align) {
                 case 'left':
                     context.fillText(lines[i]!, x, y);
@@ -256,9 +295,141 @@ export class RenderBasics {
                     context.fillText(lines[i]!, x + rect.width, y);
                     break;
             }
+
+            // Now add padding to calculate the hit text path and collect all lines into a path.
+
+            const line = lines[i] || '';
+            const width = context.measureText(line).width;
+
+            let left = rect.left;
+            switch (align) {
+                case 'left':
+                    left = rect.left;
+                    break;
+                case 'center':
+                    left = rect.left + (rect.width - width) / 2;
+                    break;
+                case 'right':
+                    left = rect.left + rect.width - width;
+                    break;
+            }
+
+            let top = y;
+            switch (baseline) {
+                case 'top':
+                    top = y;
+                    break;
+                case 'middle':
+                    top = y - lineHeight / 2;
+                    break;
+                case 'bottom':
+                    top = y - lineHeight;
+                    break;
+            }
+
+            path.rect(
+                left - padding,
+                top - padding,
+                Math.max(width + padding * 2, padding * 2),
+                lineHeight + padding * 2,
+            );
         }
+
+        // Finally return the text hit path
+        return path;
     }
 
+    /**
+     * Render text along a sloped line defined by two points, taking into account text alignment and baseline settings. 
+     * Returns a Path2D representing the hit area for the text (that can be used for hit testing).
+     * @param node The node for which to render the text.
+     * @param context The canvas rendering context.
+     * @param from The starting point of the sloped line.
+     * @param to The ending point of the sloped line.
+     * @returns A Path2D representing the hit area for the text.
+     */
+    private static renderLineSloped(node: INode, context: CanvasRenderingContext2D, from: IPoint, to: IPoint): Path2D | undefined {
+        if (!context) return;
+
+        if (from.y < to.y && from.x > to.x) {   // inverted
+            const tmp = { x: from.x, y: from.y };
+            from = { x: to.x, y: to.y };
+            to = tmp;
+        }
+
+        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+
+        const { lines, lineHeight, startline } = this.getTextLayoutSloped(node, context, from, to);
+
+        const midX = (from.x + to.x) / 2;
+        const midY = (from.y + to.y) / 2;
+        const epsilon = 4;
+
+        const line = lines[0] || '';
+        const width = context.measureText(line).width;
+        const y = startline - epsilon;
+
+        let x = from.x;
+        switch (textAlign(node)) {
+            case 'left':
+                x = from.x;
+                break;
+            case 'center':
+                x = from.x + (to.x - from.x - width) / 2;
+                break;
+            case 'right':
+                x = to.x - width;
+                break;
+        }
+
+        context.save();
+        context.translate(midX, midY);
+        context.rotate(angle);
+        context.translate(-midX, -midY);
+        context.textAlign = 'left';
+        context.textBaseline = 'bottom';
+        context.fillText(line, x, y);
+        context.restore();
+
+        // Now add padding to calculate the hit text path and return it.
+
+        const padding = DiagramConstants.HANDLE_HIT_EPSILON;
+        const boxLeft = x - padding;
+        const boxTop = y - lineHeight - padding;
+        const boxWidth = Math.max(width + padding * 2, padding * 2);
+        const boxHeight = lineHeight + padding * 2;
+
+        const rotatePoint = (px: number, py: number): IPoint => {
+            const dx = px - midX;
+            const dy = py - midY;
+            return {
+                x: midX + (dx * Math.cos(angle)) - (dy * Math.sin(angle)),
+                y: midY + (dx * Math.sin(angle)) + (dy * Math.cos(angle)),
+            };
+        };
+
+        const p1 = rotatePoint(boxLeft, boxTop);
+        const p2 = rotatePoint(boxLeft + boxWidth, boxTop);
+        const p3 = rotatePoint(boxLeft + boxWidth, boxTop + boxHeight);
+        const p4 = rotatePoint(boxLeft, boxTop + boxHeight);
+
+        const path = new Path2D();
+        path.moveTo(p1.x, p1.y);
+        path.lineTo(p2.x, p2.y);
+        path.lineTo(p3.x, p3.y);
+        path.lineTo(p4.x, p4.y);
+        path.closePath();
+
+        return path;
+    }
+
+    /**
+     * Calculate the text layout for a node within a given rectangle, returning the lines of text, line height, and starting line position.
+     * @param node The node for which to calculate the text layout.
+     * @param context The canvas rendering context.
+     * @param rect The rectangle within which to layout the text.
+     * @returns An object containing the lines of text, line height, and starting line position.
+     */
     private static getTextLayout(node: INode, context: CanvasRenderingContext2D, rect: IRect) {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) {
@@ -274,10 +445,9 @@ export class RenderBasics {
         context.fillStyle = node.transparent && diagram.render_mode == 'view'
             ? 'transparent'
             : textColor(node);
-        // : (node.textColor || node.strokeStyle || '#111827');
 
-        context.textAlign = textAlign(node);    //.textAlign || 'center';
-        context.textBaseline = textBaseline(node); //.textBaseline || 'middle';
+        context.textAlign = textAlign(node);
+        context.textBaseline = textBaseline(node);
 
         context.font = nodeFont(node);
 
@@ -297,6 +467,59 @@ export class RenderBasics {
                 break;
             case 'bottom':
                 startline = rect.top + rect.height - (lineHeight * (lines.length - 1));
+                break;
+        }
+
+        return { lines, lineHeight, startline };
+    }
+
+    /**
+     * Calculate the text layout for a sloped line between two points, returning the lines of text, line height, and starting line position.
+     * @param node The node for which to calculate the text layout.
+     * @param context The canvas rendering context.
+     * @param from The starting point of the sloped line.
+     * @param to The ending point of the sloped line.
+     * @returns An object containing the lines of text, line height, and starting line position.
+     */
+    private static getTextLayoutSloped(node: INode, context: CanvasRenderingContext2D, from: IPoint, to: IPoint) {
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) {
+            return { lines: [], lineHeight: 0, startline: 0 };
+        }
+
+        if (!node.text?.length) {
+            return { lines: [], lineHeight: 0, startline: 0 };
+        }
+
+        const width = Math.sqrt((to.x - from.x) ** 2 + (to.y - from.y) ** 2);
+
+        // Text should remain legible against the node fill and should not inherit shape shadows.
+        context.shadowColor = 'transparent';
+        context.fillStyle = node.transparent && diagram.render_mode == 'view'
+            ? 'transparent'
+            : textColor(node);
+
+        context.textAlign = textAlign(node);
+        context.textBaseline = textBaseline(node);
+
+        context.font = nodeFont(node);
+
+        let fparts = context.font.split('px');
+        let fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || DiagramConstants.DEFAULT_NODE_FONT_SIZE : DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+        let lineHeight = (fontSize * 1.25);
+        let lines = this.getLines(node.text, width, context);
+        let startline = 0;
+
+        const baseline = textBaseline(node);
+        switch (baseline) {
+            case 'top':
+                startline = from.y + (fontSize / 2);
+                break;
+            case 'middle':
+                startline = from.y + (fontSize / 4) + ((to.y - from.y) / 2) - (lineHeight * (lines.length - 1) / 2);
+                break;
+            case 'bottom':
+                startline = to.y - (fontSize / 2);
                 break;
         }
 
@@ -371,69 +594,4 @@ export class RenderBasics {
         return 'rgba(0, 0, 0, 0.35)';
     }
 
-    /**
-     * Returns a Path2D object representing the hit area for the text of a node, including optional padding.
-     * @param node The node for which to get the text hit path.
-     * @param context The canvas rendering context.
-     * @param padding The padding to apply around the text hit area.
-     * @returns A Path2D object representing the text hit area, or undefined if the node has insufficient points.
-     */
-    public static getTextHitPath(node: INode, context: CanvasRenderingContext2D, padding?: number): Path2D | undefined {
-        const diagram = node.owner;
-        if (!isDiagramViewLike(diagram)) return undefined;
-        const coordinates = diagram.getCoordinates();
-
-        if (node.points.length <= 1) {
-            return undefined;
-        }
-
-        padding = padding ? padding : DiagramConstants.HANDLE_HIT_EPSILON;  // Or should we use a larger value ? The default was 4
-
-        const rect = coordinates.getBoundingRect(node);
-        const { lines, lineHeight, startline } = this.getTextLayout(node, context, rect);
-        const path = new Path2D();
-
-        const align = textAlign(node), baseline = textBaseline(node);
-
-        for (let i = 0; i < lines.length; i++) {
-            const line = lines[i] || '';
-            const width = context.measureText(line).width;
-            const y = startline + (i * lineHeight);
-
-            let left = rect.left;
-            switch (align) {
-                case 'left':
-                    left = rect.left;
-                    break;
-                case 'center':
-                    left = rect.left + (rect.width - width) / 2;
-                    break;
-                case 'right':
-                    left = rect.left + rect.width - width;
-                    break;
-            }
-
-            let top = y;
-            switch (baseline) {
-                case 'top':
-                    top = y;
-                    break;
-                case 'middle':
-                    top = y - lineHeight / 2;
-                    break;
-                case 'bottom':
-                    top = y - lineHeight;
-                    break;
-            }
-
-            path.rect(
-                left - padding,
-                top - padding,
-                Math.max(width + padding * 2, padding * 2),
-                lineHeight + padding * 2,
-            );
-        }
-
-        return path;
-    }
 }

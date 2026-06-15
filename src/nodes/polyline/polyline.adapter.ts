@@ -31,7 +31,7 @@ export class PolylineAdapter implements INodeAdapter {
 
     is_connector = true;
     multistep_create = true;
-    has_text = false;
+    has_text = true;
     text_overflow: TextOverflowMode = 'visible';
 
     /**
@@ -68,6 +68,10 @@ export class PolylineAdapter implements INodeAdapter {
                 if (Math.abs(sourcePoint.x - hitPoint.x) <= epsilon && Math.abs(sourcePoint.y - hitPoint.y) <= epsilon) {
                     return NodeHandle.POINT;
                 }
+            }
+
+            if (cached?.text_path && coordinates.isPointInPath(cached.text_path, hitPoint.x, hitPoint.y)) {
+                return NodeHandle.MOVE;
             }
 
             if (cached.path) {
@@ -120,11 +124,31 @@ export class PolylineAdapter implements INodeAdapter {
                 ConnectionBasics.renderArrows(node, context);
             }
 
+            if (node.text) {
+                const { from, to } = this.longestSegment(node) || { from: node.points[0]!, to: node.points[1]! };
+                RenderBasics.renderText(node, context, { overflow: this.text_overflow, from, to });
+            }
+
             cached.path = path;
             cache.setNode(node, cached);
 
             context.restore();
         }
+    }
+
+    private longestSegment(node: INode): { from: IPoint, to: IPoint } | undefined {
+        if (node.points.length < 2) {
+            return undefined;
+        }
+        const segments: { from: IPoint, to: IPoint, length: number }[] = [];
+        for (let i = 1; i < node.points.length; i++) {
+            const from = node.points[i - 1]!;
+            const to = node.points[i]!;
+            const length = Math.sqrt((to.x - from.x) ** 2 + (to.y - from.y) ** 2);
+            segments.push({ from, to, length });
+        }
+        segments.sort((a, b) => b.length - a.length);
+        return segments[0];
     }
 
     public renderSelection(node: INode, context: CanvasRenderingContext2D): void {

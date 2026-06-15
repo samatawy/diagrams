@@ -70,4 +70,11 @@ export class EllipseAdapter extends RectangleAdapter {
         }
     }
 
+    public onCreateDraft(tool: string): Partial<INode> | undefined {
+        return {
+            type: this.name,
+            points: [{ x: 0, y: 0 }, { x: 104, y: 64 }],
+        }
+    }
+
 }

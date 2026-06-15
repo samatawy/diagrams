@@ -69,4 +69,11 @@ export class RhombusAdapter extends RectangleAdapter {
         }
     }
 
+    public onCreateDraft(tool: string): Partial<INode> | undefined {
+        return {
+            type: this.name,
+            points: [{ x: 0, y: 0 }, { x: 64, y: 64 }],
+        }
+    }
+
 }

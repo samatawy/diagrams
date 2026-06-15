@@ -34,6 +34,7 @@ function createContext(): CanvasRenderingContext2D {
         setLineDash() { },
         stroke() { },
         fill() { },
+        fillRect() { },
         beginPath() { },
         moveTo() { },
         lineTo() { },

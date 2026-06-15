@@ -17,6 +17,7 @@ export class PolygonAdapter extends PolylineAdapter {
     public static NAME = 'polygon';
 
     hollow_mode: HollowMode = 'if_transparent';
+    has_text = true;
     text_overflow: TextOverflowMode = 'hidden';
 
     render(node: INode, context: CanvasRenderingContext2D): void {

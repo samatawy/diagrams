@@ -7,6 +7,7 @@ import { ConnectionBasics } from "./connection.basics";
 import { RenderBasics } from "./render.basics";
 import type { HollowMode, INodeAdapter, TextOverflowMode } from "../factory/node.adapter";
 import { isHollow, lineWidth, nodeAngle } from "../value.utils";
+// import type { INodeCached } from "../view";
 
 /**
  * PolylineAdapter is a node adapter responsible for rendering polyline nodes in the diagram. 
