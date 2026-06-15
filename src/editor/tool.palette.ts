@@ -256,7 +256,6 @@ export class ToolPalette {
 
         const adapter = NodeRegistry.adapter(tool);
         if (adapter?.drag_create) {
-            console.log(`Attaching drag-create behavior for tool: ${tool}`);
             this.attachDragCreateBehavior(button, tool);
         }
 

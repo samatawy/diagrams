@@ -967,7 +967,6 @@ export class DiagramEditView extends DiagramView {
         this.can_paste = true;
         this.emitClipboardChange(operation, nodes);
 
-        // console.log('Copying ', JSON.stringify(json, null, '  '));
         void this.writeClipboardText(jsonSerializer.write(json));
     }
 
@@ -2663,7 +2662,7 @@ export class DiagramEditView extends DiagramView {
     async init() {
         if (!this.canvas) {
             setTimeout(() => {
-                console.log('NOT yet ready !!!');
+                console.warn('NOT yet ready !!!');
                 this.init();
             }, 100)
             return;
@@ -3373,7 +3372,6 @@ export class DiagramEditView extends DiagramView {
         // if (blob && blob.size) {
         //     img.src = await this.toDataURL(blob);
         // }
-        //console.log(node.innerHTML);
         // let canvas = await html2canvas.default(node, {backgroundColor: 'rgba(0,0,0,0)', allowTaint: true});
         // if (canvas) img.src = canvas.toDataURL('image/png');
         // .then(canvas => {
