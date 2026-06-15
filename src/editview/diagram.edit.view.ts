@@ -2650,6 +2650,7 @@ export class DiagramEditView extends DiagramView {
     private resizeSelected(handle: NodeHandle, byX: number, byY: number, preserveAspect?: boolean): void {
         for (const node of this.selection()) {
             NodeBasics.resizeHandle(node, handle, byX, byY, preserveAspect);
+            NodeRegistry.adapter(node.type)?.afterResize?.(node, handle);
         }
     }
 

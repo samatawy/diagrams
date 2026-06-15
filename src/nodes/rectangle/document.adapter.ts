@@ -1,5 +1,5 @@
 import type { INode } from "../../interfaces";
-import type { IPoint, IRect, NodeHandle } from "../../types";
+import type { IPoint, IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
@@ -8,13 +8,13 @@ import { imageMode, isHollow, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 
 /**
- * ParallelogramAdapter is a node adapter responsible for rendering parallelogram nodes in the diagram. 
- * It extends the RectangleAdapter to leverage basic rectangle rendering capabilities while adding specific logic for handling parallelogram shapes and hit testing.
- * Registers with the NodeRegistry under the name 'parallelogram'.
+ * DocumentAdapter is a node adapter responsible for rendering document nodes in the diagram. 
+ * It extends the RectangleAdapter to leverage basic rectangle rendering capabilities while adding specific logic for handling document shapes and hit testing.
+ * Registers with the NodeRegistry under the name 'document'.
  */
-export class ParallelogramAdapter extends RectangleAdapter {
+export class DocumentAdapter extends RectangleAdapter {
 
-    public static NAME = 'parallelogram';
+    public static NAME = 'document';
 
     public override render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
@@ -35,33 +35,31 @@ export class ParallelogramAdapter extends RectangleAdapter {
             }
             let rect: IRect = { left: from.x, top: from.y, width: to.x - from.x, height: to.y - from.y }
 
-            const skew = this.getSkew(node, rect);
-            const skewAbs = Math.abs(skew);
-            const insetTop = skew >= 0;
+            const waveheight = this.getWaveheight(node, rect);
 
             context.save();
             RenderBasics.prepare(node, context);
 
             const path = new Path2D();
-            if (insetTop) {
-                path.moveTo(rect.left + skewAbs, rect.top);
-                // NW
-                path.lineTo(rect.left + rect.width, rect.top);
-                // NE
-                path.lineTo(rect.left + rect.width - skewAbs, rect.top + rect.height);
-                // SE
-                path.lineTo(rect.left, rect.top + rect.height);
-                // SW
-            } else {
-                path.moveTo(rect.left, rect.top);
-                // NW
-                path.lineTo(rect.left + rect.width - skewAbs, rect.top);
-                // NE
-                path.lineTo(rect.left + rect.width, rect.top + rect.height);
-                // SE
-                path.lineTo(rect.left + skewAbs, rect.top + rect.height);
-                // SW
-            }
+            path.moveTo(rect.left, rect.top);
+            // NW
+            path.lineTo(rect.left + rect.width, rect.top);
+            // NE
+            path.lineTo(rect.left + rect.width, rect.top + rect.height);
+            // SE
+
+            // 1. First half: SE to Middle (Curves UP)
+            path.quadraticCurveTo(
+                rect.left + rect.width * 0.75, rect.top + rect.height - waveheight * 2, // Control point (pulls UP)
+                rect.left + rect.width * 0.5, rect.top + rect.height              // End point (Middle of bottom edge)
+            );
+
+            // 2. Second half: Middle to SW (Curves DOWN)
+            path.quadraticCurveTo(
+                rect.left + rect.width * 0.25, rect.top + rect.height + waveheight * 2, // Control point (pulls DOWN)
+                rect.left, rect.top + rect.height              // End point (SW corner)
+            );
+            // SW
             path.closePath();
 
             if (cached.img && imageMode(node) == 'frame') {
@@ -88,42 +86,41 @@ export class ParallelogramAdapter extends RectangleAdapter {
         }
     }
 
-    protected getSkew(node: INode, rect: IRect): number {
-        const rawSkew = node.geometry?.skew;
-        if (typeof rawSkew === 'number' && Number.isFinite(rawSkew)) {
-            const maxSkew = rect.width / 2;
-            return Math.max(-maxSkew, Math.min(maxSkew, rawSkew));
+    protected getWaveheight(node: INode, rect: IRect): number {
+        let waveheight = node.geometry?.waveheight ?? -1;
+        if (waveheight >= 0) {
+            return waveheight;
         }
 
-        const maxSkew = rect.width / 2;
-        const defaultSkew = Math.min(rect.width / 2, rect.height / 2);
-        return Math.max(0, Math.min(maxSkew, defaultSkew));
+        let min_waveheight = 0;
+        let max_waveheight = rect.height / 4;
+        waveheight = Math.min(rect.width / 2, rect.height / 2);
+        waveheight = Math.min(max_waveheight, waveheight);
+        waveheight = Math.max(min_waveheight, waveheight);
+        return waveheight;
     }
 
     /**
-     * Build a rect for the handle used to define a custom skew at the top left of the shape.
+     * Build a rect for the handle used to define a custom waveheight at the bottom left of the shape.
      * No transformation necessary here.
      * @param node The node being tested.
      * @param rect The bounding rectangle of the node.
      * @returns A rectangle representing the handle's bounding area.
      */
     private getAlterRect(node: INode, rect: IRect): IRect {
-        const skew = this.getSkew(node, rect);
-        const skewAbs = Math.abs(skew);
-        const insetTop = skew >= 0;
+        const waveheight = this.getWaveheight(node, rect);
         const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
+        const handle_size = 2 * epsilon;
         return {
-            left: rect.left + skewAbs,
-            top: insetTop
-                ? rect.top - epsilon - 2 * epsilon
-                : rect.top + rect.height - epsilon,
-            width: 2 * epsilon,
-            height: 2 * epsilon,
+            left: rect.left - epsilon - handle_size,
+            top: rect.top + rect.height - waveheight - handle_size,
+            width: handle_size,
+            height: handle_size,
         }
     }
 
     /**
-    * Test a point against the handle used to define a custom skew at the top left of the shape.
+    * Test a point against the handle used to define a custom waveheight at the bottom left of the shape.
     * No transformation necessary here.
     * @param node The node being tested.
     * @param rect The bounding rectangle of the node.
@@ -140,8 +137,8 @@ export class ParallelogramAdapter extends RectangleAdapter {
     }
 
     /** 
-     * Render the handle used to define a custom skew at the top left of the shape. 
-     * It has the shape of a parallelogram to indicate its function for adjusting the skew.
+     * Render the handle used to define a custom waveheight at the bottom left of the shape. 
+     * It has the shape of a downward semicircle to indicate its function for adjusting the waveheight.
      * No transformation necessary here.
      * @param node The node being rendered.
      * @param context The canvas rendering context.
@@ -150,12 +147,24 @@ export class ParallelogramAdapter extends RectangleAdapter {
     protected override renderAlterHandle(node: INode, context: CanvasRenderingContext2D, rect: IRect): void {
         const alter_rect = this.getAlterRect(node, rect);
         const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
+        const handle_size = 2 * epsilon;
 
         const handles = new Path2D();
-        handles.moveTo(alter_rect.left + epsilon / 2, alter_rect.top);
+        handles.moveTo(alter_rect.left, alter_rect.top);
         handles.lineTo(alter_rect.left + alter_rect.width, alter_rect.top);
-        handles.lineTo(alter_rect.left + alter_rect.width - epsilon / 2, alter_rect.top + alter_rect.height);
-        handles.lineTo(alter_rect.left, alter_rect.top + alter_rect.height);
+        handles.lineTo(alter_rect.left + alter_rect.width, alter_rect.top + alter_rect.height);
+
+        // 1. First half: SE to Middle (Curves UP)
+        handles.quadraticCurveTo(
+            alter_rect.left + alter_rect.width * 0.75, alter_rect.top + alter_rect.height - epsilon, // Control point (pulls UP)
+            alter_rect.left + alter_rect.width * 0.5, alter_rect.top + alter_rect.height              // End point (Middle of bottom edge)
+        );
+
+        // 2. Second half: Middle to SW (Curves DOWN)
+        handles.quadraticCurveTo(
+            alter_rect.left + alter_rect.width * 0.25, alter_rect.top + alter_rect.height + epsilon, // Control point (pulls DOWN)
+            alter_rect.left, alter_rect.top + alter_rect.height              // End point (SW corner)
+        );
         handles.closePath();
 
         context.fill(handles);
@@ -163,8 +172,7 @@ export class ParallelogramAdapter extends RectangleAdapter {
     }
 
     /**
-    * Sliding the ALTER handle sets a signed skew.
-    * Positive values inset the top edge, negative values inset the bottom edge.
+     * Sliding the ALTER handle sets the waveheight as the distance between the handle start and the left of the bounding rect.
      * Transformation is necessary here.
      * @param node The node being altered.
      * @param point The point where the handle is currently at.
@@ -183,23 +191,12 @@ export class ParallelogramAdapter extends RectangleAdapter {
 
             const rect = coordinates.getBoundingRect(node);
             const pt = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, angle, cos, sin);
-            let new_skew = Math.min(pt.x - rect.left, rect.width / 2);
-            new_skew = Math.max(0, new_skew);
-            const insetTop = pt.y <= rect.top + rect.height / 2;
+            let new_waveheight = Math.min(rect.top + rect.height - pt.y, rect.height / 2);
+            new_waveheight = Math.max(0, new_waveheight);
 
             if (!node.geometry) node.geometry = {};
-            node.geometry.skew = insetTop ? new_skew : -new_skew;
+            node.geometry.waveheight = new_waveheight;
         }
-    }
-
-    public afterResize(node: INode, _handle: NodeHandle): void {
-        const diagram = node.owner;
-        if (!isDiagramViewLike(diagram)) return;
-        if (!node.geometry || typeof node.geometry.skew !== 'number' || !Number.isFinite(node.geometry.skew)) return;
-
-        const rect = diagram.getCoordinates().getBoundingRect(node);
-        const maxSkew = rect.width / 2;
-        node.geometry.skew = Math.max(-maxSkew, Math.min(maxSkew, node.geometry.skew));
     }
 
 }

@@ -8,13 +8,13 @@ import { imageMode, isHollow, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 
 /**
- * ParallelogramAdapter is a node adapter responsible for rendering parallelogram nodes in the diagram. 
- * It extends the RectangleAdapter to leverage basic rectangle rendering capabilities while adding specific logic for handling parallelogram shapes and hit testing.
- * Registers with the NodeRegistry under the name 'parallelogram'.
+ * TrapezoidAdapter is a node adapter responsible for rendering trapezoid nodes in the diagram. 
+ * It extends the RectangleAdapter to leverage basic rectangle rendering capabilities while adding specific logic for handling trapezoid shapes and hit testing.
+ * Registers with the NodeRegistry under the name 'trapezoid'.
  */
-export class ParallelogramAdapter extends RectangleAdapter {
+export class TrapezoidAdapter extends RectangleAdapter {
 
-    public static NAME = 'parallelogram';
+    public static NAME = 'trapezoid';
 
     public override render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
@@ -44,20 +44,24 @@ export class ParallelogramAdapter extends RectangleAdapter {
 
             const path = new Path2D();
             if (insetTop) {
+                // Inset top edge: NW and NE corners are moved inward by skew
+
                 path.moveTo(rect.left + skewAbs, rect.top);
-                // NW
-                path.lineTo(rect.left + rect.width, rect.top);
-                // NE
-                path.lineTo(rect.left + rect.width - skewAbs, rect.top + rect.height);
-                // SE
-                path.lineTo(rect.left, rect.top + rect.height);
-                // SW
-            } else {
-                path.moveTo(rect.left, rect.top);
                 // NW
                 path.lineTo(rect.left + rect.width - skewAbs, rect.top);
                 // NE
                 path.lineTo(rect.left + rect.width, rect.top + rect.height);
+                // SE
+                path.lineTo(rect.left, rect.top + rect.height);
+                // SW
+            } else {
+                // Inset bottom edge: SW and SE corners are moved inward by skew
+
+                path.moveTo(rect.left, rect.top);
+                // NW
+                path.lineTo(rect.left + rect.width, rect.top);
+                // NE
+                path.lineTo(rect.left + rect.width - skewAbs, rect.top + rect.height);
                 // SE
                 path.lineTo(rect.left + skewAbs, rect.top + rect.height);
                 // SW
@@ -88,6 +92,7 @@ export class ParallelogramAdapter extends RectangleAdapter {
         }
     }
 
+    // Respects negative skew values
     protected getSkew(node: INode, rect: IRect): number {
         const rawSkew = node.geometry?.skew;
         if (typeof rawSkew === 'number' && Number.isFinite(rawSkew)) {
@@ -141,7 +146,7 @@ export class ParallelogramAdapter extends RectangleAdapter {
 
     /** 
      * Render the handle used to define a custom skew at the top left of the shape. 
-     * It has the shape of a parallelogram to indicate its function for adjusting the skew.
+     * It has the shape of a trapezoid to indicate its function for adjusting the skew.
      * No transformation necessary here.
      * @param node The node being rendered.
      * @param context The canvas rendering context.
@@ -153,8 +158,8 @@ export class ParallelogramAdapter extends RectangleAdapter {
 
         const handles = new Path2D();
         handles.moveTo(alter_rect.left + epsilon / 2, alter_rect.top);
-        handles.lineTo(alter_rect.left + alter_rect.width, alter_rect.top);
-        handles.lineTo(alter_rect.left + alter_rect.width - epsilon / 2, alter_rect.top + alter_rect.height);
+        handles.lineTo(alter_rect.left + alter_rect.width - epsilon / 2, alter_rect.top);
+        handles.lineTo(alter_rect.left + alter_rect.width, alter_rect.top + alter_rect.height);
         handles.lineTo(alter_rect.left, alter_rect.top + alter_rect.height);
         handles.closePath();
 

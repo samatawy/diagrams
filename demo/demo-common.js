@@ -15,6 +15,8 @@ import {
     PolygonAdapter,
     CurveAdapter,
     LineAdapter,
+    TrapezoidAdapter,
+    DocumentAdapter,
 } from '../dist/index.js';
 
 let registered = false;
@@ -32,6 +34,8 @@ export const EDITOR_TOOL_DEFS = [
     { key: 'polyline', label: 'Polyline' },
     { key: 'polygon', label: 'Polygon' },
     { key: 'curve', label: 'Curve' },
+    { key: 'trapezoid', label: 'Trapezoid' },
+    { key: 'document', label: 'Document' },
 ];
 
 export function registerAdapters() {
@@ -60,6 +64,8 @@ export function registerAdapters() {
     new PolygonAdapter().register();
     // new CurveAdapter().register();
     new LineAdapter().register();
+    new TrapezoidAdapter().register();
+    new DocumentAdapter().register();
 }
 
 export function makeBox(owner, id, type, left, top, width, height, options = {}) {

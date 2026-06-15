@@ -10,6 +10,8 @@ export * from './rectangle/ellipse.adapter';
 export * from './rectangle/rhombus.adapter';
 export * from './rectangle/text.adapter';
 export * from './rectangle/svg.adapter';
+export * from './rectangle/trapezoid.adapter';
+export * from './rectangle/document.adapter';
 
 export * from './polyline/polyline.adapter';
 export * from './polyline/polygon.adapter';

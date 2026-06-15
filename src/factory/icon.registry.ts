@@ -266,3 +266,9 @@ IconRegistry.registerSymbol('polygon', 'tool-polygon',
 
 IconRegistry.registerSymbol('curve', 'tool-curve',
     sym('tool-curve', '<path d="M4 20 C4 4 20 4 20 20"/>'));
+
+IconRegistry.registerSymbol('trapezoid', 'tool-trapezoid',
+    sym('tool-trapezoid', '<polygon points="6 5 18 5 21 19 3 19"/>'));
+
+IconRegistry.registerSymbol('document', 'tool-document',
+    sym('tool-document', '<path d="M3 5 H21 V17 Q16 13 12 17 Q7 21 3 17 Z"/>'));

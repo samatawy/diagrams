@@ -78,6 +78,14 @@ export interface INodeAdapter {
     onCreateMove(node: INode, point: IPoint): void;
 
     /**
+     * Updates the node's size while the user is dragging a resize handle.
+     * Called on every pointermove while a resize is active.
+     * @param node The node being resized.
+     * @param handle The handle being used to resize the node.
+     */
+    afterResize?(node: INode, handle: NodeHandle): void;
+
+    /**
      * Updates a custom handle position while the user is dragging it.
      * Called on every pointermove while a handle drag is active.
      * @param node The node being altered.
