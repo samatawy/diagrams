@@ -131,6 +131,7 @@ export class DiagramEditView extends DiagramView {
         element: HTMLTextAreaElement;
         nodeId: string;
         originalText: string;
+        singleLine: boolean;
     };
 
     private dragCreateDraft?: INode;
@@ -1719,7 +1720,10 @@ export class DiagramEditView extends DiagramView {
         const key = event.key.toLowerCase();
 
         if (this.activeTextEditor) {
-            if (key === 'enter' && (event.ctrlKey || event.metaKey)) {
+            const editingNode = this.node(this.activeTextEditor.nodeId);
+            const singleLine = this.activeTextEditor.singleLine || (editingNode ? this.isConnectorType(editingNode.type) : false);
+
+            if (key === 'enter' && (singleLine || (!event.ctrlKey && !event.metaKey && !event.shiftKey))) {
                 consumeEvent();
                 this.closeTextEditor(true);
 
@@ -2309,6 +2313,14 @@ export class DiagramEditView extends DiagramView {
         this.canvas.style.cursor = this.getCursor(handle) || 'default';
 
         this.renderPreview();
+
+        // Double-click enters text editing for text-capable nodes.
+        if (event.detail >= 2 && this.current.tool === 'select') {
+            const hit = this.hitNode(event.offsetX, event.offsetY);
+            if (hit && this.hasTextInput(hit.type)) {
+                this.editText(hit);
+            }
+        }
     }
 
     // ==================================================
@@ -2767,6 +2779,11 @@ export class DiagramEditView extends DiagramView {
         return false;
     }
 
+    public override zoomTo(zoom: number, centerX?: number, centerY?: number): void {
+        this.closeTextEditor(false);
+        super.zoomTo(zoom, centerX, centerY);
+    }
+
     private editText(node: INode): void {
         if (!this.canvas || !node) {
             return;
@@ -2782,25 +2799,82 @@ export class DiagramEditView extends DiagramView {
         const zoom = this.coordinates.zoom;
         const pan = this.coordinates.pan;
         const font = node.font || `${this.fontSize}px ${this.fontFace}`;
-        const fontSize = Math.max(1, parseFloat(font.split('px')[0] || `${this.fontSize}`) || this.fontSize);
-        const lineHeight = Math.max(fontSize * 1.25, 1);
-        const editorWidth = Math.max(24, rect.width * zoom);
-        const editorHeight = Math.max(lineHeight, rect.height * zoom);
-        const left = canvasRect.left + (rect.left * zoom) - pan.x - 2;
-        let top = canvasRect.top + (rect.top * zoom) - pan.y - 2;
+        const parsedFontSize = Math.max(1, parseFloat(font.split('px')[0] || `${this.fontSize}`) || this.fontSize);
+        const scaledFontSize = Math.max(1, parsedFontSize * zoom);
+        const scaledLineHeight = Math.max(scaledFontSize * 1.25, 1);
+        const singleLine = this.isConnectorType(node.type);
+
+        const worldToScreen = (x: number, y: number): IPoint => ({
+            x: canvasRect.left + (x * zoom) - pan.x,
+            y: canvasRect.top + (y * zoom) - pan.y,
+        });
+
+        let editorWidth = Math.max(24, rect.width * zoom);
+        let editorHeight = Math.max(scaledLineHeight, rect.height * zoom);
+        let left = canvasRect.left + (rect.left * zoom) - pan.x;
+        let top = canvasRect.top + (rect.top * zoom) - pan.y;
+        let transform = '';
 
         const baseline = textBaseline(node);
-        if (baseline === 'middle') {
-            top = canvasRect.top + ((rect.top + rect.height / 2) * zoom) - pan.y - (editorHeight / 2);
-        } else if (baseline === 'bottom') {
-            top = canvasRect.top + ((rect.top + rect.height) * zoom) - pan.y - editorHeight;
+        const rectTopScreen = canvasRect.top + (rect.top * zoom) - pan.y;
+        const rectHeightScreen = rect.height * zoom;
+
+        // For non-sloped text, place the editor from the same line-box anchor model used by render text,
+        // so top/middle/bottom baselines are visually distinct.
+        if (!singleLine) {
+            const text = nodeText(node);
+            const measureContext = this.context;
+            measureContext.save();
+            measureContext.font = font.replace(/\d+(?:\.\d+)?px/, `${scaledFontSize}px`);
+            const wrapped = this.wrapEditorTextLines(text, editorWidth, measureContext);
+            measureContext.restore();
+
+            const lineCount = Math.max(1, wrapped.length);
+            const textBlockHeight = lineCount * scaledLineHeight;
+
+            const startline = baseline === 'top'
+                ? rectTopScreen + (scaledFontSize / 2)
+                : baseline === 'bottom'
+                    ? rectTopScreen + rectHeightScreen - (scaledLineHeight * (lineCount - 1))
+                    : rectTopScreen + (scaledFontSize / 4) + (rectHeightScreen / 2) - (scaledLineHeight * (lineCount - 1) / 2);
+
+            const firstLineTop = baseline === 'top'
+                ? startline
+                : baseline === 'bottom'
+                    ? startline - scaledLineHeight
+                    : startline - (scaledLineHeight / 2);
+
+            editorHeight = Math.max(scaledLineHeight, textBlockHeight);
+            top = firstLineTop;
+        }
+
+        if (singleLine && node.points.length >= 2) {
+            const seg = NodeBasics.longestSegment(node.points)!;
+            // Normalise direction the same way the renderer does, so the normal always points "above" the line.
+            const { from, to } = NodeBasics.normalizeLine(seg.from, seg.to);
+            const angle = NodeBasics.calculateAngle(from, to);
+            const fromScreen = worldToScreen(from.x, from.y);
+            const toScreen = worldToScreen(to.x, to.y);
+            const midScreen = { x: (fromScreen.x + toScreen.x) / 2, y: (fromScreen.y + toScreen.y) / 2 };
+
+            // After normalisation the line is left-to-right, so (sin, -cos) points upward in canvas Y-down coords.
+            const nx = Math.sin(angle);
+            const ny = -Math.cos(angle);
+            const offset = scaledLineHeight / 2;
+
+            editorWidth = Math.max(24, NodeBasics.calculateLength(fromScreen, toScreen));
+            editorHeight = scaledLineHeight;
+            left = midScreen.x + nx * offset - editorWidth / 2;
+            top = midScreen.y + ny * offset - editorHeight / 2;
+            transform = `rotate(${angle}rad)`;
         }
 
         const textarea = document.createElement('textarea');
         textarea.value = nodeText(node);
+        textarea.rows = 1;
         textarea.spellcheck = false;
         textarea.autocomplete = 'off';
-        textarea.wrap = 'soft';
+        textarea.wrap = singleLine ? 'off' : 'soft';
         textarea.style.position = 'fixed';
         textarea.style.left = `${left}px`;
         textarea.style.top = `${top}px`;
@@ -2808,23 +2882,26 @@ export class DiagramEditView extends DiagramView {
         textarea.style.height = `${editorHeight}px`;
         textarea.style.boxSizing = 'border-box';
         textarea.style.margin = '0';
-        textarea.style.padding = '2px 4px';
-        textarea.style.border = '2px dotted currentColor';
+        textarea.style.padding = '0';       // singleLine ? '0' : '0 2px';
+        textarea.style.border = 'none'; '2px dotted currentColor';
         textarea.style.outline = 'none';
-        textarea.style.borderRadius = '2px';
+        // textarea.style.borderRadius = '2px';
         textarea.style.resize = 'none';
         textarea.style.overflow = 'hidden';
+        textarea.style.whiteSpace = singleLine ? 'nowrap' : 'pre-wrap';
         textarea.style.background = 'transparent';
         textarea.style.color = strokeStyle(node);   //.strokeStyle || '#111827';
         textarea.style.caretColor = 'currentColor';
-        textarea.style.font = font;
-        textarea.style.lineHeight = `${lineHeight}px`;
+        textarea.style.font = font.replace(/\d+(?:\.\d+)?px/, `${scaledFontSize}px`);
+        textarea.style.lineHeight = `${scaledLineHeight}px`;
         textarea.style.textAlign = textAlign(node); // node.textAlign || 'center';
         textarea.style.transformOrigin = 'center center';
         textarea.style.zIndex = '2147483647';
         textarea.style.cursor = 'text';
 
-        if (node.angle) {
+        if (transform) {
+            textarea.style.transform = transform;
+        } else if (node.angle) {
             textarea.style.transform = `rotate(${node.angle}rad)`;
         }
 
@@ -2838,6 +2915,25 @@ export class DiagramEditView extends DiagramView {
             element: textarea,
             nodeId: node.id,
             originalText,
+            singleLine,
+        };
+
+        const autosizeEditor = (): void => {
+            if (singleLine) {
+                return;
+            }
+
+            textarea.style.height = 'auto';
+            const nextHeight = Math.max(scaledLineHeight, textarea.scrollHeight);
+            textarea.style.height = `${nextHeight}px`;
+
+            if (baseline === 'top') {
+                textarea.style.top = `${rectTopScreen + (scaledFontSize / 2)}px`;
+            } else if (baseline === 'bottom') {
+                textarea.style.top = `${rectTopScreen + rectHeightScreen - nextHeight}px`;
+            } else {
+                textarea.style.top = `${rectTopScreen + (scaledFontSize / 4) + (rectHeightScreen / 2) - (nextHeight / 2)}px`;
+            }
         };
 
         textarea.addEventListener('keydown', (event) => {
@@ -2848,9 +2944,27 @@ export class DiagramEditView extends DiagramView {
             //     return;
             // }
 
-            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            if (event.key === 'Enter' && (singleLine || (!event.ctrlKey && !event.metaKey && !event.shiftKey))) {
                 event.preventDefault();
                 this.closeTextEditor(true);
+                return;
+            }
+
+            if (!singleLine && event.key === 'Enter' && (event.ctrlKey || event.metaKey || event.shiftKey)) {
+                event.preventDefault();
+                const start = textarea.selectionStart ?? textarea.value.length;
+                const end = textarea.selectionEnd ?? textarea.value.length;
+                const value = textarea.value;
+                textarea.value = `${value.slice(0, start)}\n${value.slice(end)}`;
+                const next = start + 1;
+                textarea.selectionStart = next;
+                textarea.selectionEnd = next;
+                autosizeEditor();
+                return;
+            }
+
+            if (singleLine && event.key === 'Enter') {
+                event.preventDefault();
                 return;
             }
 
@@ -2860,11 +2974,25 @@ export class DiagramEditView extends DiagramView {
             }
         });
 
+        if (singleLine) {
+            textarea.addEventListener('input', () => {
+                const normalized = textarea.value.replace(/[\r\n]+/g, ' ');
+                if (normalized !== textarea.value) {
+                    textarea.value = normalized;
+                }
+            });
+        } else {
+            textarea.addEventListener('input', () => {
+                autosizeEditor();
+            });
+        }
+
         textarea.addEventListener('blur', () => {
             this.closeTextEditor(true);
         });
 
         setTimeout(() => {
+            autosizeEditor();
             textarea.focus();
             textarea.select();
         }, 50);
@@ -2906,6 +3034,31 @@ export class DiagramEditView extends DiagramView {
         this.canvas.style.cursor = 'default';
 
         return true;
+    }
+
+    private wrapEditorTextLines(text: string, maxWidth: number, context: CanvasRenderingContext2D): string[] {
+        const sourceLines = (text || '').split('\n');
+        const lines: string[] = [];
+
+        for (const src of sourceLines) {
+            const words = src.split(' ');
+            let currentLine = words[0] ?? '';
+
+            for (let i = 1; i < words.length; i++) {
+                const word = words[i] ?? '';
+                const trial = `${currentLine} ${word}`;
+                if (context.measureText(trial).width < maxWidth) {
+                    currentLine = trial;
+                } else {
+                    lines.push(currentLine);
+                    currentLine = word;
+                }
+            }
+
+            lines.push(currentLine);
+        }
+
+        return lines;
     }
 
     private normalizeRect(start: IPoint, end: IPoint): IRect {

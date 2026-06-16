@@ -8,6 +8,7 @@ import { RenderBasics } from "../render.basics";
 import type { HollowMode, INodeAdapter, TextOverflowMode } from "../../factory/node.adapter";
 import { isHollow, lineWidth, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
+import { NodeBasics } from "../node.basics";
 
 /**
  * PolylineAdapter is a node adapter responsible for rendering polyline nodes in the diagram. 
@@ -125,7 +126,7 @@ export class PolylineAdapter implements INodeAdapter {
             }
 
             if (node.text) {
-                const { from, to } = this.longestSegment(node) || { from: node.points[0]!, to: node.points[1]! };
+                const { from, to } = NodeBasics.longestSegment(node.points) || { from: node.points[0]!, to: node.points[1]! };
                 RenderBasics.renderText(node, context, { overflow: this.text_overflow, from, to });
             }
 
@@ -136,20 +137,20 @@ export class PolylineAdapter implements INodeAdapter {
         }
     }
 
-    private longestSegment(node: INode): { from: IPoint, to: IPoint } | undefined {
-        if (node.points.length < 2) {
-            return undefined;
-        }
-        const segments: { from: IPoint, to: IPoint, length: number }[] = [];
-        for (let i = 1; i < node.points.length; i++) {
-            const from = node.points[i - 1]!;
-            const to = node.points[i]!;
-            const length = Math.sqrt((to.x - from.x) ** 2 + (to.y - from.y) ** 2);
-            segments.push({ from, to, length });
-        }
-        segments.sort((a, b) => b.length - a.length);
-        return segments[0];
-    }
+    // private longestSegment(node: INode): { from: IPoint, to: IPoint } | undefined {
+    //     if (node.points.length < 2) {
+    //         return undefined;
+    //     }
+    //     const segments: { from: IPoint, to: IPoint, length: number }[] = [];
+    //     for (let i = 1; i < node.points.length; i++) {
+    //         const from = node.points[i - 1]!;
+    //         const to = node.points[i]!;
+    //         const length = Math.sqrt((to.x - from.x) ** 2 + (to.y - from.y) ** 2);
+    //         segments.push({ from, to, length });
+    //     }
+    //     segments.sort((a, b) => b.length - a.length);
+    //     return segments[0];
+    // }
 
     public renderSelection(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

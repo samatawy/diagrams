@@ -110,6 +110,16 @@ export interface SnapOptions {
      */
     threshold?: number | Partial<Record<SnapAxis, number>>;
     /**
+     * Threshold used when deciding which guides are rendered.
+     * Defaults to `threshold` when omitted.
+     */
+    render_threshold?: number | Partial<Record<SnapAxis, number>>;
+    /**
+     * Threshold used when deciding which deltas are snapped on pointer-up.
+     * Defaults to `threshold` when omitted.
+     */
+    snap_threshold?: number | Partial<Record<SnapAxis, number>>;
+    /**
      * Preferred drag direction per axis for tie-break ranking.
      * Positive values bias positive deltas, negative values bias negative deltas.
      */
@@ -146,6 +156,10 @@ export interface SnapGuideResult extends SnapDeltaResult {
      * Guides that can be rendered for visual feedback. 
      */
     guides: DiagramGuide[];
+    /**
+     * Options used to compute this result.
+     */
+    options?: SnapOptions;
 }
 
 /**
@@ -247,7 +261,9 @@ export class Guides {
             return undefined;
         }
 
-        return this.snapWithGuides(bounds, candidates, this.buildSnapOptions(input.diagram.grid, input.byX, input.byY));
+        const options = this.buildSnapOptions(input.diagram.grid, input.byX, input.byY);
+
+        return this.snapWithGuides(bounds, candidates, options);
     }
 
     /**
@@ -260,7 +276,7 @@ export class Guides {
             return false;
         }
 
-        const { dx, dy } = this.snapDeltas(input.snap, input.handle, input.diagram.grid);
+        const { dx, dy } = this.snapDeltas(input.snap, input.handle);
         if (dx === 0 && dy === 0) {
             return false;
         }
@@ -289,6 +305,8 @@ export class Guides {
 
         return {
             threshold: { x: xThreshold, y: yThreshold },
+            render_threshold: { x: xThreshold, y: yThreshold },
+            snap_threshold: { x: xThreshold, y: yThreshold },
             preferDeltaSign: { x: byX, y: byY },
         };
     }
@@ -297,13 +315,13 @@ export class Guides {
      * Given a pending snap result and the active drag handle, return the dx/dy
      * to apply at pointer-up.  For MOVE, the closest match on each axis wins.
      * For resize handles, only the match whose sourcePoint matches the active
-     * edge of that handle is eligible.  A match is only applied when its
-     * distance falls within snapRatio × the render threshold.
+      * edge of that handle is eligible.  A match is only applied when its
+      * distance falls within `snap_threshold`.
      */
-    public static snapDeltas(snap: SnapGuideResult, handle: NodeHandle, grid: Pick<IGrid, 'width' | 'height'>, snapRatio = 0.5): { dx: number; dy: number } {
-        const xThreshold = Math.max(1, grid.width || 6) * snapRatio;
-        const yThreshold = Math.max(1, grid.height || 6) * snapRatio;
-
+    public static snapDeltas(snap: SnapGuideResult, handle: NodeHandle, options?: SnapOptions): { dx: number; dy: number } {
+        const effective = options ?? snap.options ?? {};
+        const xThreshold = this.thresholdForAxis(effective, 'x', 'snap');
+        const yThreshold = this.thresholdForAxis(effective, 'y', 'snap');
         const isMove = handle === NodeHandle.MOVE;
         const xSourceKey = isMove ? undefined : this.handleSourceKey(handle, 'x');
         const ySourceKey = isMove ? undefined : this.handleSourceKey(handle, 'y');
@@ -326,9 +344,8 @@ export class Guides {
      * @param options Snap behavior options.
      * @returns Ordered axis matches from best to worst.
      */
-    public static matchesByAxis(movingRect: IRect, candidates: SnapCandidate[], axis: SnapAxis, options: SnapOptions = {},
-    ): SnapMatch[] {
-        const threshold = this.thresholdForAxis(options.threshold, axis);
+    public static matchesByAxis(movingRect: IRect, candidates: SnapCandidate[], axis: SnapAxis, options: SnapOptions = {}): SnapMatch[] {
+        const threshold = this.thresholdForAxis(options, axis, 'match');
         const preferredDirection = options.preferDeltaSign?.[axis] ?? 0;
         const sourcePoints = this.axisPoints(movingRect, axis);
         const matches: SnapMatch[] = [];
@@ -426,10 +443,15 @@ export class Guides {
      */
     private static snapWithGuides(movingRect: IRect, candidates: SnapCandidate[], options: SnapOptions = {}): SnapGuideResult {
         const result = this.snapDelta(movingRect, candidates, options);
+        const xGuideThreshold = this.thresholdForAxis(options, 'x', 'render');
+        const yGuideThreshold = this.thresholdForAxis(options, 'y', 'render');
+        const xGuideMatches = result.xMatches.filter(match => match.distance <= xGuideThreshold);
+        const yGuideMatches = result.yMatches.filter(match => match.distance <= yGuideThreshold);
 
         return {
             ...result,
-            guides: this.buildGuides(movingRect, candidates, result.xMatches, result.yMatches),
+            guides: this.buildGuides(movingRect, candidates, xGuideMatches, yGuideMatches),
+            options,
         };
     }
 
@@ -552,18 +574,25 @@ export class Guides {
     }
 
     /**
-     * Resolves axis threshold from scalar or per-axis threshold config.
-     * @param threshold Threshold option input.
+     * Resolves axis threshold for matching, rendering, or snapping with option fallbacks.
+     * @param options Snap options input.
      * @param axis Axis to resolve.
+     * @param mode Threshold mode to resolve.
      * @returns Numeric threshold for the requested axis.
      */
-    private static thresholdForAxis(threshold: SnapOptions['threshold'], axis: SnapAxis): number {
-        if (typeof threshold === 'number') {
-            return threshold;
+    private static thresholdForAxis(options: SnapOptions, axis: SnapAxis, mode: 'match' | 'render' | 'snap'): number {
+        const source = mode === 'render'
+            ? (options.render_threshold ?? options.threshold)
+            : mode === 'snap'
+                ? (options.snap_threshold ?? options.threshold)
+                : options.threshold;
+
+        if (typeof source === 'number') {
+            return source;
         }
 
-        if (threshold && typeof threshold[axis] === 'number') {
-            return threshold[axis]!;
+        if (source && typeof source[axis] === 'number') {
+            return source[axis]!;
         }
 
         return 6;
@@ -726,7 +755,7 @@ export class Guides {
     }
 
     /**
-     * Finds nodes linked to the current selection through connection endpoints.
+     * Finds nodes linked to the current selection directly through anchor points.
      * @param nodeIds Selected/excluded node ids.
      * @param allNodes All diagram nodes.
      * @returns Linked node ids to be excluded from snapping.
@@ -746,16 +775,48 @@ export class Guides {
                 continue;
             }
 
-            if (nodeIds.has(fromId)) {
-                linked.add(toId);
-            }
-            if (nodeIds.has(toId)) {
-                linked.add(fromId);
+            if (nodeIds.has(fromId) || nodeIds.has(toId)) {
+                linked.add(node.id);
             }
         }
 
         return linked;
     }
+
+    // /**
+    //  * Finds nodes linked to the current selection through connection endpoints.
+    //  * @param nodeIds Selected/excluded node ids.
+    //  * @param allNodes All diagram nodes.
+    //  * @returns Linked node ids to be excluded from snapping.
+    //  */
+    // private static getLinkedNodeIds(nodeIds: Set<string>, allNodes: INode[]): Set<string> {
+    //     const linked = new Set<string>();
+
+    //     for (const node of allNodes) {
+    //         // if (!isConnectionNode(node)) {
+    //         //     continue;
+    //         // }
+    //         const connection = node as INode & IConnection;
+    //         if (!connection.from && !connection.to) {
+    //             continue;
+    //         }
+
+    //         const fromId = this.anchorNodeId(connection.from);
+    //         const toId = this.anchorNodeId(connection.to);
+    //         if (!fromId || !toId) {
+    //             continue;
+    //         }
+
+    //         if (nodeIds.has(fromId)) {
+    //             linked.add(toId);
+    //         }
+    //         if (nodeIds.has(toId)) {
+    //             linked.add(fromId);
+    //         }
+    //     }
+
+    //     return linked;
+    // }
 
     /**
      * Extracts a connection anchor node id from string/object anchor forms.

@@ -3,6 +3,7 @@ import { NodeHandle, type IPoint, type IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { CoordinateSystem } from "../view/coordinate.system";
 import { NodeRegistry } from "../factory/node.registry";
+import { NodeBasics } from "./node.basics";
 
 type InteractiveDiagram = INode['owner'] & {
     getCoordinates(): CoordinateSystem;
@@ -336,7 +337,7 @@ export class ConnectionBasics {
 
     private static renderArrow(from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
         const headlen = 10;
-        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        const angle = NodeBasics.calculateAngle(from, to);  //to.y - from.y, to.x - from.x);
 
         context.beginPath();
         context.moveTo(to.x, to.y);

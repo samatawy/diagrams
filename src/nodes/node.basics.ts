@@ -1,5 +1,5 @@
 import type { INode } from "../interfaces";
-import { NodeHandle, type IRect } from "../types";
+import { NodeHandle, type IPoint, type IRect } from "../types";
 import { isDiagramViewLike, isNode } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import { isHollow } from "../value.utils";
@@ -304,4 +304,49 @@ export class NodeBasics {
         }
         return false;
     }
+
+    public static longestSegment(points: IPoint[]): { from: IPoint, to: IPoint } | undefined {
+        if (points.length < 2) {
+            return undefined;
+        }
+        const segments: { from: IPoint, to: IPoint, length: number }[] = [];
+        for (let i = 1; i < points.length; i++) {
+            const from = points[i - 1]!;
+            const to = points[i]!;
+            const length = this.calculateLength(from, to);
+            segments.push({ from, to, length });
+        }
+        segments.sort((a, b) => b.length - a.length);
+        return segments[0];
+    }
+
+    public static calculateLength(from: IPoint, to: IPoint): number {
+        return Math.sqrt((to.x - from.x) ** 2 + (to.y - from.y) ** 2);
+    }
+
+    public static calculateAngle(from: IPoint, to: IPoint): number {
+        return Math.atan2(to.y - from.y, to.x - from.x);
+    }
+
+    public static normalizeLine(from: IPoint, to: IPoint): { from: IPoint, to: IPoint } {
+        if (this.isInvertedLine(from, to)) {
+            return { from: to, to: from };
+        } else {
+            return { from, to };
+        }
+    }
+
+    public static isInvertedLine(from: IPoint, to: IPoint): boolean {
+        const dx = to.x - from.x;
+        if (dx < 0) {
+            return true;
+        }
+        if (dx > 0) {
+            return false;
+        }
+
+        // Vertical tie-breaker keeps normalization deterministic.
+        return from.y > to.y;
+    }
+
 }

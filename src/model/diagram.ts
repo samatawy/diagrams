@@ -5,7 +5,7 @@ import { downloadTextFile, exportTextBlob, isBrowserRuntime } from '../io/browse
 import { isNodeRuntime, writeTextFile } from '../io/node.support';
 import type { DiagramExportFormat, DiagramSaveOptions } from "../io/export.types";
 import { AssetStore } from "../view/asset.store";
-import { DiagramConstants, GRID_LINE_COLOR, GRID_CELL_HEIGHT, GRID_CELL_WIDTH } from "./diagram.constants";
+import { DiagramConstants } from "./diagram.constants";
 import type { ImageMode } from "../types";
 
 const defaultGrid: IGrid = {
@@ -35,8 +35,6 @@ export class Diagram implements IDiagram {
     public meta?: Record<string, any>;
 
     public grid: IGrid;
-
-    // protected constants: DiagramConstants;
 
     private readonly assetStore = new AssetStore();
 

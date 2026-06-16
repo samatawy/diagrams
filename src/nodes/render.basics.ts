@@ -5,6 +5,7 @@ import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
 import { fillStyle, imageMode, imageId, lineWidth, nodeFont, shadowStyle, strokeStyle, textAlign, textBaseline, textColor } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
+import { NodeBasics } from "./node.basics";
 
 export interface TextOptions {
     overflow: TextOverflowMode;
@@ -351,13 +352,9 @@ export class RenderBasics {
     private static renderLineSloped(node: INode, context: CanvasRenderingContext2D, from: IPoint, to: IPoint): Path2D | undefined {
         if (!context) return;
 
-        if (from.y < to.y && from.x > to.x) {   // inverted
-            const tmp = { x: from.x, y: from.y };
-            from = { x: to.x, y: to.y };
-            to = tmp;
-        }
+        ({ from, to } = NodeBasics.normalizeLine(from, to));
 
-        const angle = Math.atan2(to.y - from.y, to.x - from.x);
+        const angle = NodeBasics.calculateAngle(from, to);
 
         const { lines, lineHeight, startline } = this.getTextLayoutSloped(node, context, from, to);
 
@@ -491,7 +488,7 @@ export class RenderBasics {
             return { lines: [], lineHeight: 0, startline: 0 };
         }
 
-        const width = Math.sqrt((to.x - from.x) ** 2 + (to.y - from.y) ** 2);
+        const width = NodeBasics.calculateLength(from, to);
 
         // Text should remain legible against the node fill and should not inherit shape shadows.
         context.shadowColor = 'transparent';
