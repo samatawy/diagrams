@@ -44,10 +44,20 @@ export interface INode {
      */
     textBaseline?: ITextBaseline,
 
+    // /**
+    //  * The font used for the node's text, which can include font family, size, weight, and other CSS font properties.
+    //  */
+    // font?: string,
+
     /**
-     * The font used for the node's text, which can include font family, size, weight, and other CSS font properties.
+     * The font face used for the node's text, which specifies the font family to be used for rendering the text.
      */
-    font?: string,
+    fontFace?: string;
+
+    /**
+     * The size of the font used for the node's text, which specifies the size of the text (in pixels).
+     */
+    fontSize?: number;
 
     // The following are cached in the diagram's ViewCache
     // path?: Path2D;
@@ -264,7 +274,7 @@ export interface IDiagram extends Serializable {
     nodes: INode[];
     layers: ILayer[];
     meta?: Record<string, unknown>;
-    grid: IGrid;
+    grid?: IGrid;
 
     node(id: string): INode | undefined;
     upsertNode(node: INode): INode;

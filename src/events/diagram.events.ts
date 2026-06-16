@@ -41,7 +41,15 @@ export type DiagramChangeScope = 'model' | 'view' | 'style';
  * This interface can be used to provide detailed information about changes occurring in the diagram, allowing for more granular handling of updates and interactions.
  */
 export interface DiagramChanged {
+    /**
+     * The scope of the change, which indicates whether the change is related to the model, view, or style of the diagram.
+     * This property allows developers to handle changes more specifically based on their nature, optimizing performance and user experience.
+     */
     scope: DiagramChangeScope;
+    /**
+     * The source event that triggered the change, represented as a string. 
+     * This property provides context about what caused the change, enabling more informed handling of the event.
+     */
     sourceEvent: string;
 }
 

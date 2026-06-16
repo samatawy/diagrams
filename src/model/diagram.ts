@@ -1,20 +1,11 @@
-import type { IConnection, IConnectionAnchor, IDiagram, IGrid, ILayer, INode } from "../interfaces";
+import type { IConnection, IConnectionAnchor, IDiagram, ILayer, INode } from "../interfaces";
 import type { ISerializer, ISerializedConnectionAnchor, ISerializedDiagram, ISerializedLayer, ISerializedNode } from '../io/serialized.types';
 import { jsonSerializer } from '../io/json.serializer';
 import { downloadTextFile, exportTextBlob, isBrowserRuntime } from '../io/browser.support';
 import { isNodeRuntime, writeTextFile } from '../io/node.support';
 import type { DiagramExportFormat, DiagramSaveOptions } from "../io/export.types";
 import { AssetStore } from "../view/asset.store";
-import { DiagramConstants } from "./diagram.constants";
 import type { ImageMode } from "../types";
-
-const defaultGrid: IGrid = {
-    forced: false,
-    visible: true,
-    color: 'lightgray',
-    width: 20,
-    height: 20,
-};
 
 
 /**
@@ -34,30 +25,23 @@ export class Diagram implements IDiagram {
 
     public meta?: Record<string, any>;
 
-    public grid: IGrid;
-
     private readonly assetStore = new AssetStore();
 
     public get image_assets(): Record<string, string> {
         return this.assetStore.snapshot() ?? {};
     }
 
-    constructor(id: string, initial?: Partial<Omit<Diagram, 'id'>>) {
+    constructor(id: string, initial?: Partial<Omit<IDiagram, 'id'>>) {
         this.id = id;
         this.nodes = [];
         this.layers = initial?.layers ? initial.layers.map(layer => this.createLayer(layer.id, layer.name, layer.visible, layer.nodes)) : [];
         this.meta = initial?.meta ? { ...initial.meta } : undefined;
-        this.grid = initial?.grid ? { ...initial.grid } : { ...defaultGrid };
 
         if (initial?.nodes) {
             for (const node of initial.nodes) {
                 this.upsertNode(node);
             }
         }
-        // this.constants = new DiagramConstants();
-        this.grid.color = DiagramConstants.GRID_LINE_COLOR;
-        this.grid.width = DiagramConstants.GRID_CELL_WIDTH;
-        this.grid.height = DiagramConstants.GRID_CELL_HEIGHT;
     }
 
     /**
@@ -67,7 +51,9 @@ export class Diagram implements IDiagram {
         this.assetStore.destroy();
     }
 
-    // Model management methods
+    // ======================================
+    // ========== Model management methods ==========
+    // ======================================
 
     /**
      * Retrieves a node by its ID.
@@ -222,12 +208,118 @@ export class Diagram implements IDiagram {
     public clear(): void {
         this.nodes = [];
         this.layers = [];
-        this.meta = undefined;
-        this.grid = { ...defaultGrid };
+        this.deleteMeta();
         this.assetStore.clear();
     }
 
-    // I/O methods
+    // ======================================
+    // ========== Metadata methods ==========
+    // ======================================
+
+    /**
+     * Gets the metadata object for the diagram. If no metadata exists, an empty object is returned.
+     * @returns The metadata object for the diagram.
+     */
+    public get metadata(): Record<string, any> {
+        return this.meta || {};
+    }
+
+    /**
+     * Sets the metadata object for the diagram. If a null or undefined value is provided, the metadata is cleared.
+     * @param data The metadata object to set for the diagram.
+     */
+    public set metadata(data: Record<string, any>) {
+        this.meta = data || {};
+    }
+
+    /**
+     * Gets the value of a specific metadata key for the diagram.
+     * @param key The key of the metadata to retrieve.
+     * @returns The value of the specified metadata key, or undefined if the key does not exist.
+     */
+    public getMeta(key?: string): any {
+        return key ? (this.meta ? this.meta[key] : undefined) : this.meta;
+    }
+
+    /**
+     * Sets the value of a specific metadata key for the diagram.
+     * @param key The key of the metadata to set.
+     * @param value The value to set for the specified metadata key.
+     */
+    public setMeta(key: string, value: any): void {
+        if (!this.meta) {
+            this.meta = {};
+        }
+        this.meta[key] = value;
+    }
+
+    /**
+     * Deletes a specific metadata key from the diagram.
+     * @param key The key of the metadata to delete. If not provided, all metadata for the diagram is deleted.
+     */
+    public deleteMeta(key?: string): void {
+        if (this.meta) {
+            if (key) {
+                delete (this.meta[key]);
+            } else {
+                this.meta = undefined;
+            }
+        }
+    }
+
+    /**
+     * Gets the value of a specific metadata key for a node.
+     * @param node The node or node ID to retrieve metadata from.
+     * @param key The key of the metadata to retrieve.
+     * @returns The value of the specified metadata key, or undefined if the key does not exist.
+     */
+    public getNodeMeta(node: string | INode, key: string): any {
+        const target = this.resolveNode(node);
+        if (!target || !target.meta) {
+            return undefined;
+        }
+        return target.meta[key];
+    }
+
+    /**
+     * Sets the value of a specific metadata key for a node.
+     * @param node The node or node ID to set metadata for.
+     * @param key The key of the metadata to set.
+     * @param value The value to set for the specified metadata key.
+     */
+    public setNodeMeta(node: string | INode, key: string, value: any): void {
+        const target = this.resolveNode(node);
+        if (!target) {
+            return;
+        }
+
+        if (!target.meta) {
+            target.meta = {};
+        }
+        target.meta[key] = value;
+    }
+
+    /**
+     * Deletes a specific metadata key from a node.
+     * @param node The node or node ID to delete metadata from.
+     * @param key The key of the metadata to delete. If not provided, all metadata for the node is deleted.
+     */
+    public deleteNodeMeta(node: string | INode, key?: string): void {
+        const target = this.resolveNode(node);
+        if (!target || !target.meta) {
+            return;
+        }
+        if (key) {
+            delete (target.meta[key]);
+        } else {
+            target.meta = undefined;
+        }
+    }
+
+
+    // ======================================
+    // ========== I/O methods ==========
+    // ======================================
 
     /**
      * Loads the diagram data from a serialized JSON object.
@@ -258,7 +350,7 @@ export class Diagram implements IDiagram {
         this.nodes = (json.nodes ?? []).map(node => this.hydrateNode(node));
         this.layers = (json.layers ?? []).map(layer => this.hydrateLayer(layer));
         this.meta = json.meta ? { ...json.meta } : undefined;
-        this.grid = json.grid ? { ...defaultGrid, ...json.grid } : { ...defaultGrid };
+        // this.grid = json.grid ? { ...defaultGrid, ...json.grid } : { ...defaultGrid };
         this.pruneMissingLayerNodes();
         return this;
     }
@@ -282,7 +374,7 @@ export class Diagram implements IDiagram {
             })),
             image_assets: imageAssets,
             meta: this.meta ? { ...this.meta } : undefined,
-            grid: { ...this.grid },
+            // grid: { ...this.grid },
         } satisfies ISerializedDiagram);
     }
 

@@ -22,6 +22,8 @@ import { WidthSelect, type WidthSelectConfig } from "./width.select";
 import { ArrowSelect, type ArrowSelectConfig } from "./arrow.select";
 import type { ArrowDirection } from "../types";
 import { IntegerRangeSelect, type IntegerRangeSelectConfig } from "./integer.range.select";
+import { DiagramInspector } from "./inspector/diagram.inspector";
+import type { InspectorConfig } from "./inspector/inspector";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
@@ -53,6 +55,7 @@ export type DiagramEditorConfig = {
     shadowOffsetY?: IntegerRangeSelectConfig;
     shadowBlur?: IntegerRangeSelectConfig;
     fillColor?: ColorSelectConfig;
+    inspector?: InspectorConfig;
 
     fileDialogs?: DiagramEditorFileDialogsConfig;
 }
@@ -88,7 +91,7 @@ const DIAGRAM_EDITOR_STYLES = `
 .diagram-editor-stage {
     flex: 1 1 0;
     display: grid;
-    grid-template-columns: max-content minmax(0, 1fr);
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
     min-height: 0;
     overflow: hidden;
 }
@@ -96,6 +99,12 @@ const DIAGRAM_EDITOR_STYLES = `
     border-right: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
     padding: 8px var(--diagram-ui-panel-padding, 6px);
     overflow-y: auto;
+}
+.diagram-editor-inspector {
+    border-left: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    padding: 8px var(--diagram-ui-panel-padding, 6px);
+    overflow-y: auto;
+    min-width: 180px;
 }
 .diagram-editor-canvas {
     position: relative;
@@ -182,6 +191,9 @@ export class DiagramEditor {
     protected toolboxHost?: HTMLElement;
     protected toolbox?: ToolPalette;
 
+    protected inspectorHost?: HTMLElement;
+    protected inspector?: DiagramInspector;
+
     protected fontToolbar?: HTMLElement;
     protected fontSelectHost?: HTMLElement;
     protected fontSizeSelectHost?: HTMLElement;
@@ -239,6 +251,7 @@ export class DiagramEditor {
         this.diagram.destroy();
 
         this.toolbox?.destroy();
+        this.inspector?.destroy();
         for (const toolbar of this.toolbars) {
             toolbar.destroy();
         }
@@ -440,11 +453,18 @@ export class DiagramEditor {
         setClasses(canvasHost, 'diagram-editor-canvas');
         this.stageHost.appendChild(canvasHost);
 
+        // Inspector is the right column of the stage grid.
+        this.inspectorHost = document.createElement('div');
+        setClasses(this.inspectorHost, 'diagram-editor-inspector');
+        this.stageHost.appendChild(this.inspectorHost);
+
         // Create the local diagram edit view and load the provided diagram if any
         const id = diagram?.id || `diagram-${Date.now()}`;
         this.diagram = new DiagramEditView(id, canvasHost);
         this.diagram.fileDialogs = this.createFileDialogs();
         this.diagram.prompts = this.createDiagramPrompts();
+
+        this.inspector = new DiagramInspector(this.inspectorHost, this.diagram, config.inspector || {});
 
         if (diagram) this.diagram.read(diagram);
 

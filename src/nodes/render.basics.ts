@@ -3,7 +3,7 @@ import type { IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { fillStyle, imageMode, imageId, lineWidth, nodeFont, shadowStyle, strokeStyle, textAlign, textBaseline, textColor } from "../value.utils";
+import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, shadowStyle, strokeStyle, textAlign, textBaseline, textColor } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 
@@ -276,24 +276,24 @@ export class RenderBasics {
     private static renderLines(node: INode, context: CanvasRenderingContext2D, rect: IRect): Path2D | undefined {
         if (!context) return undefined;
 
-        const { lines, lineHeight, startline } = this.getTextLayout(node, context, rect);
+        const { lines, lineHeight, startline, textRect } = this.getTextLayout(node, context, rect);
         const path = new Path2D();
         const padding = DiagramConstants.HANDLE_HIT_EPSILON;
         const align = textAlign(node);
         const baseline = textBaseline(node);
 
         for (let i = 0; i < lines.length; i++) {
-            let x = rect.left;
+            let x = textRect.left;
             let y = startline + (i * lineHeight);
             switch (align) {
                 case 'left':
                     context.fillText(lines[i]!, x, y);
                     break;
                 case 'center':
-                    context.fillText(lines[i]!, x + rect.width / 2, y);
+                    context.fillText(lines[i]!, x + textRect.width / 2, y);
                     break;
                 case 'right':
-                    context.fillText(lines[i]!, x + rect.width, y);
+                    context.fillText(lines[i]!, x + textRect.width, y);
                     break;
             }
 
@@ -302,16 +302,16 @@ export class RenderBasics {
             const line = lines[i] || '';
             const width = context.measureText(line).width;
 
-            let left = rect.left;
+            let left = textRect.left;
             switch (align) {
                 case 'left':
-                    left = rect.left;
+                    left = textRect.left;
                     break;
                 case 'center':
-                    left = rect.left + (rect.width - width) / 2;
+                    left = textRect.left + (textRect.width - width) / 2;
                     break;
                 case 'right':
-                    left = rect.left + rect.width - width;
+                    left = textRect.left + textRect.width - width;
                     break;
             }
 
@@ -430,11 +430,11 @@ export class RenderBasics {
     private static getTextLayout(node: INode, context: CanvasRenderingContext2D, rect: IRect) {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) {
-            return { lines: [], lineHeight: 0, startline: 0 };
+            return { lines: [], lineHeight: 0, startline: 0, textRect: rect };
         }
 
         if (!node.text?.length) {
-            return { lines: [], lineHeight: 0, startline: 0 };
+            return { lines: [], lineHeight: 0, startline: 0, textRect: rect };
         }
 
         // Text should remain legible against the node fill and should not inherit shape shadows.
@@ -446,28 +446,35 @@ export class RenderBasics {
         context.textAlign = textAlign(node);
         context.textBaseline = textBaseline(node);
 
-        context.font = nodeFont(node);
+        context.font = `${nodeFontSize(node)}px ${nodeFontFace(node)}`;
 
         let fparts = context.font.split('px');
         let fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || DiagramConstants.DEFAULT_NODE_FONT_SIZE : DiagramConstants.DEFAULT_NODE_FONT_SIZE;
         let lineHeight = (fontSize * 1.25);
-        let lines = this.getLines(node.text, rect.width, context);
+        const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
+        const textRect = {
+            left: rect.left + textPadding,
+            top: rect.top + textPadding,
+            width: Math.max(1, rect.width - (textPadding * 2)),
+            height: Math.max(lineHeight, rect.height - (textPadding * 2)),
+        };
+        let lines = this.getLines(node.text, textRect.width, context);
         let startline = 0;
 
         const baseline = textBaseline(node);
         switch (baseline) {
             case 'top':
-                startline = rect.top + (fontSize / 2);  // 6
+                startline = textRect.top + (fontSize / 2);
                 break;
             case 'middle':
-                startline = rect.top + (fontSize / 4) + (rect.height / 2) - (lineHeight * (lines.length - 1) / 2);
+                startline = textRect.top + (fontSize / 4) + (textRect.height / 2) - (lineHeight * (lines.length - 1) / 2);
                 break;
             case 'bottom':
-                startline = rect.top + rect.height - (lineHeight * (lines.length - 1));
+                startline = textRect.top + textRect.height - (lineHeight * (lines.length - 1));
                 break;
         }
 
-        return { lines, lineHeight, startline };
+        return { lines, lineHeight, startline, textRect };
     }
 
     /**
@@ -497,9 +504,9 @@ export class RenderBasics {
             : textColor(node);
 
         context.textAlign = textAlign(node);
-        context.textBaseline = textBaseline(node);
+        // context.textBaseline = textBaseline(node);
 
-        context.font = nodeFont(node);
+        context.font = `${nodeFontSize(node)}px ${nodeFontFace(node)} `;
 
         let fparts = context.font.split('px');
         let fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || DiagramConstants.DEFAULT_NODE_FONT_SIZE : DiagramConstants.DEFAULT_NODE_FONT_SIZE;
@@ -507,18 +514,19 @@ export class RenderBasics {
         let lines = this.getLines(node.text, width, context);
         let startline = 0;
 
-        const baseline = textBaseline(node);
-        switch (baseline) {
-            case 'top':
-                startline = from.y + (fontSize / 2);
-                break;
-            case 'middle':
-                startline = from.y + (fontSize / 4) + ((to.y - from.y) / 2) - (lineHeight * (lines.length - 1) / 2);
-                break;
-            case 'bottom':
-                startline = to.y - (fontSize / 2);
-                break;
-        }
+        // const baseline = textBaseline(node);
+        // switch (baseline) {
+        //     case 'top':
+        //         startline = from.y + (fontSize / 2);
+        //         break;
+        //     case 'middle':
+        //         startline = from.y + (fontSize / 4) + ((to.y - from.y) / 2) - (lineHeight * (lines.length - 1) / 2);
+        //         break;
+        //     case 'bottom':
+        //         startline = to.y - (fontSize / 2);
+        //         break;
+        // }
+        startline = from.y + (fontSize / 4) + ((to.y - from.y) / 2) - (lineHeight * (lines.length - 1) / 2);
 
         return { lines, lineHeight, startline };
     }

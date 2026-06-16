@@ -72,7 +72,9 @@ describe('Diagram', () => {
                     text: 'Target',
                     textAlign: 'center',
                     textBaseline: 'middle',
-                    font: '16px Tahoma',
+                    fontFace: 'Tahoma',
+                    fontSize: 16,
+                    // font: '16px Tahoma',
                     img_mode: 'none',
                     ready: false,
                     transparent: false,
@@ -93,7 +95,9 @@ describe('Diagram', () => {
                     text: '',
                     textAlign: 'center',
                     textBaseline: 'middle',
-                    font: '16px Tahoma',
+                    fontFace: 'Tahoma',
+                    fontSize: 16,
+                    // font: '16px Tahoma',
                     img_mode: 'none',
                     ready: false,
                     transparent: true,
@@ -116,13 +120,6 @@ describe('Diagram', () => {
                 },
             ],
             meta: { title: 'Persisted Demo' },
-            grid: {
-                forced: false,
-                visible: true,
-                color: 'lightgray',
-                width: 20,
-                height: 20,
-            },
         } as ISerializedDiagram;
 
         const restored = await new Diagram('empty').read(source, jsonSerializer);

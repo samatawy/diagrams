@@ -31,7 +31,7 @@ import {
     type DiagramEditContextMenu,
 } from "../events/diagram.events";
 import type { ISerializedNode } from "../io";
-import { nodeAngle, nodeText, strokeStyle, textAlign, textBaseline } from "../value.utils";
+import { lineWidth, nodeAngle, nodeText, strokeStyle, textAlign, textBaseline } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 
 
@@ -674,6 +674,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
+        this.eventDispatcher.styleChanged('set-stroke-color');
     }
 
     /**
@@ -697,6 +698,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
+        this.eventDispatcher.styleChanged('set-fill-color');
     }
 
     /**
@@ -715,6 +717,7 @@ export class DiagramEditView extends DiagramView {
         }
         this.render('all');
         this.renderPreview();
+        this.eventDispatcher.styleChanged('set-text-color');
     }
 
     /**
@@ -733,6 +736,7 @@ export class DiagramEditView extends DiagramView {
         }
         this.render('all');
         this.renderPreview();
+        this.eventDispatcher.styleChanged('set-line-width');
     }
 
     /**
@@ -755,6 +759,7 @@ export class DiagramEditView extends DiagramView {
         }
         this.render('all');
         this.renderPreview();
+        this.eventDispatcher.styleChanged('set-arrow');
     }
 
     /**
@@ -773,6 +778,7 @@ export class DiagramEditView extends DiagramView {
         }
         this.render('all');
         this.renderPreview();
+        this.eventDispatcher.styleChanged('set-shadow-style');
     }
 
     /**
@@ -787,10 +793,12 @@ export class DiagramEditView extends DiagramView {
         this.settings.fontFace = face;
 
         for (let node of this.selection()) {
-            node.font = this.settings.fontSize + 'px ' + this.settings.fontFace;
+            node.fontFace = face;
+            //     node.font = this.settings.fontSize + 'px ' + this.settings.fontFace;
         }
         this.render('all');
         this.renderPreview();
+        this.eventDispatcher.styleChanged('set-font-face');
     }
 
     /**
@@ -805,10 +813,12 @@ export class DiagramEditView extends DiagramView {
         this.settings.fontSize = size;
 
         for (let node of this.selection()) {
-            node.font = this.settings.fontSize + 'px ' + this.settings.fontFace;
+            node.fontSize = size;
+            //     node.font = this.settings.fontSize + 'px ' + this.settings.fontFace;
         }
         this.render('all');
         this.renderPreview();
+        this.eventDispatcher.styleChanged('set-font-size');
     }
 
     /**
@@ -827,6 +837,7 @@ export class DiagramEditView extends DiagramView {
         }
         this.render('all');
         this.renderPreview();
+        this.eventDispatcher.styleChanged('set-text-align');
     }
 
     /**
@@ -845,6 +856,7 @@ export class DiagramEditView extends DiagramView {
         }
         this.render('all');
         this.renderPreview();
+        this.eventDispatcher.styleChanged('set-text-baseline');
     }
 
     /**
@@ -855,19 +867,20 @@ export class DiagramEditView extends DiagramView {
         this.settings.nodeText = text;
 
         this.applyText(this.settings.nodeText);
+        this.eventDispatcher.styleChanged('set-node-text');
     }
 
-    /**
-     * Updates the grid settings for the diagram and re-renders it to reflect the changes.
-     * @param json A partial object containing the grid properties to update. Only the provided properties will be updated, while the others will remain unchanged.
-     */
-    public updateGrid(json: Partial<IGrid>): void {
-        Object.assign(this.grid, json);
-        this.render('all');
-    }
+    // /**
+    //  * Updates the grid settings for the diagram and re-renders it to reflect the changes.
+    //  * @param json A partial object containing the grid properties to update. Only the provided properties will be updated, while the others will remain unchanged.
+    //  */
+    // public updateGrid(json: Partial<IGrid>): void {
+    //     Object.assign(this.grid, json);
+    //     this.render('all');
+    // }
 
     /**
-     * List colors used in this diagram in descening order of their usage frequency.
+     * List colors used in this diagram in descending order of their usage frequency.
      * @returns Colors as an array of strings.
      */
     public getFrequentColors(): string[] {
@@ -2043,20 +2056,29 @@ export class DiagramEditView extends DiagramView {
             // If we are clicking on an already selected item, only get the handle..
             // the rest will be done by SelectMove..
             this.addUndo();
-            if (this.downHandle === NodeHandle.MOVE || this.downHandle === NodeHandle.N || this.downHandle === NodeHandle.S
-                || this.downHandle === NodeHandle.E || this.downHandle === NodeHandle.W || this.downHandle === NodeHandle.NE
-                || this.downHandle === NodeHandle.NW || this.downHandle === NodeHandle.SE || this.downHandle === NodeHandle.SW) {
-                const guideResult = Guides.computeResult({
-                    diagram: this,
-                    nodes: [this.downShape],
-                    byX: 0,
-                    byY: 0,
-                    downShapeId: this.downShape?.id,
-                });
-                if (guideResult) {
-                    this.guides = guideResult.guides;
-                    this.pendingGuideSnap = guideResult;
-                    this.render('all');
+
+            this.guides = [];
+            this.pendingGuideSnap = undefined;
+            const useGuides = !!(this.guideOptions.render || this.guideOptions.snap);
+            if (useGuides) {
+
+                if (this.downHandle === NodeHandle.MOVE || this.downHandle === NodeHandle.N || this.downHandle === NodeHandle.S
+                    || this.downHandle === NodeHandle.E || this.downHandle === NodeHandle.W || this.downHandle === NodeHandle.NE
+                    || this.downHandle === NodeHandle.NW || this.downHandle === NodeHandle.SE || this.downHandle === NodeHandle.SW) {
+
+                    const guideResult = Guides.computeResult({
+                        diagram: this,
+                        nodes: [this.downShape],
+                        byX: 0,
+                        byY: 0,
+                        downShapeId: this.downShape?.id,
+                    });
+
+                    if (guideResult) {
+                        this.guides = this.guideOptions.render ? guideResult.guides : [];
+                        this.pendingGuideSnap = this.guideOptions.snap ? guideResult : undefined;
+                        this.render('all');
+                    }
                 }
             }
             return;
@@ -2096,17 +2118,24 @@ export class DiagramEditView extends DiagramView {
             || this.downHandle === NodeHandle.NW || this.downHandle === NodeHandle.SE || this.downHandle === NodeHandle.SW;
         const shiftToggleGuidePreview = !!event.shiftKey && !!this.downShape;
 
-        if (handleAllowsGuidePreview || shiftToggleGuidePreview) {
-            const guideResult = Guides.computeResult({
-                diagram: this,
-                nodes: shiftToggleGuidePreview ? [this.downShape!] : this.selection(),
-                byX: 0,
-                byY: 0,
-                downShapeId: this.downShape?.id,
-            });
-            if (guideResult) {
-                this.guides = guideResult.guides;
-                this.pendingGuideSnap = guideResult;
+        this.guides = [];
+        this.pendingGuideSnap = undefined;
+        const useGuides = !!(this.guideOptions.render || this.guideOptions.snap);
+        if (useGuides) {
+
+            if (handleAllowsGuidePreview || shiftToggleGuidePreview) {
+                const guideResult = Guides.computeResult({
+                    diagram: this,
+                    nodes: shiftToggleGuidePreview ? [this.downShape!] : this.selection(),
+                    byX: 0,
+                    byY: 0,
+                    downShapeId: this.downShape?.id,
+                });
+
+                if (guideResult) {
+                    this.guides = this.guideOptions.render ? guideResult.guides : [];
+                    this.pendingGuideSnap = this.guideOptions.snap ? guideResult : undefined;
+                }
             }
         }
 
@@ -2621,7 +2650,9 @@ export class DiagramEditView extends DiagramView {
             text: tool === 'text' ? (this.nodeText || 'New Text') : (this.nodeText || ''),
             textAlign: this.textAlign,
             textBaseline: this.textBaseline,
-            font: `${this.fontSize}px ${this.fontFace}`,
+            fontFace: this.fontFace,
+            fontSize: this.fontSize,
+            // font: `${this.fontSize}px ${this.fontFace}`,
             ready: false,
             strokeStyle: this.strokeColor,
             fillStyle,
@@ -2798,11 +2829,14 @@ export class DiagramEditView extends DiagramView {
         const canvasRect = this.canvas.getBoundingClientRect();
         const zoom = this.coordinates.zoom;
         const pan = this.coordinates.pan;
-        const font = node.font || `${this.fontSize}px ${this.fontFace}`;
-        const parsedFontSize = Math.max(1, parseFloat(font.split('px')[0] || `${this.fontSize}`) || this.fontSize);
-        const scaledFontSize = Math.max(1, parsedFontSize * zoom);
+        const fontFace = node.fontFace || this.fontFace;
+        const fontSize = node.fontSize || this.fontSize;
+        // const font = node.font || `${this.fontSize}px ${this.fontFace}`;
+        // const parsedFontSize = Math.max(1, parseFloat(font.split('px')[0] || `${this.fontSize}`) || this.fontSize);
+        const scaledFontSize = Math.max(1, fontSize * zoom);
         const scaledLineHeight = Math.max(scaledFontSize * 1.25, 1);
         const singleLine = this.isConnectorType(node.type);
+        const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
 
         const worldToScreen = (x: number, y: number): IPoint => ({
             x: canvasRect.left + (x * zoom) - pan.x,
@@ -2815,17 +2849,27 @@ export class DiagramEditView extends DiagramView {
         let top = canvasRect.top + (rect.top * zoom) - pan.y;
         let transform = '';
 
-        const baseline = textBaseline(node);
         const rectTopScreen = canvasRect.top + (rect.top * zoom) - pan.y;
         const rectHeightScreen = rect.height * zoom;
+        const baseline = textBaseline(node);
+        let textRectTopScreen = rectTopScreen;
+        let textRectHeightScreen = rectHeightScreen;
 
         // For non-sloped text, place the editor from the same line-box anchor model used by render text,
         // so top/middle/bottom baselines are visually distinct.
         if (!singleLine) {
+            const textRectLeftScreen = canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x;
+            textRectTopScreen = canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y;
+            const textRectWidthScreen = Math.max(1, (rect.width - (textPadding * 2)) * zoom);
+            textRectHeightScreen = Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom);
+
+            left = textRectLeftScreen;
+            editorWidth = Math.max(24, textRectWidthScreen);
+
             const text = nodeText(node);
             const measureContext = this.context;
             measureContext.save();
-            measureContext.font = font.replace(/\d+(?:\.\d+)?px/, `${scaledFontSize}px`);
+            measureContext.font = fontFace.replace(/\d+(?:\.\d+)?px/, `${scaledFontSize}px`);
             const wrapped = this.wrapEditorTextLines(text, editorWidth, measureContext);
             measureContext.restore();
 
@@ -2833,10 +2877,10 @@ export class DiagramEditView extends DiagramView {
             const textBlockHeight = lineCount * scaledLineHeight;
 
             const startline = baseline === 'top'
-                ? rectTopScreen + (scaledFontSize / 2)
+                ? textRectTopScreen + (scaledFontSize / 2)
                 : baseline === 'bottom'
-                    ? rectTopScreen + rectHeightScreen - (scaledLineHeight * (lineCount - 1))
-                    : rectTopScreen + (scaledFontSize / 4) + (rectHeightScreen / 2) - (scaledLineHeight * (lineCount - 1) / 2);
+                    ? textRectTopScreen + textRectHeightScreen - (scaledLineHeight * (lineCount - 1))
+                    : textRectTopScreen + (scaledFontSize / 4) + (textRectHeightScreen / 2) - (scaledLineHeight * (lineCount - 1) / 2);
 
             const firstLineTop = baseline === 'top'
                 ? startline
@@ -2892,17 +2936,27 @@ export class DiagramEditView extends DiagramView {
         textarea.style.background = 'transparent';
         textarea.style.color = strokeStyle(node);   //.strokeStyle || '#111827';
         textarea.style.caretColor = 'currentColor';
-        textarea.style.font = font.replace(/\d+(?:\.\d+)?px/, `${scaledFontSize}px`);
+        textarea.style.font = `${scaledFontSize}px ${fontFace}`;
+        // textarea.style.font = font.replace(/\d+(?:\.\d+)?px/, `${scaledFontSize}px`);
         textarea.style.lineHeight = `${scaledLineHeight}px`;
         textarea.style.textAlign = textAlign(node); // node.textAlign || 'center';
-        textarea.style.transformOrigin = 'center center';
         textarea.style.zIndex = '2147483647';
         textarea.style.cursor = 'text';
 
         if (transform) {
+            // Sloped connector: textarea is already centered on the midpoint so center-center is correct.
+            textarea.style.transformOrigin = 'center center';
             textarea.style.transform = transform;
         } else if (node.angle) {
+            // Non-sloped rotated node: the textarea is inset from the node rect, so its center ≠ the node's
+            // visual center. Set transform-origin explicitly to the node center in textarea-local coords so
+            // rotation pivots on the right point.
+            const nodeCenterX = canvasRect.left + ((rect.left + rect.width / 2) * zoom) - pan.x;
+            const nodeCenterY = canvasRect.top + ((rect.top + rect.height / 2) * zoom) - pan.y;
+            textarea.style.transformOrigin = `${nodeCenterX - left}px ${nodeCenterY - top}px`;
             textarea.style.transform = `rotate(${node.angle}rad)`;
+        } else {
+            textarea.style.transformOrigin = 'center center';
         }
 
         const originalText = textarea.value;
@@ -2928,21 +2982,23 @@ export class DiagramEditView extends DiagramView {
             textarea.style.height = `${nextHeight}px`;
 
             if (baseline === 'top') {
-                textarea.style.top = `${rectTopScreen + (scaledFontSize / 2)}px`;
+                textarea.style.top = `${textRectTopScreen + (scaledFontSize / 2)}px`;
             } else if (baseline === 'bottom') {
-                textarea.style.top = `${rectTopScreen + rectHeightScreen - nextHeight}px`;
+                textarea.style.top = `${textRectTopScreen + textRectHeightScreen - nextHeight}px`;
             } else {
-                textarea.style.top = `${rectTopScreen + (scaledFontSize / 4) + (rectHeightScreen / 2) - (nextHeight / 2)}px`;
+                textarea.style.top = `${textRectTopScreen + (scaledFontSize / 4) + (textRectHeightScreen / 2) - (nextHeight / 2)}px`;
+            }
+
+            if (node.angle) {
+                const nextTop = parseFloat(textarea.style.top);
+                const nodeCenterX = canvasRect.left + ((rect.left + rect.width / 2) * zoom) - pan.x;
+                const nodeCenterY = canvasRect.top + ((rect.top + rect.height / 2) * zoom) - pan.y;
+                textarea.style.transformOrigin = `${nodeCenterX - left}px ${nodeCenterY - nextTop}px`;
             }
         };
 
         textarea.addEventListener('keydown', (event) => {
             event.stopPropagation();
-            // if (event.key === 'Enter') {
-            //     event.preventDefault();
-            //     this.closeTextEditor(true);
-            //     return;
-            // }
 
             if (event.key === 'Enter' && (singleLine || (!event.ctrlKey && !event.metaKey && !event.shiftKey))) {
                 event.preventDefault();
@@ -3132,19 +3188,23 @@ export class DiagramEditView extends DiagramView {
             NodeBasics.moveBy(node, byX, byY);
         }
 
-        const guideResult = Guides.computeResult({
-            diagram: this,
-            nodes,
-            byX,
-            byY,
-            downShapeId: this.downShape?.id,
-        });
-        if (guideResult) {
-            this.pendingGuideSnap = guideResult;
-            this.guides = guideResult.guides;
-        } else {
-            this.guides = [];
-            this.pendingGuideSnap = undefined;
+        this.guides = [];
+        this.pendingGuideSnap = undefined;
+        const useGuides = this.guideOptions?.render || this.guideOptions?.snap;
+        if (useGuides) {
+
+            const guideResult = Guides.computeResult({
+                diagram: this,
+                nodes,
+                byX,
+                byY,
+                downShapeId: this.downShape?.id,
+            });
+
+            if (guideResult) {
+                this.pendingGuideSnap = this.guideOptions.snap ? guideResult : undefined;
+                this.guides = this.guideOptions.render ? guideResult.guides : [];
+            }
         }
     }
 
@@ -3161,23 +3221,30 @@ export class DiagramEditView extends DiagramView {
             NodeRegistry.adapter(node.type)?.afterResize?.(node, handle);
         }
 
-        const guideResult = Guides.computeResult({
-            diagram: this,
-            nodes,
-            byX,
-            byY,
-            downShapeId: this.downShape?.id,
-        });
-        if (guideResult) {
-            this.pendingGuideSnap = guideResult;
-            this.guides = guideResult.guides;
-        } else {
-            this.guides = [];
-            this.pendingGuideSnap = undefined;
+        this.guides = [];
+        this.pendingGuideSnap = undefined;
+        const useGuides = this.guideOptions?.render || this.guideOptions?.snap;
+        if (useGuides) {
+
+            const guideResult = Guides.computeResult({
+                diagram: this,
+                nodes,
+                byX,
+                byY,
+                downShapeId: this.downShape?.id,
+            });
+
+            if (guideResult) {
+                this.pendingGuideSnap = this.guideOptions.snap ? guideResult : undefined;
+                this.guides = this.guideOptions.render ? guideResult.guides : [];
+            }
         }
     }
 
     private applyPendingGuideSnap(handle: NodeHandle, preserveAspect?: boolean): void {
+        if (!this.guideOptions.snap) {
+            return;
+        }
         void Guides.applyPendingToNodes({
             diagram: this,
             snap: this.pendingGuideSnap,
@@ -3320,14 +3387,16 @@ export class DiagramEditView extends DiagramView {
 
             const default_font = this.parseFontFace(DiagramConstants.DEFAULT_NODE_FONT);
             const default_size = DiagramConstants.DEFAULT_NODE_FONT_SIZE;
-            if (shape.font) {
-                let fparts = shape.font.split('px');
-                this.settings.fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || default_size : default_size;
-                this.settings.fontFace = (fparts.length > 1) ? fparts[1]!.trim() || default_font : default_font;
-            } else {
-                this.settings.fontSize = default_size;
-                this.settings.fontFace = default_font;
-            }
+            this.settings.fontFace = shape.fontFace || default_font;
+            this.settings.fontSize = shape.fontSize || default_size;
+            // if (shape.font) {
+            //     let fparts = shape.font.split('px');
+            //     this.settings.fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || default_size : default_size;
+            //     this.settings.fontFace = (fparts.length > 1) ? fparts[1]!.trim() || default_font : default_font;
+            // } else {
+            //     this.settings.fontSize = default_size;
+            //     this.settings.fontFace = default_font;
+            // }
             this.settings.nodeText = shape.text || '';
 
             this.settings.shadowStyle = shape.shadowStyle ?? DiagramConstants.NO_SHADOW;

@@ -53,7 +53,6 @@ export interface ISerializedDiagram {
     id: string;
     nodes: ISerializedNode[];
     layers: ISerializedLayer[];
-    grid?: Partial<IGrid>;
     meta?: Record<string, unknown>;
     image_assets?: Record<string, string>;
 }

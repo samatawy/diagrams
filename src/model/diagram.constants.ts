@@ -41,6 +41,7 @@ export const DEFAULT_NODE_TEXT_BASELINE = 'DEFAULT_NODE_TEXT_BASELINE';
 export const DEFAULT_NODE_CORNER_RADIUS = 'DEFAULT_NODE_CORNER_RADIUS';
 export const DEFAULT_NODE_FONT = 'DEFAULT_NODE_FONT';
 export const DEFAULT_NODE_FONT_SIZE = 'DEFAULT_NODE_FONT_SIZE';
+export const DEFAULT_TEXT_PADDING = 'DEFAULT_TEXT_PADDING';
 export const DEFAULT_NODE_LINE_WIDTH = 'DEFAULT_NODE_LINE_WIDTH';
 export const DEFAULT_NODE_TRANSPARENT = 'DEFAULT_NODE_TRANSPARENT';
 
@@ -99,6 +100,7 @@ export class DiagramConstants {
         DEFAULT_NODE_CORNER_RADIUS: 5,
         DEFAULT_NODE_FONT: '16px sans-serif',
         DEFAULT_NODE_FONT_SIZE: 16,
+        DEFAULT_TEXT_PADDING: 4,
         DEFAULT_NODE_LINE_WIDTH: 1,
         DEFAULT_NODE_TRANSPARENT: false,
 
@@ -241,6 +243,10 @@ export class DiagramConstants {
 
     public static get DEFAULT_NODE_FONT_SIZE(): number {
         return this.get(DEFAULT_NODE_FONT_SIZE);
+    }
+
+    public static get DEFAULT_TEXT_PADDING(): number {
+        return this.get(DEFAULT_TEXT_PADDING);
     }
 
     public static get DEFAULT_NODE_LINE_WIDTH(): number {

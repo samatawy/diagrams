@@ -158,6 +158,17 @@ export class EventDispatcher {
     }
 
     /**
+     * Emits a style-scope diagram change event.
+     * @param sourceEvent The name of the triggering event. 
+     */
+    public styleChanged(sourceEvent: string): void {
+        this.dispatchInternal(DIAGRAM_CHANGED_EVENT, {
+            scope: 'style',
+            sourceEvent,
+        }, false);
+    }
+
+    /**
      * Emits the clipboard-change event.
      * @param detail Clipboard payload.
      */

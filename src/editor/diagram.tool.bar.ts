@@ -1,6 +1,8 @@
 import type { DiagramEditView } from '../editview/diagram.edit.view';
 import { DIAGRAM_CHANGED_EVENT, DIAGRAM_CLIPBOARD_EVENT } from '../events/diagram.events';
+import { NodeRegistry } from '../factory';
 import { IconRegistry } from '../factory/icon.registry';
+import { isConnectionNode } from '../guards';
 import { ToolBar, type ToolBarConfig } from './tool.bar';
 
 /**
@@ -60,13 +62,24 @@ export interface DiagramToolBarConfig extends ToolBarConfig {
  */
 export type DiagramToolBarLayoutItem = '|' | 'new' | 'open' | 'save' | 'export' | 'undo' | 'redo' | 'front' | 'back' | 'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' |
     'align-left' | 'align-center' | 'align-right' | 'align-top' | 'align-middle' | 'align-bottom' | 'distribute-h' | 'distribute-v' |
-    'zoom-in' | 'zoom-out' | 'fit-width' | 'fit-all' | 'show-grid' | 'snap-grid';
+    'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom' |
+    'zoom-in' | 'zoom-out' | 'fit-width' | 'fit-all' | 'show-grid' | 'snap-grid' | 'show-guides' | 'snap-guides';
 
 export const DEFAULT_LAYOUT: DiagramToolBarLayoutItem[] = [
     'new',
     'open',
     'save',
     'export',
+    '|',
+    'show-grid',
+    'snap-grid',
+    'show-guides',
+    'snap-guides',
+    '|',
+    'zoom-in',
+    'zoom-out',
+    'fit-width',
+    'fit-all',
     '|',
     'undo',
     'redo',
@@ -89,13 +102,12 @@ export const DEFAULT_LAYOUT: DiagramToolBarLayoutItem[] = [
     'distribute-h',
     'distribute-v',
     '|',
-    'zoom-in',
-    'zoom-out',
-    'fit-width',
-    'fit-all',
-    '|',
-    'show-grid',
-    'snap-grid',
+    'text-left',
+    'text-center',
+    'text-right',
+    'text-top',
+    'text-middle',
+    'text-bottom',
 ];
 
 /**
@@ -219,17 +231,91 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Show Grid',
         tooltip: 'Toggle grid visibility',
         toggle: true,
-        execute: (d) => d.updateGrid({ visible: !(d.grid as any)?.visible }),
-        isActive: (d) => !!(d.grid as any)?.visible,
+        execute: (d) => d.updateGrid({ visible: !d.grid?.visible }),
+        isActive: (d) => !!d.grid?.visible,
     },
     {
         id: 'snap-grid',
         label: 'Snap to Grid',
         tooltip: 'Toggle snap to grid',
         toggle: true,
-        execute: (d) => d.updateGrid({ forced: !(d.grid as any)?.forced }),
-        isActive: (d) => !!(d.grid as any)?.forced,
+        execute: (d) => d.updateGrid({ forced: !d.grid?.forced }),
+        isActive: (d) => !!d.grid?.forced,
     },
+    {
+        id: 'show-guides',
+        label: 'Show Guides',
+        tooltip: 'Toggle guide visibility',
+        toggle: true,
+        execute: (d) => d.updateGuides({ render: !d.guideOptions?.render }),
+        isActive: (d) => !!d.guideOptions?.render,
+    },
+    {
+        id: 'snap-guides',
+        label: 'Snap to Guides',
+        tooltip: 'Toggle snap to guides',
+        toggle: true,
+        execute: (d) => d.updateGuides({ snap: !d.guideOptions?.snap }),
+        isActive: (d) => !!d.guideOptions?.snap,
+    },
+
+    // align text
+    {
+        id: 'text-left',
+        label: 'Align Text Left',
+        tooltip: 'Align text to left edges',
+        toggle: true,
+        execute: (d) => d.setTextAlign('left'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every(n => n.textAlign === 'left'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => NodeRegistry.adapter(n.type)?.has_text),
+    },
+    {
+        id: 'text-center',
+        label: 'Align Text Center',
+        tooltip: 'Align text to horizontal centers',
+        toggle: true,
+        execute: (d) => d.setTextAlign('center'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every(n => n.textAlign === 'center'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => NodeRegistry.adapter(n.type)?.has_text),
+    },
+    {
+        id: 'text-right',
+        label: 'Align Text Right',
+        tooltip: 'Align text to right edges',
+        toggle: true,
+        execute: (d) => d.setTextAlign('right'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every(n => n.textAlign === 'right'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => NodeRegistry.adapter(n.type)?.has_text),
+    },
+    {
+        id: 'text-top',
+        label: 'Align Text Top',
+        tooltip: 'Align text to top edges',
+        toggle: true,
+        execute: (d) => d.setTextBaseline('top'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every(n => !isConnectionNode(n) && n.textBaseline === 'top'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
+    },
+    {
+        id: 'text-middle',
+        label: 'Align Text Middle',
+        tooltip: 'Align text to vertical centers',
+        toggle: true,
+        execute: (d) => d.setTextBaseline('middle'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every(n => !isConnectionNode(n) && n.textBaseline === 'middle'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
+    },
+    {
+        id: 'text-bottom',
+        label: 'Align Text Bottom',
+        tooltip: 'Align text to bottom edges',
+        toggle: true,
+        execute: (d) => d.setTextBaseline('bottom'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every(n => !isConnectionNode(n) && n.textBaseline === 'bottom'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
+    },
+
+    // Align nodes
     {
         id: 'align-left',
         label: 'Align Left',
@@ -321,11 +407,7 @@ export class DiagramToolBar extends ToolBar {
         this.setEnabled('paste', !!this.diagram.canPaste);
     };
 
-    constructor(
-        target: HTMLElement,
-        diagram: DiagramEditView,
-        config: DiagramToolBarConfig = {}
-    ) {
+    constructor(target: HTMLElement, diagram: DiagramEditView, config: DiagramToolBarConfig = {}) {
         super(target, config);
         this.diagram = diagram;
         this.bindDiagramEvents();

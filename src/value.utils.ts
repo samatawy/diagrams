@@ -10,8 +10,12 @@ export function textBaseline(node: INode): ITextBaseline {
     return node.textBaseline || 'middle';
 }
 
-export function nodeFont(node: INode): string {
-    return node.font || '16px sans-serif';
+export function nodeFontFace(node: INode): string {
+    return node.fontFace || 'system';   //'16px sans-serif';
+}
+
+export function nodeFontSize(node: INode): number {
+    return node.fontSize || 14;
 }
 
 export function nodeText(node: INode): string {

@@ -55,11 +55,11 @@ export class NodeBasics {
         rect.height = rect.height || 0.001;
 
         // prevent reaching zero width or height..
-        let minWidth = (node.owner.grid.forced) ? node.owner.grid.width : 8;
+        let minWidth = (node.owner.grid?.forced) ? node.owner.grid.width : 8;
         if (rect.width + (byX) <= minWidth) {
             byX = 0;
         }
-        let minHeight = (node.owner.grid.forced) ? node.owner.grid.height : 8;
+        let minHeight = (node.owner.grid?.forced) ? node.owner.grid.height : 8;
         if (rect.height + (byY) <= minHeight) {
             byY = 0;
         }
@@ -246,9 +246,11 @@ export class NodeBasics {
         // }
 
         if (node.angle) {
+            const grid_width = node.owner.grid?.width || 0;
+            const grid_height = node.owner.grid?.height || 0;
 
-            for (let x = 0; x < target.width; x = Math.min(x + node.owner.grid.width, target.width)) {
-                for (let y = 0; y < target.height; y = Math.min(y + node.owner.grid.height, target.height)) {
+            for (let x = 0; x < target.width; x = Math.min(x + grid_width, target.width)) {
+                for (let y = 0; y < target.height; y = Math.min(y + grid_height, target.height)) {
 
                     // let check = this.owner.getHitPoint({x: target.left + x, y: target.top + y}, rect, this.angle, this.cos, this.sin);
                     let check = { x: target.left + x, y: target.top + y };

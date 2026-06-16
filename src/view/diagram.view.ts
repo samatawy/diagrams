@@ -1,5 +1,5 @@
 import { NodeRegistry } from "../factory/node.registry";
-import type { HasSelection, ILayer, INode } from "../interfaces";
+import type { HasSelection, IDiagram, IGrid, ILayer, INode } from "../interfaces";
 import { createCanvas2D, downloadBlob, isBrowserRuntime } from "../io/browser.support";
 import type { ImageSaveOptions, ImageSerializer, ImageWriteOptions } from "../io/export.types";
 import { isNodeRuntime, writeBinaryFile } from "../io/node.support";
@@ -19,6 +19,7 @@ import {
     type DiagramInitialView,
     type DiagramViewOptions,
     type DiagramSelectionOptions,
+    type DiagramGuideOptions,
 } from "./view.options";
 import { DiagramConstants } from "../model/diagram.constants";
 import type { DiagramGuide } from "../layout";
@@ -26,6 +27,14 @@ import type { DiagramGuide } from "../layout";
 export type RenderMode = 'view' | 'editing';
 
 export type RenderScope = 'all' | 'nodes' | 'selection' | 'grid' | 'guides';
+
+const defaultGrid: IGrid = {
+    forced: false,
+    visible: true,
+    color: 'lightgray',
+    width: 20,
+    height: 20,
+};
 
 /**
  * A class representing a diagram in 'view' mode. 
@@ -65,6 +74,13 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected fitViewport: FitViewport;
 
+    public grid: IGrid;
+
+    public guideOptions: DiagramGuideOptions = {
+        render: true,
+        snap: true,
+    };
+
     protected guides: DiagramGuide[] = [];
 
     protected isSpacePanning: boolean = false;
@@ -101,7 +117,7 @@ export class DiagramView extends Diagram implements HasSelection {
      */
     constructor(id: string,
         target: HTMLElement | HTMLCanvasElement,
-        initial?: Partial<Omit<Diagram, 'id'>>,
+        initial?: Partial<Omit<IDiagram, 'id'>>,
         options?: DiagramViewOptions
     ) {
         super(id, initial);
@@ -114,6 +130,12 @@ export class DiagramView extends Diagram implements HasSelection {
         this.coordinates.attach(this);
         this.cache = new ViewCache();
         this.fitViewport = new FitViewport(this);
+
+        this.grid = initial?.grid ? { ...initial.grid } : { ...defaultGrid };
+        this.grid.color = DiagramConstants.GRID_LINE_COLOR;
+        this.grid.width = DiagramConstants.GRID_CELL_WIDTH;
+        this.grid.height = DiagramConstants.GRID_CELL_HEIGHT;
+
         if (options?.canvasBackgroundColor !== undefined) {
             this.canvasBackgroundColor = options.canvasBackgroundColor;
         }
@@ -121,6 +143,11 @@ export class DiagramView extends Diagram implements HasSelection {
             ...this.selectionOptions,
             ...options?.selection,
         };
+        this.guideOptions = {
+            ...this.guideOptions,
+            ...options?.guides,
+        }
+
         this.syncCanvasSize();
         this.bindResizeObserver();
         this.applyInitialView(options?.initialView);
@@ -156,6 +183,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     public override clear(): void {
         this.clearSelection();
+        // this.grid = { ...defaultGrid };
         super.clear();
     }
 
@@ -589,6 +617,24 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         context.restore();
+    }
+
+
+    /**
+     * Updates the grid settings for the diagram and re-renders it to reflect the changes.
+     * @param json A partial object containing the grid properties to update. Only the provided properties will be updated, while the others will remain unchanged.
+     */
+    public updateGrid(json: Partial<IGrid>): void {
+        Object.assign(this.grid, json);
+        this.render('all');
+    }
+
+    /**
+     * Updates the guides settings for the diagram.
+     * @param options A partial object containing the guide properties to update. Only the provided properties will be updated, while the others will remain unchanged.
+     */
+    public updateGuides(options: Partial<DiagramGuideOptions>): void {
+        Object.assign(this.guideOptions, options);
     }
 
     public setGuides(guides: DiagramGuide[]): void {

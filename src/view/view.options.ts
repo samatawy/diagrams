@@ -34,6 +34,16 @@ export interface DiagramSelectionOptions {
 }
 
 /**
+ * Options for rendering and snapping guides in the diagram view.
+ */
+export interface DiagramGuideOptions {
+    render: boolean;
+    snap: boolean;
+    render_threshold?: number;
+    snap_threshold?: number;
+}
+
+/**
  * Initial viewport settings for a diagram view.
  */
 export interface DiagramInitialView {
@@ -52,6 +62,7 @@ export interface DiagramViewOptions {
     selectedNodeId?: string;
     selectedNodeIds?: string[];
     selection?: DiagramSelectionOptions;
+    guides?: DiagramGuideOptions;
     /**
      * Canvas background color for DiagramView rendering. Use 'transparent' to keep the canvas clear.
      */
