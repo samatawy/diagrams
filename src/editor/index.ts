@@ -12,6 +12,11 @@ export * from './buttons/tool.palette';
 export * from './buttons/toolbar';
 export * from './buttons/diagram.toolbar';
 export * from './buttons/diagram.toolbar.layouts';
+export * from './buttons/diagram.actions';
+
+// Menus
+export * from './menus/context.menu';
+export * from './menus/diagram.context.menu';
 
 // Inspector
 export * from './inspector/inspector';

@@ -24,6 +24,7 @@ import type { ArrowDirection } from "../types";
 import { IntegerRangeSelect, type IntegerRangeSelectConfig } from "./inputs/integer.range.select";
 import { DiagramInspector } from "./inspector/diagram.inspector";
 import type { InspectorConfig } from "./inspector/inspector";
+import { DiagramContextMenu } from "./menus/diagram.context.menu";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
@@ -473,6 +474,7 @@ export class DiagramEditor {
         this.diagram = new DiagramEditView(id, canvasHost);
         this.diagram.fileDialogs = this.createFileDialogs();
         this.diagram.prompts = this.createDiagramPrompts();
+        this.diagram.contextMenu = new DiagramContextMenu(this.diagram);
 
         if (this.inspectorHost) {
             this.inspector = new DiagramInspector(this.inspectorHost, this.diagram, config.inspector || {});

@@ -1,6 +1,7 @@
 import {
     DiagramView,
     DiagramEditView,
+    DiagramContextMenu,
     DIAGRAM_CLIPBOARD_EVENT,
     DIAGRAM_CHANGED_EVENT,
     NodeHandle,
@@ -190,6 +191,7 @@ export function mountEditor(target, seed) {
             view.grid.visible = true;
             view.grid.width = 24;
             view.grid.height = 24;
+            view.contextMenu = new DiagramContextMenu(view);
             return view;
         },
         48,

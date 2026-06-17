@@ -23,6 +23,7 @@ import {
 } from "./view.options";
 import { DiagramConstants } from "../model/diagram.constants";
 import type { DiagramGuide } from "../layout";
+import { ContextMenu } from '../editor/menus/context.menu';
 
 export type RenderMode = 'view' | 'editing';
 
@@ -46,6 +47,16 @@ const defaultGrid: IGrid = {
 export class DiagramView extends Diagram implements HasSelection {
 
     protected readonly ownsCanvas: boolean;
+
+    /**
+     * Optional context menu invoked when the user right-clicks on the canvas.
+     * Assign a {@link DiagramContextMenu} or {@link ContextMenu} instance here.
+     * @example
+     * ```ts
+     * view.contextMenu = new DiagramContextMenu(view);
+     * ```
+     */
+    public contextMenu?: ContextMenu;
 
     protected coordinates: CoordinateSystem;
 
@@ -106,7 +117,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected readonly handleKeyUp = (event: KeyboardEvent) => this.keyup(event);
 
-    protected readonly handleContextMenu = (event: PointerEvent) => this.contextmenu(event);
+    protected readonly handleContextMenu = (event: MouseEvent) => this.contextmenu(event);
 
     /**
      * Creates a new DiagramView instance.
@@ -1039,9 +1050,10 @@ export class DiagramView extends Diagram implements HasSelection {
      * Respond to context menu events on the canvas, preventing the default context menu from appearing.
      * @param event The pointer event.
      */
-    protected contextmenu(event: PointerEvent): void {
+    protected contextmenu(event: MouseEvent): void {
         event.preventDefault();
         event.stopImmediatePropagation();
+        this.contextMenu?.open(event);
     }
 
     // ================================================

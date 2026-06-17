@@ -1415,7 +1415,7 @@ export class DiagramEditView extends DiagramView {
      * @param dir The direction to align the nodes ('left', 'right', 'center', 'top', 'bottom', 'middle').
      */
     public alignSelected(dir: 'left' | 'right' | 'center' | 'top' | 'bottom' | 'middle'): void {
-        let nodes = this.selection();
+        let nodes = this.selection().filter(n => !isConnection(n));
         if (nodes.length < 2) return;
 
         this.addUndo();
@@ -1482,7 +1482,7 @@ export class DiagramEditView extends DiagramView {
      * @param dir The direction to spread the nodes ('row' or 'column').
      */
     public spreadSelected(dir: 'row' | 'column'): void {
-        let nodes = this.selection();
+        let nodes = this.selection().filter(n => !isConnection(n));
         if (nodes.length < 3) return;
 
         this.addUndo();
@@ -1924,6 +1924,8 @@ export class DiagramEditView extends DiagramView {
             nodes: this.selection(),
             nodeIds: this.selection().map(node => node.id),
         } satisfies DiagramEditContextMenu);
+
+        this.contextMenu?.open(event);
     }
 
     // ==================================================
