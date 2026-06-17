@@ -1,7 +1,7 @@
 import type { DiagramEditView } from '../../editview/diagram.edit.view';
 import { NodeRegistry } from '../../factory';
 import { IconRegistry } from '../../factory/icon.registry';
-import { isConnectionNode } from '../../guards';
+import { isConnection, isConnectionNode } from '../../guards';
 import type { DiagramToolBarLayoutItem } from './diagram.toolbar.layouts';
 
 export interface DiagramAction {
@@ -87,14 +87,14 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Bring to Front',
         tooltip: 'Bring to front',
         execute: (d) => d.bringSelectionToFront(),
-        isEnabled: (d) => d.selection().length > 0,
+        isEnabled: (d) => d.selection().some(n => !isConnection(n)),
     },
     {
         id: 'back',
         label: 'Send to Back',
         tooltip: 'Send to back',
         execute: (d) => d.sendSelectionToBack(),
-        isEnabled: (d) => d.selection().length > 0,
+        isEnabled: (d) => d.selection().some(n => !isConnection(n)),
     },
     {
         id: 'duplicate',

@@ -99,6 +99,8 @@ You can tailor the editor for your own product:
 
 ## Version History
 
+- Since version `0.3.0`
+  - Context menu
 - Since version `0.2.0`
   - Improved in-place editing for nodes and connections
   - A full Inspector panel was added to the editor, including Identity, Geometry, Text, Line, Fill, Shadow, and Metadata sections

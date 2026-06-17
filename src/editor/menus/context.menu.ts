@@ -1,10 +1,30 @@
-import { injectStyles, setClasses } from "../editor.utils";
+import { injectStyles, setClasses, toggleClasses } from "../editor.utils";
 
 const STYLE_ID = 'context-menu-defaults';
 
+/**
+ * Configuration options for {@link ContextMenu}.
+ */
+export interface ContextMenuConfig {
+    /** Class applied to the menu container. Default: `context-menu`. */
+    menuClassName?: string;
+    /** Class applied to each action row. Default: `context-menu-item`. */
+    itemClassName?: string;
+    /** Class applied to the icon slot inside an action row. Default: `context-menu-item-icon`. */
+    iconClassName?: string;
+    /** Class applied to the label span inside an action row. Default: `context-menu-item-label`. */
+    labelClassName?: string;
+    /** Class added to an item row when its toggle is active. Default: `is-active`. */
+    activeClassName?: string;
+    /** Class added to an item row when it is disabled. Default: `is-disabled`. */
+    disabledClassName?: string;
+    /** Class applied to separator elements. Default: `context-menu-separator`. */
+    separatorClassName?: string;
+}
+
 const DEFAULT_STYLES = `
 .context-menu {
-    position: fixed;
+    position: absolute;
     z-index: 1000;
     min-width: 180px;
     padding: 4px 0;
@@ -70,7 +90,11 @@ const DEFAULT_STYLES = `
  */
 export class ContextMenu {
 
+    protected readonly host: HTMLElement;
+
     protected menuElement: HTMLElement | null = null;
+
+    protected readonly config: ContextMenuConfig;
 
     private readonly onDocumentClick = (e: MouseEvent): void => {
         if (this.menuElement && !this.menuElement.contains(e.target as Node)) {
@@ -80,9 +104,15 @@ export class ContextMenu {
 
     /**
      * Creates a ContextMenu. Styles are injected once.
+     * @param host Element to append the menu into. Must establish a stacking context so CSS variables are inherited.
+     * @param config Optional class-name overrides.
      */
-    constructor() {
+    constructor(host: HTMLElement, config: ContextMenuConfig = {}) {
         injectStyles(STYLE_ID, DEFAULT_STYLES);
+        this.host = host;
+        this.config = config;
+        // Ensure host is a positioning context for position:absolute children.
+        if (getComputedStyle(host).position === 'static') host.style.position = 'relative';
     }
 
     /**
@@ -105,18 +135,17 @@ export class ContextMenu {
         options: { icon?: Element | null; active?: boolean; disabled?: boolean } = {},
     ): HTMLElement {
         const item = document.createElement('div');
-        item.classList.add('context-menu-item');
-        if (options.disabled) item.classList.add('is-disabled');
-        if (options.active) item.classList.add('is-active');
+        setClasses(item, 'context-menu-item', this.config.itemClassName || '');
+        if (options.disabled) toggleClasses(item, true, 'is-disabled', this.config.disabledClassName || '');
+        if (options.active) toggleClasses(item, true, 'is-active', this.config.activeClassName || '');
 
-        // Icon slot — always present so text stays aligned.
         const iconSlot = document.createElement('span');
-        iconSlot.classList.add('context-menu-item-icon');
+        setClasses(iconSlot, 'context-menu-item-icon', this.config.iconClassName || '');
         if (options.icon) iconSlot.appendChild(options.icon);
         item.appendChild(iconSlot);
 
         const labelEl = document.createElement('span');
-        labelEl.classList.add('context-menu-item-label');
+        setClasses(labelEl, 'context-menu-item-label', this.config.labelClassName || '');
         labelEl.textContent = label;
         item.appendChild(labelEl);
 
@@ -133,7 +162,7 @@ export class ContextMenu {
      */
     public addSeparator(): void {
         const sep = document.createElement('div');
-        sep.classList.add('context-menu-separator');
+        setClasses(sep, 'context-menu-separator', this.config.separatorClassName || '');
         this.menuElement?.appendChild(sep);
     }
 
@@ -147,21 +176,32 @@ export class ContextMenu {
     protected show(x: number, y: number): void {
         this.close();
         const menu = document.createElement('div');
-        menu.classList.add('context-menu');
-        document.body.appendChild(menu);
+        setClasses(menu, 'context-menu', this.config.menuClassName || '');
+        this.host.appendChild(menu);
         this.menuElement = menu;
 
-        // Position, then clamp so the menu stays within the viewport.
-        const vw = window.innerWidth;
-        const vh = window.innerHeight;
-        menu.style.left = `${x}px`;
-        menu.style.top = `${y}px`;
-        // After appending we can measure and adjust.
+        // Convert viewport coords to host-local coords so position:absolute lands correctly
+        // regardless of whether an ancestor has a CSS transform.
+        const hostRect = this.host.getBoundingClientRect();
+        menu.style.left = `${x - hostRect.left}px`;
+        menu.style.top = `${y - hostRect.top}px`;
+
+        // Clamp against the viewport: getBoundingClientRect gives viewport coords so the
+        // overflow delta is coordinate-system-independent and can be subtracted directly
+        // from the host-local left/top values.
         requestAnimationFrame(() => {
-            if (!this.menuElement) return;
+            if (!this.menuElement || !hostRect) return;
             const rect = this.menuElement.getBoundingClientRect();
-            if (rect.right > vw) this.menuElement.style.left = `${Math.max(0, vw - rect.width - 4)}px`;
-            if (rect.bottom > vh) this.menuElement.style.top = `${Math.max(0, vh - rect.height - 4)}px`;
+            const overRight = rect.right - hostRect.right;
+            const overBottom = rect.bottom - hostRect.bottom;
+            if (overRight > 0) this.menuElement.style.left = `${parseFloat(this.menuElement.style.left) - overRight - 1}px`;
+            if (overBottom > 0) this.menuElement.style.top = `${parseFloat(this.menuElement.style.top) - overBottom - 1}px`;
+
+            // const rect = this.menuElement.getBoundingClientRect();
+            // const overRight = rect.right - window.innerWidth;
+            // const overBottom = rect.bottom - window.innerHeight;
+            // if (overRight > 0) this.menuElement.style.left = `${parseFloat(this.menuElement.style.left) - overRight - 4}px`;
+            // if (overBottom > 0) this.menuElement.style.top = `${parseFloat(this.menuElement.style.top) - overBottom - 4}px`;
         });
 
         document.addEventListener('click', this.onDocumentClick, { capture: true, once: true });

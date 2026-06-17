@@ -10,7 +10,7 @@ import {
 } from '../buttons/diagram.toolbar.layouts';
 import { ACTION_MAP } from '../buttons/diagram.actions';
 import { IconRegistry } from '../../factory/icon.registry';
-import { ContextMenu } from './context.menu';
+import { ContextMenu, type ContextMenuConfig } from './context.menu';
 
 /**
  * Layout shown when nothing is selected: grid/guides toggles, zoom/fit, and paste.
@@ -40,7 +40,7 @@ const HAS_SELECTION_LAYOUT: DiagramToolBarLayoutItem[] = [
 /**
  * Configuration options for {@link DiagramContextMenu}.
  */
-export interface DiagramContextMenuConfig {
+export interface DiagramContextMenuConfig extends ContextMenuConfig {
     /**
      * Layout used when nothing is selected. Defaults to view, zoom, and paste actions.
      */
@@ -76,7 +76,8 @@ export class DiagramContextMenu extends ContextMenu {
      * @param config Optional configuration overriding the default action layouts.
      */
     constructor(diagram: DiagramView, config?: DiagramContextMenuConfig) {
-        super();
+        // Pass the diagram's host so the menu inherits its CSS-variable theme.
+        super((diagram as unknown as { host: HTMLElement }).host, config);
         this.diagram = diagram;
         this.emptyLayout = config?.emptyLayout ?? EMPTY_SELECTION_LAYOUT;
         this.selectionLayout = config?.selectionLayout ?? HAS_SELECTION_LAYOUT;

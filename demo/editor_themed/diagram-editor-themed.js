@@ -1,4 +1,4 @@
-import { DiagramEditor, ThemeRegistry, DEFAULT_LAYOUT } from '../../dist/index.js';
+import { DiagramEditor, ThemeRegistry, DEFAULT_DIAGRAM_TOOLBAR_LAYOUT } from '../../dist/index.js';
 import { registerAdapters, makeBox, makeLine } from '../demo-common.js';
 import { NodeHandle } from '../../dist/index.js';
 
@@ -60,10 +60,10 @@ if (!host) throw new Error('Host element not found');
 ThemeRegistry.apply(host, 'indigo');
 
 // ── Mount editor ──────────────────────────────────────────────────────────────
-const firstSeparatorIndex = DEFAULT_LAYOUT.indexOf('|');
+const firstSeparatorIndex = DEFAULT_DIAGRAM_TOOLBAR_LAYOUT.indexOf('|');
 const toolbarLayout = firstSeparatorIndex >= 0
-    ? DEFAULT_LAYOUT.slice(firstSeparatorIndex + 1)
-    : [...DEFAULT_LAYOUT];
+    ? DEFAULT_DIAGRAM_TOOLBAR_LAYOUT.slice(firstSeparatorIndex + 1)
+    : [...DEFAULT_DIAGRAM_TOOLBAR_LAYOUT];
 
 const editor = new DiagramEditor(host, {
     toolbars: [

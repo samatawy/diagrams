@@ -24,6 +24,7 @@ import {
 import { DiagramConstants } from "../model/diagram.constants";
 import type { DiagramGuide } from "../layout";
 import { ContextMenu } from '../editor/menus/context.menu';
+import { isConnection } from "../guards";
 
 export type RenderMode = 'view' | 'editing';
 
@@ -557,12 +558,27 @@ export class DiagramView extends Diagram implements HasSelection {
         for (const layer of this.layers) {
             if (!layer.visible) continue;
 
-            for (const node of this.layerNodes(layer)) {
-                const handler = NodeRegistry.adapter(node.type);
+            const nodes = this.layerNodes(layer);
+            const connections = nodes.filter(isConnection);
+
+            // Render connections first..
+            for (const node of connections) {
                 if (what === 'nodes' || what === 'all') {
+                    const handler = NodeRegistry.adapter(node.type);
                     handler?.render(node, this.context);
                 }
+            }
 
+            // Then render non-connection nodes on top, so they appear above connecting lines.
+            for (const node of nodes) {
+                const handler = NodeRegistry.adapter(node.type);
+                if (what === 'nodes' || what === 'all') {
+                    if (!isConnection(node)) {
+                        handler?.render(node, this.context);
+                    }
+                }
+
+                // and render selection anchors on top.
                 if (what === 'selection' || what === 'all') {
                     if (this.isSelected(node)) {
                         handler?.renderSelection(node, this.context);
