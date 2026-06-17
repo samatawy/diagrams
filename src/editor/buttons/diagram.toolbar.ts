@@ -3,11 +3,11 @@ import { DIAGRAM_CHANGED_EVENT, DIAGRAM_CLIPBOARD_EVENT } from '../../events/dia
 import { NodeRegistry } from '../../factory';
 import { IconRegistry } from '../../factory/icon.registry';
 import { isConnectionNode } from '../../guards';
-import { ToolBar, type ToolBarConfig } from './tool.bar';
+import { Toolbar, type ToolbarConfig } from './toolbar';
+import { DEFAULT_DIAGRAM_TOOLBAR_LAYOUT, type DiagramToolBarLayoutItem } from './diagram.toolbar.layouts';
 
 /**
- * Configuration options for the diagram toolbar.
- * Provide only the properties you want to customize. All other properties will use default values.
+ * Descriptor for a single diagram toolbar action button.
  */
 export interface DiagramAction {
     /**
@@ -34,7 +34,7 @@ export interface DiagramAction {
      * Called when the button is clicked; receives the diagram view.
      */
     execute: (diagram: DiagramEditView) => void | Promise<void>;
-    /** 
+    /**
      * Returns true when the button should be enabled; defaults to always enabled.
      */
     isEnabled?: (diagram: DiagramEditView) => boolean;
@@ -48,7 +48,7 @@ export interface DiagramAction {
  * Configuration options for the diagram toolbar.
  * Provide only the properties you want to customize. All other properties will use default values.
  */
-export interface DiagramToolBarConfig extends ToolBarConfig {
+export interface DiagramToolBarConfig extends ToolbarConfig {
     /**
      * Ordered toolbar layout mixing action IDs and separators.
      * Example: ['undo', 'redo', '|', 'delete', 'copy', 'paste']
@@ -56,59 +56,6 @@ export interface DiagramToolBarConfig extends ToolBarConfig {
      */
     layout?: DiagramToolBarLayoutItem[];
 }
-
-/**
- * Available built-in diagram actions. These can be used in the toolbar layout.
- */
-export type DiagramToolBarLayoutItem = '|' | 'new' | 'open' | 'save' | 'export' | 'undo' | 'redo' | 'front' | 'back' | 'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' |
-    'align-left' | 'align-center' | 'align-right' | 'align-top' | 'align-middle' | 'align-bottom' | 'distribute-h' | 'distribute-v' |
-    'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom' |
-    'zoom-in' | 'zoom-out' | 'fit-width' | 'fit-all' | 'show-grid' | 'snap-grid' | 'show-guides' | 'snap-guides';
-
-export const DEFAULT_LAYOUT: DiagramToolBarLayoutItem[] = [
-    'new',
-    'open',
-    'save',
-    'export',
-    '|',
-    'show-grid',
-    'snap-grid',
-    'show-guides',
-    'snap-guides',
-    '|',
-    'zoom-in',
-    'zoom-out',
-    'fit-width',
-    'fit-all',
-    '|',
-    'undo',
-    'redo',
-    '|',
-    'front',
-    'back',
-    '|',
-    'delete',
-    'duplicate',
-    'cut',
-    'copy',
-    'paste',
-    '|',
-    'align-left',
-    'align-center',
-    'align-right',
-    'align-top',
-    'align-middle',
-    'align-bottom',
-    'distribute-h',
-    'distribute-v',
-    '|',
-    'text-left',
-    'text-center',
-    'text-right',
-    'text-top',
-    'text-middle',
-    'text-bottom',
-];
 
 /**
  * Full catalogue of built-in diagram actions.
@@ -374,7 +321,9 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
     },
 ];
 
-/** Lookup map built once from the catalogue. */
+/**
+ * Lookup map built once from the catalogue.
+ */
 const ACTION_MAP = new Map<string, DiagramAction>(
     DIAGRAM_ACTIONS.map((a) => [a.id, a])
 );
@@ -383,16 +332,15 @@ const ACTION_MAP = new Map<string, DiagramAction>(
  * DiagramToolBar is a specialized toolbar for diagram editing, providing buttons for common actions like undo, redo, copy, paste, alignment, and zooming.
  * It automatically updates the enabled and active state of buttons based on the current state of the associated DiagramEditView.
  * The toolbar can be configured with a custom layout and styling options.
- * 
  * Example usage:
  * ```ts
  * const toolbar = new DiagramToolBar(toolbarContainer, diagramView, {
- *     layout: ['undo', 'redo', '|', 'copy', 'paste'],
- *     hostClassName: 'my-toolbar',
+ * layout: ['undo', 'redo', '|', 'copy', 'paste'],
+ * hostClassName: 'my-toolbar',
  * });
  * ```
  */
-export class DiagramToolBar extends ToolBar {
+export class DiagramToolBar extends Toolbar {
 
     protected diagram: DiagramEditView;
 
@@ -407,6 +355,12 @@ export class DiagramToolBar extends ToolBar {
         this.setEnabled('paste', !!this.diagram.canPaste);
     };
 
+    /**
+     * Builds a diagram action toolbar attached to the given diagram view.
+     * @param target The host element that will contain the toolbar buttons.
+     * @param diagram The diagram view whose actions the toolbar controls.
+     * @param config Optional layout and style configuration.
+     */
     constructor(target: HTMLElement, diagram: DiagramEditView, config: DiagramToolBarConfig = {}) {
         super(target, config);
         this.diagram = diagram;
@@ -423,7 +377,7 @@ export class DiagramToolBar extends ToolBar {
         super.destroy();
     }
 
-    /** 
+    /**
      * Re-evaluates enabled and active state for all registered actions.
      */
     public refresh(): void {
@@ -443,6 +397,9 @@ export class DiagramToolBar extends ToolBar {
         this.refresh();
     }
 
+    /**
+     * Subscribes to diagram-level events that trigger toolbar state updates.
+     */
     protected bindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.addEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
@@ -451,6 +408,9 @@ export class DiagramToolBar extends ToolBar {
         source?.addEventListener(DIAGRAM_CLIPBOARD_EVENT, this.onClipboardChanged);
     }
 
+    /**
+     * Unsubscribes all diagram-level event listeners attached by {@link bindDiagramEvents}.
+     */
     protected unbindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.removeEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
@@ -459,6 +419,10 @@ export class DiagramToolBar extends ToolBar {
         source?.removeEventListener(DIAGRAM_CLIPBOARD_EVENT, this.onClipboardChanged);
     }
 
+    /**
+     * Instantiates buttons for each action in the resolved layout.
+     * @param config The toolbar config used to determine the button layout.
+     */
     protected build(config: DiagramToolBarConfig): void {
         for (const item of this.resolveLayout(config)) {
             if (item === '|') {
@@ -491,7 +455,12 @@ export class DiagramToolBar extends ToolBar {
         }
     }
 
+    /**
+     * Returns the ordered list of layout items from config, or falls back to the default layout.
+     * @param config The toolbar config.
+     * @returns The resolved layout array.
+     */
     protected resolveLayout(config: DiagramToolBarConfig): DiagramToolBarLayoutItem[] {
-        return (config.layout?.length ? config.layout : DEFAULT_LAYOUT);
+        return (config.layout?.length ? config.layout : DEFAULT_DIAGRAM_TOOLBAR_LAYOUT);
     }
 }

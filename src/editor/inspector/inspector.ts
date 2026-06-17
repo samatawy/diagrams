@@ -14,25 +14,45 @@ export type { EditableRecord, InspectorAdapterInit } from "./inspector.adapter";
  * Provide only the properties you want to override; defaults will be used for the rest.
  */
 export interface InspectorConfig {
-    /** Optional class name for the host element. */
+    /**
+     * Optional class name for the host element.
+     */
     hostClassName?: string;
-    /** Optional class name for each section element. */
+    /**
+     * Optional class name for each section element.
+     */
     sectionClassName?: string;
-    /** Optional class name for each section heading element. */
+    /**
+     * Optional class name for each section heading element.
+     */
     headingClassName?: string;
-    /** Optional class name for the properties grid element inside each section. */
+    /**
+     * Optional class name for the properties grid element inside each section.
+     */
     gridClassName?: string;
-    /** Optional class name for each row (label + control pair) element. */
+    /**
+     * Optional class name for each row (label + control pair) element.
+     */
     rowClassName?: string;
-    /** Optional class name for label elements. */
+    /**
+     * Optional class name for label elements.
+     */
     labelClassName?: string;
-    /** Optional class name for value/control elements. */
+    /**
+     * Optional class name for value/control elements.
+     */
     valueClassName?: string;
-    /** Optional class name applied to rows that are read-only. */
+    /**
+     * Optional class name applied to rows that are read-only.
+     */
     readonlyClassName?: string;
-    /** Optional class name applied to rows that are disabled (e.g. mixed multi-selection). */
+    /**
+     * Optional class name applied to rows that are disabled (e.g. mixed multi-selection).
+     */
     disabledClassName?: string;
-    /** Optional class name applied to value elements that show a mixed/multi state placeholder. */
+    /**
+     * Optional class name applied to value elements that show a mixed/multi state placeholder.
+     */
     mixedClassName?: string;
 }
 
@@ -131,10 +151,10 @@ const DEFAULT_STYLES = `
 /* Two-column property grid */
 .inspector .inspector-grid {
     display: grid;
-    grid-template-columns: var(--inspector-label-width, 100px) minmax(0, 1fr);
+    grid-template-columns: var(--inspector-label-width, 80px) minmax(0, 1fr);
     row-gap: 2px;
     column-gap: var(--diagram-ui-control-gap, 8px);
-    align-items: center;
+    align-items: start;
     padding: 6px 6px;
     background: color-mix(in srgb, var(--inspector-value-bg) 60%, white 40%);
     border-top: none;
@@ -180,7 +200,7 @@ const DEFAULT_STYLES = `
 /* Value / control cell */
 .inspector .inspector-value {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     min-height: 26px;
     position: relative;
     border-radius: 6px;
@@ -188,7 +208,8 @@ const DEFAULT_STYLES = `
     padding: 2px;
 }
 .inspector .inspector-value input[type='text'],
-.inspector .inspector-value input[type='number'] {
+.inspector .inspector-value input[type='number'],
+.inspector .inspector-value textarea {
     width: 100%;
     box-sizing: border-box;
     padding: var(--diagram-ui-control-padding-y, 3px) var(--diagram-ui-control-padding-x, 6px);
@@ -201,11 +222,13 @@ const DEFAULT_STYLES = `
     appearance: none;
 }
 .inspector .inspector-value input[type='text']:focus,
-.inspector .inspector-value input[type='number']:focus {
+.inspector .inspector-value input[type='number']:focus,
+.inspector .inspector-value textarea:focus {
     border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
 }
 .inspector .inspector-value input[type='text']:read-only,
-.inspector .inspector-value input[type='number']:read-only {
+.inspector .inspector-value input[type='number']:read-only,
+.inspector .inspector-value textarea:read-only {
     background: transparent;
     border-color: transparent;
     color: var(--diagram-ui-text-muted, #334155);
@@ -217,7 +240,8 @@ const DEFAULT_STYLES = `
     accent-color: var(--diagram-ui-accent, #0f766e);
     cursor: pointer;
 }
-.inspector .inspector-value.is-mixed input {
+.inspector .inspector-value.is-mixed input,
+.inspector .inspector-value.is-mixed textarea {
     color: var(--diagram-ui-text-muted, #94a3b8);
     font-style: italic;
 }
@@ -304,19 +328,55 @@ function ensureDefaultStyles(): void {
 
 export type InspectorAdapterClassName = string & {};
 
+/**
+ * Defines how a single inspector row is rendered and edited.
+ */
 export interface InspectorPropertyDefinition {
+    /**
+     * Unique key/path used to read and write the property.
+     */
     key: string;
+    /**
+     * Optional display label shown in the inspector row.
+     */
     label?: string;
+    /**
+     * Primitive value category used for adapter resolution.
+     */
     type: 'string' | 'number' | 'boolean' | 'select' | 'object';
+    /**
+     * Optional explicit adapter/editor name overriding type-based resolution.
+     */
     editor?: InspectorAdapterClassName;
+    /**
+     * Optional editor-specific configuration object passed to the adapter.
+     */
     editorOptions?: object;
+    /**
+     * Marks the row as read-only.
+     */
     readonly: boolean;
+    /**
+     * Marks the row as disabled.
+     */
     disabled?: boolean;
+    /**
+     * Marks the row as volatile so it can be rebuilt for selection-specific structures.
+     */
     volatile?: boolean;
 }
 
+/**
+ * Aggregated value set for one property across the current selection.
+ */
 export interface InspectorPropertyData {
+    /**
+     * Property key associated with this value collection.
+     */
     key: string;
+    /**
+     * Unique set of collected values from selected objects.
+     */
     values: Set<unknown>;
 }
 
@@ -332,33 +392,64 @@ export type InspectorAdapterClass = new (
 // Inspector base class
 // ============================================================
 
+/**
+ * Generic sectioned inspector that renders property rows and syncs adapter values.
+ */
 export class Inspector {
 
     private static adapterRegistry: Map<string, InspectorAdapterClass> = new Map();
 
+    /**
+     * Registers an adapter class under a given name for later resolution by adapter/type name.
+     * @param name Lookup key used in property definitions.
+     * @param adapterClass The adapter constructor to register.
+     */
     public static registerAdapter(name: string, adapterClass: InspectorAdapterClass): void {
         Inspector.adapterRegistry.set(name, adapterClass);
     }
 
-    public static registerEditor(name: string, editorClass: InspectorAdapterClass): void {
-        Inspector.registerAdapter(name, editorClass);
-    }
+    // /**
+    //  * Alias for {@link registerAdapter}; kept for backwards compatibility.
+    //  * @param name Lookup key used in property definitions.
+    //  * @param editorClass The adapter constructor to register.
+    //  */
+    // public static registerEditor(name: string, editorClass: InspectorAdapterClass): void {
+    //     Inspector.registerAdapter(name, editorClass);
+    // }
 
+    /**
+     * Removes a previously registered adapter by name.
+     * @param name The lookup key of the adapter to remove.
+     */
     public static unregisterAdapter(name: string): void {
         Inspector.adapterRegistry.delete(name);
     }
 
-    public static unregisterEditor(name: string): void {
-        Inspector.unregisterAdapter(name);
-    }
+    // /**
+    //  * Alias for {@link unregisterAdapter}; kept for backwards compatibility.
+    //  * @param name The lookup key of the adapter to remove.
+    //  */
+    // public static unregisterEditor(name: string): void {
+    //     Inspector.unregisterAdapter(name);
+    // }
 
+    /**
+     * Returns the adapter class registered under a given name, or undefined if not found.
+     * @param name The lookup key.
+     * @returns The registered adapter class, or undefined.
+     */
     public static getAdapter(name: string): InspectorAdapterClass | undefined {
         return Inspector.adapterRegistry.get(name);
     }
 
-    public static getEditor(name: string): InspectorAdapterClass | undefined {
-        return Inspector.getAdapter(name);
-    }
+    // /**
+    //  * Alias for {@link getAdapter}; kept for backwards compatibility.
+    //  * @param name The lookup key.
+    //  * @returns The registered adapter class, or undefined.
+    //  */
+    // public static getEditor(name: string): InspectorAdapterClass | undefined {
+    //     return Inspector.getAdapter(name);
+    // }
 
     protected host: HTMLElement;
 
@@ -379,6 +470,11 @@ export class Inspector {
     // Value cells keyed by property key, for targeted updates.
     protected cells: Map<string, HTMLElement> = new Map();
 
+    /**
+     * Creates an inspector mounted inside the given element.
+     * @param target The host element that will contain the inspector.
+     * @param config Optional style/class overrides for the inspector layout.
+     */
     constructor(target: HTMLElement, config: InspectorConfig = {}) {
         ensureDefaultStyles();
         this.host = target;
@@ -393,6 +489,9 @@ export class Inspector {
         this.host.innerHTML = '';
     }
 
+    /**
+     * Registers built-in native adapters. Subclasses override to add domain-specific adapters.
+     */
     protected registerAdapters(): void {
         registerNativeInspectorAdapters(Inspector.registerAdapter);
     }
@@ -429,6 +528,12 @@ export class Inspector {
         // Subclasses override when they support writing changes back to a model.
     }
 
+    /**
+     * Derives the overall selection state from the item count and value diversity.
+     * @param selectedCount Number of currently selected nodes.
+     * @param values Per-key value sets collected from the selection.
+     * @returns 'none', 'single', or 'mixed'.
+     */
     protected resolveSelectionState(selectedCount: number, values: Record<string, Set<unknown>>): InspectorSelectionState {
         if (selectedCount === 0) {
             return 'none';
@@ -443,17 +548,34 @@ export class Inspector {
         return 'single';
     }
 
+    /**
+     * Applies selection-state CSS classes to the inspector host element.
+     * @param state The current selection state to reflect.
+     */
     protected applySelectionState(state: InspectorSelectionState): void {
         this.host.classList.toggle('inspector-selection-none', state === 'none');
         this.host.classList.toggle('inspector-selection-single', state === 'single');
         this.host.classList.toggle('inspector-selection-mixed', state === 'mixed');
     }
 
+    /**
+     * Reads a value from a flat or nested record using the registered adapter for the key.
+     * Falls back to dot-path traversal if no adapter is registered.
+     * @param record The source data record.
+     * @param key The property key, supporting dot-separated paths.
+     * @returns The resolved value, or undefined if not found.
+     */
     protected readRecordValue(record: EditableRecord, key: string): unknown {
         const adapter = this.adapters.get(key);
         return adapter?.extractValueFrom(record, key).value ?? this.getPathValue(record, key);
     }
 
+    /**
+     * Traverses a dot-separated path inside a record and returns the leaf value.
+     * @param record The root record to traverse.
+     * @param path Dot-separated property path, e.g. 'shadowStyle.offset.x'.
+     * @returns The value at the path, or undefined if any segment is missing.
+     */
     protected getPathValue(record: EditableRecord, path: string): unknown {
         const segments = path.split('.').filter((segment) => segment.length > 0);
         let current: any = record;

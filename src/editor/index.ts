@@ -9,8 +9,15 @@ export * from './prompt.dialog';
 
 // Bound components
 export * from './buttons/tool.palette';
-export * from './buttons/tool.bar';
-export * from './buttons/diagram.tool.bar';
+export * from './buttons/toolbar';
+export * from './buttons/diagram.toolbar';
+export * from './buttons/diagram.toolbar.layouts';
+
+// Inspector
+export * from './inspector/inspector';
+export * from './inspector/diagram.inspector';
+export * from './inspector/enum.select.adapter';
+export * from './inspector/text.input.adapter';
 
 // Editor component
 export * from './diagram.editor';

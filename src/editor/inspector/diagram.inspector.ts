@@ -33,6 +33,9 @@ export type DiagramInspectorConfig = InspectorConfig & {
     textBaselineOptions?: EnumSelectAdapterConfig['options'];
 };
 
+/**
+ * Diagram-specific inspector that wires editor sections to the active diagram selection.
+ */
 export class DiagramInspector extends Inspector {
 
     protected diagram: DiagramView;
@@ -42,6 +45,12 @@ export class DiagramInspector extends Inspector {
     private geometryGrid?: HTMLElement;
     private metaGrid?: HTMLElement;
 
+    /**
+     * Creates a DiagramInspector bound to the given diagram view.
+     * @param target The host element that will contain the inspector.
+     * @param diagram The diagram view to observe and edit.
+     * @param config Optional inspector and adapter configuration.
+     */
     constructor(target: HTMLElement, diagram: DiagramView, config: DiagramInspectorConfig = {}) {
         super(target, config);
         this.diagram = diagram;
@@ -65,6 +74,9 @@ export class DiagramInspector extends Inspector {
         super.destroy();
     }
 
+    /**
+     * Registers diagram-specific adapters in addition to the native ones.
+     */
     protected override registerAdapters(): void {
         super.registerAdapters();
 
@@ -79,6 +91,9 @@ export class DiagramInspector extends Inspector {
         Inspector.registerAdapter('EnumSelect', EnumSelectAdapter);
     }
 
+    /**
+     * Builds all static inspector sections and rows during construction.
+     */
     protected initialize(): void {
         const readonly = this.readonly;
 
@@ -91,7 +106,13 @@ export class DiagramInspector extends Inspector {
         this.addRow(geometry, { key: 'angle', label: 'Angle', type: 'number', editor: 'Angle', editorOptions: { precision: 4 }, readonly: readonly });
 
         const { grid: text } = this.buildSection('Text');
-        this.addRow(text, { key: 'text', label: 'Content', type: 'string', readonly: readonly });
+        this.addRow(text, {
+            key: 'text',
+            label: 'Content',
+            type: 'string',
+            editorOptions: { multiline: true },
+            readonly: readonly
+        });
         this.addRow(text, {
             key: 'fontFace',
             label: 'Font Face',
@@ -207,6 +228,11 @@ export class DiagramInspector extends Inspector {
         this.metaGrid = meta;
     }
 
+    /**
+     * Forwards an adapter value change to the inspector apply pipeline.
+     * @param def The property definition that changed.
+     * @param value The new value emitted by the adapter.
+     */
     protected override onAdapterValueChanged(def: InspectorPropertyDefinition, value: unknown): void {
         this.applyInspectorChange(def.key, value);
     }
@@ -215,6 +241,9 @@ export class DiagramInspector extends Inspector {
     // Diagram event wiring
     // ============================================================
 
+    /**
+     * Subscribes to diagram-level events that should trigger an inspector refresh or row rebuild.
+     */
     protected bindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.addEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
@@ -223,6 +252,9 @@ export class DiagramInspector extends Inspector {
         source?.addEventListener(DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, this.onDiagramSelectionChanged);
     }
 
+    /**
+     * Unsubscribes all diagram-level event listeners attached by {@link bindDiagramEvents}.
+     */
     protected unbindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.removeEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
@@ -231,10 +263,16 @@ export class DiagramInspector extends Inspector {
         source?.removeEventListener(DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, this.onDiagramSelectionChanged);
     }
 
+    /**
+     * Handles DIAGRAM_CHANGED_EVENT by refreshing displayed adapter values.
+     */
     protected onDiagramChanged = (): void => {
         this.refresh();
     }
 
+    /**
+     * Handles selection and geometry change events by rebuilding volatile rows then refreshing.
+     */
     protected onDiagramSelectionChanged = (): void => {
         this.syncDynamicRows(this.diagram.selection());
         this.refresh();
@@ -244,6 +282,9 @@ export class DiagramInspector extends Inspector {
     // Refresh
     // ============================================================
 
+    /**
+     * Pushes the latest selection values into all adapter controls.
+     */
     protected refresh(): void {
         this.syncingAdapters = true;
         try {
@@ -288,6 +329,10 @@ export class DiagramInspector extends Inspector {
         }
     }
 
+    /**
+     * Rebuilds volatile rows (points, geometry, meta) to match the current selection.
+     * @param selected Currently selected nodes.
+     */
     private syncDynamicRows(selected: INode[]): void {
         if (!this.geometryGrid || !this.metaGrid) {
             return;
@@ -316,6 +361,11 @@ export class DiagramInspector extends Inspector {
         }
     }
 
+    /**
+     * Returns true when all selected nodes share an identical point array structure.
+     * @param selected Currently selected nodes.
+     * @returns True if point rows can be safely rendered.
+     */
     private canShowPointRows(selected: INode[]): boolean {
         if (!selected.length) {
             return false;
@@ -330,6 +380,11 @@ export class DiagramInspector extends Inspector {
         return signatures.size <= 1;
     }
 
+    /**
+     * Builds property definitions for each point in the first selected node.
+     * @param selected Currently selected nodes.
+     * @returns An array of volatile property definitions for point rows.
+     */
     private buildPointRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
         if (!this.canShowPointRows(selected)) {
             return [];
@@ -347,6 +402,11 @@ export class DiagramInspector extends Inspector {
         }));
     }
 
+    /**
+     * Builds property definitions for flat editable keys in each node's geometry container.
+     * @param selected Currently selected nodes.
+     * @returns An array of volatile property definitions for geometry rows.
+     */
     private buildGeometryRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
         const keys = this.collectFlatRecordKeys(selected, 'geometry');
         return keys.map((key) => {
@@ -362,6 +422,11 @@ export class DiagramInspector extends Inspector {
         });
     }
 
+    /**
+     * Builds property definitions for flat editable keys in each node's meta container.
+     * @param selected Currently selected nodes.
+     * @returns An array of volatile property definitions for meta rows.
+     */
     private buildMetaRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
         const keys = this.collectFlatRecordKeys(selected, 'meta');
         return keys.map((key) => ({
@@ -373,6 +438,12 @@ export class DiagramInspector extends Inspector {
         }));
     }
 
+    /**
+     * Collects the union of all flat string/number/boolean keys from the given container across every selected node.
+     * @param selected Currently selected nodes.
+     * @param container Either 'geometry' or 'meta'.
+     * @returns Sorted array of unique key names.
+     */
     private collectFlatRecordKeys(selected: INode[], container: 'geometry' | 'meta'): string[] {
         const keySet = new Set<string>();
         for (const node of selected) {
@@ -391,6 +462,13 @@ export class DiagramInspector extends Inspector {
         return [...keySet].sort();
     }
 
+    /**
+     * Determines the TypeScript primitive type for a flat container key across the selection.
+     * @param selected Currently selected nodes.
+     * @param container Either 'geometry' or 'meta'.
+     * @param key The flat key to inspect.
+     * @returns 'number', 'boolean', or 'string'.
+     */
     private resolveFlatValueType(selected: INode[], container: 'geometry' | 'meta', key: string): 'string' | 'number' | 'boolean' {
         for (const node of selected) {
             const record = (node as any)[container] as Record<string, unknown> | undefined;
@@ -413,16 +491,31 @@ export class DiagramInspector extends Inspector {
         return 'string';
     }
 
+    /**
+     * Returns true when the value is a string, number, or boolean that can be displayed inline.
+     * @param value The value to test.
+     * @returns True if the value is a flat editable primitive.
+     */
     private isFlatEditableValue(value: unknown): value is string | number | boolean {
         return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
     }
 
+    /**
+     * Reads the adapter's current value and forwards it to the patch pipeline.
+     * @param key The property key that triggered the change.
+     * @param value The new value (unused; adapter value is read directly).
+     */
     private applyInspectorChange(key: string, value: unknown): void {
         const adapter = this.adapters.get(key);
         const patch = adapter?.getValue();
         this.applyPatchToSelection(patch, key);
     }
 
+    /**
+     * Applies a patch record to every selected node, then triggers a render and refresh.
+     * @param patch The key-value changes to write to each node.
+     * @param sourceKey The originating property key, used when emitting the changed event.
+     */
     private applyPatchToSelection(patch: EditableRecord | undefined, sourceKey: string): void {
         const selected = this.diagram.selection();
         if (!selected.length) {
@@ -443,6 +536,11 @@ export class DiagramInspector extends Inspector {
         this.refresh();
     }
 
+    /**
+     * Mirrors inspector patch values into the diagram's default settings so new nodes inherit them.
+     * @param edit The diagram edit view (typed as any to avoid import overhead).
+     * @param patch The patch produced by the adapter.
+     */
     private updateDiagramDefaultsFromPatch(edit: any, patch: EditableRecord | undefined): void {
         if (patch === undefined) {
             return;
@@ -508,6 +606,12 @@ export class DiagramInspector extends Inspector {
         }
     }
 
+    /**
+     * Writes a value at a dot-separated path inside a target object, creating intermediate objects as needed.
+     * @param target The root object to mutate.
+     * @param path Dot-separated property path, e.g. 'shadowStyle.offset.x'.
+     * @param value The value to set at the leaf.
+     */
     private setPathValue(target: Record<string, unknown>, path: string, value: unknown): void {
         const segments = path.split('.').filter((segment) => segment.length > 0);
         if (!segments.length) {
@@ -532,6 +636,11 @@ export class DiagramInspector extends Inspector {
         current[leafKey] = value;
     }
 
+    /**
+     * Normalizes a raw shadow style value into the canonical shadow object shape.
+     * @param style Any existing shadow style value (may be undefined or partial).
+     * @returns A fully-populated shadow style object.
+     */
     private normalizeShadowStyle(style: any): { name: string; color: string; blur: number; offset: { x: number; y: number } } {
         const base = DiagramConstants.NO_SHADOW;
         const next = style && typeof style === 'object' ? style : {};
@@ -552,6 +661,10 @@ export class DiagramInspector extends Inspector {
         };
     }
 
+    /**
+     * Dispatches DIAGRAM_CHANGED_EVENT with scope 'style' from the diagram host element.
+     * @param key The property key that was changed, included in the event sourceEvent field.
+     */
     private emitInspectorChanged(key: string): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         if (!source) {
@@ -567,6 +680,11 @@ export class DiagramInspector extends Inspector {
         }));
     }
 
+    /**
+     * Resets an adapter cell to an unset/empty state.
+     * @param cell The value cell DOM element.
+     * @param def The property definition for the cell.
+     */
     private clearCell(cell: HTMLElement, def: InspectorPropertyDefinition): void {
         cell.classList.remove(this.config.mixedClassName);
         const adapter = this.adapters.get(def.key);
@@ -574,6 +692,11 @@ export class DiagramInspector extends Inspector {
         adapter?.showValue({ [def.key]: undefined });
     }
 
+    /**
+     * Collects per-property value sets from all selected nodes.
+     * @param nodes The selected nodes to read values from.
+     * @returns A map of property key to its set of distinct values across the selection.
+     */
     private collectNodeValues(nodes: INode[]): Record<string, Set<unknown>> {
         const result: Record<string, Set<unknown>> = {};
         for (const key of Object.keys(this.definitions)) {
@@ -590,6 +713,11 @@ export class DiagramInspector extends Inspector {
         return result;
     }
 
+    /**
+     * Converts a diagram node into a flat key-value record for adapter consumption.
+     * @param node The node to convert.
+     * @returns A flat record with all inspectable properties of the node.
+     */
     private toValueRecord(node: INode): EditableRecord {
         const n = node as any;
         return {

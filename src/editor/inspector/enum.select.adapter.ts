@@ -3,11 +3,23 @@ import { InspectorAdapter } from "./inspector";
 
 export type EnumSelectOption = string | { value: string; label?: string };
 
+/**
+ * Configuration options for EnumSelectAdapter.
+ */
 export interface EnumSelectAdapterConfig {
+    /**
+     * Allowed option values, with optional display labels.
+     */
     options: EnumSelectOption[];
+    /**
+     * Optional placeholder text when no value is selected.
+     */
     placeholder?: string;
 }
 
+/**
+ * Inspector adapter for constrained string values rendered as a dropdown menu.
+ */
 export class EnumSelectAdapter extends InspectorAdapter {
 
     private readonly host: HTMLDivElement;

@@ -142,6 +142,12 @@ export class PromptDialog {
         });
     }
 
+    /**
+     * Falls back to window.confirm when the HTMLDialogElement API is unavailable.
+     * Returns the primary action value if the user confirms, the cancel value otherwise.
+     * @param input The same options passed to {@link show}.
+     * @returns The resolved action value.
+     */
     private static fallback<T extends string>(input: PromptDialogOptions<T>): T {
         const primary = input.actions.find((a) => a.primary) ?? input.actions[0]!;
         const cancel = [...input.actions].reverse().find((a) => !a.primary) ?? input.actions[0]!;
@@ -153,6 +159,11 @@ export class PromptDialog {
         return window.confirm(input.prompt) ? primary.value : cancel.value;
     }
 
+    /**
+     * Constructs the `<dialog>` element containing the prompt head and action buttons.
+     * @param input The dialog options.
+     * @returns The constructed dialog element.
+     */
     private static buildDialog<T extends string>(input: PromptDialogOptions<T>): HTMLDialogElement {
         const dialog = document.createElement('dialog');
         setClasses(dialog, 'diagram-prompt-backdrop', 'diagram-prompt');
@@ -163,6 +174,11 @@ export class PromptDialog {
         return dialog;
     }
 
+    /**
+     * Builds the header section with an optional icon, title, and prompt message.
+     * @param input The dialog options.
+     * @returns The constructed header element.
+     */
     private static buildHead<T extends string>(input: PromptDialogOptions<T>): HTMLElement {
         const head = document.createElement('div');
         setClasses(head, 'diagram-prompt-head');
@@ -191,6 +207,11 @@ export class PromptDialog {
         return head;
     }
 
+    /**
+     * Builds the action button row, marking the primary action button with the 'primary' class.
+     * @param input The dialog options.
+     * @returns The constructed actions container element.
+     */
     private static buildActions<T extends string>(input: PromptDialogOptions<T>): HTMLElement {
         const actions = document.createElement('div');
         setClasses(actions, 'diagram-prompt-actions');
@@ -213,10 +234,17 @@ export class PromptDialog {
         return actions;
     }
 
+    /**
+     * Returns true when the browser supports the native HTMLDialogElement API.
+     * @returns True when `<dialog>` is available.
+     */
     private static supportsDialog(): boolean {
         return typeof document !== 'undefined' && typeof HTMLDialogElement !== 'undefined';
     }
 
+    /**
+     * Injects the prompt dialog CSS into the document head if not already present.
+     */
     private static ensureStyles(): void {
         injectStyles(STYLE_ID, STYLES);
     }

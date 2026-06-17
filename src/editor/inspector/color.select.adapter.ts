@@ -2,6 +2,9 @@ import { ColorSelect, type ColorSelectConfig } from "../inputs/color.select";
 import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
 
+/**
+ * Inspector adapter that binds a ColorSelect control to a string color property.
+ */
 export class ColorSelectAdapter extends InspectorAdapter {
 
     private readonly editor: ColorSelect;

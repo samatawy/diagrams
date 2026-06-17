@@ -2,6 +2,9 @@ import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { FontSelect, type FontSelectConfig } from "../inputs/font.select";
 import { InspectorAdapter } from "./inspector";
 
+/**
+ * Inspector adapter that binds a FontSelect control to text font-family properties.
+ */
 export class FontSelectAdapter extends InspectorAdapter {
 
     private readonly editor: FontSelect;

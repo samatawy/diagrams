@@ -167,10 +167,9 @@ function ensureDefaultStyles(): void {
  * A dropdown control for selecting font families.
  * Emits a 'fontchange' event when the selected font changes.
  * Example usage:
- * 
  * const fontSelect = new FontSelect(document.getElementById('font-select'), {
- *     fonts: ['Arial', 'Verdana', 'Tahoma'],
- *     showPreview: true,
+ * fonts: ['Arial', 'Verdana', 'Tahoma'],
+ * showPreview: true,
  * });
  */
 export class FontSelect {
@@ -187,6 +186,11 @@ export class FontSelect {
 
     protected menu: HTMLDivElement;
 
+    /**
+     * Creates a FontSelect component inside the given element.
+     * @param target The host element that will contain the font picker.
+     * @param config Optional display and behaviour configuration.
+     */
     constructor(target: HTMLElement, config: FontSelectConfig = {}) {
         ensureDefaultStyles();
 
@@ -264,7 +268,7 @@ export class FontSelect {
         this.selectFont(selectedFont || this.config.fonts[0] || 'Tahoma', false);
     }
 
-    /** 
+    /**
      * Handles the click event on the trigger button.
      * Toggles the open/closed state of the dropdown menu.
      */
@@ -277,7 +281,7 @@ export class FontSelect {
     };
 
     /**
-     * Handles the click event on the document to close the menu when clicking outside. 
+     * Handles the click event on the document to close the menu when clicking outside.
      */
     protected readonly onDocumentClick = (event: Event): void => {
         const target = event.target as Node | null;
@@ -302,6 +306,10 @@ export class FontSelect {
         this.closeMenu();
     };
 
+    /**
+     * Replaces the current option list with a new set of font families.
+     * @param fonts The font family strings to render.
+     */
     protected rebuildOptions(fonts: string[]): void {
         this.menu.innerHTML = '';
         for (const font of fonts) {
@@ -311,6 +319,11 @@ export class FontSelect {
         this.syncTrigger();
     }
 
+    /**
+     * Builds a single option button with an optional font-preview span.
+     * @param font The CSS font-family string for this option.
+     * @returns The constructed option button element.
+     */
     protected buildOption(font: string): HTMLButtonElement {
         const option = document.createElement('button');
         option.type = 'button';
@@ -331,6 +344,11 @@ export class FontSelect {
         return option;
     }
 
+    /**
+     * Updates the internal selection state, syncs the trigger and option list, and optionally emits 'fontchange'.
+     * @param font The new font family to select.
+     * @param emit Whether to dispatch the change event. Defaults to true.
+     */
     protected selectFont(font: string, emit = true): void {
         this.selected = font;
         this.syncTrigger();
@@ -340,10 +358,16 @@ export class FontSelect {
         }
     }
 
+    /**
+     * Updates the trigger button's preview text to the current font family.
+     */
     protected syncTrigger(): void {
         this.triggerPreview.textContent = this.selected;
     }
 
+    /**
+     * Toggles the selected CSS class and aria-selected attribute on all font option buttons.
+     */
     protected syncSelectedOption(): void {
         const options = this.menu.querySelectorAll<HTMLElement>('[data-font]');
         options.forEach((option) => {
@@ -353,11 +377,17 @@ export class FontSelect {
         });
     }
 
+    /**
+     * Adds the open CSS class and updates aria-expanded on the trigger button.
+     */
     protected openMenu(): void {
         setClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'true');
     }
 
+    /**
+     * Removes the open CSS class and updates aria-expanded on the trigger button.
+     */
     protected closeMenu(): void {
         removeClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'false');

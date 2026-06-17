@@ -268,8 +268,8 @@ function ensureDefaultStyles(): void {
 }
 
 /**
- * A color selection control that supports predefined options and an optional native color picker input. 
- * The control can be configured to show color swatches, labels, and the native input in different arrangements. 
+ * A color selection control that supports predefined options and an optional native color picker input.
+ * The control can be configured to show color swatches, labels, and the native input in different arrangements.
  * It dispatches a 'colorchange' event with the selected color whenever the selection changes.
  */
 export class ColorSelect {
@@ -296,6 +296,11 @@ export class ColorSelect {
 
     protected menu: HTMLDivElement;
 
+    /**
+     * Creates a ColorSelect component inside the given element.
+     * @param target The host element that will contain the color picker.
+     * @param config Optional display and behaviour configuration.
+     */
     constructor(target: HTMLElement, config: ColorSelectConfig = {}) {
         ensureDefaultStyles();
         this.host = target;
@@ -429,7 +434,7 @@ export class ColorSelect {
     }
 
     /**
-     * Removes all color options from the menu, including the transparent 'clear' and custom options if present. 
+     * Removes all color options from the menu, including the transparent 'clear' and custom options if present.
      * The menu will be left empty and the custom option will need to be re-added manually if desired.
      */
     public clearOptions(): void {
@@ -517,6 +522,12 @@ export class ColorSelect {
         this.host.dispatchEvent(new CustomEvent('colorchange', { detail: color }));
     }
 
+    /**
+     * Builds a preset color option button for the dropdown menu.
+     * @param color CSS color value for this option.
+     * @param label Optional display label; defaults to the color value.
+     * @returns The constructed option button element.
+     */
     protected buildOption(color: string, label?: string): HTMLButtonElement {
         const option = document.createElement('button');
         option.type = 'button';
@@ -538,6 +549,10 @@ export class ColorSelect {
         return option;
     }
 
+    /**
+     * Builds the "custom" option button that opens the native color picker.
+     * @returns The constructed custom option button element.
+     */
     protected buildCustomOption(): HTMLButtonElement {
         const option = document.createElement('button');
         option.type = 'button';
@@ -565,6 +580,11 @@ export class ColorSelect {
         return option;
     }
 
+    /**
+     * Creates a color swatch element with its background set to the given color.
+     * @param color CSS color value to display in the swatch.
+     * @returns The swatch div element.
+     */
     protected createSwatch(color: string): HTMLDivElement {
         const swatch = document.createElement('div');
         setClasses(swatch, DEFAULT_CONFIG.swatchClassName, this.config.swatchClassName);
@@ -572,6 +592,10 @@ export class ColorSelect {
         return swatch;
     }
 
+    /**
+     * Creates the multi-colour gradient swatch used for the custom-colour option.
+     * @returns The swatch div element.
+     */
     protected createCustomSwatch(): HTMLDivElement {
         const swatch = document.createElement('div');
         setClasses(swatch, DEFAULT_CONFIG.swatchClassName, this.config.swatchClassName);
@@ -579,6 +603,12 @@ export class ColorSelect {
         return swatch;
     }
 
+    /**
+     * Returns the CSS background value to apply to a swatch element.
+     * Transparent colors are rendered as a checkerboard pattern.
+     * @param color CSS color string.
+     * @returns The CSS background shorthand value.
+     */
     protected colorStyleForSwatch(color: string): string {
         if (color.trim().toLowerCase() === 'transparent') {
             return 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #e2e8f0 6px, #e2e8f0 12px)';
@@ -586,6 +616,9 @@ export class ColorSelect {
         return color;
     }
 
+    /**
+     * Updates the trigger button's swatch, label, and native input to reflect the current selection.
+     */
     protected syncTrigger(): void {
         if (this.triggerSwatch) {
             this.triggerSwatch.style.background = this.colorStyleForSwatch(this.selected);
@@ -598,10 +631,21 @@ export class ColorSelect {
         }
     }
 
+    /**
+     * Returns the human-readable label for a color, showing 'clear' for transparent.
+     * @param color CSS color string.
+     * @returns Display label string.
+     */
     protected displayColorLabel(color: string): string {
         return color.trim().toLowerCase() === 'transparent' ? 'clear' : color;
     }
 
+    /**
+     * Converts a color to a 6-digit hex value accepted by native `<input type="color">`.
+     * Falls back to a dark default when the color cannot be converted.
+     * @param color CSS color string.
+     * @returns A #rrggbb hex string.
+     */
     protected nativeInputValue(color: string): string {
         const value = color.trim().toLowerCase();
         if (value === 'transparent') {
@@ -618,6 +662,11 @@ export class ColorSelect {
         return '#111827';
     }
 
+    /**
+     * Normalises the `showNativeInput` config value into one of the four known placement modes.
+     * @param value The raw config value.
+     * @returns One of 'start', 'end', 'option', or 'none'.
+     */
     protected resolveNativeInputMode(value: ColorSelectConfig['showNativeInput']): 'start' | 'end' | 'option' | 'none' {
         if (value === undefined) {
             return DEFAULT_CONFIG.showNativeInput;
@@ -628,6 +677,9 @@ export class ColorSelect {
         return DEFAULT_CONFIG.showNativeInput;
     }
 
+    /**
+     * Triggers the custom color picker input, using `showPicker()` when available.
+     */
     protected customInputOpen(): void {
         if (!this.customInput) {
             return;
@@ -640,6 +692,9 @@ export class ColorSelect {
         this.customInput.click();
     }
 
+    /**
+     * Inserts the custom option button into the correct position in the dropdown menu.
+     */
     protected placeCustomOption(): void {
         if (!this.customOption) {
             return;
@@ -664,6 +719,9 @@ export class ColorSelect {
         // this.menu.appendChild(this.customOption);
     }
 
+    /**
+     * Prepends a 'transparent' / 'clear' option to the menu if not already present.
+     */
     protected placeTransparentOption(): void {
         const transparentColor = 'transparent';
         if (this.hasOption(transparentColor)) {
@@ -673,12 +731,22 @@ export class ColorSelect {
         this.menu.insertBefore(option, this.menu.firstChild);
     }
 
+    /**
+     * Returns true when a menu option matching the given color already exists.
+     * @param color CSS color string to check.
+     * @returns True when the option is present.
+     */
     protected hasOption(color: string): boolean {
         const wanted = this.normalizeComparableColor(color);
         const options = this.menu.querySelectorAll<HTMLElement>('[data-color]');
         return Array.from(options).some((option) => this.normalizeComparableColor(option.dataset.color ?? '') === wanted);
     }
 
+    /**
+     * Normalises a CSS color string to a lowercase 6-digit hex so options can be compared reliably.
+     * @param color CSS color string to normalise.
+     * @returns Comparable lowercase color string.
+     */
     protected normalizeComparableColor(color: string): string {
         const value = color.trim().toLowerCase();
         if (value === 'transparent') {
@@ -692,6 +760,10 @@ export class ColorSelect {
         return value;
     }
 
+    /**
+     * Toggles the selected CSS class and aria-selected attribute on all menu option buttons
+     * to reflect the current selection.
+     */
     protected syncSelectedOption(): void {
         const options = this.menu.querySelectorAll<HTMLElement>('[data-color]');
         options.forEach((option) => {
@@ -701,11 +773,17 @@ export class ColorSelect {
         });
     }
 
+    /**
+     * Adds the open CSS class and updates aria-expanded on the trigger button.
+     */
     protected openMenu(): void {
         setClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'true');
     }
 
+    /**
+     * Removes the open CSS class and updates aria-expanded on the trigger button.
+     */
     protected closeMenu(): void {
         removeClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'false');

@@ -370,8 +370,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     /**
      * Fits the diagram content to the width of the viewport, with optional padding and alignment.
-     * @param padding The padding to apply around the content.
-     * @param alignment The alignment of the content within the viewport.
+     * @param options Optional configuration for padding and alignment.
      */
     public fitToWidth(options?: { padding?: number, alignment?: FitAlign }): void {
         this.fitViewport.fitToWidth(options);
@@ -381,8 +380,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     /**
      * Fits the diagram content to the viewport, with optional padding and alignment.
-     * @param padding The padding to apply around the content.
-     * @param alignment The alignment of the content within the viewport.
+     * @param options Optional configuration for padding and alignment.
      */
     public fitToNodes(options?: { padding?: number, alignment?: FitAlign }): void {
         this.fitViewport.fitToNodes(options);

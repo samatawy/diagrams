@@ -1,8 +1,8 @@
-/** 
+/**
  * Configuration options for the toolbar.
  * Provide only the properties you want to customize. All other properties will use default values.
  */
-export interface ToolBarConfig {
+export interface ToolbarConfig {
     /**
      * Optional CSS class name to apply to the toolbar host element. This allows for custom styling of the toolbar.
      */
@@ -29,32 +29,32 @@ export interface ToolBarConfig {
     tooltipAttribute?: string;
 }
 
-/** 
+/**
  * Definition of a toolbar button.
  * Provide only the properties you want to customize. All other properties will use default values.
  */
 export interface ToolButtonDef {
-    /** 
-     * Unique identifier for the button. This is used to reference the button in the toolbar. 
+    /**
+     * Unique identifier for the button. This is used to reference the button in the toolbar.
      */
     id: string;
-    /** 
-     * SVG use href (e.g. '#icon-undo'), URL string, or an Element 
+    /**
+     * SVG use href (e.g. '#icon-undo'), URL string, or an Element
      */
     icon?: string | Element;
-    /** 
+    /**
      * Optional label for the button. This is used for accessibility and tooltips.
      */
     label?: string;
-    /** 
-     * Optional tooltip text for the button. This is displayed on hover. 
+    /**
+     * Optional tooltip text for the button. This is displayed on hover.
      */
     tooltip?: string;
-    /** 
+    /**
      * Indicates if the button is a toggle button.
      */
     toggle?: boolean;
-    /** 
+    /**
      * Indicates if the button is disabled.
      */
     disabled?: boolean;
@@ -155,7 +155,7 @@ function ensureToolbarStyles(): void {
     injectStyles(TOOLBAR_STYLE_ID, TOOLBAR_DEFAULT_STYLES);
 }
 
-const DEFAULT_TOOLBAR_CONFIG: Required<ToolBarConfig> = {
+const DEFAULT_TOOLBAR_CONFIG: Required<ToolbarConfig> = {
     hostClassName: 'toolbar',
     buttonClassName: 'toolbar-button',
     activeClassName: 'is-active',
@@ -170,15 +170,20 @@ const DEFAULT_TOOLBAR_CONFIG: Required<ToolBarConfig> = {
  * Buttons can be added with icons, labels, tooltips, and click event handlers.
  * Buttons can also be toggled on/off and enabled/disabled.
  */
-export class ToolBar {
+export class Toolbar {
 
     protected host: HTMLElement;
 
-    protected config: Required<ToolBarConfig>;
+    protected config: Required<ToolbarConfig>;
 
     protected buttons = new Map<string, HTMLButtonElement>();
 
-    constructor(target: HTMLElement, config: ToolBarConfig = {}) {
+    /**
+     * Creates a toolbar mounted inside the given element.
+     * @param target The host element that will contain the toolbar buttons.
+     * @param config Optional style/class overrides for the toolbar layout.
+     */
+    constructor(target: HTMLElement, config: ToolbarConfig = {}) {
         ensureToolbarStyles();
         this.host = target;
         this.config = { ...DEFAULT_TOOLBAR_CONFIG, ...config };
@@ -256,6 +261,11 @@ export class ToolBar {
         return this.buttons.get(id);
     }
 
+    /**
+     * Creates a button DOM element from the given definition and wires its click handler.
+     * @param def The button definition including id, icon, label, and callbacks.
+     * @returns The constructed HTMLButtonElement.
+     */
     protected buildButton(def: ToolButtonDef): HTMLButtonElement {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -288,6 +298,11 @@ export class ToolBar {
         return btn;
     }
 
+    /**
+     * Resolves a string icon reference or Element into a DOM element suitable for button content.
+     * @param icon An SVG sprite reference (e.g. '#icon-undo'), an img URL, raw SVG markup, or an Element.
+     * @returns The icon element, or null when no icon is provided.
+     */
     protected resolveIcon(icon?: string | Element): Element | null {
         if (!icon) {
             return null;

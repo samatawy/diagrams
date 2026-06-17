@@ -2,13 +2,37 @@
  * Configuration options for the IntegerRangeSelect control.
  */
 export interface IntegerRangeSelectConfig {
+    /**
+     * Minimum allowed slider value.
+     */
     min?: number;
+    /**
+     * Maximum allowed slider value.
+     */
     max?: number;
+    /**
+     * Slider increment step; normalized to a positive integer internally.
+     */
     step?: number;
+    /**
+     * Initial slider value used during construction.
+     */
     value?: number;
+    /**
+     * Optional text unit suffix shown next to the numeric value (for example, 'px').
+     */
     unit?: string;
+    /**
+     * Optional CSS class for the host element.
+     */
     hostClassName?: string;
+    /**
+     * Optional CSS class for the native range input element.
+     */
     trackClassName?: string;
+    /**
+     * Optional CSS class for the value text element.
+     */
     valueClassName?: string;
 }
 
@@ -72,6 +96,11 @@ export class IntegerRangeSelect {
 
     protected selected: number;
 
+    /**
+     * Creates an IntegerRangeSelect component inside the given element.
+     * @param target The host element that will contain the range slider.
+     * @param config Optional range bounds and display configuration.
+     */
     constructor(target: HTMLElement, config: IntegerRangeSelectConfig = {}) {
         ensureDefaultStyles();
 
@@ -165,12 +194,18 @@ export class IntegerRangeSelect {
         this.value = value ?? this.selected;
     }
 
+    /**
+     * Fires on every `input` event to keep the display in sync while dragging.
+     */
     protected readonly onInput = (): void => {
         this.selected = this.clamp(Number(this.input.value));
         this.input.value = String(this.selected);
         this.syncDisplay();
     };
 
+    /**
+     * Fires on the `change` event when the user releases the slider, and emits 'valuechange'.
+     */
     protected readonly onChange = (): void => {
         this.selected = this.clamp(Number(this.input.value));
         this.input.value = String(this.selected);
@@ -178,10 +213,18 @@ export class IntegerRangeSelect {
         this.host.dispatchEvent(new CustomEvent<number>('valuechange', { detail: this.selected }));
     };
 
+    /**
+     * Updates the visible value text element to reflect the current selection.
+     */
     protected syncDisplay(): void {
         this.valueText.textContent = `${this.selected}${this.config.unit}`;
     }
 
+    /**
+     * Clamps and rounds a raw number to the configured min/max range.
+     * @param value The raw value to clamp.
+     * @returns The clamped integer value.
+     */
     protected clamp(value: number): number {
         const rounded = Number.isFinite(value) ? Math.round(value) : this.config.min;
         const bounded = Math.min(this.config.max, Math.max(this.config.min, rounded));

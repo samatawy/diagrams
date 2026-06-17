@@ -11,7 +11,7 @@ import {
 } from "../io";
 import { Diagram } from "../model/diagram";
 import { ColorSelect, type ColorSelectConfig } from "./inputs/color.select";
-import { DiagramToolBar, type DiagramToolBarConfig } from "./buttons/diagram.tool.bar";
+import { DiagramToolBar, type DiagramToolBarConfig } from "./buttons/diagram.toolbar";
 import { injectStyles, setClasses } from "./editor.utils";
 import { FontSelect, type FontSelectConfig } from "./inputs/font.select";
 import { PromptDialog } from "./prompt.dialog";
@@ -770,6 +770,12 @@ export class DiagramEditor {
         }
     }
 
+    /**
+     * Creates a toolbar container div inside the given parent element.
+     * @param parent The element to append the toolbar to.
+     * @param className Optional extra CSS class for the toolbar.
+     * @returns The toolbar wrapper element.
+     */
     private createToolbar(parent: HTMLElement, className?: string): HTMLElement {
         const bar = document.createElement('div');
         className ? setClasses(bar, 'toolbar', className) : setClasses(bar, 'toolbar');
@@ -778,6 +784,13 @@ export class DiagramEditor {
         return bar;
     }
 
+    /**
+     * Creates a labelled host element for a single editor control inside a toolbar.
+     * @param parent The toolbar element to append the control host to.
+     * @param className CSS class applied to the inner host div.
+     * @param labelText Optional visible label text; if provided a `<label>` wraps the host.
+     * @returns The inner host element that should receive the control.
+     */
     private createControlHost(parent: HTMLElement, className: string, labelText?: string): HTMLElement {
         const container = labelText ? document.createElement('label') : document.createElement('div');
         if (labelText) {
@@ -792,6 +805,10 @@ export class DiagramEditor {
         return host;
     }
 
+    /**
+     * Enables or disables the shadow effect on the diagram, then syncs the shadow range controls.
+     * @param enabled True to enable shadow, false to disable (sets color to transparent).
+     */
     private applyShadowEnabledState(enabled: boolean): void {
         const current = this.diagram.shadowStyle;
         this.diagram.setShadowStyle({
@@ -804,6 +821,13 @@ export class DiagramEditor {
         if (this.shadowBlurSelect) this.shadowBlurSelect.disabled = !enabled;
     }
 
+    /**
+     * Adds a CustomEvent listener on the element and registers a disposer so the listener
+     * is automatically removed when {@link detachListeners} is called.
+     * @param element The target element.
+     * @param eventName The event name to listen for.
+     * @param handler Callback receiving the CustomEvent detail payload.
+     */
     private addManagedListener<T>(element: HTMLElement, eventName: string, handler: (detail: T) => void): void {
         const wrapped = (event: Event) => {
             handler((event as CustomEvent<T>).detail);
@@ -815,6 +839,13 @@ export class DiagramEditor {
         });
     }
 
+    /**
+     * Adds a plain DOM event listener on the element and registers a disposer so the listener
+     * is automatically removed when {@link detachListeners} is called.
+     * @param element The target element.
+     * @param eventName The event name to listen for.
+     * @param handler Callback invoked on each event.
+     */
     private addManagedEventListener(element: HTMLElement, eventName: string, handler: () => void): void {
         const wrapped = () => {
             handler();
@@ -826,6 +857,11 @@ export class DiagramEditor {
         });
     }
 
+    /**
+     * Constructs a DiagramFileDialogs instance, merging any consumer-provided file dialog
+     * overrides from the editor config.
+     * @returns The configured DiagramFileDialogs object.
+     */
     private createFileDialogs(): DiagramFileDialogs {
         const dialogs = new DiagramFileDialogs();
 
@@ -843,6 +879,11 @@ export class DiagramEditor {
         return dialogs;
     }
 
+    /**
+     * Constructs the DiagramEditViewPrompts bridge, routing calls through consumer-provided
+     * prompt overrides or falling back to the built-in dialog implementations.
+     * @returns The configured prompts object.
+     */
     private createDiagramPrompts(): DiagramEditViewPrompts {
         return {
             onUnsavedChanges: async ({ reason }) => {
@@ -859,6 +900,10 @@ export class DiagramEditor {
         };
     }
 
+    /**
+     * If the diagram has unsaved changes, prompts the user to save or discard before closing.
+     * @returns True when the close operation should proceed; false when the user cancels.
+     */
     private async confirmCloseIfNeeded(): Promise<boolean> {
         if (!this.diagram.isModified()) {
             return true;

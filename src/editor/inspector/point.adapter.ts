@@ -3,12 +3,27 @@ import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
 
 export interface PointAdapterConfig {
+    /**
+     * Whether to render small X/Y labels next to the coordinate inputs.
+     */
     showLabels?: boolean;
+    /**
+     * Label text used for the X coordinate input.
+     */
     xLabel?: string;
+    /**
+     * Label text used for the Y coordinate input.
+     */
     yLabel?: string;
+    /**
+     * Number of decimal places used when formatting and normalizing coordinates.
+     */
     precision?: number;
 }
 
+/**
+ * Inspector adapter for editing point values as paired X/Y numeric inputs.
+ */
 export class PointAdapter extends InspectorAdapter {
 
     private readonly inputX: HTMLInputElement;

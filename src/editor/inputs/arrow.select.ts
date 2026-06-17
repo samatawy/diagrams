@@ -12,10 +12,6 @@ export interface ArrowSelectConfig {
      * The stroke color to use for the width swatch in the dropdown and trigger button.
      */
     strokeColor?: string;
-    // /**
-    //  * Indicates whether to show the width label (e.g., "1px", "2px") next to the swatch in the trigger button and options.
-    //  */
-    // showLabel?: boolean;
     /**
      * Optional CSS class name to apply to the host element of the ArrowSelect component. This allows for custom styling of the component.
      */
@@ -36,10 +32,6 @@ export interface ArrowSelectConfig {
      * Optional CSS class name to apply to the swatch element of the ArrowSelect component. This allows for custom styling of the swatch.
      */
     swatchClassName?: string;
-    // /**
-    //  * Optional CSS class name to apply to the label element of the ArrowSelect component. This allows for custom styling of the label.
-    //  */
-    // labelClassName?: string;
     /**
      * Optional CSS class name to apply to the selected option of the ArrowSelect component. This allows for custom styling of the selected option.
      */
@@ -55,13 +47,11 @@ const DEFAULT_ARROWS: ArrowDirection[] = ['end', 'start', 'both', 'none'];
 const DEFAULT_CONFIG: Required<Omit<ArrowSelectConfig, 'arrows'>> & { arrows: ArrowDirection[] } = {
     arrows: DEFAULT_ARROWS,
     strokeColor: '#1f2937',
-    // showLabel: true,
     hostClassName: 'arrow-select-control',
     triggerClassName: 'color-preset-trigger',
     menuClassName: 'color-preset-menu',
     optionClassName: 'color-preset-option',
     swatchClassName: 'arrow-width-swatch',
-    // labelClassName: 'color-preset-label',
     selectedClassName: 'is-selected',
     openClassName: 'is-open',
 };
@@ -165,10 +155,10 @@ function ensureDefaultStyles(): void {
 
 
 /**
- * A dropdown component for selecting line widths.
- * It displays a list of predefined widths and allows the user to select one.
- * The selected width is reflected in the trigger button and can be accessed via the `value` property.
- * The component emits a 'widthchange' event when the selected width changes.
+ * A dropdown component for selecting arrow direction presets.
+ * It displays predefined directions and reflects the selected direction in the trigger button.
+ * The selected direction is exposed through the `value` property.
+ * The component emits an `arrowchange` event when the direction changes.
  */
 export class ArrowSelect {
 
@@ -186,6 +176,11 @@ export class ArrowSelect {
 
     protected menu: HTMLDivElement;
 
+    /**
+     * Creates an ArrowSelect component inside the given element.
+     * @param target The host element that will contain the arrow picker.
+     * @param config Optional display and behaviour configuration.
+     */
     constructor(target: HTMLElement, config: ArrowSelectConfig = {}) {
         ensureDefaultStyles();
 
@@ -209,12 +204,6 @@ export class ArrowSelect {
         this.triggerSwatch = document.createElement('div');
         setClasses(this.triggerSwatch, DEFAULT_CONFIG.swatchClassName, this.config.swatchClassName);
         this.trigger.appendChild(this.triggerSwatch);
-
-        // if (this.config.showLabel) {
-        //     this.triggerLabel = document.createElement('span');
-        //     setClasses(this.triggerLabel, DEFAULT_CONFIG.labelClassName, this.config.labelClassName);
-        //     this.trigger.appendChild(this.triggerLabel);
-        // }
 
         this.menu = document.createElement('div');
         setClasses(this.menu, DEFAULT_CONFIG.menuClassName, this.config.menuClassName);
@@ -310,6 +299,10 @@ export class ArrowSelect {
         this.closeMenu();
     };
 
+    /**
+     * Replaces the current option list with a new set of arrow directions.
+     * @param arrows The arrow directions to render.
+     */
     protected rebuildOptions(arrows: ArrowDirection[]): void {
         this.menu.innerHTML = '';
         for (const arrow of arrows) {
@@ -319,6 +312,11 @@ export class ArrowSelect {
         this.syncTrigger();
     }
 
+    /**
+     * Builds a single option button containing an SVG arrow preview.
+     * @param arrow The arrow direction value for this option.
+     * @returns The constructed option button element.
+     */
     protected buildOption(arrow: ArrowDirection): HTMLButtonElement {
         const option = document.createElement('button');
         option.type = 'button';
@@ -331,16 +329,14 @@ export class ArrowSelect {
         swatch.appendChild(this.createArrowSvg(arrow));
         option.appendChild(swatch);
 
-        // if (this.config.showLabel) {
-        //     const label = document.createElement('span');
-        //     setClasses(label, DEFAULT_CONFIG.labelClassName, this.config.labelClassName);
-        //     label.textContent = `${width}px`;
-        //     option.appendChild(label);
-        // }
-
         return option;
     }
 
+    /**
+     * Creates an SVG element visualising the given arrow direction with an optional arrowhead.
+     * @param arrow The arrow direction to draw.
+     * @returns The SVG element.
+     */
     protected createArrowSvg(arrow: ArrowDirection): SVGElement {
         const normalized = this.normalizeArrow(arrow);
 
@@ -372,6 +368,13 @@ export class ArrowSelect {
         return svg;
     }
 
+    /**
+     * Creates an SVG polygon representing a single arrowhead at the given position.
+     * @param x Horizontal position of the arrowhead tip.
+     * @param y Vertical position of the arrowhead tip.
+     * @param direction 'forward' points right; 'backward' points left.
+     * @returns The SVG polygon element.
+     */
     protected createArrowHead(x: number, y: number, direction: 'forward' | 'backward'): SVGPolygonElement {
         const head = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
         if (direction === 'forward') {
@@ -383,6 +386,11 @@ export class ArrowSelect {
         return head;
     }
 
+    /**
+     * Normalises any value into a valid ArrowDirection, falling back to 'none'.
+     * @param arrow Raw value to normalise.
+     * @returns A valid ArrowDirection string.
+     */
     protected normalizeArrow(arrow: ArrowDirection | string | undefined): ArrowDirection {
         if (arrow === 'start' || arrow === 'end' || arrow === 'both' || arrow === 'none') {
             return arrow;
@@ -390,6 +398,11 @@ export class ArrowSelect {
         return 'none';
     }
 
+    /**
+     * Updates the internal selection state, syncs the trigger and option list, and optionally emits 'arrowchange'.
+     * @param arrow The new arrow direction to select.
+     * @param emit Whether to dispatch the change event. Defaults to true.
+     */
     protected selectArrow(arrow: ArrowDirection, emit = true): void {
         const next = this.normalizeArrow(arrow);
         this.selected = next;
@@ -402,14 +415,17 @@ export class ArrowSelect {
         this.host.dispatchEvent(new CustomEvent<ArrowDirection>('arrowchange', { detail: next }));
     }
 
+    /**
+     * Updates the trigger button's swatch to show the current arrow direction.
+     */
     protected syncTrigger(): void {
         this.triggerSwatch.innerHTML = '';
         this.triggerSwatch.appendChild(this.createArrowSvg(this.selected));
-        // if (this.triggerLabel) {
-        //     this.triggerLabel.textContent = `${this.selected}px`;
-        // }
     }
 
+    /**
+     * Toggles the selected CSS class and aria-selected attribute on all arrow option buttons.
+     */
     protected syncSelectedOption(): void {
         const options = this.menu.querySelectorAll<HTMLElement>('[data-arrow]');
         options.forEach((option) => {
@@ -419,11 +435,17 @@ export class ArrowSelect {
         });
     }
 
+    /**
+     * Adds the open CSS class and updates aria-expanded on the trigger button.
+     */
     protected openMenu(): void {
         setClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'true');
     }
 
+    /**
+     * Removes the open CSS class and updates aria-expanded on the trigger button.
+     */
     protected closeMenu(): void {
         removeClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'false');

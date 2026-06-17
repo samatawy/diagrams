@@ -2,6 +2,9 @@ import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
 import { SizeSelect, type SizeSelectConfig } from "../inputs/size.select";
 
+/**
+ * Inspector adapter that binds a SizeSelect control to numeric size properties.
+ */
 export class SizeSelectAdapter extends InspectorAdapter {
 
     private readonly editor: SizeSelect;

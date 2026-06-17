@@ -1,11 +1,23 @@
 import { InspectorAdapter, type EditableRecord, type InspectorAdapterInit } from "./inspector.adapter";
 
 export interface NumberInputAdapterConfig {
+    /**
+     * Optional minimum allowed numeric value.
+     */
     min?: number;
+    /**
+     * Optional maximum allowed numeric value.
+     */
     max?: number;
+    /**
+     * Optional decimal precision used for normalization and formatting.
+     */
     precision?: number;
 }
 
+/**
+ * Inspector adapter for numeric text fields with optional precision and min/max constraints.
+ */
 export class NumberInputAdapter extends InspectorAdapter {
 
     private readonly input: HTMLInputElement;

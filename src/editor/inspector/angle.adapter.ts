@@ -1,10 +1,19 @@
 import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
 
+/**
+ * Configuration options for angle editing behavior.
+ */
 interface AngleAdapterConfig {
+    /**
+     * Number of decimal places used when formatting and normalizing angle values.
+     */
     precision?: number;
 }
 
+/**
+ * Inspector adapter for editing angle values in degrees while persisting radians.
+ */
 export class AngleAdapter extends InspectorAdapter {
 
     private readonly input: HTMLInputElement;

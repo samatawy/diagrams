@@ -632,9 +632,8 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Starts a local drag-create draft for the provided tool.
-     * The draft is previewed and can be placed by pointer-up on canvas.
-     * @param tool The name of the tool to create a draft for.
+     * Creates a draft node for the current tool, if applicable. This is used for tools that create new nodes.
+     * @param draft Partial node data to initialize the draft.
      */
     public createDragDraft(draft: Partial<INode>): void {
         if (!draft || !draft.type || draft.type === 'select' || !NodeRegistry.adapter(draft.type)) {

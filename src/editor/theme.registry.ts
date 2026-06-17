@@ -102,7 +102,7 @@ const DEFAULTS: Required<DiagramTheme> = {
     accent: '#0f766e',
     accentContrast: '#ffffff',
     shadowColor: 'rgba(15, 23, 42, 0.18)',
-    fontFamily: "system-ui",
+    fontFamily: 'system-ui',
     fontSize: '12px',
     labelFontSize: '11px',
     transitionFast: '100ms ease',
@@ -139,7 +139,6 @@ export class ThemeRegistry {
      * The changes apply to all themes and persist until resetDefaults() is called.
      * Note that existing themes are not affected; they will continue to inherit the old defaults
      * until re-applied.
-     * 
      * @param vars Partial token set with new default values.
      */
     public static setDefaults(vars: DiagramTheme): void {
@@ -201,9 +200,8 @@ export class ThemeRegistry {
 
     /**
      * Resolves a final token map by merging in order:
-     *   current defaults → named theme (if any) → optional inline overrides.
+     * current defaults → named theme (if any) → optional inline overrides.
      * Returns a plain object; nothing is applied to the DOM.
-     * 
      * @param theme A registered theme name or an inline theme object.
      * @param overrides Optional inline token overrides applied on top of the resolved theme.
      * @returns The final resolved theme object.
@@ -224,10 +222,9 @@ export class ThemeRegistry {
      * Applies a theme to an element as CSS custom properties.
      * The vars are scoped to that element and inherited by all children,
      * so any editor component rendered inside it consumes the theme automatically.
-     *
      * @param element   The element to receive the CSS custom properties.
      * @param theme     A registered theme name, an inline DiagramTheme object, or
-     *                  omit to apply the current defaults only.
+     * omit to apply the current defaults only.
      * @param overrides Extra token overrides applied on top of the resolved theme.
      */
     public static apply(element: HTMLElement, theme?: string | DiagramTheme, overrides?: DiagramTheme): void {
@@ -266,7 +263,9 @@ export class ThemeRegistry {
 
     // ── Internals ─────────────────────────────────────────────────────────────
 
-    /** Maps a camelCase or snake_case token field name to its full CSS custom property name. */
+    /**
+     * Maps a camelCase or snake_case token field name to its full CSS custom property name.
+     */
     private static normalizeVarName(name: string): string {
         if (name.startsWith('--')) {
             // already valid CSS variable name, return as is

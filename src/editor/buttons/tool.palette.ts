@@ -116,6 +116,12 @@ export class ToolPalette {
 
     protected renderedTools: string[] = [];
 
+    /**
+     * Creates a tool palette mounted inside the given host element.
+     * @param host The element that will contain the tool buttons.
+     * @param diagram The diagram view whose tool selection the palette controls.
+     * @param config Optional layout and style configuration.
+     */
     constructor(host: HTMLElement, diagram: DiagramEditView, config: ToolPaletteConfig = {}) {
         ensureDefaultStyles();
         this.host = host;
@@ -165,7 +171,11 @@ export class ToolPalette {
         this.highlight(this.diagram.currentTool || 'select');
     }
 
-    /** Adds a tool entry manually (useful for custom/non-registered tools). */
+    /**
+     * Adds a tool entry manually, useful for custom or non-registered tools.
+     * @param tool The tool identifier string.
+     * @param label Optional display label; defaults to a prettified version of the tool name.
+     */
     public addTool(tool: string, label?: string): void {
         this.manualTools.set(tool, label || prettyToolName(tool));
         this.refresh();
@@ -180,7 +190,10 @@ export class ToolPalette {
         this.renderedTools = [];
     }
 
-    /** Swap the underlying diagram view (e.g. after remounting). */
+    /**
+     * Swaps the underlying diagram view, for example after remounting.
+     * @param diagram The new diagram view to attach to.
+     */
     public setDiagramView(diagram: DiagramEditView): void {
         this.unbindDiagramEvents();
         this.diagram = diagram;
@@ -189,8 +202,8 @@ export class ToolPalette {
     }
 
     /**
-     * Handles the diagram tool change event.
-     * @param event The event object containing the tool change details.
+     * Handles diagram tool-change events and updates the highlighted tool button.
+     * @param event The custom event carrying the new tool name.
      */
     protected readonly onDiagramToolChanged = (event: Event): void => {
         const nextTool = event instanceof CustomEvent
@@ -199,16 +212,27 @@ export class ToolPalette {
         this.highlight(nextTool || 'select');
     };
 
+    /**
+     * Subscribes to DIAGRAM_TOOL_CHANGED_EVENT on the diagram host to track active tool changes.
+     */
     protected bindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.addEventListener(DIAGRAM_TOOL_CHANGED_EVENT, this.onDiagramToolChanged);
     }
 
+    /**
+     * Unsubscribes DIAGRAM_TOOL_CHANGED_EVENT listener attached by {@link bindDiagramEvents}.
+     */
     protected unbindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.removeEventListener(DIAGRAM_TOOL_CHANGED_EVENT, this.onDiagramToolChanged);
     }
 
+    /**
+     * Orders the available tools according to the configured layout, inserting wildcard tools as needed.
+     * @param allTools The full list of tool identifiers to arrange.
+     * @returns The ordered list of tool identifiers to render.
+     */
     protected resolveLayout(allTools: string[]): string[] {
         const layout = this.config.layout?.length ? this.config.layout : DEFAULT_TOOL_LAYOUT;
         const remaining = allTools.filter((tool) => tool !== '');
@@ -246,6 +270,11 @@ export class ToolPalette {
         return result;
     }
 
+    /**
+     * Builds and appends a single tool button to the palette.
+     * @param tool The tool identifier string.
+     * @param label The display label and tooltip for the button.
+     */
     protected renderTool(tool: string, label: string): void {
         const button = document.createElement('button');
         button.type = 'button';
@@ -282,6 +311,12 @@ export class ToolPalette {
         this.renderedTools.push(tool);
     }
 
+    /**
+     * Attaches pointer-based drag-to-create behavior to a tool button.
+     * Does nothing when the tool's adapter does not produce a draft node.
+     * @param button The button element to instrument.
+     * @param tool The tool identifier whose adapter supplies the draft node.
+     */
     protected attachDragCreateBehavior(button: HTMLButtonElement, tool: string): void {
         const adapter = NodeRegistry.adapter(tool);
         const draft = adapter?.onCreateDraft ? adapter.onCreateDraft(tool) : undefined;
@@ -319,6 +354,10 @@ export class ToolPalette {
         });
     }
 
+    /**
+     * Marks the given tool button as active and clears the active state from all others.
+     * @param tool The tool identifier to highlight.
+     */
     protected highlight(tool: string): void {
         for (const button of this.host.querySelectorAll<HTMLButtonElement>('button[data-tool]')) {
             const isActive = button.getAttribute('data-tool') === tool;

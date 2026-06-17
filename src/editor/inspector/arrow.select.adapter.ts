@@ -2,6 +2,9 @@ import { ArrowSelect, type ArrowSelectConfig } from "../inputs/arrow.select";
 import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
 
+/**
+ * Inspector adapter that maps arrow direction UI values to start/end arrow model flags.
+ */
 export class ArrowSelectAdapter extends InspectorAdapter {
 
     private readonly editor: ArrowSelect;

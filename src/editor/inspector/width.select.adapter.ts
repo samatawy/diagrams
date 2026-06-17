@@ -2,6 +2,9 @@ import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
 import { WidthSelect, type WidthSelectConfig } from "../inputs/width.select";
 
+/**
+ * Inspector adapter that binds a WidthSelect control to numeric stroke width properties.
+ */
 export class WidthSelectAdapter extends InspectorAdapter {
 
     private readonly editor: WidthSelect;

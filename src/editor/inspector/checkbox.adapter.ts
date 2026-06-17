@@ -1,5 +1,8 @@
 import { InspectorAdapter, type EditableRecord, type InspectorAdapterInit } from "./inspector.adapter";
 
+/**
+ * Inspector adapter for boolean properties rendered as checkboxes.
+ */
 export class CheckboxAdapter extends InspectorAdapter {
 
     private readonly input: HTMLInputElement;

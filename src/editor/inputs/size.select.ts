@@ -49,18 +49,18 @@ export interface SizeSelectConfig {
     openClassName?: string;
 }
 
-export const DEFAULT_SIZES: number[] = [10, 12, 14, 16, 18, 20, 24, 28, 32, 40];
+export const DEFAULT_SIZES: number[] = [6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 24, 28, 32, 40];
 
 const DEFAULT_CONFIG: Required<Omit<SizeSelectConfig, 'sizes'>> & { sizes: number[] } = {
     sizes: DEFAULT_SIZES,
     unit: 'px',
     showLabel: true,
     hostClassName: 'size-select-control',
-    triggerClassName: 'color-preset-trigger',
-    menuClassName: 'color-preset-menu',
-    optionClassName: 'color-preset-option',
+    triggerClassName: 'size-select-trigger',
+    menuClassName: 'size-select-menu',
+    optionClassName: 'size-select-option',
     previewClassName: 'size-select-preview',
-    labelClassName: 'color-preset-label',
+    labelClassName: 'size-select-label',
     selectedClassName: 'is-selected',
     openClassName: 'is-open',
 };
@@ -175,11 +175,10 @@ function normalizeSizes(sizes: number[]): number[] {
  * A dropdown control for selecting sizes (e.g., font sizes, line widths).
  * Emits a 'sizechange' event when the selected size changes.
  * Example usage:
- * 
  * const sizeSelect = new SizeSelect(document.getElementById('size-select'), {
- *     sizes: [8, 10, 12, 14, 16, 18, 20],
- *     unit: 'px',
- *     showLabel: true,
+ * sizes: [8, 10, 12, 14, 16, 18, 20],
+ * unit: 'px',
+ * showLabel: true,
  * });
  */
 export class SizeSelect {
@@ -196,6 +195,11 @@ export class SizeSelect {
 
     protected menu: HTMLDivElement;
 
+    /**
+     * Creates a SizeSelect component inside the given element.
+     * @param target The host element that will contain the size picker.
+     * @param config Optional display and behaviour configuration.
+     */
     constructor(target: HTMLElement, config: SizeSelectConfig = {}) {
         ensureDefaultStyles();
 
@@ -311,6 +315,10 @@ export class SizeSelect {
         this.closeMenu();
     };
 
+    /**
+     * Replaces the current option list with a new set of size values.
+     * @param sizes The numeric size values to render.
+     */
     protected rebuildOptions(sizes: number[]): void {
         this.menu.innerHTML = '';
         for (const size of sizes) {
@@ -320,6 +328,11 @@ export class SizeSelect {
         this.syncTrigger();
     }
 
+    /**
+     * Builds a single option button with a size preview and optional unit label.
+     * @param size The numeric size value for this option.
+     * @returns The constructed option button element.
+     */
     protected buildOption(size: number): HTMLButtonElement {
         const option = document.createElement('button');
         option.type = 'button';
@@ -342,6 +355,11 @@ export class SizeSelect {
         return option;
     }
 
+    /**
+     * Updates the internal selection state, syncs the trigger and option list, and optionally emits 'sizechange'.
+     * @param size The new size value to select.
+     * @param emit Whether to dispatch the change event. Defaults to true.
+     */
     protected selectSize(size: number, emit = true): void {
         this.selected = Math.round(size);
         this.syncTrigger();
@@ -351,10 +369,16 @@ export class SizeSelect {
         }
     }
 
+    /**
+     * Updates the trigger button's preview text to the current size with its unit suffix.
+     */
     protected syncTrigger(): void {
         this.triggerPreview.textContent = `${this.selected}${this.config.unit}`;
     }
 
+    /**
+     * Toggles the selected CSS class and aria-selected attribute on all size option buttons.
+     */
     protected syncSelectedOption(): void {
         const options = this.menu.querySelectorAll<HTMLElement>('[data-size]');
         options.forEach((option) => {
@@ -364,11 +388,17 @@ export class SizeSelect {
         });
     }
 
+    /**
+     * Adds the open CSS class and updates aria-expanded on the trigger button.
+     */
     protected openMenu(): void {
         setClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'true');
     }
 
+    /**
+     * Removes the open CSS class and updates aria-expanded on the trigger button.
+     */
     protected closeMenu(): void {
         removeClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'false');

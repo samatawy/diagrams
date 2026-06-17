@@ -207,6 +207,11 @@ export class WidthSelect {
 
     protected menu: HTMLDivElement;
 
+    /**
+     * Creates a WidthSelect component inside the given element.
+     * @param target The host element that will contain the width picker.
+     * @param config Optional display and behaviour configuration.
+     */
     constructor(target: HTMLElement, config: WidthSelectConfig = {}) {
         ensureDefaultStyles();
 
@@ -329,6 +334,10 @@ export class WidthSelect {
         this.closeMenu();
     };
 
+    /**
+     * Replaces the current option list with a new set of widths.
+     * @param widths The pixel-width values to render.
+     */
     protected rebuildOptions(widths: number[]): void {
         this.menu.innerHTML = '';
         for (const width of widths) {
@@ -338,6 +347,11 @@ export class WidthSelect {
         this.syncTrigger();
     }
 
+    /**
+     * Builds a single option button containing an SVG stroke-width preview.
+     * @param width The pixel width value for this option.
+     * @returns The constructed option button element.
+     */
     protected buildOption(width: number): HTMLButtonElement {
         const option = document.createElement('button');
         option.type = 'button';
@@ -360,6 +374,11 @@ export class WidthSelect {
         return option;
     }
 
+    /**
+     * Creates an SVG element visualising a horizontal line at the given stroke width.
+     * @param width The stroke width in pixels.
+     * @returns The SVG element.
+     */
     protected createWidthSvg(width: number): SVGElement {
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', '100%');
@@ -378,6 +397,11 @@ export class WidthSelect {
         return svg;
     }
 
+    /**
+     * Updates the internal selection state, syncs the trigger and option list, and optionally emits 'widthchange'.
+     * @param width The new width value to select.
+     * @param emit Whether to dispatch the change event. Defaults to true.
+     */
     protected selectWidth(width: number, emit = true): void {
         const next = Math.max(1, Math.round(width));
         this.selected = next;
@@ -390,6 +414,9 @@ export class WidthSelect {
         this.host.dispatchEvent(new CustomEvent<number>('widthchange', { detail: next }));
     }
 
+    /**
+     * Updates the trigger button's swatch and optional label to reflect the current width.
+     */
     protected syncTrigger(): void {
         this.triggerSwatch.innerHTML = '';
         this.triggerSwatch.appendChild(this.createWidthSvg(this.selected));
@@ -398,6 +425,9 @@ export class WidthSelect {
         }
     }
 
+    /**
+     * Toggles the selected CSS class and aria-selected attribute on all width option buttons.
+     */
     protected syncSelectedOption(): void {
         const options = this.menu.querySelectorAll<HTMLElement>('[data-width]');
         options.forEach((option) => {
@@ -407,11 +437,17 @@ export class WidthSelect {
         });
     }
 
+    /**
+     * Adds the open CSS class and updates aria-expanded on the trigger button.
+     */
     protected openMenu(): void {
         setClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'true');
     }
 
+    /**
+     * Removes the open CSS class and updates aria-expanded on the trigger button.
+     */
     protected closeMenu(): void {
         removeClasses(this.host, DEFAULT_CONFIG.openClassName, this.config.openClassName);
         this.trigger.setAttribute('aria-expanded', 'false');
