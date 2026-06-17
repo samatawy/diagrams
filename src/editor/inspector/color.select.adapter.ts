@@ -1,4 +1,4 @@
-import { ColorSelect, type ColorSelectConfig } from "../color.select";
+import { ColorSelect, type ColorSelectConfig } from "../inputs/color.select";
 import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
 

@@ -1,8 +1,8 @@
-import type { DiagramEditView } from '../editview/diagram.edit.view';
-import { DIAGRAM_CHANGED_EVENT, DIAGRAM_CLIPBOARD_EVENT } from '../events/diagram.events';
-import { NodeRegistry } from '../factory';
-import { IconRegistry } from '../factory/icon.registry';
-import { isConnectionNode } from '../guards';
+import type { DiagramEditView } from '../../editview/diagram.edit.view';
+import { DIAGRAM_CHANGED_EVENT, DIAGRAM_CLIPBOARD_EVENT } from '../../events/diagram.events';
+import { NodeRegistry } from '../../factory';
+import { IconRegistry } from '../../factory/icon.registry';
+import { isConnectionNode } from '../../guards';
 import { ToolBar, type ToolBarConfig } from './tool.bar';
 
 /**

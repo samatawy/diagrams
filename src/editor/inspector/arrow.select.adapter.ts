@@ -1,4 +1,4 @@
-import { ArrowSelect, type ArrowSelectConfig } from "../arrow.select";
+import { ArrowSelect, type ArrowSelectConfig } from "../inputs/arrow.select";
 import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
 

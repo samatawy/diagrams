@@ -1,6 +1,6 @@
 import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
-import { WidthSelect, type WidthSelectConfig } from "../width.select";
+import { WidthSelect, type WidthSelectConfig } from "../inputs/width.select";
 
 export class WidthSelectAdapter extends InspectorAdapter {
 

@@ -149,7 +149,7 @@ const TOOLBAR_DEFAULT_STYLES = `
 }
 `;
 
-import { injectStyles, setClasses, toggleClasses } from './editor.utils';
+import { injectStyles, setClasses, toggleClasses } from '../editor.utils';
 
 function ensureToolbarStyles(): void {
     injectStyles(TOOLBAR_STYLE_ID, TOOLBAR_DEFAULT_STYLES);

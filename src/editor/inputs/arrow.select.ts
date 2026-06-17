@@ -156,8 +156,8 @@ const DEFAULT_STYLES = `
 }
 `;
 
-import type { ArrowDirection } from '../types';
-import { injectStyles, setClasses, toggleClasses, removeClasses } from './editor.utils';
+import type { ArrowDirection } from '../../types';
+import { injectStyles, setClasses, toggleClasses, removeClasses } from '../editor.utils';
 
 function ensureDefaultStyles(): void {
     injectStyles(STYLE_ID, DEFAULT_STYLES);

@@ -52,7 +52,7 @@ export class PointAdapter extends InspectorAdapter {
 
         this.inputX = document.createElement('input');
         this.inputX.type = 'number';
-        this.inputX.step = this.stepFromPrecision();
+        this.inputX.step = '1'; // this.stepFromPrecision();
         this.inputX.readOnly = initial.readonly;
         this.inputX.style.flex = '1';
         this.inputX.style.minWidth = '56px';
@@ -66,7 +66,7 @@ export class PointAdapter extends InspectorAdapter {
 
         this.inputY = document.createElement('input');
         this.inputY.type = 'number';
-        this.inputY.step = this.stepFromPrecision();
+        this.inputY.step = '1'; // this.stepFromPrecision();
         this.inputY.readOnly = initial.readonly;
         this.inputY.style.flex = '1';
         this.inputY.style.minWidth = '56px';
@@ -89,6 +89,10 @@ export class PointAdapter extends InspectorAdapter {
     }
 
     private propagateInputChange(): void {
+        if (this.isTransientNumberInput(this.inputX.value) || this.isTransientNumberInput(this.inputY.value)) {
+            return;
+        }
+
         const parsedX = Number(this.inputX.value);
         const parsedY = Number(this.inputY.value);
         const complete = this.inputX.value !== ''
@@ -155,14 +159,14 @@ export class PointAdapter extends InspectorAdapter {
         return value.toFixed(p).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
     }
 
-    private stepFromPrecision(): string {
-        const p = this.normalizedPrecision();
-        if (p === undefined) {
-            return 'any';
-        }
+    // private stepFromPrecision(): string {
+    //     const p = this.normalizedPrecision();
+    //     if (p === undefined) {
+    //         return 'any';
+    //     }
 
-        return p === 0 ? '1' : String(Math.pow(10, -p));
-    }
+    //     return p === 0 ? '1' : String(Math.pow(10, -p));
+    // }
 
     private normalizedPrecision(): number | undefined {
         if (typeof this.config.precision !== 'number') {
@@ -170,5 +174,9 @@ export class PointAdapter extends InspectorAdapter {
         }
 
         return Math.max(0, Math.floor(this.config.precision));
+    }
+
+    private isTransientNumberInput(raw: string): boolean {
+        return raw === '-' || raw === '.' || raw === '-.' || raw.endsWith('.') || /[eE][+-]?$/.test(raw);
     }
 }

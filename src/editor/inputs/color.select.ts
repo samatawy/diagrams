@@ -1,4 +1,4 @@
-import { injectStyles, setClasses, toggleClasses, removeClasses } from './editor.utils';
+import { injectStyles, setClasses, toggleClasses, removeClasses } from '../editor.utils';
 
 /**
  * Configuration options for the ColorSelect control.

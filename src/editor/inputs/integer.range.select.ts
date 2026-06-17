@@ -51,7 +51,7 @@ const DEFAULT_STYLES = `
 }
 `;
 
-import { injectStyles, setClasses } from './editor.utils';
+import { injectStyles, setClasses } from '../editor.utils';
 
 function ensureDefaultStyles(): void {
     injectStyles(STYLE_ID, DEFAULT_STYLES);

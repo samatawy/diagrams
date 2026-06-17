@@ -106,6 +106,7 @@ const DEFAULT_STYLES = `
     text-transform: uppercase;
     letter-spacing: 0.04em;
     border: var(--diagram-ui-border-width, 1px) solid var(--inspector-header-border);
+    border-radius: var(--inspector-heading-radius, 5px);
     background: var(--inspector-header-bg);
     margin-bottom: 0;
     cursor: default;
@@ -113,14 +114,18 @@ const DEFAULT_STYLES = `
     transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease;
 }
 .inspector .inspector-heading::before {
-    content: '▾';
-    font-size: 9px;
-    transform: rotate(0deg);
+    content: '';
+    width: 3px;
+    height: 3px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    margin-inline-end: 2px;
+    transform: rotate(45deg);
     transform-origin: 50% 50%;
     transition: transform 0.26s var(--inspector-caret-ease);
 }
 .inspector .inspector-section.is-collapsed .inspector-heading::before {
-    transform: rotate(-90deg);
+    transform: rotate(-45deg);
 }
 
 /* Two-column property grid */

@@ -16,11 +16,15 @@ export class AngleAdapter extends InspectorAdapter {
         this.precision = typeof config.precision === 'number' ? Math.max(0, Math.floor(config.precision)) : 4;
         this.input = document.createElement('input');
         this.input.type = 'number';
-        this.input.step = this.precision === 0 ? '1' : String(Math.pow(10, -this.precision));
+        this.input.step = '1'; //// this.precision === 0 ? '1' : String(Math.pow(10, -this.precision));
         this.input.readOnly = initial.readonly;
         this.input.title = 'Angle in degrees';
         cell.appendChild(this.input);
         this.input.addEventListener('input', () => {
+            if (this.isTransientNumberInput(this.input.value)) {
+                return;
+            }
+
             const parsed = Number(this.input.value);
             if (this.input.value === '') {
                 this.setUnset(true);
@@ -77,5 +81,9 @@ export class AngleAdapter extends InspectorAdapter {
         }
 
         return value.toFixed(this.precision).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+    }
+
+    private isTransientNumberInput(raw: string): boolean {
+        return raw === '-' || raw === '.' || raw === '-.' || raw.endsWith('.') || /[eE][+-]?$/.test(raw);
     }
 }

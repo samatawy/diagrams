@@ -36,6 +36,11 @@ a {
     margin: 0 auto;
 }
 
+/* Used by full editor demos only; keeps gallery/viewer pages at the base shell width. */
+.shell.shell-editor {
+    max-width: 1800px;
+}
+
 .topbar {
     display: flex;
     align-items: center;

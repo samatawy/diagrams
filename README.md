@@ -97,6 +97,13 @@ You can tailor the editor for your own product:
 - Provide custom file dialog handlers for open/save/export.
 - Style and wire custom UI controls around `DiagramEditView`.
 
+## Version History
+
+- Since version `0.2.0`
+  - Improved in-place editing for nodes and connections
+  - A full Inspector panel was added to the editor, including Identity, Geometry, Text, Line, Fill, Shadow, and Metadata sections
+  - Keyboard handling was hardened so global editor shortcuts do not interfere with other page controls
+
 ## Development Scripts
 
 - `npm run lint`

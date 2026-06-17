@@ -10,18 +10,18 @@ import {
     type ISerializedDiagram,
 } from "../io";
 import { Diagram } from "../model/diagram";
-import { ColorSelect, type ColorSelectConfig } from "./color.select";
-import { DiagramToolBar, type DiagramToolBarConfig } from "./diagram.tool.bar";
+import { ColorSelect, type ColorSelectConfig } from "./inputs/color.select";
+import { DiagramToolBar, type DiagramToolBarConfig } from "./buttons/diagram.tool.bar";
 import { injectStyles, setClasses } from "./editor.utils";
-import { FontSelect, type FontSelectConfig } from "./font.select";
+import { FontSelect, type FontSelectConfig } from "./inputs/font.select";
 import { PromptDialog } from "./prompt.dialog";
-import { SizeSelect, type SizeSelectConfig } from "./size.select";
-import { ToolPalette, type ToolPaletteConfig } from "./tool.palette";
+import { SizeSelect, type SizeSelectConfig } from "./inputs/size.select";
+import { ToolPalette, type ToolPaletteConfig } from "./buttons/tool.palette";
 import { DIAGRAM_CHANGED_EVENT } from "../events/diagram.events";
-import { WidthSelect, type WidthSelectConfig } from "./width.select";
-import { ArrowSelect, type ArrowSelectConfig } from "./arrow.select";
+import { WidthSelect, type WidthSelectConfig } from "./inputs/width.select";
+import { ArrowSelect, type ArrowSelectConfig } from "./inputs/arrow.select";
 import type { ArrowDirection } from "../types";
-import { IntegerRangeSelect, type IntegerRangeSelectConfig } from "./integer.range.select";
+import { IntegerRangeSelect, type IntegerRangeSelectConfig } from "./inputs/integer.range.select";
 import { DiagramInspector } from "./inspector/diagram.inspector";
 import type { InspectorConfig } from "./inspector/inspector";
 
@@ -42,6 +42,7 @@ export type DiagramEditorFileDialogsConfig = {
 
 export type DiagramEditorConfig = {
     hostClassName?: string;
+    showInspector?: boolean;
     toolPalette?: ToolPaletteConfig;
     toolbars?: DiagramToolBarConfig[];
     prompts?: DiagramEditorPrompts;
@@ -85,7 +86,8 @@ const DIAGRAM_EDITOR_STYLES = `
     display: flex;
     flex-wrap: wrap;
     gap: var(--diagram-ui-control-gap, 4px);
-    align-items: flex-start;
+    align-items: stretch;
+    justify-content: flex-start;
     padding-bottom: 8px;
 }
 .diagram-editor-stage {
@@ -94,6 +96,9 @@ const DIAGRAM_EDITOR_STYLES = `
     grid-template-columns: max-content minmax(0, 1fr) max-content;
     min-height: 0;
     overflow: hidden;
+}
+.diagram-editor-stage.no-inspector {
+    grid-template-columns: max-content minmax(0, 1fr);
 }
 .diagram-editor-tool-palette {
     border-right: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
@@ -437,6 +442,9 @@ export class DiagramEditor {
 
         this.stageHost = document.createElement('div');
         setClasses(this.stageHost, 'diagram-editor-stage');
+        if (config.showInspector === false) {
+            this.stageHost.classList.add('no-inspector');
+        }
         host.appendChild(this.stageHost);
 
         this.toolbarsHost = document.createElement('div');
@@ -453,10 +461,12 @@ export class DiagramEditor {
         setClasses(canvasHost, 'diagram-editor-canvas');
         this.stageHost.appendChild(canvasHost);
 
-        // Inspector is the right column of the stage grid.
-        this.inspectorHost = document.createElement('div');
-        setClasses(this.inspectorHost, 'diagram-editor-inspector');
-        this.stageHost.appendChild(this.inspectorHost);
+        // Inspector is the right column of the stage grid when enabled.
+        if (config.showInspector !== false) {
+            this.inspectorHost = document.createElement('div');
+            setClasses(this.inspectorHost, 'diagram-editor-inspector');
+            this.stageHost.appendChild(this.inspectorHost);
+        }
 
         // Create the local diagram edit view and load the provided diagram if any
         const id = diagram?.id || `diagram-${Date.now()}`;
@@ -464,7 +474,9 @@ export class DiagramEditor {
         this.diagram.fileDialogs = this.createFileDialogs();
         this.diagram.prompts = this.createDiagramPrompts();
 
-        this.inspector = new DiagramInspector(this.inspectorHost, this.diagram, config.inspector || {});
+        if (this.inspectorHost) {
+            this.inspector = new DiagramInspector(this.inspectorHost, this.diagram, config.inspector || {});
+        }
 
         if (diagram) this.diagram.read(diagram);
 

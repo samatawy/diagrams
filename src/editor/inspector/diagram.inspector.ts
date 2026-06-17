@@ -5,11 +5,11 @@ import { DIAGRAM_CHANGED_EVENT, DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, DIAGRAM_NOD
 import { DiagramConstants } from "../../model/diagram.constants";
 
 import { Inspector, type InspectorConfig, type InspectorPropertyDefinition, type EditableRecord } from "./inspector";
-import type { ColorSelectConfig } from "../color.select";
-import type { WidthSelectConfig } from "../width.select";
-import type { ArrowSelectConfig } from "../arrow.select";
-import type { FontSelectConfig } from "../font.select";
-import type { SizeSelectConfig } from "../size.select";
+import type { ColorSelectConfig } from "../inputs/color.select";
+import type { WidthSelectConfig } from "../inputs/width.select";
+import type { ArrowSelectConfig } from "../inputs/arrow.select";
+import type { FontSelectConfig } from "../inputs/font.select";
+import type { SizeSelectConfig } from "../inputs/size.select";
 import { ColorSelectAdapter } from "./color.select.adapter";
 import { WidthSelectAdapter } from "./width.select.adapter";
 import { ArrowSelectAdapter } from "./arrow.select.adapter";

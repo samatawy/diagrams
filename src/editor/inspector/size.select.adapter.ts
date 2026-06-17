@@ -1,6 +1,6 @@
 import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
-import { SizeSelect, type SizeSelectConfig } from "../size.select";
+import { SizeSelect, type SizeSelectConfig } from "../inputs/size.select";
 
 export class SizeSelectAdapter extends InspectorAdapter {
 

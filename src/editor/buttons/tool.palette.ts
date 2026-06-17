@@ -1,7 +1,7 @@
-import { DiagramEditView } from '../editview/diagram.edit.view';
-import { NodeRegistry } from '../factory/node.registry';
-import { IconRegistry } from '../factory/icon.registry';
-import { DIAGRAM_TOOL_CHANGED_EVENT, type DiagramToolChange } from '../events/diagram.events';
+import { DiagramEditView } from '../../editview/diagram.edit.view';
+import { NodeRegistry } from '../../factory/node.registry';
+import { IconRegistry } from '../../factory/icon.registry';
+import { DIAGRAM_TOOL_CHANGED_EVENT, type DiagramToolChange } from '../../events/diagram.events';
 
 export const TOOL_PALETTE_TOOL_SELECTED_EVENT = 'tool-selected';
 
@@ -81,7 +81,7 @@ const DEFAULT_STYLES = `
 }
 `;
 
-import { injectStyles, setClasses } from './editor.utils';
+import { injectStyles, setClasses } from '../editor.utils';
 
 function ensureDefaultStyles(): void {
     injectStyles(STYLE_ID, DEFAULT_STYLES);

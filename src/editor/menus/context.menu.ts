@@ -1,4 +1,4 @@
-import { setClasses } from "./editor.utils";
+import { setClasses } from "../editor.utils";
 
 export class ContextMenu {
 

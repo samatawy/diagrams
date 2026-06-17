@@ -1,5 +1,5 @@
 import type { InspectorAdapterInit, EditableRecord } from "./inspector";
-import { FontSelect, type FontSelectConfig } from "../font.select";
+import { FontSelect, type FontSelectConfig } from "../inputs/font.select";
 import { InspectorAdapter } from "./inspector";
 
 export class FontSelectAdapter extends InspectorAdapter {
