@@ -73,7 +73,7 @@ const DEFAULT_STYLES = `
     min-width: 72px;
     max-width: 100px;
 }
-.size-select-control .color-preset-trigger,
+.size-select-control .size-select-trigger,
 .size-select-control button[aria-haspopup='listbox'] {
     width: 100%;
     display: grid;
@@ -89,13 +89,13 @@ const DEFAULT_STYLES = `
     color: var(--diagram-ui-text, #1f2937);
     font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
 }
-.size-select-control .color-preset-trigger::after {
+.size-select-control .size-select-trigger::after {
     content: '▾';
     font-size: var(--diagram-ui-font-size, 12px);
     color: var(--diagram-ui-text-muted, #334155);
 }
-.size-select-control .color-preset-trigger:hover,
-.size-select-control .color-preset-trigger:focus-visible,
+.size-select-control .size-select-trigger:hover,
+.size-select-control .size-select-trigger:focus-visible,
 .size-select-control button[aria-haspopup='listbox']:hover,
 .size-select-control button[aria-haspopup='listbox']:focus-visible {
     border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
@@ -105,7 +105,7 @@ const DEFAULT_STYLES = `
     color: var(--diagram-ui-text, #1f2937);
     white-space: nowrap;
 }
-.size-select-control .color-preset-menu {
+.size-select-control .size-select-menu {
     position: absolute;
     left: 0;
     right: 0;
@@ -120,26 +120,25 @@ const DEFAULT_STYLES = `
     overflow: auto;
     box-shadow: 0 10px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
 }
-.size-select-control.is-open .color-preset-menu {
+.size-select-control.is-open .size-select-menu {
     display: grid;
     gap: var(--diagram-ui-group-gap, 4px);
 }
-.size-select-control .color-preset-option {
+.size-select-control .size-select-option {
     width: 100%;
-    display: grid;
-    grid-template-columns: 1fr auto;
+    display: flex;
     align-items: center;
-    gap: var(--diagram-ui-group-gap, 8px);
+    gap: 2px;
     border: none;
     border-radius: var(--diagram-ui-control-radius, 6px);
     background: transparent;
     padding: var(--diagram-ui-group-gap, 4px) var(--diagram-ui-control-padding-x, 8px);
     cursor: pointer;
-    font: inherit;
+    font: var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
     text-align: left;
 }
-.size-select-control .color-preset-option:hover,
-.size-select-control .color-preset-option.is-selected {
+.size-select-control .size-select-option:hover,
+.size-select-control .size-select-option.is-selected {
     background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
 }
 `;
