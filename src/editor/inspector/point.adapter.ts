@@ -6,6 +6,7 @@ export interface PointAdapterConfig {
     showLabels?: boolean;
     xLabel?: string;
     yLabel?: string;
+    precision?: number;
 }
 
 export class PointAdapter extends InspectorAdapter {
@@ -21,7 +22,8 @@ export class PointAdapter extends InspectorAdapter {
             showLabels: true,
             xLabel: 'X',
             yLabel: 'Y',
-            ...((initial.def.editorOptions as PointAdapterConfig | undefined) || {}),
+            precision: 2,
+            ...(initial.def.editorOptions || {} as PointAdapterConfig),
         };
 
         const row = document.createElement('div');
@@ -50,7 +52,7 @@ export class PointAdapter extends InspectorAdapter {
 
         this.inputX = document.createElement('input');
         this.inputX.type = 'number';
-        this.inputX.step = '1';
+        this.inputX.step = this.stepFromPrecision();
         this.inputX.readOnly = initial.readonly;
         this.inputX.style.flex = '1';
         this.inputX.style.minWidth = '56px';
@@ -64,7 +66,7 @@ export class PointAdapter extends InspectorAdapter {
 
         this.inputY = document.createElement('input');
         this.inputY.type = 'number';
-        this.inputY.step = '1';
+        this.inputY.step = this.stepFromPrecision();
         this.inputY.readOnly = initial.readonly;
         this.inputY.style.flex = '1';
         this.inputY.style.minWidth = '56px';
@@ -101,7 +103,7 @@ export class PointAdapter extends InspectorAdapter {
         }
 
         this.setUnset(false);
-        this.notifyChange({ x: parsedX, y: parsedY });
+        this.notifyChange({ x: this.normalizeValue(parsedX), y: this.normalizeValue(parsedY) });
     }
 
     override showValue(editable: EditableRecord): void {
@@ -116,8 +118,8 @@ export class PointAdapter extends InspectorAdapter {
         }
 
         this.setUnset(false);
-        this.inputX.value = String(point.x);
-        this.inputY.value = String(point.y);
+        this.inputX.value = this.formatValue(this.normalizeValue(Number(point.x)));
+        this.inputY.value = this.formatValue(this.normalizeValue(Number(point.y)));
     }
 
     override getValue(): EditableRecord {
@@ -127,6 +129,46 @@ export class PointAdapter extends InspectorAdapter {
             return { [this.returnKey ?? '']: undefined };
         }
 
-        return { [this.returnKey ?? '']: { x: parsedX, y: parsedY } };
+        return { [this.returnKey ?? '']: { x: this.normalizeValue(parsedX), y: this.normalizeValue(parsedY) } };
+    }
+
+    private normalizeValue(value: number): number {
+        const p = this.normalizedPrecision();
+        if (p === undefined) {
+            return value;
+        }
+
+        const factor = Math.pow(10, p);
+        return Math.round(value * factor) / factor;
+    }
+
+    private formatValue(value: number): string {
+        const p = this.normalizedPrecision();
+        if (p === undefined) {
+            return String(value);
+        }
+
+        if (p === 0) {
+            return String(Math.round(value));
+        }
+
+        return value.toFixed(p).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+    }
+
+    private stepFromPrecision(): string {
+        const p = this.normalizedPrecision();
+        if (p === undefined) {
+            return 'any';
+        }
+
+        return p === 0 ? '1' : String(Math.pow(10, -p));
+    }
+
+    private normalizedPrecision(): number | undefined {
+        if (typeof this.config.precision !== 'number') {
+            return undefined;
+        }
+
+        return Math.max(0, Math.floor(this.config.precision));
     }
 }

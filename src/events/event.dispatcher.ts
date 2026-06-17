@@ -12,6 +12,7 @@ import {
     DIAGRAM_NODE_MOVED_EVENT,
     DIAGRAM_NODE_POINTS_CHANGED_EVENT,
     DIAGRAM_NODE_RESIZED_EVENT,
+    DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT,
     DIAGRAM_SELECTION_EVENT,
     DIAGRAM_TOOL_CHANGED_EVENT,
     DIAGRAM_VIEWPORT_EVENT,
@@ -118,6 +119,14 @@ export class EventDispatcher {
     }
 
     /**
+     * Emits the node-geometry-altered event.
+     * @param detail Node change payload.
+     */
+    public nodeGeometryAltered(detail: DiagramNodeChange): void {
+        this.dispatchInternal(DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, detail);
+    }
+
+    /**
      * Emits the node-points-changed event.
      * @param detail Node change payload.
      */
@@ -202,6 +211,7 @@ export class EventDispatcher {
             case DIAGRAM_NODE_DELETED_EVENT:
             case DIAGRAM_NODE_MOVED_EVENT:
             case DIAGRAM_NODE_RESIZED_EVENT:
+            case DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT:
             case DIAGRAM_NODE_POINTS_CHANGED_EVENT:
             case DIAGRAM_CONNECTION_CONNECTED_EVENT:
             case DIAGRAM_CONNECTION_DISCONNECTED_EVENT:

@@ -123,6 +123,8 @@ export class DiagramEditView extends DiagramView {
 
     private pointChangedNodes = new Set<INode>();
 
+    private alteredNodes = new Set<INode>();
+
     private pendingGuideSnap?: SnapGuideResult;
 
     private connectionBeforeEdit?: { node: INode & IConnection; from?: string; to?: string };
@@ -2237,6 +2239,7 @@ export class DiagramEditView extends DiagramView {
                     if (this.downShape) {
                         const movePos = { x: event.offsetX, y: event.offsetY };
                         NodeRegistry.adapter(this.downShape.type)?.onAlterMove?.(this.downShape, movePos);
+                        this.alteredNodes.add(this.downShape);
                         this.render('all');
                     }
                     break;
@@ -3284,10 +3287,14 @@ export class DiagramEditView extends DiagramView {
         for (const node of this.pointChangedNodes) {
             this.emitNodePointsChanged(node);
         }
+        for (const node of this.alteredNodes) {
+            this.emitNodeGeometryAltered(node);
+        }
 
         this.movedNodes.clear();
         this.resizedNodes.clear();
         this.pointChangedNodes.clear();
+        this.alteredNodes.clear();
     }
 
     private emitNodeAdded(node: INode): void {
@@ -3313,6 +3320,13 @@ export class DiagramEditView extends DiagramView {
 
     private emitNodeResized(node: INode): void {
         this.eventDispatcher.nodeResized({
+            node,
+            nodeId: node.id,
+        });
+    }
+
+    private emitNodeGeometryAltered(node: INode): void {
+        this.eventDispatcher.nodeGeometryAltered({
             node,
             nodeId: node.id,
         });

@@ -13,7 +13,7 @@ export class FontSelectAdapter extends InspectorAdapter {
         cell.appendChild(host);
         const options: FontSelectConfig = {
             showPreview: true,
-            ...(initial.def.editorOptions as FontSelectConfig),
+            ...(initial.def.editorOptions || {} as FontSelectConfig),
         };
         this.editor = new FontSelect(host, options);
         host.addEventListener('fontchange', (e) => {

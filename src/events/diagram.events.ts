@@ -17,6 +17,7 @@ export const DIAGRAM_NODE_ADDED_EVENT = "node-added";
 export const DIAGRAM_NODE_DELETED_EVENT = "node-deleted";
 export const DIAGRAM_NODE_MOVED_EVENT = "node-moved";
 export const DIAGRAM_NODE_RESIZED_EVENT = "node-resized";
+export const DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT = "node-geometry-altered";
 export const DIAGRAM_NODE_POINTS_CHANGED_EVENT = "node-points-changed";
 export const DIAGRAM_CONNECTION_CONNECTED_EVENT = "connection-connected";
 export const DIAGRAM_CONNECTION_DISCONNECTED_EVENT = "connection-disconnected";

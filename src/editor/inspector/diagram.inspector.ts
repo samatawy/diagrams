@@ -1,7 +1,7 @@
 import type { INode } from "../../interfaces";
 import type { DiagramView } from "../../view";
 import { DiagramEditView } from "../../editview";
-import { DIAGRAM_CHANGED_EVENT, DIAGRAM_SELECTION_EVENT } from "../../events";
+import { DIAGRAM_CHANGED_EVENT, DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, DIAGRAM_NODE_POINTS_CHANGED_EVENT, DIAGRAM_SELECTION_EVENT } from "../../events";
 import { DiagramConstants } from "../../model/diagram.constants";
 
 import { Inspector, type InspectorConfig, type InspectorPropertyDefinition, type EditableRecord } from "./inspector";
@@ -40,6 +40,7 @@ export class DiagramInspector extends Inspector {
     protected inspectorConfig: DiagramInspectorConfig;
 
     private geometryGrid?: HTMLElement;
+    private metaGrid?: HTMLElement;
 
     constructor(target: HTMLElement, diagram: DiagramView, config: DiagramInspectorConfig = {}) {
         super(target, config);
@@ -87,7 +88,7 @@ export class DiagramInspector extends Inspector {
 
         const { grid: geometry } = this.buildSection('Geometry');
         this.geometryGrid = geometry;
-        this.addRow(geometry, { key: 'angle', label: 'Angle', type: 'number', editor: 'Angle', readonly: readonly });
+        this.addRow(geometry, { key: 'angle', label: 'Angle', type: 'number', editor: 'Angle', editorOptions: { precision: 4 }, readonly: readonly });
 
         const { grid: text } = this.buildSection('Text');
         this.addRow(text, { key: 'text', label: 'Content', type: 'string', readonly: readonly });
@@ -203,7 +204,7 @@ export class DiagramInspector extends Inspector {
         });
 
         const { grid: meta } = this.buildSection('Metadata');
-        this.addRow(meta, { key: 'meta', label: 'Meta', type: 'string', readonly: readonly });
+        this.metaGrid = meta;
     }
 
     protected override onAdapterValueChanged(def: InspectorPropertyDefinition, value: unknown): void {
@@ -218,12 +219,16 @@ export class DiagramInspector extends Inspector {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.addEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
         source?.addEventListener(DIAGRAM_SELECTION_EVENT, this.onDiagramSelectionChanged);
+        source?.addEventListener(DIAGRAM_NODE_POINTS_CHANGED_EVENT, this.onDiagramSelectionChanged);
+        source?.addEventListener(DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, this.onDiagramSelectionChanged);
     }
 
     protected unbindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.removeEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
         source?.removeEventListener(DIAGRAM_SELECTION_EVENT, this.onDiagramSelectionChanged);
+        source?.removeEventListener(DIAGRAM_NODE_POINTS_CHANGED_EVENT, this.onDiagramSelectionChanged);
+        source?.removeEventListener(DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, this.onDiagramSelectionChanged);
     }
 
     protected onDiagramChanged = (): void => {
@@ -231,7 +236,7 @@ export class DiagramInspector extends Inspector {
     }
 
     protected onDiagramSelectionChanged = (): void => {
-        this.syncPointRows(this.diagram.selection());
+        this.syncDynamicRows(this.diagram.selection());
         this.refresh();
     }
 
@@ -283,12 +288,12 @@ export class DiagramInspector extends Inspector {
         }
     }
 
-    private syncPointRows(selected: INode[]): void {
-        if (!this.geometryGrid) {
+    private syncDynamicRows(selected: INode[]): void {
+        if (!this.geometryGrid || !this.metaGrid) {
             return;
         }
 
-        const removed = this.removeVolatileRowsFromGrid(this.geometryGrid);
+        const removed = this.removeVolatileRowsFromGrid(this.host);
         for (const key of removed) {
             this.cells.delete(key);
             this.adapters.get(key)?.destroy();
@@ -298,6 +303,16 @@ export class DiagramInspector extends Inspector {
         const pointDefs = this.buildPointRowDefinitions(selected);
         for (const def of pointDefs) {
             this.addRow(this.geometryGrid, def);
+        }
+
+        const geometryDefs = this.buildGeometryRowDefinitions(selected);
+        for (const def of geometryDefs) {
+            this.addRow(this.geometryGrid, def);
+        }
+
+        const metaDefs = this.buildMetaRowDefinitions(selected);
+        for (const def of metaDefs) {
+            this.addRow(this.metaGrid, def);
         }
     }
 
@@ -326,9 +341,80 @@ export class DiagramInspector extends Inspector {
             label: index === 0 ? 'Points' : '\u00A0',
             type: 'object',
             editor: 'Point',
+            editorOptions: { precision: 2 },
             readonly: this.readonly,
             volatile: true,
         }));
+    }
+
+    private buildGeometryRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
+        const keys = this.collectFlatRecordKeys(selected, 'geometry');
+        return keys.map((key) => {
+            const type = this.resolveFlatValueType(selected, 'geometry', key);
+            return {
+                key: `geometry.${key}`,
+                label: key.length ? `${key[0]!.toUpperCase()}${key.slice(1)}` : key,
+                type,
+                editorOptions: type === 'number' ? { precision: 4 } : undefined,
+                readonly: this.readonly,
+                volatile: true,
+            };
+        });
+    }
+
+    private buildMetaRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
+        const keys = this.collectFlatRecordKeys(selected, 'meta');
+        return keys.map((key) => ({
+            key: `meta.${key}`,
+            label: key,
+            type: this.resolveFlatValueType(selected, 'meta', key),
+            readonly: this.readonly,
+            volatile: true,
+        }));
+    }
+
+    private collectFlatRecordKeys(selected: INode[], container: 'geometry' | 'meta'): string[] {
+        const keySet = new Set<string>();
+        for (const node of selected) {
+            const record = (node as any)[container];
+            if (!record || typeof record !== 'object' || Array.isArray(record)) {
+                continue;
+            }
+
+            for (const [key, value] of Object.entries(record as Record<string, unknown>)) {
+                if (this.isFlatEditableValue(value)) {
+                    keySet.add(key);
+                }
+            }
+        }
+
+        return [...keySet].sort();
+    }
+
+    private resolveFlatValueType(selected: INode[], container: 'geometry' | 'meta', key: string): 'string' | 'number' | 'boolean' {
+        for (const node of selected) {
+            const record = (node as any)[container] as Record<string, unknown> | undefined;
+            const value = record?.[key];
+            if (!this.isFlatEditableValue(value)) {
+                continue;
+            }
+
+            if (typeof value === 'number') {
+                return 'number';
+            }
+
+            if (typeof value === 'boolean') {
+                return 'boolean';
+            }
+
+            return 'string';
+        }
+
+        return 'string';
+    }
+
+    private isFlatEditableValue(value: unknown): value is string | number | boolean {
+        return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
     }
 
     private applyInspectorChange(key: string, value: unknown): void {
@@ -511,6 +597,7 @@ export class DiagramInspector extends Inspector {
             type: n.type,
             angle: n.angle,
             points: n.points,
+            geometry: n.geometry,
             strokeStyle: n.strokeStyle,
             fillStyle: n.fillStyle,
             lineWidth: n.lineWidth,
