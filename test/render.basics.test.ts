@@ -56,7 +56,6 @@ describe('RenderBasics', () => {
             textBaseline: 'middle',
             fontFace: 'Tahoma',
             fontSize: 16,
-            // font: '16px Tahoma',
             strokeStyle: '#334155',
             textColor: '#000000',
             owner,

@@ -70,7 +70,7 @@ const DIAGRAM_EDITOR_STYLES = `
     height: 100%;
     min-height: 0;
     box-sizing: border-box;
-    font-family: var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font-family: var(--diagram-ui-font-family, system-ui);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
 }
 .diagram-editor-header {
@@ -134,7 +134,7 @@ const DIAGRAM_EDITOR_STYLES = `
     align-items: center;
     gap: var(--diagram-ui-toolbar-gap, 6px);
     margin-inline-start: 4px;
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
     color: var(--diagram-ui-text-muted, #475569);
 }
 .diagram-editor-shadow-enable-label {
@@ -142,7 +142,7 @@ const DIAGRAM_EDITOR_STYLES = `
     align-items: normal;
     gap: var(--diagram-ui-control-gap, 4px);
     margin-inline-start: 4px;
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
     color: var(--diagram-ui-text-muted, #475569);
     cursor: pointer;
     user-select: none;

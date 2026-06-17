@@ -102,7 +102,7 @@ const DEFAULTS: Required<DiagramTheme> = {
     accent: '#0f766e',
     accentContrast: '#ffffff',
     shadowColor: 'rgba(15, 23, 42, 0.18)',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    fontFamily: "system-ui",
     fontSize: '12px',
     labelFontSize: '11px',
     transitionFast: '100ms ease',

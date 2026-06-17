@@ -91,7 +91,7 @@ const TOOLBAR_DEFAULT_STYLES = `
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     cursor: pointer;
     color: var(--diagram-ui-text-muted, #334155);
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
     line-height: 0;
     flex-shrink: 0;
     transition: border-color var(--diagram-ui-transition-fast, 100ms ease), background-color var(--diagram-ui-transition-fast, 100ms ease), color var(--diagram-ui-transition-fast, 100ms ease);

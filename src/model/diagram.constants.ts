@@ -98,7 +98,7 @@ export class DiagramConstants {
         DEFAULT_NODE_TEXT_ALIGN: 'center',
         DEFAULT_NODE_TEXT_BASELINE: 'middle',
         DEFAULT_NODE_CORNER_RADIUS: 5,
-        DEFAULT_NODE_FONT: '16px sans-serif',
+        DEFAULT_NODE_FONT: '16px system-ui',
         DEFAULT_NODE_FONT_SIZE: 16,
         DEFAULT_TEXT_PADDING: 4,
         DEFAULT_NODE_LINE_WIDTH: 1,

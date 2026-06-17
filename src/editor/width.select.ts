@@ -87,7 +87,7 @@ const DEFAULT_STYLES = `
     border-radius: var(--diagram-ui-control-radius, 10px);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     color: var(--diagram-ui-text, #1f2937);
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
 }
 .line-width-control .color-preset-trigger::after {
 	content: '▾';
@@ -112,7 +112,7 @@ const DEFAULT_STYLES = `
 	overflow: visible;
 }
 .line-width-control .color-preset-label {
-	font: 600 var(--diagram-ui-label-font-size, 11px)/1.1 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+	font: 600 var(--diagram-ui-label-font-size, 11px)/1.1 var(--diagram-ui-font-family, system-ui);
 	color: var(--diagram-ui-text-muted, #334155);
 	text-transform: lowercase;
 	justify-self: end;

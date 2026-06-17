@@ -59,11 +59,18 @@ const DEFAULT_STYLES = `
 .inspector {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     width: 300px;
     min-width: 300px;
+    --inspector-base: 15, 118, 110;
+    --inspector-header-bg: rgba(var(--inspector-base), 0.14);
+    --inspector-header-border: rgba(var(--inspector-base), 0.34);
+    --inspector-label-bg: rgba(var(--inspector-base), 0.08);
+    --inspector-value-bg: rgba(var(--inspector-base), 0.03);
+    --inspector-caret-ease: cubic-bezier(0.2, 0.75, 0.25, 1);
     gap: var(--diagram-ui-group-gap, 4px);
     padding: var(--diagram-ui-panel-padding, 6px);
-    font: var(--diagram-ui-font-size, 12px)/1.4 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: var(--diagram-ui-font-size, 12px)/1.4 var(--diagram-ui-font-family, system-ui);
     color: var(--diagram-ui-text, #1f2937);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     overflow-y: auto;
@@ -74,7 +81,18 @@ const DEFAULT_STYLES = `
 .inspector .inspector-section {
     display: flex;
     flex-direction: column;
+    flex: 0 0 auto;
     gap: 0;
+}
+
+/* Collapsible body wrapper — uses grid-template-rows so overflow can be cleared after expand */
+.inspector .inspector-section-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.26s var(--inspector-caret-ease);
+}
+.inspector .inspector-section.is-collapsed .inspector-section-body {
+    grid-template-rows: 0fr;
 }
 
 /* Section heading */
@@ -82,26 +100,27 @@ const DEFAULT_STYLES = `
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 4px 0 4px 2px;
-    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
-    color: var(--diagram-ui-text-muted, #334155);
+    padding: 6px 8px;
+    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
+    color: rgba(var(--inspector-base), 1);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    border-bottom: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.1));
-    margin-bottom: 4px;
+    border: var(--diagram-ui-border-width, 1px) solid var(--inspector-header-border);
+    background: var(--inspector-header-bg);
+    margin-bottom: 0;
     cursor: default;
     user-select: none;
+    transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease;
 }
 .inspector .inspector-heading::before {
     content: '▾';
     font-size: 9px;
-    transition: transform 0.15s;
+    transform: rotate(0deg);
+    transform-origin: 50% 50%;
+    transition: transform 0.26s var(--inspector-caret-ease);
 }
 .inspector .inspector-section.is-collapsed .inspector-heading::before {
     transform: rotate(-90deg);
-}
-.inspector .inspector-section.is-collapsed .inspector-grid {
-    display: none;
 }
 
 /* Two-column property grid */
@@ -111,7 +130,18 @@ const DEFAULT_STYLES = `
     row-gap: 2px;
     column-gap: var(--diagram-ui-control-gap, 8px);
     align-items: center;
-    padding: 2px 0;
+    padding: 6px 6px;
+    background: color-mix(in srgb, var(--inspector-value-bg) 60%, white 40%);
+    border-top: none;
+    min-height: 0;
+    opacity: 1;
+    transition: opacity 0.22s ease, padding 0.26s var(--inspector-caret-ease);
+}
+
+.inspector .inspector-section.is-collapsed .inspector-grid {
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 /* Row */
@@ -129,15 +159,17 @@ const DEFAULT_STYLES = `
 
 /* Label */
 .inspector .inspector-label {
-    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
-    color: var(--diagram-ui-text-muted, #334155);
+    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
+    color: color-mix(in srgb, rgba(var(--inspector-base), 1) 70%, #0f172a 30%);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 8px 4px;
+    padding: 8px 6px;
     min-height: 26px;
     display: flex;
     align-items: center;
+    border-radius: 6px;
+    background: var(--inspector-label-bg);
 }
 
 /* Value / control cell */
@@ -146,6 +178,9 @@ const DEFAULT_STYLES = `
     align-items: center;
     min-height: 26px;
     position: relative;
+    border-radius: 6px;
+    background: var(--inspector-value-bg);
+    padding: 2px;
 }
 .inspector .inspector-value input[type='text'],
 .inspector .inspector-value input[type='number'] {
@@ -156,7 +191,7 @@ const DEFAULT_STYLES = `
     border-radius: var(--diagram-ui-control-radius, 6px);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     color: var(--diagram-ui-text, #1f2937);
-    font: var(--diagram-ui-font-size, 12px)/1.4 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: var(--diagram-ui-font-size, 12px)/1.4 var(--diagram-ui-font-family, system-ui);
     outline: none;
     appearance: none;
 }
@@ -245,7 +280,7 @@ const DEFAULT_STYLES = `
     margin-top: 6px;
     padding: 4px 2px;
     color: var(--diagram-ui-text-muted, #64748b);
-    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
     letter-spacing: 0.02em;
     text-transform: uppercase;
 }
@@ -508,12 +543,29 @@ export class Inspector {
         const h = document.createElement('div');
         setClasses(h, DEFAULT_CONFIG.headingClassName, this.config.headingClassName);
         h.textContent = heading;
-        h.addEventListener('click', () => section.classList.toggle('is-collapsed'));
         section.appendChild(h);
+
+        const body = document.createElement('div');
+        body.className = 'inspector-section-body';
+        section.appendChild(body);
 
         const grid = document.createElement('div');
         setClasses(grid, DEFAULT_CONFIG.gridClassName, this.config.gridClassName);
-        section.appendChild(grid);
+        body.appendChild(grid);
+
+        h.addEventListener('click', () => {
+            const collapsing = !section.classList.contains('is-collapsed');
+            if (collapsing) {
+                body.style.overflow = 'hidden';
+                section.classList.add('is-collapsed');
+            } else {
+                body.style.overflow = 'hidden';
+                section.classList.remove('is-collapsed');
+                body.addEventListener('transitionend', () => {
+                    body.style.overflow = '';
+                }, { once: true });
+            }
+        });
 
         this.host.appendChild(section);
         return { section, grid };

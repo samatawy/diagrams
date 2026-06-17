@@ -43,7 +43,7 @@ const DEFAULT_STYLES = `
 .integer-range-select .integer-range-select-value {
     min-width: 28px;
     text-align: right;
-    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
     color: var(--diagram-ui-text-muted, #334155);
 }
 .integer-range-select--disabled .integer-range-select-value {

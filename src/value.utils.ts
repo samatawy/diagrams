@@ -11,7 +11,7 @@ export function textBaseline(node: INode): ITextBaseline {
 }
 
 export function nodeFontFace(node: INode): string {
-    return node.fontFace || 'system';   //'16px sans-serif';
+    return node.fontFace || 'system';
 }
 
 export function nodeFontSize(node: INode): number {

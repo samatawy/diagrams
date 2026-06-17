@@ -55,7 +55,7 @@ const DEFAULT_STYLES = `
     align-items: center;
     justify-content: center;
     line-height: 0;
-    font: 600 var(--diagram-ui-font-size, 13px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: 600 var(--diagram-ui-font-size, 13px)/1.2 var(--diagram-ui-font-family, system-ui);
     color: var(--diagram-ui-text-muted, #334155);
     cursor: pointer;
     transition: border-color var(--diagram-ui-transition-fast, 100ms ease), background-color var(--diagram-ui-transition-fast, 100ms ease), color var(--diagram-ui-transition-fast, 100ms ease);

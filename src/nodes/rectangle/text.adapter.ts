@@ -27,4 +27,11 @@ export class TextAdapter extends RectangleAdapter {
         context.restore();
     }
 
+    public onCreateDraft(tool: string): Partial<INode> | undefined {
+        return {
+            type: this.name,
+            points: [{ x: 0, y: 0 }, { x: 64, y: 64 }],
+            text: 'Text',
+        }
+    }
 }

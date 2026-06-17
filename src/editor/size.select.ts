@@ -87,7 +87,7 @@ const DEFAULT_STYLES = `
     border-radius: var(--diagram-ui-control-radius, 10px);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     color: var(--diagram-ui-text, #1f2937);
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
 }
 .size-select-control .color-preset-trigger::after {
     content: '▾';
@@ -101,7 +101,7 @@ const DEFAULT_STYLES = `
     border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
 }
 .size-select-preview {
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
     color: var(--diagram-ui-text, #1f2937);
     white-space: nowrap;
 }

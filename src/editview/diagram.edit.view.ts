@@ -796,7 +796,6 @@ export class DiagramEditView extends DiagramView {
 
         for (let node of this.selection()) {
             node.fontFace = face;
-            //     node.font = this.settings.fontSize + 'px ' + this.settings.fontFace;
         }
         this.render('all');
         this.renderPreview();
@@ -816,7 +815,6 @@ export class DiagramEditView extends DiagramView {
 
         for (let node of this.selection()) {
             node.fontSize = size;
-            //     node.font = this.settings.fontSize + 'px ' + this.settings.fontFace;
         }
         this.render('all');
         this.renderPreview();
@@ -2654,12 +2652,11 @@ export class DiagramEditView extends DiagramView {
             type: tool,
             points,
             hollow,
-            text: tool === 'text' ? (this.nodeText || 'New Text') : (this.nodeText || ''),
+            text: tool === 'text' ? 'Text' : '', // tool === 'text' ? (this.nodeText || 'New Text') : (this.nodeText || ''),
             textAlign: this.textAlign,
             textBaseline: this.textBaseline,
             fontFace: this.fontFace,
             fontSize: this.fontSize,
-            // font: `${this.fontSize}px ${this.fontFace}`,
             ready: false,
             strokeStyle: this.strokeColor,
             fillStyle,
@@ -2838,8 +2835,6 @@ export class DiagramEditView extends DiagramView {
         const pan = this.coordinates.pan;
         const fontFace = node.fontFace || this.fontFace;
         const fontSize = node.fontSize || this.fontSize;
-        // const font = node.font || `${this.fontSize}px ${this.fontFace}`;
-        // const parsedFontSize = Math.max(1, parseFloat(font.split('px')[0] || `${this.fontSize}`) || this.fontSize);
         const scaledFontSize = Math.max(1, fontSize * zoom);
         const scaledLineHeight = Math.max(scaledFontSize * 1.25, 1);
         const singleLine = this.isConnectorType(node.type);
@@ -2933,20 +2928,18 @@ export class DiagramEditView extends DiagramView {
         textarea.style.height = `${editorHeight}px`;
         textarea.style.boxSizing = 'border-box';
         textarea.style.margin = '0';
-        textarea.style.padding = '0';       // singleLine ? '0' : '0 2px';
+        textarea.style.padding = '0';
         textarea.style.border = 'none'; '2px dotted currentColor';
         textarea.style.outline = 'none';
-        // textarea.style.borderRadius = '2px';
         textarea.style.resize = 'none';
         textarea.style.overflow = 'hidden';
         textarea.style.whiteSpace = singleLine ? 'nowrap' : 'pre-wrap';
         textarea.style.background = 'transparent';
-        textarea.style.color = strokeStyle(node);   //.strokeStyle || '#111827';
+        textarea.style.color = strokeStyle(node);
         textarea.style.caretColor = 'currentColor';
         textarea.style.font = `${scaledFontSize}px ${fontFace}`;
-        // textarea.style.font = font.replace(/\d+(?:\.\d+)?px/, `${scaledFontSize}px`);
         textarea.style.lineHeight = `${scaledLineHeight}px`;
-        textarea.style.textAlign = textAlign(node); // node.textAlign || 'center';
+        textarea.style.textAlign = textAlign(node);
         textarea.style.zIndex = '2147483647';
         textarea.style.cursor = 'text';
 
@@ -3407,14 +3400,7 @@ export class DiagramEditView extends DiagramView {
             const default_size = DiagramConstants.DEFAULT_NODE_FONT_SIZE;
             this.settings.fontFace = shape.fontFace || default_font;
             this.settings.fontSize = shape.fontSize || default_size;
-            // if (shape.font) {
-            //     let fparts = shape.font.split('px');
-            //     this.settings.fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || default_size : default_size;
-            //     this.settings.fontFace = (fparts.length > 1) ? fparts[1]!.trim() || default_font : default_font;
-            // } else {
-            //     this.settings.fontSize = default_size;
-            //     this.settings.fontFace = default_font;
-            // }
+
             this.settings.nodeText = shape.text || '';
 
             this.settings.shadowStyle = shape.shadowStyle ?? DiagramConstants.NO_SHADOW;

@@ -56,7 +56,7 @@ const STYLES = `
     background: #ffffff;
     color: #1f2937;
     box-shadow: 0 16px 48px rgba(15, 23, 42, 0.28);
-    font: 500 13px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font: 500 13px/1.45 system-ui;
 }
 .diagram-prompt-head {
     display: grid;
@@ -76,7 +76,7 @@ const STYLES = `
 }
 .diagram-prompt h3 {
     margin: 0 0 6px;
-    font: 700 15px/1.3 -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font: 700 15px/1.3 system-ui;
     color: #0f172a;
 }
 .diagram-prompt p {
@@ -95,7 +95,7 @@ const STYLES = `
     background: #ffffff;
     color: #334155;
     padding: 6px 11px;
-    font: 600 12px/1.1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    font: 600 12px/1.1 system-ui;
     cursor: pointer;
 }
 .diagram-prompt-actions button:hover {
