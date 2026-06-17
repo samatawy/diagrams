@@ -1,40 +1,38 @@
 import type { DiagramView } from '../../view/diagram.view';
 import { DiagramEditView } from '../../editview/diagram.edit.view';
 import {
-    type DiagramToolBarLayoutItem,
-    DIAGRAM_VIEW_TOOLBAR_LAYOUT,
-    DIAGRAM_ZOOM_TOOLBAR_LAYOUT,
-    DIAGRAM_ZORDER_TOOLBAR_LAYOUT,
-    DIAGRAM_CLIPBOARD_TOOLBAR_LAYOUT,
-    DIAGRAM_ALIGN_TOOLBAR_LAYOUT,
-} from '../buttons/diagram.toolbar.layouts';
-import { ACTION_MAP } from '../buttons/diagram.actions';
+    DIAGRAM_VIEW_ACTION_LAYOUT,
+    DIAGRAM_ZOOM_ACTION_LAYOUT,
+    DIAGRAM_ZORDER_ACTION_LAYOUT,
+    DIAGRAM_CLIPBOARD_ACTION_LAYOUT,
+    DIAGRAM_ALIGN_ACTION_LAYOUT,
+} from '../diagram.action.layouts';
+
+import { ACTION_MAP, type DiagramActionId } from '../diagram.actions';
 import { IconRegistry } from '../../factory/icon.registry';
 import { ContextMenu, type ContextMenuConfig } from './context.menu';
 
 /**
  * Layout shown when nothing is selected: grid/guides toggles, zoom/fit, and paste.
  */
-const EMPTY_SELECTION_LAYOUT: DiagramToolBarLayoutItem[] = [
+const EMPTY_SELECTION_LAYOUT: DiagramActionId[] = [
     'paste',
     '|',
-    ...DIAGRAM_VIEW_TOOLBAR_LAYOUT,
+    ...DIAGRAM_VIEW_ACTION_LAYOUT,
     '|',
-    ...DIAGRAM_ZOOM_TOOLBAR_LAYOUT,
+    ...DIAGRAM_ZOOM_ACTION_LAYOUT,
 ];
 
 /**
  * Layout shown when one or more nodes are selected.
  * Actions are filtered to only those enabled for the current selection.
  */
-const HAS_SELECTION_LAYOUT: DiagramToolBarLayoutItem[] = [
-    ...DIAGRAM_CLIPBOARD_TOOLBAR_LAYOUT,
+const HAS_SELECTION_LAYOUT: DiagramActionId[] = [
+    ...DIAGRAM_CLIPBOARD_ACTION_LAYOUT,
     '|',
-    ...DIAGRAM_ZORDER_TOOLBAR_LAYOUT,
+    ...DIAGRAM_ZORDER_ACTION_LAYOUT,
     '|',
-    ...DIAGRAM_ALIGN_TOOLBAR_LAYOUT,
-    // '|',
-    // ...DIAGRAM_TEXT_ALIGN_TOOLBAR_LAYOUT,
+    ...DIAGRAM_ALIGN_ACTION_LAYOUT,
 ];
 
 /**
@@ -44,12 +42,12 @@ export interface DiagramContextMenuConfig extends ContextMenuConfig {
     /**
      * Layout used when nothing is selected. Defaults to view, zoom, and paste actions.
      */
-    emptyLayout?: DiagramToolBarLayoutItem[];
+    emptyLayout?: DiagramActionId[];
     /**
      * Layout used when one or more nodes are selected.
      * Only enabled actions are shown. Defaults to clipboard, z-order, align, and text-align actions.
      */
-    selectionLayout?: DiagramToolBarLayoutItem[];
+    selectionLayout?: DiagramActionId[];
 }
 
 /**
@@ -67,8 +65,8 @@ export interface DiagramContextMenuConfig extends ContextMenuConfig {
 export class DiagramContextMenu extends ContextMenu {
 
     private readonly diagram: DiagramView;
-    private readonly emptyLayout: DiagramToolBarLayoutItem[];
-    private readonly selectionLayout: DiagramToolBarLayoutItem[];
+    private readonly emptyLayout: DiagramActionId[];
+    private readonly selectionLayout: DiagramActionId[];
 
     /**
      * Creates a new DiagramContextMenu.
@@ -111,7 +109,7 @@ export class DiagramContextMenu extends ContextMenu {
      * Renders a list of action IDs into menu items, collapsing redundant separators
      * and skipping disabled actions.
      */
-    private addActions(layout: DiagramToolBarLayoutItem[], editView: DiagramEditView | null): void {
+    private addActions(layout: DiagramActionId[], editView: DiagramEditView | null): void {
         let pendingSeparator = false;
         let anyAdded = false;
 

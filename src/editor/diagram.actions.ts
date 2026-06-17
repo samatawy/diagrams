@@ -1,14 +1,24 @@
-import type { DiagramEditView } from '../../editview/diagram.edit.view';
-import { NodeRegistry } from '../../factory';
-import { IconRegistry } from '../../factory/icon.registry';
-import { isConnection, isConnectionNode } from '../../guards';
-import type { DiagramToolBarLayoutItem } from './diagram.toolbar.layouts';
+import type { DiagramEditView } from '../editview/diagram.edit.view';
+import { NodeRegistry } from '../factory';
+import { isConnection, isConnectionNode } from '../guards';
+
+/**
+ * Available built-in diagram actions. These can be used in the toolbar layout, context menu, etc.
+ */
+export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
+    'show-grid' | 'snap-grid' | 'show-guides' | 'snap-guides' |
+    'zoom-in' | 'zoom-out' | 'fit-width' | 'fit-all' |
+    'undo' | 'redo' |
+    'front' | 'back' |
+    'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' |
+    'align-left' | 'align-center' | 'align-right' | 'align-top' | 'align-middle' | 'align-bottom' | 'distribute-h' | 'distribute-v' |
+    'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom';
 
 export interface DiagramAction {
     /**
      * Unique identifier for the action. This is used to reference the action in the toolbar.
      */
-    id: DiagramToolBarLayoutItem;
+    id: DiagramActionId;
     /**
      * Optional label for the action. This is used for accessibility and tooltips.
      */
@@ -87,14 +97,14 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Bring to Front',
         tooltip: 'Bring to front',
         execute: (d) => d.bringSelectionToFront(),
-        isEnabled: (d) => d.selection().some(n => !isConnection(n)),
+        isEnabled: (d) => d.selection().some((n) => !isConnection(n)),
     },
     {
         id: 'back',
         label: 'Send to Back',
         tooltip: 'Send to back',
         execute: (d) => d.sendSelectionToBack(),
-        isEnabled: (d) => d.selection().some(n => !isConnection(n)),
+        isEnabled: (d) => d.selection().some((n) => !isConnection(n)),
     },
     {
         id: 'duplicate',
@@ -195,8 +205,8 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to left edges',
         toggle: true,
         execute: (d) => d.setTextAlign('left'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every(n => n.textAlign === 'left'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => NodeRegistry.adapter(n.type)?.has_text),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => n.textAlign === 'left'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
     },
     {
         id: 'text-center',
@@ -204,8 +214,8 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to horizontal centers',
         toggle: true,
         execute: (d) => d.setTextAlign('center'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every(n => n.textAlign === 'center'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => NodeRegistry.adapter(n.type)?.has_text),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => n.textAlign === 'center'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
     },
     {
         id: 'text-right',
@@ -213,8 +223,8 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to right edges',
         toggle: true,
         execute: (d) => d.setTextAlign('right'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every(n => n.textAlign === 'right'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => NodeRegistry.adapter(n.type)?.has_text),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => n.textAlign === 'right'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
     },
     {
         id: 'text-top',
@@ -222,8 +232,8 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to top edges',
         toggle: true,
         execute: (d) => d.setTextBaseline('top'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every(n => !isConnectionNode(n) && n.textBaseline === 'top'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && n.textBaseline === 'top'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
     },
     {
         id: 'text-middle',
@@ -231,8 +241,8 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to vertical centers',
         toggle: true,
         execute: (d) => d.setTextBaseline('middle'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every(n => !isConnectionNode(n) && n.textBaseline === 'middle'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && n.textBaseline === 'middle'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
     },
     {
         id: 'text-bottom',
@@ -240,8 +250,8 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to bottom edges',
         toggle: true,
         execute: (d) => d.setTextBaseline('bottom'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every(n => !isConnectionNode(n) && n.textBaseline === 'bottom'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some(n => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && n.textBaseline === 'bottom'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
     },
 
     // Align nodes
@@ -250,56 +260,56 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Align Left',
         tooltip: 'Align left edges',
         execute: (d) => d.alignSelected('left'),
-        isEnabled: (d) => d.selection().filter(n => !isConnectionNode(n)).length > 1,
+        isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length > 1,
     },
     {
         id: 'align-center',
         label: 'Align Center',
         tooltip: 'Align horizontal centers',
         execute: (d) => d.alignSelected('center'),
-        isEnabled: (d) => d.selection().filter(n => !isConnectionNode(n)).length > 1,
+        isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length > 1,
     },
     {
         id: 'align-right',
         label: 'Align Right',
         tooltip: 'Align right edges',
         execute: (d) => d.alignSelected('right'),
-        isEnabled: (d) => d.selection().filter(n => !isConnectionNode(n)).length > 1,
+        isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length > 1,
     },
     {
         id: 'align-top',
         label: 'Align Top',
         tooltip: 'Align top edges',
         execute: (d) => d.alignSelected('top'),
-        isEnabled: (d) => d.selection().filter(n => !isConnectionNode(n)).length > 1,
+        isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length > 1,
     },
     {
         id: 'align-middle',
         label: 'Align Middle',
         tooltip: 'Align vertical centers',
         execute: (d) => d.alignSelected('middle'),
-        isEnabled: (d) => d.selection().filter(n => !isConnectionNode(n)).length > 1,
+        isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length > 1,
     },
     {
         id: 'align-bottom',
         label: 'Align Bottom',
         tooltip: 'Align bottom edges',
         execute: (d) => d.alignSelected('bottom'),
-        isEnabled: (d) => d.selection().filter(n => !isConnectionNode(n)).length > 1,
+        isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length > 1,
     },
     {
         id: 'distribute-h',
         label: 'Distribute Horizontally',
         tooltip: 'Distribute spacing horizontally',
         execute: (d) => d.spreadSelected('row'),
-        isEnabled: (d) => d.selection().filter(n => !isConnectionNode(n)).length >= 3,
+        isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length >= 3,
     },
     {
         id: 'distribute-v',
         label: 'Distribute Vertically',
         tooltip: 'Distribute spacing vertically',
         execute: (d) => d.spreadSelected('column'),
-        isEnabled: (d) => d.selection().filter(n => !isConnectionNode(n)).length >= 3,
+        isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length >= 3,
     },
 ];
 

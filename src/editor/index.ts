@@ -7,14 +7,19 @@ export * from './inputs/integer.range.select';
 export * from './inputs/arrow.select';
 export * from './prompt.dialog';
 
-// Bound components
+// Theming
+export * from './theme.registry';
+
+// Actions
+export * from './diagram.actions';
+export * from './diagram.action.layouts';
+
+// Button components
 export * from './buttons/tool.palette';
 export * from './buttons/toolbar';
 export * from './buttons/diagram.toolbar';
-export * from './buttons/diagram.toolbar.layouts';
-export * from './buttons/diagram.actions';
 
-// Menus
+// Menu components
 export * from './menus/context.menu';
 export * from './menus/diagram.context.menu';
 
@@ -26,6 +31,3 @@ export * from './inspector/text.input.adapter';
 
 // Editor component
 export * from './diagram.editor';
-
-// Theming
-export * from './theme.registry';

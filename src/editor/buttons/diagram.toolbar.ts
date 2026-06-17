@@ -2,8 +2,30 @@ import type { DiagramEditView } from '../../editview/diagram.edit.view';
 import { DIAGRAM_CHANGED_EVENT, DIAGRAM_CLIPBOARD_EVENT } from '../../events/diagram.events';
 import { IconRegistry } from '../../factory/icon.registry';
 import { Toolbar, type ToolbarConfig } from './toolbar';
-import { DEFAULT_DIAGRAM_TOOLBAR_LAYOUT, type DiagramToolBarLayoutItem } from './diagram.toolbar.layouts';
-import { type DiagramAction, ACTION_MAP, DIAGRAM_ACTIONS } from './diagram.actions';
+
+import { type DiagramAction, type DiagramActionId, ACTION_MAP } from '../diagram.actions';
+import { DIAGRAM_ALIGN_ACTION_LAYOUT, DIAGRAM_CLIPBOARD_ACTION_LAYOUT, DIAGRAM_FILE_ACTION_LAYOUT, DIAGRAM_HISTORY_ACTION_LAYOUT, DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT, DIAGRAM_VIEW_ACTION_LAYOUT, DIAGRAM_ZOOM_ACTION_LAYOUT, DIAGRAM_ZORDER_ACTION_LAYOUT } from '../diagram.action.layouts';
+
+
+const DIAGRAM_FULL_TOOLBAR_LAYOUT: DiagramActionId[] = [
+    ...DIAGRAM_FILE_ACTION_LAYOUT,
+    '|',
+    ...DIAGRAM_VIEW_ACTION_LAYOUT,
+    '|',
+    ...DIAGRAM_ZOOM_ACTION_LAYOUT,
+    '|',
+    ...DIAGRAM_HISTORY_ACTION_LAYOUT,
+    '|',
+    ...DIAGRAM_ZORDER_ACTION_LAYOUT,
+    '|',
+    ...DIAGRAM_CLIPBOARD_ACTION_LAYOUT,
+    '|',
+    ...DIAGRAM_ALIGN_ACTION_LAYOUT,
+    '|',
+    ...DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT,
+];
+
+const DEFAULT_DIAGRAM_TOOLBAR_LAYOUT = DIAGRAM_FULL_TOOLBAR_LAYOUT;
 
 /**
  * Configuration options for the diagram toolbar.
@@ -15,7 +37,7 @@ export interface DiagramToolBarConfig extends ToolbarConfig {
      * Example: ['undo', 'redo', '|', 'delete', 'copy', 'paste']
      * A default layout will be used if none is provided.
      */
-    layout?: DiagramToolBarLayoutItem[];
+    layout?: DiagramActionId[];
 }
 
 export class DiagramToolBar extends Toolbar {
@@ -138,7 +160,7 @@ export class DiagramToolBar extends Toolbar {
      * @param config The toolbar config.
      * @returns The resolved layout array.
      */
-    protected resolveLayout(config: DiagramToolBarConfig): DiagramToolBarLayoutItem[] {
+    protected resolveLayout(config: DiagramToolBarConfig): DiagramActionId[] {
         return (config.layout?.length ? config.layout : DEFAULT_DIAGRAM_TOOLBAR_LAYOUT);
     }
 }
