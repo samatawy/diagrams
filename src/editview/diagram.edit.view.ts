@@ -1750,6 +1750,10 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
+        if (this.shouldIgnoreGlobalKeydown(event)) {
+            return;
+        }
+
         if (key === 'escape') {
             this.exitDrawing();
             return;

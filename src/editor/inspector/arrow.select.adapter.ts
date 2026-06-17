@@ -1,12 +1,12 @@
 import { ArrowSelect, type ArrowSelectConfig } from "../arrow.select";
-import type { InspectorEditorInit, EditableRecord } from "./inspector";
-import { InspectorValueEditor } from "./inspector";
+import type { InspectorAdapterInit, EditableRecord } from "./inspector";
+import { InspectorAdapter } from "./inspector";
 
-export class ArrowSelectEditor extends InspectorValueEditor {
+export class ArrowSelectAdapter extends InspectorAdapter {
 
     private readonly editor: ArrowSelect;
 
-    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorEditorInit) {
+    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorAdapterInit) {
         super(cell, mixedClassName);
         const host = document.createElement('div');
         host.style.width = '100%';
@@ -15,14 +15,24 @@ export class ArrowSelectEditor extends InspectorValueEditor {
             ...(initial.def.editorOptions as ArrowSelectConfig),
         };
         this.editor = new ArrowSelect(host, options);
-        host.addEventListener('arrowchange', (e) => this.notifyChange((e as CustomEvent<string>).detail));
+        host.addEventListener('arrowchange', (e) => {
+            this.setUnset(false);
+            this.notifyChange((e as CustomEvent<string>).detail);
+        });
     }
 
     override showValue(editable: EditableRecord): void {
         // refresh() passes the already-derived direction string under the row key ('arrow').
         // extractValueFrom() handles deriving direction from startArrow/endArrow in the full record.
-        const explicit = editable['arrow'] ? String(editable['arrow'] ?? 'none') : undefined;
-        if (explicit) {
+        const explicitRaw = editable['arrow'];
+        if (explicitRaw === undefined || explicitRaw === null) {
+            this.setUnset(true);
+            return;
+        }
+
+        const explicit = String(explicitRaw);
+        if (explicit.length > 0) {
+            this.setUnset(false);
             this.editor.value = explicit as any;
             return;
         }
@@ -31,6 +41,7 @@ export class ArrowSelectEditor extends InspectorValueEditor {
         const start = Boolean(editable['startArrow']);
         const end = Boolean(editable['endArrow']);
         const direction = start && end ? 'both' : start ? 'start' : end ? 'end' : 'none';
+        this.setUnset(false);
         this.editor.value = direction;
     }
 

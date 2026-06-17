@@ -1,51 +1,45 @@
 import type { INode } from "../../interfaces";
 import type { DiagramView } from "../../view";
 import { DiagramEditView } from "../../editview";
-import { DIAGRAM_CHANGED_EVENT } from "../../events";
+import { DIAGRAM_CHANGED_EVENT, DIAGRAM_SELECTION_EVENT } from "../../events";
+import { DiagramConstants } from "../../model/diagram.constants";
 
-import { Inspector, InspectorValueEditor, type InspectorConfig, type InspectorPropertyDefinition, type EditableRecord } from "./inspector";
+import { Inspector, type InspectorConfig, type InspectorPropertyDefinition, type EditableRecord } from "./inspector";
 import type { ColorSelectConfig } from "../color.select";
 import type { WidthSelectConfig } from "../width.select";
 import type { ArrowSelectConfig } from "../arrow.select";
 import type { FontSelectConfig } from "../font.select";
 import type { SizeSelectConfig } from "../size.select";
-import { ColorSelectEditor } from "./color.select.editor";
-import { WidthSelectEditor } from "./width.select.editor";
-import { ArrowSelectEditor } from "./arrow.select.editor";
-import { FontSelectEditor } from "./font.select.editor";
-import { SizeSelectEditor } from "./size.select.editor";
-import { AngleEditor } from "./angle.editor";
-import { EnumSelectEditor, type EnumSelectEditorConfig } from "./enum.select.editor";
+import { ColorSelectAdapter } from "./color.select.adapter";
+import { WidthSelectAdapter } from "./width.select.adapter";
+import { ArrowSelectAdapter } from "./arrow.select.adapter";
+import { FontSelectAdapter } from "./font.select.adapter";
+import { SizeSelectAdapter } from "./size.select.adapter";
+import { AngleAdapter } from "./angle.adapter";
+import { EnumSelectAdapter, type EnumSelectAdapterConfig } from "./enum.select.adapter";
+import { PointAdapter } from "./point.adapter";
 
 export type DiagramInspectorConfig = InspectorConfig & {
     colorSelect?: ColorSelectConfig;
     strokeColor?: ColorSelectConfig;
     fillColor?: ColorSelectConfig;
     textColor?: ColorSelectConfig;
+    shadowColor?: ColorSelectConfig;
     widthSelect?: WidthSelectConfig;
     arrowSelect?: ArrowSelectConfig;
     fontSelect?: FontSelectConfig;
     sizeSelect?: SizeSelectConfig;
-    textAlignOptions?: EnumSelectEditorConfig['options'];
-    textBaselineOptions?: EnumSelectEditorConfig['options'];
+    textAlignOptions?: EnumSelectAdapterConfig['options'];
+    textBaselineOptions?: EnumSelectAdapterConfig['options'];
 };
 
 export class DiagramInspector extends Inspector {
 
     protected diagram: DiagramView;
 
-    protected readonly: boolean = false;
-
     protected inspectorConfig: DiagramInspectorConfig;
 
-    // Value cells keyed by property key, for targeted updates.
-    private cells: Map<string, HTMLElement> = new Map();
-
-    // Editor bindings keyed by property key.
-    private editors: Map<string, InspectorValueEditor> = new Map();
-
-    // Prevent feedback loops while pushing model values into controls.
-    private syncingEditors: boolean = false;
+    private geometryGrid?: HTMLElement;
 
     constructor(target: HTMLElement, diagram: DiagramView, config: DiagramInspectorConfig = {}) {
         super(target, config);
@@ -53,7 +47,7 @@ export class DiagramInspector extends Inspector {
         this.inspectorConfig = config;
         this.readonly = !(diagram instanceof DiagramEditView);
 
-        this.registerEditors();
+        this.registerAdapters();
         this.initialize();
         this.bindDiagramEvents();
     }
@@ -63,21 +57,25 @@ export class DiagramInspector extends Inspector {
      */
     public override destroy(): void {
         this.unbindDiagramEvents();
-        for (const editor of this.editors.values()) {
-            editor.destroy();
+        for (const adapter of this.adapters.values()) {
+            adapter.destroy();
         }
-        this.editors.clear();
+        this.adapters.clear();
         super.destroy();
     }
 
-    protected registerEditors(): void {
-        Inspector.registerEditor('ColorSelect', ColorSelectEditor);
-        Inspector.registerEditor('WidthSelect', WidthSelectEditor);
-        Inspector.registerEditor('ArrowSelect', ArrowSelectEditor);
-        Inspector.registerEditor('FontSelect', FontSelectEditor);
-        Inspector.registerEditor('SizeSelect', SizeSelectEditor);
-        Inspector.registerEditor('AngleEditor', AngleEditor);
-        Inspector.registerEditor('EnumSelect', EnumSelectEditor);
+    protected override registerAdapters(): void {
+        super.registerAdapters();
+
+        Inspector.registerAdapter('ColorSelect', ColorSelectAdapter);
+        Inspector.registerAdapter('WidthSelect', WidthSelectAdapter);
+        Inspector.registerAdapter('ArrowSelect', ArrowSelectAdapter);
+        Inspector.registerAdapter('FontSelect', FontSelectAdapter);
+        Inspector.registerAdapter('SizeSelect', SizeSelectAdapter);
+        Inspector.registerAdapter('Angle', AngleAdapter);
+        Inspector.registerAdapter('Point', PointAdapter);
+        Inspector.registerAdapter('AngleEditor', AngleAdapter);
+        Inspector.registerAdapter('EnumSelect', EnumSelectAdapter);
     }
 
     protected initialize(): void {
@@ -88,7 +86,8 @@ export class DiagramInspector extends Inspector {
         this.addRow(identity, { key: 'type', label: 'Type', type: 'string', readonly: true });
 
         const { grid: geometry } = this.buildSection('Geometry');
-        this.addRow(geometry, { key: 'angle', label: 'Angle', type: 'number', editor: 'AngleEditor', readonly: readonly });
+        this.geometryGrid = geometry;
+        this.addRow(geometry, { key: 'angle', label: 'Angle', type: 'number', editor: 'Angle', readonly: readonly });
 
         const { grid: text } = this.buildSection('Text');
         this.addRow(text, { key: 'text', label: 'Content', type: 'string', readonly: readonly });
@@ -123,7 +122,7 @@ export class DiagramInspector extends Inspector {
             editor: 'EnumSelect',
             editorOptions: {
                 options: this.inspectorConfig.textAlignOptions || ['left', 'center', 'right'],
-            } as EnumSelectEditorConfig,
+            } as EnumSelectAdapterConfig,
             readonly: readonly,
         });
         this.addRow(text, {
@@ -133,7 +132,7 @@ export class DiagramInspector extends Inspector {
             editor: 'EnumSelect',
             editorOptions: {
                 options: this.inspectorConfig.textBaselineOptions || ['top', 'middle', 'bottom'],
-            } as EnumSelectEditorConfig,
+            } as EnumSelectAdapterConfig,
             readonly: readonly,
         });
 
@@ -175,34 +174,40 @@ export class DiagramInspector extends Inspector {
         this.addRow(fill, { key: 'img_mode', label: 'Mode', type: 'string', readonly: readonly });
         this.addRow(fill, { key: 'image_id', label: 'Asset ID', type: 'string', readonly: readonly });
 
-        // this.addRow(appearance, { key: 'hollow', label: 'Hollow', type: 'boolean', readonly: readonly });
-        // this.addRow(appearance, { key: 'transparent', label: 'Transparent', type: 'boolean', readonly: readonly });
-        // this.addRow(appearance, { key: 'shadowStyle', label: 'Shadow', type: 'string', readonly: readonly });
+        const { grid: shadow } = this.buildSection('Shadow');
+        this.addRow(shadow, {
+            key: 'shadowStyle.color',
+            label: 'Color',
+            type: 'string',
+            editor: 'ColorSelect',
+            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.shadowColor || {}) },
+            readonly: readonly,
+        });
+        this.addRow(shadow, {
+            key: 'shadowStyle.blur',
+            label: 'Blur',
+            type: 'number',
+            readonly: readonly,
+        });
+        this.addRow(shadow, {
+            key: 'shadowStyle.offset.x',
+            label: 'Offset X',
+            type: 'number',
+            readonly: readonly,
+        });
+        this.addRow(shadow, {
+            key: 'shadowStyle.offset.y',
+            label: 'Offset Y',
+            type: 'number',
+            readonly: readonly,
+        });
 
         const { grid: meta } = this.buildSection('Metadata');
         this.addRow(meta, { key: 'meta', label: 'Meta', type: 'string', readonly: readonly });
     }
 
-    // ============================================================
-    // Private helpers
-    // ============================================================
-
-    /**
-     * Registers a property definition and immediately builds its row in the given grid.
-     * Stores the value cell for targeted updates by refresh().
-     */
-    private addRow(grid: HTMLElement, def: InspectorPropertyDefinition): void {
-        this.defineProperty(def);
-        const cell = this.buildRow(grid, def);
-        const editor = this.buildEditor(cell, def);
-        if (!def.readonly) {
-            editor.setChangeHandler((value) => {
-                if (this.syncingEditors) return;
-                this.applyInspectorChange(def.key, value);
-            });
-        }
-        this.cells.set(def.key, cell);
-        this.editors.set(def.key, editor);
+    protected override onAdapterValueChanged(def: InspectorPropertyDefinition, value: unknown): void {
+        this.applyInspectorChange(def.key, value);
     }
 
     // ============================================================
@@ -212,14 +217,21 @@ export class DiagramInspector extends Inspector {
     protected bindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.addEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
+        source?.addEventListener(DIAGRAM_SELECTION_EVENT, this.onDiagramSelectionChanged);
     }
 
     protected unbindDiagramEvents(): void {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.removeEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
+        source?.removeEventListener(DIAGRAM_SELECTION_EVENT, this.onDiagramSelectionChanged);
     }
 
     protected onDiagramChanged = (): void => {
+        this.refresh();
+    }
+
+    protected onDiagramSelectionChanged = (): void => {
+        this.syncPointRows(this.diagram.selection());
         this.refresh();
     }
 
@@ -228,11 +240,15 @@ export class DiagramInspector extends Inspector {
     // ============================================================
 
     protected refresh(): void {
-        this.syncingEditors = true;
+        this.syncingAdapters = true;
         try {
             const selected = this.diagram.selection();
+
             const values = this.collectNodeValues(selected);
             const colors = this.readonly ? [] : (this.diagram as DiagramEditView).getFrequentColors();
+            const state = this.resolveSelectionState(selected.length, values);
+
+            this.applySelectionState(state);
 
             for (const [key, cell] of this.cells) {
                 const def = this.definitions[key];
@@ -244,32 +260,80 @@ export class DiagramInspector extends Inspector {
                     continue;
                 }
 
-                const editor = this.editors.get(key);
-                if (!editor) {
+                const adapter = this.adapters.get(key);
+                if (!adapter) {
                     continue;
                 }
 
                 if (valueSet.size > 1) {
-                    editor.setMixed?.(true);
+                    adapter.setMixed?.(true);
                 } else {
                     const v = [...valueSet][0];
                     cell.classList.remove(this.config.mixedClassName);
-                    editor.setMixed?.(false);
-                    editor.showValue({ [key]: v });
+                    adapter.setMixed?.(false);
+                    adapter.showValue({ [key]: v });
                 }
 
-                if (editor instanceof ColorSelectEditor) {
-                    (editor as ColorSelectEditor).setColors(colors);
+                if (adapter instanceof ColorSelectAdapter) {
+                    (adapter as ColorSelectAdapter).setColors(colors);
                 }
             }
         } finally {
-            this.syncingEditors = false;
+            this.syncingAdapters = false;
         }
     }
 
+    private syncPointRows(selected: INode[]): void {
+        if (!this.geometryGrid) {
+            return;
+        }
+
+        const removed = this.removeVolatileRowsFromGrid(this.geometryGrid);
+        for (const key of removed) {
+            this.cells.delete(key);
+            this.adapters.get(key)?.destroy();
+            this.adapters.delete(key);
+        }
+
+        const pointDefs = this.buildPointRowDefinitions(selected);
+        for (const def of pointDefs) {
+            this.addRow(this.geometryGrid, def);
+        }
+    }
+
+    private canShowPointRows(selected: INode[]): boolean {
+        if (!selected.length) {
+            return false;
+        }
+
+        const signatures = new Set<string>();
+        for (const node of selected) {
+            const points = Array.isArray((node as any).points) ? (node as any).points as Array<{ x: unknown; y: unknown }> : [];
+            signatures.add(JSON.stringify(points.map((p) => [Number((p as any).x), Number((p as any).y)])));
+        }
+
+        return signatures.size <= 1;
+    }
+
+    private buildPointRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
+        if (!this.canShowPointRows(selected)) {
+            return [];
+        }
+
+        const points = Array.isArray((selected[0] as any).points) ? (selected[0] as any).points as Array<unknown> : [];
+        return points.map((_, index) => ({
+            key: `points.${index}`,
+            label: index === 0 ? 'Points' : '\u00A0',
+            type: 'object',
+            editor: 'Point',
+            readonly: this.readonly,
+            volatile: true,
+        }));
+    }
+
     private applyInspectorChange(key: string, value: unknown): void {
-        const editor = this.editors.get(key);
-        const patch = editor?.getValue();
+        const adapter = this.adapters.get(key);
+        const patch = adapter?.getValue();
         this.applyPatchToSelection(patch, key);
     }
 
@@ -314,11 +378,46 @@ export class DiagramInspector extends Inspector {
         // fill
         if (patch['fillStyle'] !== undefined) edit.settings.fillColor = String(patch['fillStyle']);
 
+        const hasShadowPatch = Object.keys(patch).some((key) => key.startsWith('shadowStyle.'));
+        if (hasShadowPatch) {
+            edit.settings.shadowStyle = this.normalizeShadowStyle(edit.settings.shadowStyle);
+        }
+
         const shadowColor = patch['shadowStyle.color'];
         if (shadowColor !== undefined) {
             edit.settings.shadowStyle = {
                 ...edit.settings.shadowStyle,
                 color: String(shadowColor),
+            };
+        }
+
+        const shadowBlur = patch['shadowStyle.blur'];
+        if (shadowBlur !== undefined) {
+            edit.settings.shadowStyle = {
+                ...edit.settings.shadowStyle,
+                blur: Number(shadowBlur),
+            };
+        }
+
+        const shadowOffsetX = patch['shadowStyle.offset.x'];
+        if (shadowOffsetX !== undefined) {
+            edit.settings.shadowStyle = {
+                ...edit.settings.shadowStyle,
+                offset: {
+                    ...edit.settings.shadowStyle.offset,
+                    x: Number(shadowOffsetX),
+                },
+            };
+        }
+
+        const shadowOffsetY = patch['shadowStyle.offset.y'];
+        if (shadowOffsetY !== undefined) {
+            edit.settings.shadowStyle = {
+                ...edit.settings.shadowStyle,
+                offset: {
+                    ...edit.settings.shadowStyle.offset,
+                    y: Number(shadowOffsetY),
+                },
             };
         }
     }
@@ -327,6 +426,11 @@ export class DiagramInspector extends Inspector {
         const segments = path.split('.').filter((segment) => segment.length > 0);
         if (!segments.length) {
             return;
+        }
+
+        if (segments[0] === 'shadowStyle') {
+            const currentShadow = (target as any)['shadowStyle'];
+            (target as any)['shadowStyle'] = this.normalizeShadowStyle(currentShadow);
         }
 
         let current: any = target;
@@ -340,6 +444,26 @@ export class DiagramInspector extends Inspector {
         }
         const leafKey = segments[segments.length - 1] as string;
         current[leafKey] = value;
+    }
+
+    private normalizeShadowStyle(style: any): { name: string; color: string; blur: number; offset: { x: number; y: number } } {
+        const base = DiagramConstants.NO_SHADOW;
+        const next = style && typeof style === 'object' ? style : {};
+        const offset = next.offset && typeof next.offset === 'object' ? next.offset : {};
+
+        const blur = Number(next.blur);
+        const ox = Number(offset.x);
+        const oy = Number(offset.y);
+
+        return {
+            name: typeof next.name === 'string' && next.name.length > 0 ? next.name : base.name,
+            color: typeof next.color === 'string' ? next.color : base.color,
+            blur: Number.isFinite(blur) ? blur : base.blur,
+            offset: {
+                x: Number.isFinite(ox) ? ox : base.offset.x,
+                y: Number.isFinite(oy) ? oy : base.offset.y,
+            },
+        };
     }
 
     private emitInspectorChanged(key: string): void {
@@ -359,9 +483,9 @@ export class DiagramInspector extends Inspector {
 
     private clearCell(cell: HTMLElement, def: InspectorPropertyDefinition): void {
         cell.classList.remove(this.config.mixedClassName);
-        const editor = this.editors.get(def.key);
-        editor?.setMixed?.(false);
-        editor?.showValue({ [def.key]: undefined });
+        const adapter = this.adapters.get(def.key);
+        adapter?.setMixed?.(false);
+        adapter?.showValue({ [def.key]: undefined });
     }
 
     private collectNodeValues(nodes: INode[]): Record<string, Set<unknown>> {
@@ -373,29 +497,11 @@ export class DiagramInspector extends Inspector {
                 // const raw = node as any;
 
                 const record = owned ? { [key]: (node as any)[key] } : this.toValueRecord(node);
-                set.add(this.readRecordValue(record, key));
+                this.addComparableValue(set, this.readRecordValue(record, key));
             }
             result[key] = set;
         }
-        console.log('Collected node values for inspector:', result);
         return result;
-    }
-
-    private readRecordValue(record: EditableRecord, key: string): unknown {
-        const editor = this.editors.get(key);
-        return editor?.extractValueFrom(record).value ?? this.getPathValue(record, key);
-    }
-
-    private getPathValue(record: EditableRecord, path: string): unknown {
-        const segments = path.split('.').filter((segment) => segment.length > 0);
-        let current: any = record;
-        for (const segment of segments) {
-            if (current == null) {
-                return undefined;
-            }
-            current = current[segment];
-        }
-        return current;
     }
 
     private toValueRecord(node: INode): EditableRecord {
@@ -404,6 +510,7 @@ export class DiagramInspector extends Inspector {
             id: n.id,
             type: n.type,
             angle: n.angle,
+            points: n.points,
             strokeStyle: n.strokeStyle,
             fillStyle: n.fillStyle,
             lineWidth: n.lineWidth,

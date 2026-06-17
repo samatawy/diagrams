@@ -1,12 +1,12 @@
 import { ColorSelect, type ColorSelectConfig } from "../color.select";
-import type { InspectorEditorInit, EditableRecord } from "./inspector";
-import { InspectorValueEditor } from "./inspector";
+import type { InspectorAdapterInit, EditableRecord } from "./inspector";
+import { InspectorAdapter } from "./inspector";
 
-export class ColorSelectEditor extends InspectorValueEditor {
+export class ColorSelectAdapter extends InspectorAdapter {
 
     private readonly editor: ColorSelect;
 
-    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorEditorInit) {
+    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorAdapterInit) {
         super(cell, mixedClassName);
         const host = document.createElement('div');
         host.style.width = '100%';
@@ -17,7 +17,10 @@ export class ColorSelectEditor extends InspectorValueEditor {
             ...(initial.def.editorOptions as ColorSelectConfig),
         };
         this.editor = new ColorSelect(host, options);
-        host.addEventListener('colorchange', (e) => this.notifyChange((e as CustomEvent<string>).detail));
+        host.addEventListener('colorchange', (e) => {
+            this.setUnset(false);
+            this.notifyChange((e as CustomEvent<string>).detail);
+        });
     }
 
     public setColors(colors: string[]): void {
@@ -28,7 +31,11 @@ export class ColorSelectEditor extends InspectorValueEditor {
     override showValue(editable: EditableRecord): void {
         const { key, value } = this.extractValueFrom(editable);
         this.returnKey = key;
-        this.editor.value = value !== undefined && value !== null ? String(value) : 'transparent';
+        const hasValue = value !== undefined && value !== null && String(value) !== '';
+        this.setUnset(!hasValue);
+        if (hasValue) {
+            this.editor.value = String(value);
+        }
     }
 
     override getValue(): EditableRecord {

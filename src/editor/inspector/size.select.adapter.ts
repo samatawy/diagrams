@@ -1,12 +1,12 @@
-import type { InspectorEditorInit, EditableRecord } from "./inspector";
-import { InspectorValueEditor } from "./inspector";
+import type { InspectorAdapterInit, EditableRecord } from "./inspector";
+import { InspectorAdapter } from "./inspector";
 import { SizeSelect, type SizeSelectConfig } from "../size.select";
 
-export class SizeSelectEditor extends InspectorValueEditor {
+export class SizeSelectAdapter extends InspectorAdapter {
 
     private readonly editor: SizeSelect;
 
-    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorEditorInit) {
+    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorAdapterInit) {
         super(cell, mixedClassName);
         const host = document.createElement('div');
         host.style.width = '100%';
@@ -15,14 +15,21 @@ export class SizeSelectEditor extends InspectorValueEditor {
             ...(initial.def.editorOptions as SizeSelectConfig),
         };
         this.editor = new SizeSelect(host, options);
-        host.addEventListener('sizechange', (e) => this.notifyChange((e as CustomEvent<number>).detail));
+        host.addEventListener('sizechange', (e) => {
+            this.setUnset(false);
+            this.notifyChange((e as CustomEvent<number>).detail);
+        });
     }
 
     override showValue(editable: EditableRecord): void {
         const { key, value } = this.extractValueFrom(editable);
         this.returnKey = key;
         const size = Number(value);
-        this.editor.value = Number.isFinite(size) ? size : 1;
+        const hasValue = Number.isFinite(size);
+        this.setUnset(!hasValue);
+        if (hasValue) {
+            this.editor.value = size;
+        }
     }
 
     override getValue(): EditableRecord {

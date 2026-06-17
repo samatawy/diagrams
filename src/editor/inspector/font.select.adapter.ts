@@ -1,12 +1,12 @@
-import type { InspectorEditorInit, EditableRecord } from "./inspector";
+import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { FontSelect, type FontSelectConfig } from "../font.select";
-import { InspectorValueEditor } from "./inspector";
+import { InspectorAdapter } from "./inspector";
 
-export class FontSelectEditor extends InspectorValueEditor {
+export class FontSelectAdapter extends InspectorAdapter {
 
     private readonly editor: FontSelect;
 
-    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorEditorInit) {
+    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorAdapterInit) {
         super(cell, mixedClassName);
         const host = document.createElement('div');
         host.style.width = '100%';
@@ -16,13 +16,20 @@ export class FontSelectEditor extends InspectorValueEditor {
             ...(initial.def.editorOptions as FontSelectConfig),
         };
         this.editor = new FontSelect(host, options);
-        host.addEventListener('fontchange', (e) => this.notifyChange((e as CustomEvent<string>).detail));
+        host.addEventListener('fontchange', (e) => {
+            this.setUnset(false);
+            this.notifyChange((e as CustomEvent<string>).detail);
+        });
     }
 
     override showValue(editable: EditableRecord): void {
         const { key, value } = this.extractValueFrom(editable);
         this.returnKey = key;
-        this.editor.value = String(value ?? 'Tahoma');
+        const hasValue = value !== undefined && value !== null && String(value) !== '';
+        this.setUnset(!hasValue);
+        if (hasValue) {
+            this.editor.value = String(value);
+        }
     }
 
     override getValue(): EditableRecord {

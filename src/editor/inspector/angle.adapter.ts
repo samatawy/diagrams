@@ -1,11 +1,11 @@
-import type { InspectorEditorInit, EditableRecord } from "./inspector";
-import { InspectorValueEditor } from "./inspector";
+import type { InspectorAdapterInit, EditableRecord } from "./inspector";
+import { InspectorAdapter } from "./inspector";
 
-export class AngleEditor extends InspectorValueEditor {
+export class AngleAdapter extends InspectorAdapter {
 
     private readonly input: HTMLInputElement;
 
-    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorEditorInit) {
+    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorAdapterInit) {
         super(cell, mixedClassName);
         this.input = document.createElement('input');
         this.input.type = 'number';
@@ -16,10 +16,12 @@ export class AngleEditor extends InspectorValueEditor {
         this.input.addEventListener('input', () => {
             const parsed = Number(this.input.value);
             if (this.input.value === '') {
+                this.setUnset(true);
                 this.notifyChange(undefined);
                 return;
             }
             if (Number.isFinite(parsed)) {
+                this.setUnset(false);
                 this.notifyChange(parsed);
             }
         });
@@ -30,10 +32,12 @@ export class AngleEditor extends InspectorValueEditor {
         this.returnKey = key;
         const radians = Number(value);
         if (!Number.isFinite(radians)) {
+            this.setUnset(true);
             this.input.value = '';
             return;
         }
 
+        this.setUnset(false);
         const degrees = radians * (180 / Math.PI);
         this.input.value = String(Math.round(degrees * 100) / 100);
     }

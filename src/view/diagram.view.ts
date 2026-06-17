@@ -999,6 +999,10 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param event The keyboard event.
      */
     protected keydown(event: KeyboardEvent): void {
+        if (this.shouldIgnoreGlobalKeydown(event)) {
+            return;
+        }
+
         const key = event.key.toLowerCase();
         if (key === ' ' || key === 'space' || key === 'spacebar') {
             this.isSpacePanning = true;
@@ -1017,6 +1021,20 @@ export class DiagramView extends Diagram implements HasSelection {
                 this.canvas.style.cursor = 'default';
             }
         }
+    }
+
+    protected shouldIgnoreGlobalKeydown(event: KeyboardEvent): boolean {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+            return false;
+        }
+
+        if (target.isContentEditable || target.closest('[contenteditable="true"]')) {
+            return true;
+        }
+
+        const tagName = target.tagName.toLowerCase();
+        return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
     }
 
     /**

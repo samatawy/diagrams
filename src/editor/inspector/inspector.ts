@@ -1,4 +1,9 @@
 import { injectStyles, setClasses } from "../editor.utils";
+import { DefaultInspectorAdapter, registerNativeInspectorAdapters } from "./native.adapters";
+import { InspectorAdapter, type EditableRecord, type InspectorAdapterInit } from "./inspector.adapter";
+
+export { InspectorAdapter } from "./inspector.adapter";
+export type { EditableRecord, InspectorAdapterInit } from "./inspector.adapter";
 
 // ============================================================
 // Config
@@ -54,6 +59,8 @@ const DEFAULT_STYLES = `
 .inspector {
     display: flex;
     flex-direction: column;
+    width: 300px;
+    min-width: 300px;
     gap: var(--diagram-ui-group-gap, 4px);
     padding: var(--diagram-ui-panel-padding, 6px);
     font: var(--diagram-ui-font-size, 12px)/1.4 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
@@ -127,7 +134,7 @@ const DEFAULT_STYLES = `
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 4px 0;
+    padding: 8px 4px;
     min-height: 26px;
     display: flex;
     align-items: center;
@@ -138,6 +145,7 @@ const DEFAULT_STYLES = `
     display: flex;
     align-items: center;
     min-height: 26px;
+    position: relative;
 }
 .inspector .inspector-value input[type='text'],
 .inspector .inspector-value input[type='number'] {
@@ -173,6 +181,77 @@ const DEFAULT_STYLES = `
     color: var(--diagram-ui-text-muted, #94a3b8);
     font-style: italic;
 }
+.inspector .inspector-value.is-mixed .color-preset-trigger,
+.inspector .inspector-value.is-mixed .font-select-trigger {
+    position: relative;
+}
+.inspector .inspector-value.is-unset .color-preset-trigger,
+.inspector .inspector-value.is-unset .font-select-trigger {
+    position: relative;
+}
+.inspector .inspector-value.is-mixed .color-preset-trigger > *,
+.inspector .inspector-value.is-mixed .font-select-trigger > * {
+    opacity: 0;
+}
+.inspector .inspector-value.is-unset .color-preset-trigger > *,
+.inspector .inspector-value.is-unset .font-select-trigger > * {
+    opacity: 0;
+}
+.inspector .inspector-value.is-mixed .color-preset-trigger::after,
+.inspector .inspector-value.is-mixed .font-select-trigger::after {
+    content: 'Multiple';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 8px;
+    color: var(--diagram-ui-text-muted, #94a3b8);
+    font-style: italic;
+    pointer-events: none;
+}
+.inspector .inspector-value.is-unset .color-preset-trigger::after,
+.inspector .inspector-value.is-unset .font-select-trigger::after {
+    content: '\\00A0';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 8px;
+    pointer-events: none;
+}
+.inspector .inspector-value.is-mixed.has-number-editor::after {
+    content: 'Multiple';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 8px;
+    color: var(--diagram-ui-text-muted, #94a3b8);
+    font-style: italic;
+    pointer-events: none;
+}
+
+/* Inspector-wide selection states */
+.inspector.inspector-selection-none .inspector-grid {
+    opacity: 0.45;
+    pointer-events: none;
+}
+.inspector.inspector-selection-none::after {
+    content: 'No selection';
+    display: block;
+    margin-top: 6px;
+    padding: 4px 2px;
+    color: var(--diagram-ui-text-muted, #64748b);
+    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, 'Helvetica Neue', Helvetica, Arial, sans-serif);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+.inspector.inspector-selection-mixed .inspector-heading {
+    color: var(--diagram-ui-text, #0f172a);
+}
 `;
 
 function ensureDefaultStyles(): void {
@@ -183,16 +262,17 @@ function ensureDefaultStyles(): void {
 // Interfaces
 // ============================================================
 
-export type InspectorEditorClassName = string & {};
+export type InspectorAdapterClassName = string & {};
 
 export interface InspectorPropertyDefinition {
     key: string;
     label?: string;
-    type: 'string' | 'number' | 'boolean' | 'select';
-    editor?: InspectorEditorClassName;
+    type: 'string' | 'number' | 'boolean' | 'select' | 'object';
+    editor?: InspectorAdapterClassName;
     editorOptions?: object;
     readonly: boolean;
     disabled?: boolean;
+    volatile?: boolean;
 }
 
 export interface InspectorPropertyData {
@@ -200,152 +280,13 @@ export interface InspectorPropertyData {
     values: Set<unknown>;
 }
 
-export type EditableRecord = Record<string, unknown>;
+export type InspectorSelectionState = 'none' | 'single' | 'mixed';
 
-export interface InspectorEditorInit {
-    readonly: boolean;
-    def: InspectorPropertyDefinition;
-}
-
-export type InspectorValueEditorClass = new (
+export type InspectorAdapterClass = new (
     cell: HTMLElement,
     mixedClassName: string,
-    initial: InspectorEditorInit,
-) => InspectorValueEditor;
-
-// ============================================================
-// InspectorValueEditor — base class for all inspector row editors
-// ============================================================
-
-export abstract class InspectorValueEditor {
-
-    protected readonly cell: HTMLElement;
-    protected readonly mixedClassName: string;
-
-    protected returnKey?: string;
-
-    private changeHandler: ((value: unknown) => void) | null = null;
-
-    constructor(cell: HTMLElement, mixedClassName: string) {
-        this.cell = cell;
-        this.mixedClassName = mixedClassName;
-    }
-
-    public abstract showValue(editable: EditableRecord): void;
-
-    public abstract getValue(): EditableRecord;
-
-    public setMixed(mixed: boolean): void {
-        this.cell.classList.toggle(this.mixedClassName, mixed);
-    }
-
-    /** Registers a single handler called whenever the user changes the value in the control. */
-    public setChangeHandler(handler: ((value: unknown) => void) | null): void {
-        this.changeHandler = handler;
-    }
-
-    /** Called by subclass DOM listeners to propagate a user-driven change. */
-    protected notifyChange(value: unknown): void {
-        this.changeHandler?.(value);
-    }
-
-    public extractValueFrom(record: EditableRecord, key?: string): { key: string; value: unknown } {
-        if (key && record) {
-            return { key, value: record[key] };
-        } else {
-            key = Object.keys(record)[0];
-            return key ? { key, value: record[key] } : { key: '', value: undefined };
-        }
-    }
-
-    public destroy(): void {
-        this.changeHandler = null;
-    }
-}
-
-class CheckboxEditor extends InspectorValueEditor {
-
-    private readonly input: HTMLInputElement;
-
-    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorEditorInit) {
-        super(cell, mixedClassName);
-        this.input = document.createElement('input');
-        this.input.type = 'checkbox';
-        this.input.disabled = initial.readonly;
-        cell.appendChild(this.input);
-        this.input.addEventListener('change', () => this.notifyChange(this.input.checked));
-    }
-
-    override showValue(editable: EditableRecord): void {
-        const { key, value } = this.extractValueFrom(editable);
-        this.returnKey = key;
-        this.input.checked = Boolean(value);
-    }
-
-    override getValue(): EditableRecord {
-        return { [this.returnKey ?? '']: this.input.checked };
-    }
-}
-
-class TextInputEditor extends InspectorValueEditor {
-
-    private readonly input: HTMLInputElement;
-
-    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorEditorInit) {
-        super(cell, mixedClassName);
-        this.input = document.createElement('input');
-        this.input.type = 'text';
-        this.input.readOnly = initial.readonly;
-        cell.appendChild(this.input);
-        this.input.addEventListener('input', () => this.notifyChange(this.input.value));
-    }
-
-    override showValue(editable: EditableRecord): void {
-        const { key, value } = this.extractValueFrom(editable);
-        this.returnKey = key;
-        this.input.value = value !== undefined && value !== null ? String(value) : '';
-        this.input.placeholder = '';
-    }
-
-    override getValue(): EditableRecord {
-        return { [this.returnKey ?? '']: this.input.value };
-    }
-}
-
-class NumberInputEditor extends InspectorValueEditor {
-
-    private readonly input: HTMLInputElement;
-
-    constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorEditorInit) {
-        super(cell, mixedClassName);
-        this.input = document.createElement('input');
-        this.input.type = 'number';
-        this.input.readOnly = initial.readonly;
-        cell.appendChild(this.input);
-        this.input.addEventListener('input', () => {
-            const parsed = Number(this.input.value);
-            if (this.input.value === '') {
-                this.notifyChange(undefined);
-                return;
-            }
-            if (Number.isFinite(parsed)) {
-                this.notifyChange(parsed);
-            }
-        });
-    }
-
-    override showValue(editable: EditableRecord): void {
-        const { key, value } = this.extractValueFrom(editable);
-        this.returnKey = key;
-        this.input.value = value !== undefined && value !== null ? String(value) : '';
-        this.input.placeholder = '';
-    }
-
-    override getValue(): EditableRecord {
-        const parsed = Number(this.input.value);
-        return { [this.returnKey ?? '']: Number.isFinite(parsed) ? parsed : undefined };
-    }
-}
+    initial: InspectorAdapterInit,
+) => InspectorAdapter;
 
 // ============================================================
 // Inspector base class
@@ -353,27 +294,50 @@ class NumberInputEditor extends InspectorValueEditor {
 
 export class Inspector {
 
-    private static editorRegistry: Map<string, InspectorValueEditorClass> = new Map();
+    private static adapterRegistry: Map<string, InspectorAdapterClass> = new Map();
 
-    public static registerEditor(name: string, editorClass: InspectorValueEditorClass): void {
-        Inspector.editorRegistry.set(name, editorClass);
+    public static registerAdapter(name: string, adapterClass: InspectorAdapterClass): void {
+        Inspector.adapterRegistry.set(name, adapterClass);
+    }
+
+    public static registerEditor(name: string, editorClass: InspectorAdapterClass): void {
+        Inspector.registerAdapter(name, editorClass);
+    }
+
+    public static unregisterAdapter(name: string): void {
+        Inspector.adapterRegistry.delete(name);
     }
 
     public static unregisterEditor(name: string): void {
-        Inspector.editorRegistry.delete(name);
+        Inspector.unregisterAdapter(name);
     }
 
-    public static getEditor(name: string): InspectorValueEditorClass | undefined {
-        return Inspector.editorRegistry.get(name);
+    public static getAdapter(name: string): InspectorAdapterClass | undefined {
+        return Inspector.adapterRegistry.get(name);
+    }
+
+    public static getEditor(name: string): InspectorAdapterClass | undefined {
+        return Inspector.getAdapter(name);
     }
 
     protected host: HTMLElement;
 
     protected config: Required<InspectorConfig>;
 
+    protected readonly: boolean = false;
+
     protected definitions: { [key: string]: InspectorPropertyDefinition } = {};
 
+    // Adapter bindings keyed by property key.
+    protected adapters: Map<string, InspectorAdapter> = new Map();
+
+    // Prevent feedback loops while pushing model values into controls.
+    protected syncingAdapters: boolean = false;
+
     protected data: InspectorPropertyData[] = [];
+
+    // Value cells keyed by property key, for targeted updates.
+    protected cells: Map<string, HTMLElement> = new Map();
 
     constructor(target: HTMLElement, config: InspectorConfig = {}) {
         ensureDefaultStyles();
@@ -389,11 +353,144 @@ export class Inspector {
         this.host.innerHTML = '';
     }
 
+    protected registerAdapters(): void {
+        registerNativeInspectorAdapters(Inspector.registerAdapter);
+    }
+
     /**
      * Registers a property definition that can be rendered into a row.
      */
     public defineProperty(def: InspectorPropertyDefinition): void {
         this.definitions[def.key] = def;
+    }
+
+    /**
+     * Registers a property definition and immediately builds its row in the given grid.
+     * Stores the value cell for targeted updates by refresh().
+     */
+    protected addRow(grid: HTMLElement, def: InspectorPropertyDefinition): void {
+        this.defineProperty(def);
+        const cell = this.buildRow(grid, def);
+        const adapter = this.buildAdapter(cell, def);
+        if (!def.readonly) {
+            adapter.setChangeHandler((value) => {
+                if (this.syncingAdapters) return;
+                this.onAdapterValueChanged(def, value);
+            });
+        }
+        this.cells.set(def.key, cell);
+        this.adapters.set(def.key, adapter);
+    }
+
+    /**
+     * Hook for subclasses to apply model changes when an adapter emits a user edit.
+     */
+    protected onAdapterValueChanged(_def: InspectorPropertyDefinition, _value: unknown): void {
+        // Subclasses override when they support writing changes back to a model.
+    }
+
+    protected resolveSelectionState(selectedCount: number, values: Record<string, Set<unknown>>): InspectorSelectionState {
+        if (selectedCount === 0) {
+            return 'none';
+        }
+
+        for (const set of Object.values(values)) {
+            if (set.size > 1) {
+                return 'mixed';
+            }
+        }
+
+        return 'single';
+    }
+
+    protected applySelectionState(state: InspectorSelectionState): void {
+        this.host.classList.toggle('inspector-selection-none', state === 'none');
+        this.host.classList.toggle('inspector-selection-single', state === 'single');
+        this.host.classList.toggle('inspector-selection-mixed', state === 'mixed');
+    }
+
+    protected readRecordValue(record: EditableRecord, key: string): unknown {
+        const adapter = this.adapters.get(key);
+        return adapter?.extractValueFrom(record, key).value ?? this.getPathValue(record, key);
+    }
+
+    protected getPathValue(record: EditableRecord, path: string): unknown {
+        const segments = path.split('.').filter((segment) => segment.length > 0);
+        let current: any = record;
+        for (const segment of segments) {
+            if (current == null) {
+                return undefined;
+            }
+            current = current[segment];
+        }
+        return current;
+    }
+
+    /**
+     * Adds a value to a set while deduplicating object values by shallow first-level comparison.
+     */
+    protected addComparableValue(set: Set<unknown>, value: unknown): void {
+        if (!value || typeof value !== 'object') {
+            set.add(value);
+            return;
+        }
+
+        for (const existing of set) {
+            if (!existing || typeof existing !== 'object') {
+                continue;
+            }
+            if (this.shallowObjectEquals(existing as Record<string, unknown>, value as Record<string, unknown>)) {
+                return;
+            }
+        }
+
+        set.add(value);
+    }
+
+    /**
+     * Compares two objects using only first-level keys and values.
+     */
+    protected shallowObjectEquals(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+        const aKeys = Object.keys(a);
+        const bKeys = Object.keys(b);
+        if (aKeys.length !== bKeys.length) {
+            return false;
+        }
+
+        for (const key of aKeys) {
+            if (!(key in b)) {
+                return false;
+            }
+            if (this.valueToken(a[key]) !== this.valueToken(b[key])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Generates a stable token for first-level value comparison.
+     */
+    protected valueToken(value: unknown): string {
+        if (value === null) {
+            return 'null';
+        }
+        const type = typeof value;
+        if (type === 'undefined') {
+            return 'undefined';
+        }
+        if (type === 'string' || type === 'number' || type === 'boolean' || type === 'bigint') {
+            return `${type}:${String(value)}`;
+        }
+        if (type === 'object') {
+            try {
+                return `object:${JSON.stringify(value)}`;
+            } catch {
+                return 'object:[unserializable]';
+            }
+        }
+        return type;
     }
 
     // ============================================================
@@ -455,24 +552,41 @@ export class Inspector {
     }
 
     /**
-     * Creates the appropriate InspectorValueEditor for the given property definition
+     * Removes all rows marked as volatile from the given grid.
+     * Returns the removed keys so subclasses can clear any companion maps.
+     */
+    protected removeVolatileRowsFromGrid(grid: HTMLElement): string[] {
+        const removed: string[] = [];
+        for (const [key, def] of Object.entries(this.definitions)) {
+            if (!def.volatile) {
+                continue;
+            }
+
+            const nodes = grid.querySelectorAll<HTMLElement>(`[data-row-key="${key}"]`);
+            nodes.forEach((node) => node.remove());
+            delete this.definitions[key];
+            removed.push(key);
+        }
+        return removed;
+    }
+
+    /**
+     * Creates the appropriate inspector adapter for the given property definition
      * and mounts it into the value cell.
      */
-    protected buildEditor(cell: HTMLElement, def: InspectorPropertyDefinition): InspectorValueEditor {
-        const initial: InspectorEditorInit = {
+    protected buildAdapter(cell: HTMLElement, def: InspectorPropertyDefinition): InspectorAdapter {
+        const initial: InspectorAdapterInit = {
             readonly: def.readonly,
             def,
         };
 
-        if (def.editor) {
-            const editorClass = Inspector.getEditor(def.editor);
-            if (editorClass) {
-                return new editorClass(cell, this.config.mixedClassName, initial);
-            }
+        const adapterName = def.editor ?? def.type;
+        const adapterClass = Inspector.getAdapter(adapterName);
+        if (adapterClass) {
+            return new adapterClass(cell, this.config.mixedClassName, initial);
         }
 
-        if (def.type === 'boolean') return new CheckboxEditor(cell, this.config.mixedClassName, initial);
-        if (def.type === 'number') return new NumberInputEditor(cell, this.config.mixedClassName, initial);
-        return new TextInputEditor(cell, this.config.mixedClassName, initial);
+        return new DefaultInspectorAdapter(cell, this.config.mixedClassName, initial);
     }
+
 }
