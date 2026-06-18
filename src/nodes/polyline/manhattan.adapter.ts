@@ -8,7 +8,7 @@ import { ConnectionBasics } from "../connection.basics";
 import { NodeBasics } from "../node.basics";
 import { type IPoint, NodeHandle } from "../../types";
 
-type Direction = 'horizontal' | 'vertical';
+type CardinalDirection = 'east' | 'west' | 'north' | 'south' | 'north_east' | 'north_west' | 'south_east' | 'south_west';
 
 /**
  * ManhattanAdapter is a node adapter responsible for rendering Manhattan-style polyline nodes in the diagram. 
@@ -68,9 +68,11 @@ export class ManhattanAdapter extends PolylineAdapter {
             }
 
             if (node.text) {
-                // RenderBasics.renderText(node, context, { overflow: this.text_overflow });
                 const { from, to } = NodeBasics.longestSegment(inferredPoints) || { from: inferredPoints[0]!, to: inferredPoints[1]! };
-                RenderBasics.renderText(node, context, { overflow: this.text_overflow, from, to });
+                RenderBasics.renderText(node, context, {
+                    overflow: this.text_overflow,
+                    from, to
+                });
             }
 
             cached.path = path;
@@ -92,74 +94,154 @@ export class ManhattanAdapter extends PolylineAdapter {
 
         const last = node.points[node.points.length - 1]!;
 
-        let direction = this.inferDirection(first, next, from_handle);
-        let corner: IPoint;
+        let direction = this.infer_cardinal_from_handle(from_handle);
+        let segment = this.inferSegment(first, next, direction);
 
-        // Skip first and last points for special handling
-        for (let i = 1; i < node.points.length; i++) {
-            corner = (direction == 'horizontal')
-                ? { x: next.x, y: first.y }
-                : { x: first.x, y: next.y };
+        inferred.push(...segment);
+        inferred.push(next);
 
-            inferred.push(corner);
-            // console.log(`leg ${i} going ${direction}`);
+        for (let i = 1; i < node.points.length - 1; i++) {
+            const from = inferred[inferred.length - 1]!;
+            const to = node.points[i]!;
 
-            if (next == last) {
-                break;
-            }
-            // Prepare for next pair of points
-            direction = (direction == 'horizontal') ? 'vertical' : 'horizontal';
+            direction = this.infer_cardinal_from_points(from, to);
+            segment = this.inferSegment(from, to, direction);
 
-            first = corner;
-            next = node.points[i + 1]!;
-            if (next == last) {
-                const to_direction = this.inferDirection(corner, next, to_handle);
-                const corners = this.inferCorners(corner, next, direction, to_direction);
-                inferred.push(...corners);
-                break;
-            }
+            inferred.push(...segment);
+            inferred.push(to);
         }
-        inferred.push(last);
-        // console.log('last leg going ', this.inferDirection(undefined, undefined, to_handle));
 
+        const from = inferred[inferred.length - 1]!;
+        const end_direction = this.infer_cardinal_from_handle(to_handle);
+        const end_segment = this.inferSegment(last, from, end_direction).reverse();
+
+        inferred.push(...end_segment);
+        inferred.push(last);
+
+        console.log('inferred points', inferred);
         return inferred;
     }
 
-    private inferCorners(from: IPoint, to: IPoint, from_direction: Direction, to_direction?: Direction): IPoint[] {
-        const corners: IPoint[] = [];
+    /**
+     * Return the corner points needed to connect two points in a Manhattan-style polyline, based on the direction of the connection.
+     * @param from The starting point of the segment.
+     * @param to The ending point of the segment.
+     * @param from_direction The direction from which the segment starts.
+     * @param to_direction The direction towards which the segment ends.
+     * @returns An array of points representing the corners of the Manhattan-style polyline segment.
+     */
+    private inferSegment(from: IPoint, to: IPoint, from_direction: CardinalDirection, to_direction?: CardinalDirection): IPoint[] {
+        const points: IPoint[] = [];
 
-        if (from_direction !== to_direction) {
-            const corner = (from_direction == 'horizontal')
-                ? { x: to.x, y: from.y }
-                : { x: from.x, y: to.y };
-            corners.push(corner);
-            // console.log(`last corner going ${from_direction}`);
-
-        } else {
-            corners.push(from);
-
-            const corner = (to_direction == 'horizontal')
-                ? { x: to.x, y: from.y }
-                : { x: from.x, y: to.y };
-            corners.push(corner);
-            // console.log(`last corners going ${from_direction} then ${to_direction}`);
+        if (from.x == to.x || from.y == to.y) {
+            return [];
         }
-        return corners;
+
+        const stub = 24; // Minimum segment length before a turn is forced
+
+        let walker = { x: from.x, y: from.y };
+        let dx = to.x - from.x;
+        let dy = to.y - from.y;
+
+        // if (to_direction) {
+        //     return this.inferSegment(to, from, to_direction);
+        // }
+
+        if (from_direction === 'north') {
+            walker = { x: from.x, y: from.y + Math.min(-stub, dy) };
+            points.push(walker);
+
+            if (Math.abs(to.y - walker.y) >= 1) {
+                walker = { x: to.x, y: walker.y };
+                points.push(walker);
+            }
+        }
+
+        if (from_direction === 'south') {
+            walker = { x: from.x, y: from.y + Math.max(stub, dy) };
+            points.push(walker);
+
+            if (Math.abs(to.y - walker.y) >= 1) {
+                walker = { x: to.x, y: walker.y };
+                points.push(walker);
+            }
+        }
+
+        if (from_direction === 'west') {
+            walker = { x: from.x + Math.min(-stub, dx), y: from.y };
+            points.push(walker);
+
+            if (Math.abs(to.x - walker.x) >= 1) {
+                walker = { x: walker.x, y: to.y };
+                points.push(walker);
+            }
+        }
+
+        if (from_direction === 'east') {
+            walker = { x: from.x + Math.max(stub, dx), y: from.y };
+            points.push(walker);
+
+            if (Math.abs(to.x - walker.x) >= 1) {
+                walker = { x: walker.x, y: to.y };
+                points.push(walker);
+            }
+        }
+
+        if (to_direction) {
+            if (to_direction === 'north') {
+                walker = { x: to.x, y: to.y + Math.min(-stub, dy) };
+                points.push(walker);
+            }
+
+            if (to_direction === 'south') {
+                walker = { x: to.x, y: to.y + Math.max(stub, dy) };
+                points.push(walker);
+            }
+
+            if (to_direction === 'west') {
+                walker = { x: to.x + Math.min(-stub, dx), y: to.y };
+                points.push(walker);
+            }
+
+            if (to_direction === 'east') {
+                walker = { x: to.x + Math.max(stub, dx), y: to.y };
+                points.push(walker);
+            }
+        }
+
+        return points;
     }
 
-    private inferDirection(from?: IPoint, to?: IPoint, fromHandle?: NodeHandle): Direction {
-        if (fromHandle === NodeHandle.N || fromHandle === NodeHandle.S) {
-            return 'vertical';
-        } else if (fromHandle === NodeHandle.E || fromHandle === NodeHandle.W) {
-            return 'horizontal';
+    private infer_cardinal_from_handle(fromHandle?: NodeHandle, toHandle?: NodeHandle): CardinalDirection {
+        if (fromHandle) {
+            switch (fromHandle) {
+                case NodeHandle.E: return 'east';
+                case NodeHandle.W: return 'west';
+                case NodeHandle.N: return 'north';
+                case NodeHandle.S: return 'south';
+            }
+        } else if (toHandle) {
+            switch (toHandle) {
+                case NodeHandle.E: return 'west';
+                case NodeHandle.W: return 'east';
+                case NodeHandle.N: return 'south';
+                case NodeHandle.S: return 'north';
+            }
         }
+        return 'east';
+    }
+
+    private infer_cardinal_from_points(from: IPoint, to: IPoint): CardinalDirection {
         if (!from || !to) {
-            return 'horizontal'; // Default direction if points are not provided
+            return 'east';
         }
 
-        const dx = Math.abs(to.x - from.x);
-        const dy = Math.abs(to.y - from.y);
-        return (dx > dy) ? 'horizontal' : 'vertical';
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        if (Math.abs(dx) >= Math.abs(dy)) {
+            return dx >= 0 ? 'east' : 'west';
+        }
+        return dy >= 0 ? 'south' : 'north';
     }
 
     public textPlacement(node: INode): TextPlacement {
