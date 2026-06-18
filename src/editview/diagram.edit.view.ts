@@ -2820,6 +2820,11 @@ export class DiagramEditView extends DiagramView {
         super.zoomTo(zoom, centerX, centerY);
     }
 
+    public override panBy(byX: number, byY: number): void {
+        this.closeTextEditor(false);
+        super.panBy(byX, byY);
+    }
+
     private editText(node: INode): void {
         if (!this.canvas || !node) {
             return;
@@ -2830,44 +2835,141 @@ export class DiagramEditView extends DiagramView {
 
         this.closeTextEditor(true);
 
-        const rect = this.coordinates.getBoundingRect(node);
+        // Prepare shortcuts and rrequired data for all cases:
+
         const canvasRect = this.canvas.getBoundingClientRect();
         const zoom = this.coordinates.zoom;
         const pan = this.coordinates.pan;
+        const singleLine = this.isConnectorType(node.type);
+
+        const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
+        const baseline = textBaseline(node);
+
         const fontFace = node.fontFace || this.fontFace;
         const fontSize = node.fontSize || this.fontSize;
         const scaledFontSize = Math.max(1, fontSize * zoom);
         const scaledLineHeight = Math.max(scaledFontSize * 1.25, 1);
-        const singleLine = this.isConnectorType(node.type);
-        const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
 
-        const worldToScreen = (x: number, y: number): IPoint => ({
-            x: canvasRect.left + (x * zoom) - pan.x,
-            y: canvasRect.top + (y * zoom) - pan.y,
-        });
+        let rect = this.coordinates.getBoundingRect(node);
+        const screenRect: IRect = {
+            left: canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x,
+            top: canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y,
+            width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
+            height: Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom),
+        };
 
-        let editorWidth = Math.max(24, rect.width * zoom);
-        let editorHeight = Math.max(scaledLineHeight, rect.height * zoom);
-        let left = canvasRect.left + (rect.left * zoom) - pan.x;
-        let top = canvasRect.top + (rect.top * zoom) - pan.y;
+        let editorWidth: number;
+        let editorHeight: number;
+        let left: number;
+        let top: number;
         let transform = '';
 
-        const rectTopScreen = canvasRect.top + (rect.top * zoom) - pan.y;
-        const rectHeightScreen = rect.height * zoom;
-        const baseline = textBaseline(node);
-        let textRectTopScreen = rectTopScreen;
-        let textRectHeightScreen = rectHeightScreen;
+        // const textRectLeftScreen = canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x;
+        // const textRectTopScreen = canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y;
+        // const textRectWidthScreen = Math.max(1, (rect.width - (textPadding * 2)) * zoom);
+        // const textRectHeightScreen = Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom);
+
+        // const rectTopScreen = canvasRect.top + (rect.top * zoom) - pan.y;
+        // const rectHeightScreen = rect.height * zoom;
+        // const baseline = textBaseline(node);
+        // let textRectTopScreen = rectTopScreen;
+        // let textRectHeightScreen = rectHeightScreen;
+
+        // const rect = this.coordinates.getBoundingRect(node);
+        // const canvasRect = this.canvas.getBoundingClientRect();
+        // const zoom = this.coordinates.zoom;
+        // const pan = this.coordinates.pan;
+        // const fontFace = node.fontFace || this.fontFace;
+        // const fontSize = node.fontSize || this.fontSize;
+        // const scaledFontSize = Math.max(1, fontSize * zoom);
+        // const scaledLineHeight = Math.max(scaledFontSize * 1.25, 1);
+        // const singleLine = this.isConnectorType(node.type);
+        // const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
+
+        // const worldToScreen = (x: number, y: number): IPoint => ({
+        //     x: canvasRect.left + (x * zoom) - pan.x,
+        //     y: canvasRect.top + (y * zoom) - pan.y,
+        // });
+
+        // let editorWidth = Math.max(24, rect.width * zoom);
+        // let editorHeight = Math.max(scaledLineHeight, rect.height * zoom);
+        // let left = canvasRect.left + (rect.left * zoom) - pan.x;
+        // let top = canvasRect.top + (rect.top * zoom) - pan.y;
+        // let transform = '';
+
+        // const rectTopScreen = canvasRect.top + (rect.top * zoom) - pan.y;
+        // const rectHeightScreen = rect.height * zoom;
+        // const baseline = textBaseline(node);
+        // let textRectTopScreen = rectTopScreen;
+        // let textRectHeightScreen = rectHeightScreen;
 
         // For non-sloped text, place the editor from the same line-box anchor model used by render text,
         // so top/middle/bottom baselines are visually distinct.
-        if (!singleLine) {
-            const textRectLeftScreen = canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x;
-            textRectTopScreen = canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y;
-            const textRectWidthScreen = Math.max(1, (rect.width - (textPadding * 2)) * zoom);
-            textRectHeightScreen = Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom);
+        // if (!singleLine) {
+        //     const textRectLeftScreen = canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x;
+        //     textRectTopScreen = canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y;
+        //     const textRectWidthScreen = Math.max(1, (rect.width - (textPadding * 2)) * zoom);
+        //     textRectHeightScreen = Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom);
 
-            left = textRectLeftScreen;
-            editorWidth = Math.max(24, textRectWidthScreen);
+        //     left = textRectLeftScreen;
+        //     editorWidth = Math.max(24, textRectWidthScreen);
+
+        //     const text = nodeText(node);
+        //     const measureContext = this.context;
+        //     measureContext.save();
+        //     measureContext.font = fontFace.replace(/\d+(?:\.\d+)?px/, `${scaledFontSize}px`);
+        //     const wrapped = this.wrapEditorTextLines(text, editorWidth, measureContext);
+        //     measureContext.restore();
+
+        //     const lineCount = Math.max(1, wrapped.length);
+        //     const textBlockHeight = lineCount * scaledLineHeight;
+
+        //     const startline = baseline === 'top'
+        //         ? textRectTopScreen + (scaledFontSize / 2)
+        //         : baseline === 'bottom'
+        //             ? textRectTopScreen + textRectHeightScreen - (scaledLineHeight * (lineCount - 1))
+        //             : textRectTopScreen + (scaledFontSize / 4) + (textRectHeightScreen / 2) - (scaledLineHeight * (lineCount - 1) / 2);
+
+        //     const firstLineTop = baseline === 'top'
+        //         ? startline
+        //         : baseline === 'bottom'
+        //             ? startline - scaledLineHeight
+        //             : startline - (scaledLineHeight / 2);
+
+        //     editorHeight = Math.max(scaledLineHeight, textBlockHeight);
+        //     top = firstLineTop;
+        // }
+
+        // if (singleLine && node.points.length >= 2) {
+        //     const seg = NodeBasics.longestSegment(node.points)!;
+        //     // Normalise direction the same way the renderer does, so the normal always points "above" the line.
+        //     const { from, to } = NodeBasics.normalizeLine(seg.from, seg.to);
+        //     const angle = NodeBasics.calculateAngle(from, to);
+        //     const fromScreen = worldToScreen(from.x, from.y);
+        //     const toScreen = worldToScreen(to.x, to.y);
+        //     const midScreen = { x: (fromScreen.x + toScreen.x) / 2, y: (fromScreen.y + toScreen.y) / 2 };
+
+        //     // After normalisation the line is left-to-right, so (sin, -cos) points upward in canvas Y-down coords.
+        //     const nx = Math.sin(angle);
+        //     const ny = -Math.cos(angle);
+        //     const offset = scaledLineHeight / 2;
+
+        //     editorWidth = Math.max(24, NodeBasics.calculateLength(fromScreen, toScreen));
+        //     editorHeight = scaledLineHeight;
+        //     left = midScreen.x + nx * offset - editorWidth / 2;
+        //     top = midScreen.y + ny * offset - editorHeight / 2;
+        //     transform = `rotate(${angle}rad)`;
+        // }
+
+        // Decide where text should be placed:
+
+        const placement = NodeRegistry.adapter(node.type)?.textPlacement(node);
+        if (placement?.rect) {
+            // Lines in a bounded rect
+
+            rect = placement.rect;
+            left = screenRect.left;
+            editorWidth = Math.max(24, screenRect.width);
 
             const text = nodeText(node);
             const measureContext = this.context;
@@ -2880,10 +2982,10 @@ export class DiagramEditView extends DiagramView {
             const textBlockHeight = lineCount * scaledLineHeight;
 
             const startline = baseline === 'top'
-                ? textRectTopScreen + (scaledFontSize / 2)
+                ? screenRect.top + (scaledFontSize / 2)
                 : baseline === 'bottom'
-                    ? textRectTopScreen + textRectHeightScreen - (scaledLineHeight * (lineCount - 1))
-                    : textRectTopScreen + (scaledFontSize / 4) + (textRectHeightScreen / 2) - (scaledLineHeight * (lineCount - 1) / 2);
+                    ? screenRect.top + screenRect.height - (scaledLineHeight * (lineCount - 1))
+                    : screenRect.top + (scaledFontSize / 4) + (screenRect.height / 2) - (scaledLineHeight * (lineCount - 1) / 2);
 
             const firstLineTop = baseline === 'top'
                 ? startline
@@ -2893,13 +2995,21 @@ export class DiagramEditView extends DiagramView {
 
             editorHeight = Math.max(scaledLineHeight, textBlockHeight);
             top = firstLineTop;
-        }
 
-        if (singleLine && node.points.length >= 2) {
-            const seg = NodeBasics.longestSegment(node.points)!;
+        } else if (placement?.segment) {
+            // Text along a line segment
+
+            rect = this.coordinates.getBoundingRect(node);
+
             // Normalise direction the same way the renderer does, so the normal always points "above" the line.
-            const { from, to } = NodeBasics.normalizeLine(seg.from, seg.to);
+            const { from, to } = NodeBasics.normalizeLine(placement.segment.from, placement.segment.to);
             const angle = NodeBasics.calculateAngle(from, to);
+
+            const worldToScreen = (x: number, y: number): IPoint => ({
+                x: canvasRect.left + (x * zoom) - pan.x,
+                y: canvasRect.top + (y * zoom) - pan.y,
+            });
+
             const fromScreen = worldToScreen(from.x, from.y);
             const toScreen = worldToScreen(to.x, to.y);
             const midScreen = { x: (fromScreen.x + toScreen.x) / 2, y: (fromScreen.y + toScreen.y) / 2 };
@@ -2914,7 +3024,11 @@ export class DiagramEditView extends DiagramView {
             left = midScreen.x + nx * offset - editorWidth / 2;
             top = midScreen.y + ny * offset - editorHeight / 2;
             transform = `rotate(${angle}rad)`;
+        } else {
+            return;
         }
+
+        // Now we have the data so we can create the textarea:
 
         const textarea = document.createElement('textarea');
         textarea.value = nodeText(node);
@@ -2930,7 +3044,7 @@ export class DiagramEditView extends DiagramView {
         textarea.style.boxSizing = 'border-box';
         textarea.style.margin = '0';
         textarea.style.padding = '0';
-        textarea.style.border = 'none'; '2px dotted currentColor';
+        textarea.style.border = 'none';
         textarea.style.outline = 'none';
         textarea.style.resize = 'none';
         textarea.style.overflow = 'hidden';
@@ -2943,6 +3057,8 @@ export class DiagramEditView extends DiagramView {
         textarea.style.textAlign = textAlign(node);
         textarea.style.zIndex = '2147483647';
         textarea.style.cursor = 'text';
+
+        // Rotate the textarea if required:
 
         if (transform) {
             // Sloped connector: textarea is already centered on the midpoint so center-center is correct.
@@ -2973,6 +3089,8 @@ export class DiagramEditView extends DiagramView {
             singleLine,
         };
 
+        // Add behaviour to the textarea:
+
         const autosizeEditor = (): void => {
             if (singleLine) {
                 return;
@@ -2983,11 +3101,11 @@ export class DiagramEditView extends DiagramView {
             textarea.style.height = `${nextHeight}px`;
 
             if (baseline === 'top') {
-                textarea.style.top = `${textRectTopScreen + (scaledFontSize / 2)}px`;
+                textarea.style.top = `${screenRect.top + (scaledFontSize / 2)}px`;
             } else if (baseline === 'bottom') {
-                textarea.style.top = `${textRectTopScreen + textRectHeightScreen - nextHeight}px`;
+                textarea.style.top = `${screenRect.top + screenRect.height - nextHeight}px`;
             } else {
-                textarea.style.top = `${textRectTopScreen + (scaledFontSize / 4) + (textRectHeightScreen / 2) - (nextHeight / 2)}px`;
+                textarea.style.top = `${screenRect.top + (scaledFontSize / 4) + (screenRect.height / 2) - (nextHeight / 2)}px`;
             }
 
             if (node.angle) {

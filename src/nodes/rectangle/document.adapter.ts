@@ -88,8 +88,8 @@ export class DocumentAdapter extends RectangleAdapter {
 
     protected getWaveheight(node: INode, rect: IRect): number {
         let waveheight = node.geometry?.waveheight ?? -1;
-        if (waveheight >= 0) {
-            return waveheight;
+        if (+waveheight >= 0) {
+            return +waveheight;
         }
 
         let min_waveheight = 0;

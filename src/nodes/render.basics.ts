@@ -6,6 +6,7 @@ import type { TextOverflowMode } from "../factory/node.adapter";
 import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, shadowStyle, strokeStyle, textAlign, textBaseline, textColor } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
+import { NodeRegistry } from "../factory/node.registry";
 
 export interface TextOptions {
     overflow: TextOverflowMode;
@@ -214,6 +215,20 @@ export class RenderBasics {
         const cache = diagram.getCache();
         const cached = cache.getNode(node) || {} as INodeCached;
 
+        const adapter = NodeRegistry.adapter(node.type);
+        if (!adapter?.has_text) {
+            return; // unsupported
+        }
+        const placement = adapter.textPlacement(node);
+        if (!placement?.rect && !placement?.segment) {
+            return; // no valid text placement
+        }
+
+        if (placement.segment) {
+            options.from = options.from || placement.segment.from;
+            options.to = options.to || placement.segment.to;
+        }
+
         if (options.from || options.to) {
             // Sloped line betyween 2 points
 
@@ -222,7 +237,8 @@ export class RenderBasics {
                 from = options.from;
                 to = options.to;
             } else {
-                rect = coordinates.getBoundingRect(node);
+                rect = placement.rect ?? coordinates.getBoundingRect(node);
+                // rect = coordinates.getBoundingRect(node);
                 from = { x: rect.left, y: rect.top };
                 to = { x: rect.left + rect.width, y: rect.top + rect.height };
             }
@@ -236,7 +252,8 @@ export class RenderBasics {
         }
 
         if (node.points.length > 1) {
-            let rect = coordinates.getBoundingRect(node);
+            // let rect = coordinates.getBoundingRect(node);
+            let rect = placement.rect ?? coordinates.getBoundingRect(node);
             let textPath: Path2D | undefined;
 
             if (options.overflow == 'hidden' && options.path) {

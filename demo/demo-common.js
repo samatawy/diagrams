@@ -5,44 +5,49 @@ import {
     DIAGRAM_CLIPBOARD_EVENT,
     DIAGRAM_CHANGED_EVENT,
     NodeHandle,
-    RectangleAdapter,
-    RoundRectangleAdapter,
-    ParallelogramAdapter,
-    EllipseAdapter,
-    RhombusAdapter,
-    TextAdapter,
-    SvgAdapter,
-    PolylineAdapter,
-    PolygonAdapter,
-    CurveAdapter,
-    LineAdapter,
-    TrapezoidAdapter,
-    DocumentAdapter,
+    // RectangleAdapter,
+    // RoundRectangleAdapter,
+    // ParallelogramAdapter,
+    // EllipseAdapter,
+    // RhombusAdapter,
+    // TextAdapter,
+    // SvgAdapter,
+    // PolylineAdapter,
+    // ManhattanAdapter,
+    // PolygonAdapter,
+    // CurveAdapter,
+    // LineAdapter,
+    // TrapezoidAdapter,
+    // DocumentAdapter,
+    registerBasicAdapters,
 } from '../dist/index.js';
 
 let registered = false;
 
-export const EDITOR_TOOL_DEFS = [
-    { key: 'select', label: 'Select' },
-    { key: 'rectangle', label: 'Rectangle' },
-    { key: 'round_rectangle', label: 'Round Rect' },
-    { key: 'ellipse', label: 'Ellipse' },
-    { key: 'parallelogram', label: 'Parallelogram' },
-    { key: 'rhombus', label: 'Rhombus' },
-    { key: 'text', label: 'Text' },
-    { key: 'svg', label: 'Svg' },
-    { key: 'line', label: 'Line' },
-    { key: 'polyline', label: 'Polyline' },
-    { key: 'polygon', label: 'Polygon' },
-    { key: 'curve', label: 'Curve' },
-    { key: 'trapezoid', label: 'Trapezoid' },
-    { key: 'document', label: 'Document' },
-];
+// export const EDITOR_TOOL_DEFS = [
+//     { key: 'select', label: 'Select' },
+//     { key: 'rectangle', label: 'Rectangle' },
+//     { key: 'round_rectangle', label: 'Round Rect' },
+//     { key: 'ellipse', label: 'Ellipse' },
+//     { key: 'parallelogram', label: 'Parallelogram' },
+//     { key: 'rhombus', label: 'Rhombus' },
+//     { key: 'text', label: 'Text' },
+//     { key: 'svg', label: 'Svg' },
+//     { key: 'line', label: 'Line' },
+//     { key: 'polyline', label: 'Polyline' },
+//     { key: 'manhattan', label: 'Manhattan' },
+//     { key: 'polygon', label: 'Polygon' },
+//     { key: 'curve', label: 'Curve' },
+//     { key: 'trapezoid', label: 'Trapezoid' },
+//     { key: 'document', label: 'Document' },
+// ];
 
 export function registerAdapters() {
     if (registered) return;
     registered = true;
 
+    registerBasicAdapters();
+    /*
     RectangleAdapter.register();
     RoundRectangleAdapter.register();
     ParallelogramAdapter.register();
@@ -53,6 +58,7 @@ export function registerAdapters() {
     SvgAdapter.register();
     LineAdapter.register();
     PolylineAdapter.register();
+    ManhattanAdapter.register();
     // PolygonAdapter.register();
     // CurveAdapter.register();
 
@@ -66,6 +72,7 @@ export function registerAdapters() {
     new PolygonAdapter().register();
     new CurveAdapter().register();
     new DocumentAdapter().register();
+    */
 }
 
 export function makeBox(owner, id, type, left, top, width, height, options = {}) {

@@ -1,4 +1,4 @@
-import type { DiagramActionId } from "../../dist";
+import type { DiagramActionId } from "./diagram.actions";
 
 export const DIAGRAM_FILE_ACTION_LAYOUT: DiagramActionId[] = [
     'new',

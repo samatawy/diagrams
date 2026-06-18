@@ -81,8 +81,8 @@ export class RoundRectangleAdapter extends RectangleAdapter {
 
     protected getCornerRadius(node: INode, rect: IRect): number {
         let radius = node.geometry?.radius ?? -1;
-        if (radius >= 0) {
-            return radius;
+        if (+radius >= 0) {
+            return +radius;
         }
 
         let min_radius = Math.min(rect.width, rect.height) / 2;

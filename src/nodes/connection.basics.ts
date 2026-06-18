@@ -39,6 +39,7 @@ export class ConnectionBasics {
         if (!diagram) return;
 
         const hit = diagram.getCoordinates().getPoint(x, y, 'ignore_grid');
+        const adapter = NodeRegistry.adapter(node.type);
 
         if (node.points.length > 0) {
             const point = node.points[0]!;
@@ -49,9 +50,11 @@ export class ConnectionBasics {
 
                 if (fromAnchor && (!toTarget || toTarget.id !== fromTarget?.id)) {
                     node.from = fromAnchor;
+
                 } else {
                     node.from = undefined;
                 }
+                adapter?.afterConnect?.(node, 'from', fromAnchor ?? null);
             }
         }
 
@@ -64,9 +67,11 @@ export class ConnectionBasics {
 
                 if (toAnchor && (!fromTarget || fromTarget.id !== toTarget?.id)) {
                     node.to = toAnchor;
+
                 } else {
                     node.to = undefined;
                 }
+                adapter?.afterConnect?.(node, 'to', toAnchor ?? null);
             }
         }
     }
@@ -186,15 +191,16 @@ export class ConnectionBasics {
      * @param node The connection node to render arrows for.
      * @param context The canvas rendering context.
      */
-    public static renderArrows(node: INode & IConnection, context: CanvasRenderingContext2D): void {
-        if (node.points.length < 2) return;
+    public static renderArrows(node: INode & IConnection, context: CanvasRenderingContext2D, points?: IPoint[]): void {
+        points = points || node.points;
+        if (points.length < 2) return;
 
         if (node.startArrow) {
-            this.renderArrow(node.points[1]!, node.points[0]!, context);
+            this.renderArrow(points[1]!, points[0]!, context);
         }
 
         if (node.endArrow) {
-            this.renderArrow(node.points[node.points.length - 2]!, node.points[node.points.length - 1]!, context);
+            this.renderArrow(points[points.length - 2]!, points[points.length - 1]!, context);
         }
     }
 

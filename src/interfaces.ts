@@ -133,7 +133,7 @@ export interface INode {
     // cos?: number;
     // sin?: number;
 
-    geometry?: Record<string, number>;
+    geometry?: Record<string, number | string | boolean>;
 
     meta?: Record<string, unknown>;
 }

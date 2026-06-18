@@ -1,5 +1,6 @@
 import { CurveAdapter } from './polyline/curve.adapter';
 import { LineAdapter } from './polyline/line.adapter';
+import { ManhattanAdapter } from './polyline/manhattan.adapter';
 import { PolygonAdapter } from './polyline/polygon.adapter';
 import { PolylineAdapter } from './polyline/polyline.adapter';
 import { DocumentAdapter } from './rectangle/document.adapter';
@@ -28,6 +29,7 @@ export * from './rectangle/trapezoid.adapter';
 export * from './rectangle/document.adapter';
 
 export * from './polyline/polyline.adapter';
+export * from './polyline/manhattan.adapter';
 export * from './polyline/polygon.adapter';
 export * from './polyline/curve.adapter';
 export * from './polyline/line.adapter';
@@ -40,6 +42,7 @@ export function registerBasicAdapters(): void {
 
     LineAdapter.register();
     PolylineAdapter.register();
+    ManhattanAdapter.register();
     CurveAdapter.register();
 
     RhombusAdapter.register();

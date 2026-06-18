@@ -1009,11 +1009,7 @@ export class DiagramView extends Diagram implements HasSelection {
             const zoomFactor = event.deltaY > 0 ? 1.1 : 1 / 1.1;
             this.zoomBy(zoomFactor, event.offsetX, event.offsetY);
         } else {
-            this.coordinates.pan = {
-                x: this.coordinates.pan.x + event.deltaX,
-                y: this.coordinates.pan.y + event.deltaY,
-            };
-            this.emitViewportEvents(true, false);
+            this.panBy(event.deltaX, event.deltaY);
         }
 
         this.render();

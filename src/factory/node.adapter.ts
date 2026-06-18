@@ -1,5 +1,5 @@
-import type { IGrid, INode } from "../interfaces";
-import type { IPoint, NodeHandle } from "../types";
+import type { IConnectionAnchor, IGrid, INode } from "../interfaces";
+import type { IPoint, IRect, NodeHandle } from "../types";
 import type { IconSource } from "./icon.registry";
 
 export type { IconSource };
@@ -7,6 +7,17 @@ export type { IconSource };
 export type HollowMode = 'always' | 'never' | 'if_transparent';
 
 export type TextOverflowMode = 'visible' | 'hidden' | 'ellipsis';
+
+export interface TextPlacement {
+    /** 
+     * World-space rect for axis-aligned text (rectangles, boxes).
+     */
+    rect?: IRect;
+    /** 
+     * World-space segment for line-following text (polylines, connectors).
+     */
+    segment?: { from: IPoint; to: IPoint };
+}
 
 /**
  * INodeAdapter defines the interface for handling different types of nodes in the diagram.
@@ -99,6 +110,15 @@ export interface INodeAdapter {
     onCreateDraft?(tool: string): Partial<INode> | undefined;
 
     /**
+     * Any special handling to perform after a connection is made to this node, such as updating its geometry or state 
+     * based on the new connection.
+     * @param node The node that was connected.
+     * @param direction The direction of the connection ('from' or 'to').
+     * @param anchor The connection anchor involved in the connection, or null if none.
+     */
+    afterConnect?(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor | null): void;
+
+    /**
      * Updates the node's size while the user is dragging a resize handle.
      * Called on every pointermove while a resize is active.
      * @param node The node being resized.
@@ -142,6 +162,13 @@ export interface INodeAdapter {
      * @param ctx The canvas rendering context to draw on.
      */
     renderSelection(node: INode, ctx: CanvasRenderingContext2D): void;
+
+    /**
+     * Where to place the text for this node, if it has any. This is used for rendering and in-place editing.
+     * @param node The node whose text placement to determine.
+     * @returns The text placement information, or undefined if the node has no text.
+     */
+    textPlacement(node: INode): TextPlacement | undefined;
 
     /**
      * Writes the given node to a JSON-serializable format using the provided serializer.

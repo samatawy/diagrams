@@ -4,7 +4,7 @@ import { NodeHandle, type IPoint, type IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RenderBasics } from "../render.basics";
-import type { HollowMode, INodeAdapter, TextOverflowMode } from "../../factory/node.adapter";
+import type { HollowMode, INodeAdapter, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
 import { imageMode, isHollow, lineWidth, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 
@@ -244,6 +244,18 @@ export class RectangleAdapter implements INodeAdapter {
 
             context.restore();
         }
+    }
+
+    public textPlacement(node: INode): TextPlacement {
+        if (node.points.length > 1) {
+            const diagram = node.owner;
+            if (!isDiagramViewLike(diagram)) return {};
+
+            const coordinates = diagram.getCoordinates();
+            const rect = coordinates.getBoundingRect(node);
+            return { rect };
+        }
+        return {};
     }
 
     public write(node: INode, serializer: any): any {

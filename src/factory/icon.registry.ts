@@ -146,6 +146,7 @@ IconRegistry.registerSymbol('export', 'export', sym('export', `<path d="M4 12v8a
   <polyline points="16 6 12 2 8 6"/>
   <line x1="12" y1="2" x2="12" y2="15"/>`));
 
+// 
 IconRegistry.registerSymbol('undo', 'undo',
     sym('undo', '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>'));
 
@@ -272,6 +273,7 @@ IconRegistry.registerSymbol('ellipse', 'tool-ellipse',
 
 IconRegistry.registerSymbol('rhombus', 'tool-rhombus',
     sym('tool-rhombus', '<polygon points="12 2 22 12 12 22 2 12"/>'));
+
 IconRegistry.registerSymbol('text', 'tool-text',
     sym('tool-text', '<line x1="4" y1="6" x2="20" y2="6"/><line x1="12" y1="6" x2="12" y2="20"/>'));
 
@@ -283,6 +285,9 @@ IconRegistry.registerSymbol('line', 'tool-line',
 
 IconRegistry.registerSymbol('polyline', 'tool-polyline',
     sym('tool-polyline', '<polyline points="4 19 9 9 14 14 19 5"/>'));
+
+IconRegistry.registerSymbol('manhattan', 'tool-manhattan',
+    sym('tool-manhattan', '<polyline points="4 19 10 19 10 8 19 8"/>'));
 
 IconRegistry.registerSymbol('polygon', 'tool-polygon',
     sym('tool-polygon', '<polygon points="12 3 20 8 20 16 12 21 4 16 4 8"/>'));
