@@ -1943,6 +1943,8 @@ export class DiagramEditView extends DiagramView {
 
         if (event.buttons != 1 && event.buttons != 2) return;
         const localNodes = this.hitNodes(event.offsetX, event.offsetY);
+        // const nonConnections = localNodes.filter(node => !isConnection(node));
+
         const toggleSelectionGesture = event.ctrlKey || event.metaKey;
         const rectSelectionGesture = !this.isSpacePanning
             && !event.ctrlKey
@@ -1962,6 +1964,7 @@ export class DiagramEditView extends DiagramView {
 
         if (rectSelectionGesture) {
             this.downShape = event.shiftKey && localNodes.length > 0
+                // ? nonConnections[0] ?? localNodes[0]
                 ? localNodes[0]
                 : undefined;
 
@@ -1976,13 +1979,15 @@ export class DiagramEditView extends DiagramView {
                         this.downShape = shape;
                     }
                 }
-                this.downShape = this.downShape || localNodes[0];
+                // this.downShape = this.downShape ?? nonConnections[0] ?? localNodes[0];
+                this.downShape = this.downShape ?? localNodes[0];
             }
 
         } else {
             if (localNodes.length == 0) {
                 this.downShape = undefined;
             } else {
+                // this.downShape = nonConnections[0] ?? localNodes[0];
                 this.downShape = localNodes[0];
 
                 // Use ctrl to iterate between overlaying shapes..
@@ -1993,6 +1998,7 @@ export class DiagramEditView extends DiagramView {
                         if (next == 'ready') next = one;
                         if (this.isSelected(one)) next = 'ready';
                     }
+                    // this.downShape = isNode(next) ? next : nonConnections[0] ?? localNodes[0];
                     this.downShape = isNode(next) ? next : localNodes[0];
                 }
             }
@@ -2033,7 +2039,6 @@ export class DiagramEditView extends DiagramView {
             // Prepare to move the anchor point..
             ConnectionBasics.disconnect(this.downShape, event.offsetX, event.offsetY);
             this.emitConnectionChanges(this.downShape, this.connectionBeforeEdit);
-            // this.downShape.disconnect(event.offsetX, event.offsetY);
         }
 
         let removedPoint = false;

@@ -1,6 +1,6 @@
 import type { IConnection, IConnectionAnchor, INode } from "../interfaces";
 import { NodeHandle, type IPoint, type IRect } from "../types";
-import { isDiagramViewLike } from "../guards";
+import { isConnection, isConnectionNode, isDiagramViewLike } from "../guards";
 import type { CoordinateSystem } from "../view/coordinate.system";
 import { NodeRegistry } from "../factory/node.registry";
 import { NodeBasics } from "./node.basics";
@@ -50,11 +50,11 @@ export class ConnectionBasics {
 
                 if (fromAnchor && (!toTarget || toTarget.id !== fromTarget?.id)) {
                     node.from = fromAnchor;
+                    adapter?.afterConnect?.(node, 'from', fromAnchor ?? null);
 
                 } else {
                     node.from = undefined;
                 }
-                adapter?.afterConnect?.(node, 'from', fromAnchor ?? null);
             }
         }
 
@@ -67,11 +67,11 @@ export class ConnectionBasics {
 
                 if (toAnchor && (!fromTarget || fromTarget.id !== toTarget?.id)) {
                     node.to = toAnchor;
+                    adapter?.afterConnect?.(node, 'to', toAnchor ?? null);
 
                 } else {
                     node.to = undefined;
                 }
-                adapter?.afterConnect?.(node, 'to', toAnchor ?? null);
             }
         }
     }
@@ -273,7 +273,11 @@ export class ConnectionBasics {
         if (!diagram) return undefined;
 
         const coordinates = diagram.getCoordinates();
-        const atPoint = diagram.hitNodes(x, y);
+        let atPoint = diagram.hitNodes(x, y);
+        const nonConnections = atPoint.filter(n => !isConnectionNode(n));
+        if (nonConnections.length > 0) {
+            atPoint = nonConnections;
+        }
         if (!atPoint.length) return undefined;
 
         for (const source of atPoint) {

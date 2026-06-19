@@ -24,7 +24,7 @@ export class ManhattanAdapter extends PolylineAdapter {
     has_text = true;
     text_overflow: TextOverflowMode = 'hidden';
 
-    afterConnect?(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor | null): void {
+    afterConnect(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor | null): void {
         if (direction === 'from') {
             node.geometry = node.geometry || {} as any;
             node.geometry!.from_handle = String(anchor?.handle);
@@ -32,7 +32,35 @@ export class ManhattanAdapter extends PolylineAdapter {
             node.geometry = node.geometry || {} as any;
             node.geometry!.to_handle = String(anchor?.handle);
         }
-        console.log('afterConnect', { node, direction, anchor });
+
+        // Ensure at least one midpoint exists.
+        if (node.points.length === 2 && node.geometry?.from_handle && node.geometry?.to_handle) {
+
+            const first = node.points[0]!;
+            const second = node.points[1]!;
+            let mid_x = (first.x + second.x) / 2;
+            let mid_y = (first.y + second.y) / 2;
+            let offset: number;
+
+            switch (anchor?.handle) {
+                case NodeHandle.N:
+                    offset = -24;
+                    node.points.splice(1, 0, { x: mid_x, y: first.y + offset });
+                    break;
+                case NodeHandle.S:
+                    offset = 24;
+                    node.points.splice(1, 0, { x: mid_x, y: first.y + offset });
+                    break;
+                case NodeHandle.W:
+                    offset = -24;
+                    node.points.splice(1, 0, { x: first.x + offset, y: mid_y });
+                    break;
+                case NodeHandle.E:
+                    offset = 24;
+                    node.points.splice(1, 0, { x: first.x + offset, y: mid_y });
+                    break;
+            }
+        }
     }
 
     render(node: INode, context: CanvasRenderingContext2D): void {
@@ -52,28 +80,52 @@ export class ManhattanAdapter extends PolylineAdapter {
             const fromHandle = node.geometry?.from_handle as NodeHandle;
             const toHandle = node.geometry?.to_handle as NodeHandle;
 
-            const inferredPoints: IPoint[] = this.inferPoints(node, fromHandle, toHandle);
+            // const inferredPoints: IPoint[] = this.inferPoints(node, fromHandle, toHandle);
 
+            // const path = new Path2D();
+            // path.moveTo(inferredPoints[0]!.x, inferredPoints[0]!.y);
+
+            // for (let i = 1; i < inferredPoints.length; i++) {
+            //     const next = inferredPoints[i]!;
+            //     path.lineTo(next.x, next.y);
+            // }
+
+            // const plan = this.inferPlan(node.points, fromHandle, toHandle);
+            // console.log('Plan for rendering:', plan);
+            // const pathPoints = this.buildPoints(plan);
+            const pathPoints = this.planBestPath(node.points, fromHandle, toHandle);
+            console.log('Inferred points for rendering:', pathPoints);
             const path = new Path2D();
-            path.moveTo(inferredPoints[0]!.x, inferredPoints[0]!.y);
-
-            for (let i = 1; i < inferredPoints.length; i++) {
-                const next = inferredPoints[i]!;
+            path.moveTo(pathPoints[0]!.x, pathPoints[0]!.y);
+            for (let i = 1; i < pathPoints.length; i++) {
+                const next = pathPoints[i]!;
                 path.lineTo(next.x, next.y);
             }
-
             context.stroke(path);
             if (isConnectionNode(node)) {
-                ConnectionBasics.renderArrows(node, context, inferredPoints);
+                ConnectionBasics.renderArrows(node, context, pathPoints);
             }
 
             if (node.text) {
-                const { from, to } = NodeBasics.longestSegment(inferredPoints) || { from: inferredPoints[0]!, to: inferredPoints[1]! };
+                const { from, to } = NodeBasics.longestSegment(pathPoints) || { from: pathPoints[0]!, to: pathPoints[1]! };
                 RenderBasics.renderText(node, context, {
                     overflow: this.text_overflow,
                     from, to
                 });
             }
+
+            // context.stroke(path);
+            // if (isConnectionNode(node)) {
+            //     ConnectionBasics.renderArrows(node, context, inferredPoints);
+            // }
+
+            // if (node.text) {
+            //     const { from, to } = NodeBasics.longestSegment(inferredPoints) || { from: inferredPoints[0]!, to: inferredPoints[1]! };
+            //     RenderBasics.renderText(node, context, {
+            //         overflow: this.text_overflow,
+            //         from, to
+            //     });
+            // }
 
             cached.path = path;
             cache.setNode(node, cached);
@@ -82,135 +134,179 @@ export class ManhattanAdapter extends PolylineAdapter {
         }
     }
 
-    private inferPoints(node: INode, from_handle?: NodeHandle, to_handle?: NodeHandle): IPoint[] {
-        const inferred: IPoint[] = [];
+    // private inferPoints(node: INode, from_handle?: NodeHandle, to_handle?: NodeHandle): IPoint[] {
+    //     const inferred: IPoint[] = [];
 
-        let first = node.points[0];
-        if (!first) return inferred;
-        inferred.push(first);
+    //     let first = node.points[0];
+    //     if (!first) return inferred;
+    //     inferred.push(first);
 
-        let next = node.points[1];
-        if (!next) return inferred;
+    //     let next = node.points[1];
+    //     if (!next) return inferred;
 
-        const last = node.points[node.points.length - 1]!;
+    //     const last = node.points[node.points.length - 1]!;
 
-        let direction = this.infer_cardinal_from_handle(from_handle);
-        let segment = this.inferSegment(first, next, direction);
+    //     // const plan = this.planDirections(node.points, from_handle, to_handle);
+    //     // console.log('Plan for first segment:', plan);
 
-        inferred.push(...segment);
-        inferred.push(next);
+    //     let direction = this.infer_cardinal_from_handle(from_handle);
+    //     let segment = this.inferSegment(first, next, direction);
 
-        for (let i = 1; i < node.points.length - 1; i++) {
-            const from = inferred[inferred.length - 1]!;
-            const to = node.points[i]!;
+    //     inferred.push(...segment);
+    //     inferred.push(next);
 
-            direction = this.infer_cardinal_from_points(from, to);
-            segment = this.inferSegment(from, to, direction);
+    //     for (let i = 1; i < node.points.length - 1; i++) {
+    //         const from = inferred[inferred.length - 1]!;
+    //         const to = node.points[i]!;
 
-            inferred.push(...segment);
-            inferred.push(to);
-        }
+    //         direction = this.infer_cardinal_from_points(from, to);
+    //         segment = this.inferSegment(from, to, direction);
 
-        const from = inferred[inferred.length - 1]!;
-        const end_direction = this.infer_cardinal_from_handle(to_handle);
-        const end_segment = this.inferSegment(last, from, end_direction).reverse();
+    //         inferred.push(...segment);
+    //         inferred.push(to);
+    //     }
 
-        inferred.push(...end_segment);
-        inferred.push(last);
+    //     const from = inferred[inferred.length - 1]!;
+    //     const end_direction = this.infer_cardinal_from_handle(to_handle);
+    //     const end_segment = this.inferSegment(last, from, end_direction).reverse();
 
-        console.log('inferred points', inferred);
-        return inferred;
-    }
+    //     inferred.push(...end_segment);
+    //     inferred.push(last);
 
-    /**
-     * Return the corner points needed to connect two points in a Manhattan-style polyline, based on the direction of the connection.
-     * @param from The starting point of the segment.
-     * @param to The ending point of the segment.
-     * @param from_direction The direction from which the segment starts.
-     * @param to_direction The direction towards which the segment ends.
-     * @returns An array of points representing the corners of the Manhattan-style polyline segment.
-     */
-    private inferSegment(from: IPoint, to: IPoint, from_direction: CardinalDirection, to_direction?: CardinalDirection): IPoint[] {
-        const points: IPoint[] = [];
+    //     return inferred;
+    // }
 
-        if (from.x == to.x || from.y == to.y) {
-            return [];
-        }
+    // /**
+    //  * Return the corner points needed to connect two points in a Manhattan-style polyline, based on the direction of the connection.
+    //  * @param from The starting point of the segment.
+    //  * @param to The ending point of the segment.
+    //  * @param from_direction The direction from which the segment starts.
+    //  * @returns An array of points representing the corners of the Manhattan-style polyline segment.
+    //  */
+    // private inferSegment(from: IPoint, to: IPoint, from_direction: CardinalDirection): IPoint[] {
+    //     const points: IPoint[] = [];
 
-        const stub = 24; // Minimum segment length before a turn is forced
+    //     if (from.x == to.x || from.y == to.y) {
+    //         return [];
+    //     }
 
-        let walker = { x: from.x, y: from.y };
-        let dx = to.x - from.x;
-        let dy = to.y - from.y;
+    //     const stub = 24; // Minimum segment length before a turn is forced
 
-        // if (to_direction) {
-        //     return this.inferSegment(to, from, to_direction);
-        // }
+    //     let walker = { x: from.x, y: from.y };
+    //     let dx = to.x - from.x;
+    //     let dy = to.y - from.y;
 
-        if (from_direction === 'north') {
-            walker = { x: from.x, y: from.y + Math.min(-stub, dy) };
-            points.push(walker);
+    //     // Pre-check: if `to` is behind or too close, shift `from` one stub unit in from_direction
+    //     // before running the walker. This keeps the path from retracing the segment that just arrived.
+    //     // if (from_direction === 'east' && dx < 0) {
+    //     //     points.push({ x: from.x, y: from.y + stub * Math.sign(dy) });
+    //     //     from = points[points.length - 1]!;
+    //     //     console.log('Detour from east');
+    //     // }
+    //     // if (from_direction === 'west' && dx > 0) {
+    //     //     points.push({ x: from.x, y: from.y + stub * Math.sign(dy) });
+    //     //     from = points[points.length - 1]!;
+    //     //     console.log('Detour from west');
+    //     // }
+    //     // if (from_direction === 'north' && dy > 0) {
+    //     //     points.push({ x: from.x + stub * Math.sign(dx), y: from.y });
+    //     //     from = points[points.length - 1]!;
+    //     //     console.log('Detour from north');
+    //     // }
+    //     // if (from_direction === 'south' && dy < 0) {
+    //     //     points.push({ x: from.x + stub * Math.sign(dx), y: from.y });
+    //     //     from = points[points.length - 1]!;
+    //     //     console.log('Detour from south');
+    //     // }
 
-            if (Math.abs(to.y - walker.y) >= 1) {
-                walker = { x: to.x, y: walker.y };
-                points.push(walker);
-            }
-        }
+    //     if (from_direction === 'north') {
+    //         walker = { x: from.x, y: from.y + Math.min(-stub, dy) };
+    //         points.push(walker);
 
-        if (from_direction === 'south') {
-            walker = { x: from.x, y: from.y + Math.max(stub, dy) };
-            points.push(walker);
+    //         // if (walker.y - to.y <= 0) {       // Prevent backtracking
+    //         //     walker = { x: walker.x + stub * Math.sign(dx), y: walker.y };
+    //         //     points.push(walker);
+    //         //     console.log('Detour from north');
+    //         // }
 
-            if (Math.abs(to.y - walker.y) >= 1) {
-                walker = { x: to.x, y: walker.y };
-                points.push(walker);
-            }
-        }
+    //         if (Math.abs(to.y - walker.y) >= 1) {
+    //             walker = { x: to.x, y: walker.y };
+    //             points.push(walker);
+    //         }
+    //     }
 
-        if (from_direction === 'west') {
-            walker = { x: from.x + Math.min(-stub, dx), y: from.y };
-            points.push(walker);
+    //     if (from_direction === 'south') {
+    //         walker = { x: from.x, y: from.y + Math.max(stub, dy) };
+    //         points.push(walker); ``
 
-            if (Math.abs(to.x - walker.x) >= 1) {
-                walker = { x: walker.x, y: to.y };
-                points.push(walker);
-            }
-        }
+    //         // if (walker.y - to.y <= 0) {       // Prevent backtracking
+    //         //     walker = { x: walker.x + stub * Math.sign(dx), y: walker.y };
+    //         //     points.push(walker);
+    //         //     console.log('Detour from south');
+    //         // }
 
-        if (from_direction === 'east') {
-            walker = { x: from.x + Math.max(stub, dx), y: from.y };
-            points.push(walker);
+    //         if (Math.abs(to.y - walker.y) >= 1) {
+    //             walker = { x: to.x, y: walker.y };
+    //             points.push(walker);
+    //         }
+    //     }
 
-            if (Math.abs(to.x - walker.x) >= 1) {
-                walker = { x: walker.x, y: to.y };
-                points.push(walker);
-            }
-        }
+    //     if (from_direction === 'west') {
+    //         walker = { x: from.x + Math.min(-stub, dx), y: from.y };
+    //         points.push(walker);
 
-        if (to_direction) {
-            if (to_direction === 'north') {
-                walker = { x: to.x, y: to.y + Math.min(-stub, dy) };
-                points.push(walker);
-            }
+    //         // if (walker.x - to.x <= 0) {       // Prevent backtracking
+    //         //     walker = { x: walker.x, y: walker.y + stub * Math.sign(dy) };
+    //         //     points.push(walker);
+    //         //     console.log('Detour from west');
+    //         // }
 
-            if (to_direction === 'south') {
-                walker = { x: to.x, y: to.y + Math.max(stub, dy) };
-                points.push(walker);
-            }
+    //         if (Math.abs(to.x - walker.x) >= 1) {
+    //             walker = { x: walker.x, y: to.y };
+    //             points.push(walker);
+    //         }
+    //     }
 
-            if (to_direction === 'west') {
-                walker = { x: to.x + Math.min(-stub, dx), y: to.y };
-                points.push(walker);
-            }
+    //     if (from_direction === 'east') {
+    //         walker = { x: from.x + Math.max(stub, dx), y: from.y };
+    //         points.push(walker);
 
-            if (to_direction === 'east') {
-                walker = { x: to.x + Math.max(stub, dx), y: to.y };
-                points.push(walker);
-            }
-        }
+    //         // if (walker.x - to.x <= 0) {       // Prevent backtracking
+    //         //     walker = { x: walker.x, y: walker.y + stub * Math.sign(dy) };
+    //         //     points.push(walker);
+    //         //     console.log('Detour from east');
+    //         // }
 
-        return points;
-    }
+    //         if (Math.abs(to.x - walker.x) >= 1) {
+    //             walker = { x: walker.x, y: to.y };
+    //             points.push(walker);
+    //         }
+    //     }
+
+    //     // if (to_direction) {
+    //     //     if (to_direction === 'north') {
+    //     //         walker = { x: to.x, y: to.y + Math.min(-stub, dy) };
+    //     //         points.push(walker);
+    //     //     }
+
+    //     //     if (to_direction === 'south') {
+    //     //         walker = { x: to.x, y: to.y + Math.max(stub, dy) };
+    //     //         points.push(walker);
+    //     //     }
+
+    //     //     if (to_direction === 'west') {
+    //     //         walker = { x: to.x + Math.min(-stub, dx), y: to.y };
+    //     //         points.push(walker);
+    //     //     }
+
+    //     //     if (to_direction === 'east') {
+    //     //         walker = { x: to.x + Math.max(stub, dx), y: to.y };
+    //     //         points.push(walker);
+    //     //     }
+    //     // }
+
+    //     return points;
+    // }
 
     private infer_cardinal_from_handle(fromHandle?: NodeHandle, toHandle?: NodeHandle): CardinalDirection {
         if (fromHandle) {
@@ -231,17 +327,283 @@ export class ManhattanAdapter extends PolylineAdapter {
         return 'east';
     }
 
-    private infer_cardinal_from_points(from: IPoint, to: IPoint): CardinalDirection {
-        if (!from || !to) {
-            return 'east';
+    // private infer_cardinal_from_points(from: IPoint, to: IPoint): CardinalDirection {
+    //     if (!from || !to) {
+    //         return 'east';
+    //     }
+
+    //     const dx = to.x - from.x;
+    //     const dy = to.y - from.y;
+    //     if (Math.abs(dx) >= Math.abs(dy)) {
+    //         return dx >= 0 ? 'east' : 'west';
+    //     }
+    //     return dy >= 0 ? 'south' : 'north';
+    // }
+
+    private planBestPath(points: IPoint[], from_handle?: NodeHandle, to_handle?: NodeHandle): IPoint[] {
+        const pathPoints: IPoint[] = [];
+        const stub = 24;
+
+        if (points.length < 2) return points;
+        let leg: { start: IPoint; end: IPoint } = { start: points[0]!, end: points[1]! };
+        pathPoints.push(leg.start);
+
+        let dx: number;
+        let dy: number;
+        let next_point: IPoint;
+        let next_direction: CardinalDirection, prior_direction: CardinalDirection;
+
+        next_direction = from_handle ? this.infer_cardinal_from_handle(from_handle)
+            : this.nextDirection(leg.start, leg.end);
+
+        next_point = this.nextPoint(leg.start, leg.end, next_direction, stub);
+        pathPoints.push(next_point);
+        leg = { start: next_point, end: leg.end };
+        prior_direction = next_direction;
+
+        let index = 1;
+        let i = 0;
+        while (index < points.length && i < 100) {
+            dx = leg.end.x - leg.start.x;
+            dy = leg.end.y - leg.start.y;
+            next_direction = this.nextDirection(leg.start, leg.end, prior_direction);
+            next_point = this.nextPoint(leg.start, leg.end, next_direction, 0);
+            pathPoints.push(next_point);
+
+            if (this.samePoint(next_point, leg.end)) {
+                // Take up the next leg immediately, since the point is already aligned with the current leg.
+                leg = { start: leg.end, end: points[index + 1]! };
+                index++;
+            } else {
+                // Continue to the end of the current leg.
+                leg = { start: next_point, end: leg.end };
+            }
+            prior_direction = next_direction;
+            i++;
         }
 
+        return pathPoints;
+    }
+
+    private nextDirection(from: IPoint, to: IPoint, prior_direction?: CardinalDirection): CardinalDirection {
         const dx = to.x - from.x;
         const dy = to.y - from.y;
-        if (Math.abs(dx) >= Math.abs(dy)) {
-            return dx >= 0 ? 'east' : 'west';
+
+        if (prior_direction === 'east') {
+            if (dx > 0) return 'east';
+            return dy < 0 ? 'north' : 'south';
+
+        } else if (prior_direction === 'west') {
+            if (dx < 0) return 'west';
+            return dy < 0 ? 'north' : 'south';
+
+        } else if (prior_direction === 'north') {
+            if (dy < 0) return 'north';
+            return dx < 0 ? 'west' : 'east';
+
+        } else if (prior_direction === 'south') {
+            if (dy > 0) return 'south';
+            return dx < 0 ? 'west' : 'east';
         }
-        return dy >= 0 ? 'south' : 'north';
+
+        const prefer_horizontal = Math.abs(dx) >= Math.abs(dy);
+        if (prefer_horizontal) {
+            return dx < 0 ? 'west' : 'east';
+        } else {
+            return dy < 0 ? 'north' : 'south';
+        }
+    }
+
+    private nextPoint(from: IPoint, to: IPoint, direction: CardinalDirection, stub: number): IPoint {
+        let mdx = (to.x - from.x);
+        if (mdx === 0) return to;
+        let mdy = (to.y - from.y);
+        if (mdy === 0) return to;
+
+        switch (direction) {
+            case 'north':
+                mdy = mdy < 0 ? Math.min(-stub, mdy) : stub;
+                return { x: from.x, y: from.y + mdy };
+            case 'south':
+                mdy = mdy > 0 ? Math.max(stub, mdy) : -stub;
+                return { x: from.x, y: from.y + mdy };
+            case 'west':
+                mdx = mdx < 0 ? Math.min(-stub, mdx) : -stub;
+                return { x: from.x + mdx, y: from.y };
+            case 'east':
+                mdx = mdx > 0 ? Math.max(stub, mdx) : stub;
+                return { x: from.x + mdx, y: from.y };
+            default:
+                return from;
+        }
+    }
+
+    private samePoint(p1: IPoint, p2: IPoint): boolean {
+        return Math.abs(p1.x - p2.x) < 1 && Math.abs(p1.y - p2.y) < 1;
+    }
+
+    // /**
+    //  * Plan one CardinalDirection per segment (points.length - 1 entries).
+    //  * Consecutive directions are never opposing (east↔west, north↔south).
+    //  * east/west segments arrive horizontally, so the next segment must be vertical, and vice-versa.
+    //  */
+    // private planDirections(points: IPoint[], from_handle?: NodeHandle, to_handle?: NodeHandle): CardinalDirection[] {
+    //     const plan: CardinalDirection[] = [];
+    //     if (points.length < 2) return plan;
+
+    //     const isHorizontal = (d: CardinalDirection) => d === 'east' || d === 'west';
+    //     const isVertical = (d: CardinalDirection) => d === 'north' || d === 'south';
+
+    //     // Segment 0: driven by the from handle
+    //     plan.push(this.infer_cardinal_from_handle(from_handle));
+
+    //     // Middle segments: pick candidate from geometry, but forbid same axis as previous
+    //     for (let i = 1; i < points.length - 1; i++) {
+    //         const prev = plan[plan.length - 1]!;
+    //         const from = points[i]!;
+    //         const to = points[i + 1]!;
+    //         const dx = to.x - from.x;
+    //         const dy = to.y - from.y;
+    //         let candidate = this.infer_cardinal_from_points(from, to);
+
+    //         // east/west arrival → next must be vertical; north/south arrival → next must be horizontal
+    //         if (isHorizontal(prev) && isHorizontal(candidate)) {
+    //             candidate = dy >= 0 ? 'south' : 'north';
+    //         } else if (isVertical(prev) && isVertical(candidate)) {
+    //             candidate = dx >= 0 ? 'east' : 'west';
+    //         }
+
+    //         plan.push(candidate);
+    //     }
+
+    //     // Last segment: driven by the to handle (inverted by infer_cardinal_from_handle)
+    //     plan.push(this.infer_cardinal_from_handle(undefined, to_handle));
+
+    //     return plan;
+    // }
+
+    // /**
+    //  * Convert an interleaved plan [p0, dir0, p1, dir1, ..., pN] into a flat IPoint[]
+    //  * ready for lineTo() calls. One L-corner is inserted per segment based on exit direction:
+    //  *   east/west → horizontal leg first  → corner at { x: to.x, y: from.y }
+    //  *   north/south → vertical leg first  → corner at { x: from.x, y: to.y }
+    //  * No corner is inserted when from and to are already axis-aligned.
+    //  */
+    // private buildPoints(plan: (CardinalDirection | IPoint)[]): IPoint[] {
+    //     const result: IPoint[] = [];
+    //     if (plan.length === 0) return result;
+
+    //     const isPoint = (x: CardinalDirection | IPoint): x is IPoint => typeof x === 'object';
+
+    //     let current = plan[0] as IPoint;
+    //     result.push(current);
+    //     let i = 1;
+
+    //     while (i < plan.length) {
+    //         // Collect consecutive directions until the next point
+    //         const dirs: CardinalDirection[] = [];
+    //         while (i < plan.length && !isPoint(plan[i]!)) {
+    //             dirs.push(plan[i] as CardinalDirection);
+    //             i++;
+    //         }
+    //         const target = plan[i] as IPoint;
+    //         i++;
+
+    //         if (dirs.length === 1) {
+    //             // Straight — no corner needed
+    //         } else if (dirs.length === 2) {
+    //             // L-turn: one corner based on exit direction
+    //             const d1 = dirs[0]!;
+    //             if (d1 === 'east' || d1 === 'west') {
+    //                 result.push({ x: target.x, y: current.y }); // horizontal first
+    //             } else {
+    //                 result.push({ x: current.x, y: target.y }); // vertical first
+    //             }
+    //         }
+
+    //         result.push(target);
+    //         current = target;
+    //     }
+
+    //     return result;
+    // }
+
+    // /**
+    //  * Build an interleaved plan: [point, ...directions, point, ...directions, ..., point].
+    //  * Stub IPoints are inserted after points[0] (from handle) and before points[last] (to handle)
+    //  * so that all segments are natural L-turns — no special 3-dir cases needed.
+    //  */
+    // private inferPlan(points: IPoint[], from_handle?: NodeHandle, to_handle?: NodeHandle): (CardinalDirection | IPoint)[] {
+    //     if (points.length < 2) return [...points];
+
+    //     const stub = 24;
+
+    //     // Augment: insert a stub waypoint right after the first point (forced exit)
+    //     const augmented: IPoint[] = [...points];
+    //     if (from_handle) {
+    //         const origin = augmented[0]!;
+    //         const exit_dir = this.infer_cardinal_from_handle(from_handle);
+    //         const stub_pt: IPoint =
+    //             exit_dir === 'east' ? { x: origin.x + stub, y: origin.y } :
+    //                 exit_dir === 'west' ? { x: origin.x - stub, y: origin.y } :
+    //                     exit_dir === 'north' ? { x: origin.x, y: origin.y - stub } :
+    //                         { x: origin.x, y: origin.y + stub };
+    //         augmented.splice(1, 0, stub_pt);
+    //     }
+
+    //     // Augment: insert a stub waypoint right before the last point (forced arrival)
+    //     if (to_handle) {
+    //         const dest = augmented[augmented.length - 1]!;
+    //         const arrive_dir = this.infer_cardinal_from_handle(undefined, to_handle);
+    //         const stub_pt: IPoint =
+    //             arrive_dir === 'east' ? { x: dest.x - stub, y: dest.y } :
+    //                 arrive_dir === 'west' ? { x: dest.x + stub, y: dest.y } :
+    //                     arrive_dir === 'north' ? { x: dest.x, y: dest.y + stub } :
+    //                         { x: dest.x, y: dest.y - stub };
+    //         augmented.splice(augmented.length - 1, 0, stub_pt);
+    //     }
+
+    //     // Route between all augmented points with natural L-turns only.
+    //     // Track last_dir so we never start a segment with the opposing direction.
+    //     const opposite: Record<string, CardinalDirection> = { east: 'west', west: 'east', north: 'south', south: 'north' };
+    //     const plan: (CardinalDirection | IPoint)[] = [augmented[0]!];
+    //     let last_dir: CardinalDirection | null = null;
+
+    //     for (let i = 0; i < augmented.length - 1; i++) {
+    //         const from = augmented[i]!;
+    //         const to = augmented[i + 1]!;
+    //         const dx = to.x - from.x;
+    //         const dy = to.y - from.y;
+
+    //         if (dx === 0) {
+    //             last_dir = dy > 0 ? 'south' : 'north';
+    //             plan.push(last_dir, to);
+    //         } else if (dy === 0) {
+    //             last_dir = dx > 0 ? 'east' : 'west';
+    //             plan.push(last_dir, to);
+    //         } else {
+    //             const h_dir: CardinalDirection = dx >= 0 ? 'east' : 'west';
+    //             const v_dir: CardinalDirection = dy >= 0 ? 'south' : 'north';
+    //             // If the natural first direction opposes last_dir, start with perpendicular
+    //             const prefer_h = Math.abs(dx) >= Math.abs(dy);
+    //             const first = prefer_h ? h_dir : v_dir;
+    //             const second = prefer_h ? v_dir : h_dir;
+    //             if (last_dir && first === opposite[last_dir]) {
+    //                 plan.push(second, first, to);
+    //                 last_dir = first;
+    //             } else {
+    //                 plan.push(first, second, to);
+    //                 last_dir = second;
+    //             }
+    //         }
+    //     }
+
+    //     return plan;
+    // }
+
+    private inferPoints(node: INode, from_handle?: NodeHandle, to_handle?: NodeHandle): IPoint[] {
+        const plan = this.planBestPath(node.points, from_handle, to_handle);
+        return plan;
     }
 
     public textPlacement(node: INode): TextPlacement {
