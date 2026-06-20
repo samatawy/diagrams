@@ -350,6 +350,14 @@ export class DiagramEditor {
         return true;
     }
 
+    public get canvas(): HTMLCanvasElement {
+        return this.diagram.getCanvas();
+    }
+
+    public get view(): DiagramEditView {
+        return this.diagram;
+    }
+
     /**
      * Returns the owned diagram editing view.
      */

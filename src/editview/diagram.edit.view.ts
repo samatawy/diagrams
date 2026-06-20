@@ -598,6 +598,9 @@ export class DiagramEditView extends DiagramView {
         return this.current.tool || 'select';
     }
 
+    /**
+     * Gets whether the diagram has put nodes in the clipboard.
+     */
     public get canPaste(): boolean {
         return this.can_paste;
     }
@@ -1719,6 +1722,17 @@ export class DiagramEditView extends DiagramView {
         super.pointerUp(event);
     }
 
+    protected override dblClick(event: MouseEvent): void {
+        if (this.current.tool === 'select') {
+            const hit = this.hitNode(event.offsetX, event.offsetY);
+            if (this.double_click_listener) {
+                this.double_click_listener(hit ?? undefined, event as unknown as PointerEvent);
+            } else if (hit && this.hasTextInput(hit.type)) {
+                this.editText(hit);
+            }
+        }
+    }
+
     /**
      * Respond to key down events, handling deletion, copying, pasting, cutting, undoing, and exiting drawing mode based on the event properties and current selection state.
      * @param event The keyboard event.
@@ -2354,13 +2368,7 @@ export class DiagramEditView extends DiagramView {
 
         this.renderPreview();
 
-        // Double-click enters text editing for text-capable nodes.
-        if (event.detail >= 2 && this.current.tool === 'select') {
-            const hit = this.hitNode(event.offsetX, event.offsetY);
-            if (hit && this.hasTextInput(hit.type)) {
-                this.editText(hit);
-            }
-        }
+        // Double-click is handled in dblClick() override.
     }
 
     // ==================================================

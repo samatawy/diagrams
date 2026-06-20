@@ -38,6 +38,8 @@ const defaultGrid: IGrid = {
     height: 20,
 };
 
+export type DiagramPointerListener = (node: INode | undefined, event: PointerEvent) => void;
+
 /**
  * A class representing a diagram in 'view' mode. 
  * This class extends the base Diagram model and adds properties and methods specific to rendering and interacting with the diagram. 
@@ -101,6 +103,13 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected dragPanningWithSpace: boolean = false;
 
+
+    protected hover_listener?: DiagramPointerListener;
+
+    protected click_listener?: DiagramPointerListener;
+
+    protected double_click_listener?: DiagramPointerListener;
+
     protected readonly handlePointerDown = (event: PointerEvent) => this.pointerDown(event);
 
     protected readonly handlePointerMove = (event: PointerEvent) => this.pointerMove(event);
@@ -111,6 +120,8 @@ export class DiagramView extends Diagram implements HasSelection {
     protected readonly handlePointerLeave = (event: PointerEvent) => {
         if (event.buttons !== 0) this.pointerUp(event);
     };
+
+    protected readonly handleDblClick = (event: MouseEvent) => this.dblClick(event);
 
     protected readonly handleWheel = (event: WheelEvent) => this.wheel(event);
 
@@ -176,6 +187,7 @@ export class DiagramView extends Diagram implements HasSelection {
         this.canvas.removeEventListener('pointermove', this.handlePointerMove);
         this.canvas.removeEventListener('pointerup', this.handlePointerUp);
         this.canvas.removeEventListener('pointerleave', this.handlePointerLeave);
+        this.canvas.removeEventListener('dblclick', this.handleDblClick);
         this.canvas.removeEventListener('wheel', this.handleWheel);
         this.canvas.removeEventListener('contextmenu', this.handleContextMenu);
         window.removeEventListener('keydown', this.handleKeyDown);
@@ -804,6 +816,31 @@ export class DiagramView extends Diagram implements HasSelection {
         return bounds;
     }
 
+    // =================================================
+    // ========== Pointer listener events ==========
+    // ================================================
+
+    public set onHover(listener: DiagramPointerListener) {
+        this.hover_listener = listener;
+    }
+    public get onHover(): DiagramPointerListener | undefined {
+        return this.hover_listener;
+    }
+
+    public set onClick(listener: DiagramPointerListener) {
+        this.click_listener = listener;
+    }
+    public get onClick(): DiagramPointerListener | undefined {
+        return this.click_listener;
+    }
+
+    public set onDoubleClick(listener: DiagramPointerListener) {
+        this.double_click_listener = listener;
+    }
+    public get onDoubleClick(): DiagramPointerListener | undefined {
+        return this.double_click_listener;
+    }
+
     // =============================================
     // ========== Event handling methods. ==========
     // =============================================
@@ -946,6 +983,11 @@ export class DiagramView extends Diagram implements HasSelection {
             this.emitBackgroundClick(event.offsetX, event.offsetY);
         }
 
+        // Notify listening external code
+        if (this.click_listener) {
+            this.click_listener(hit, event);
+        }
+
         this.render();
     }
 
@@ -973,6 +1015,11 @@ export class DiagramView extends Diagram implements HasSelection {
         const hoverNode = this.hitNode(event.offsetX, event.offsetY);
         const handle = this.hitHandle(event.offsetX, event.offsetY, hoverNode);
         this.canvas.style.cursor = this.getCursor(handle) || 'default';
+
+        // Notify listening external code
+        if (this.hover_listener) {
+            this.hover_listener(hoverNode, event);
+        }
     }
 
     /**
@@ -1013,6 +1060,16 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         this.render();
+    }
+
+    /**
+     * Respond to double-click events on the canvas, invoking the double-click listener if one is set.
+     * @param event The pointer event.
+     */
+    protected dblClick(event: MouseEvent): void {
+        const hit = this.hitNode(event.offsetX, event.offsetY);
+
+        this.double_click_listener?.(hit ?? undefined, event as unknown as PointerEvent);
     }
 
     /**
@@ -1111,6 +1168,7 @@ export class DiagramView extends Diagram implements HasSelection {
         this.canvas.addEventListener('pointermove', this.handlePointerMove);
         this.canvas.addEventListener('pointerup', this.handlePointerUp);
         this.canvas.addEventListener('pointerleave', this.handlePointerLeave);
+        this.canvas.addEventListener('dblclick', this.handleDblClick);
         this.canvas.addEventListener('wheel', this.handleWheel, { passive: false });
         this.canvas.addEventListener('contextmenu', this.handleContextMenu);
         window.addEventListener('keydown', this.handleKeyDown);
