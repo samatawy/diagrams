@@ -1,9 +1,10 @@
 import type { IConnection, IConnectionAnchor, INode } from "../interfaces";
 import { NodeHandle, type IPoint, type IRect } from "../types";
-import { isConnection, isConnectionNode, isDiagramViewLike } from "../guards";
+import { isConnectionNode, isDiagramViewLike } from "../guards";
 import type { CoordinateSystem } from "../view/coordinate.system";
 import { NodeRegistry } from "../factory/node.registry";
 import { NodeBasics } from "./node.basics";
+import { DiagramConstants } from "../model/diagram.constants";
 
 type InteractiveDiagram = INode['owner'] & {
     getCoordinates(): CoordinateSystem;
@@ -40,10 +41,11 @@ export class ConnectionBasics {
 
         const hit = diagram.getCoordinates().getPoint(x, y, 'ignore_grid');
         const adapter = NodeRegistry.adapter(node.type);
+        const threshold = DiagramConstants.HANDLE_HIT_EPSILON;
 
         if (node.points.length > 0) {
             const point = node.points[0]!;
-            if (Math.abs(hit.x - point.x) <= 4 && Math.abs(hit.y - point.y) <= 4) {
+            if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
                 const fromAnchor = this.getMouseAnchor(node, x, y);
                 const toTarget = node.to ? this.resolveAnchorNode(node, node.to) : undefined;
                 const fromTarget = fromAnchor ? this.resolveAnchorNode(node, fromAnchor) : undefined;
@@ -60,7 +62,7 @@ export class ConnectionBasics {
 
         if (node.points.length > 1) {
             const point = node.points[node.points.length - 1]!;
-            if (Math.abs(hit.x - point.x) <= 4 && Math.abs(hit.y - point.y) <= 4) {
+            if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
                 const toAnchor = this.getMouseAnchor(node, x, y);
                 const fromTarget = node.from ? this.resolveAnchorNode(node, node.from) : undefined;
                 const toTarget = toAnchor ? this.resolveAnchorNode(node, toAnchor) : undefined;
