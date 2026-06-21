@@ -55,6 +55,9 @@ const DEFAULT_STYLES = `
     display: inline-flex;
     align-items: center;
     gap: var(--diagram-ui-control-gap, 6px);
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-family: var(--diagram-ui-font-family, system-ui);
+    line-height: 1.2;
 }
 .integer-range-select .integer-range-select-track {
     width: 84px;
@@ -67,7 +70,8 @@ const DEFAULT_STYLES = `
 .integer-range-select .integer-range-select-value {
     min-width: 28px;
     text-align: right;
-    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-weight: 400;
     color: var(--diagram-ui-text-muted, #334155);
 }
 .integer-range-select--disabled .integer-range-select-value {

@@ -13,6 +13,11 @@ export interface NumberInputAdapterConfig {
      * Optional decimal precision used for normalization and formatting.
      */
     precision?: number;
+    /**
+     * Value to pre-fill the input with when it is empty and the user focuses it.
+     * No change event is emitted until the user actually edits the value.
+     */
+    defaultWhenUnset?: number;
 }
 
 /**
@@ -25,7 +30,6 @@ export class NumberInputAdapter extends InspectorAdapter {
 
     constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorAdapterInit) {
         super(cell, mixedClassName);
-        this.cell.classList.add('has-number-editor');
         this.input = document.createElement('input');
         this.input.type = 'number';
         this.input.readOnly = initial.readonly;
@@ -43,6 +47,13 @@ export class NumberInputAdapter extends InspectorAdapter {
         }
 
         cell.appendChild(this.input);
+        this.input.addEventListener('focus', () => {
+            if (this.input.value === '' && typeof this.config.defaultWhenUnset === 'number') {
+                this.input.value = this.formatValue(this.normalizeValue(this.config.defaultWhenUnset));
+                // Select all so the user can immediately type over the default.
+                this.input.select();
+            }
+        });
         this.input.addEventListener('input', () => {
             if (this.isTransientNumberInput(this.input.value)) {
                 return;

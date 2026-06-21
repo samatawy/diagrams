@@ -35,11 +35,12 @@ export class SvgAdapter extends RectangleAdapter {
             const path = new Path2D();
             path.rect(rect.left, rect.top, rect.width, rect.height);
 
-            if (cached.img && imageMode(node) == 'frame') {
-                context.drawImage(cached.img, rect.left, rect.top, rect.width, rect.height);
+            if (imageMode(node) !== 'none') {
+                RenderBasics.renderImage(node, context, rect, path);
             } else {
                 context.fill(path);
             }
+
 
             cached.path = path;
             cache.setNode(node, cached);

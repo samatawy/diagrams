@@ -37,6 +37,8 @@ export const DIAGRAM_CLIPBOARD_ACTION_LAYOUT: DiagramActionId[] = [
     'cut',
     'copy',
     'paste',
+    'copy-styles',
+    'paste-styles',
 ];
 
 export const DIAGRAM_ALIGN_ACTION_LAYOUT: DiagramActionId[] = [

@@ -171,6 +171,21 @@ export interface INodeAdapter {
     textPlacement(node: INode): TextPlacement | undefined;
 
     /**
+     * Returns the visual bounding rect of the node's rendered path in world coordinates.
+     * For most nodes this equals the `rect` computed from their points.
+     * Adapters whose paths extend beyond that rect (e.g. a document node whose
+     * wavy bottom dips below the bottom edge) should override this to return the
+     * true visual bounds so that cover-mode images fill the entire visible shape.
+     *
+     * The default implementation returns `rect` unchanged.
+     *
+     * @param node The node being rendered.
+     * @param rect The rect derived from the node's control points.
+     * @returns The visual bounding rect.
+     */
+    getVisualRect(node: INode, rect: IRect): IRect;
+
+    /**
      * Writes the given node to a JSON-serializable format using the provided serializer.
      * @param node The node to serialize.
      * @param serializer The serializer to use for converting the node to JSON.

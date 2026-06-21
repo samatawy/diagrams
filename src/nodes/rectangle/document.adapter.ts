@@ -4,7 +4,7 @@ import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
-import { imageMode, isHollow, nodeAngle } from "../../value.utils";
+import { isHollow, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 
 /**
@@ -62,16 +62,8 @@ export class DocumentAdapter extends RectangleAdapter {
             // SW
             path.closePath();
 
-            if (cached.img && imageMode(node) == 'frame') {
-                context.fill(path);
-
-                context.save();
-                context.clip(path);
-                context.drawImage(cached.img, rect.left, rect.top, rect.width, rect.height);
-                context.restore();
-            } else {
-                context.fill(path);
-            }
+            context.fill(path);
+            RenderBasics.renderImage(node, context, rect, path);
             if (!isHollow(node)) {
                 RenderBasics.skipShadow(context);
             }
@@ -84,6 +76,16 @@ export class DocumentAdapter extends RectangleAdapter {
 
             context.restore();
         }
+    }
+
+    public override getVisualRect(node: INode, rect: IRect): IRect {
+        const waveheight = this.getWaveheight(node, rect);
+        return {
+            left: rect.left,
+            top: rect.top,
+            width: rect.width,
+            height: rect.height + waveheight,
+        };
     }
 
     protected getWaveheight(node: INode, rect: IRect): number {

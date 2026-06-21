@@ -100,6 +100,9 @@ const DEFAULT_STYLES = `
 .color-preset-control {
     position: relative;
     min-width: 132px;
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-family: var(--diagram-ui-font-family, system-ui);
+    line-height: 1.2;
 }
 .color-preset-control.with-native-input {
     display: grid;
@@ -132,7 +135,7 @@ const DEFAULT_STYLES = `
     border-radius: var(--diagram-ui-control-radius, 10px);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     color: var(--diagram-ui-text, #1f2937);
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
+    font-weight: 600;
 }
 .color-preset-trigger::after {
     content: '▾';
@@ -154,7 +157,9 @@ const DEFAULT_STYLES = `
     border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.2));
 }
 .color-preset-label {
-    font: 600 var(--diagram-ui-label-font-size, 11px)/1.1 var(--diagram-ui-font-family, system-ui);
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-weight: 400;
+    line-height: 1.2;
     color: var(--diagram-ui-text-muted, #334155);
     text-transform: lowercase;
     justify-self: end;

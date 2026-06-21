@@ -42,7 +42,7 @@ export class ColorPalette {
             if (lineWidth(node) > 0 || node.text?.length) {
                 if (node.strokeStyle) this.addColor(node.strokeStyle);
             }
-            if (node.fillStyle && !node.transparent && !isHollow(node)) {
+            if (node.fillStyle && !node.invisible && !isHollow(node)) {
                 if (node.fillStyle) this.addColor(node.fillStyle);
             }
         }

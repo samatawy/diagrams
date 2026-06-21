@@ -176,6 +176,25 @@ IconRegistry.registerSymbol('copy', 'copy',
 IconRegistry.registerSymbol('paste', 'paste',
     sym('paste', '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>'));
 
+// copy-styles: copy icon (two overlapping pages) — sun dot + mountain ridge drawn
+// directly inside the front page rect (no inner frame).
+IconRegistry.registerSymbol('copy-styles', 'copy-styles',
+    sym('copy-styles', `<rect x="9" y="9" width="13" height="13" rx="2"/>
+  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+  <circle cx="12.5" cy="13" r="2" fill="currentColor" stroke="none"/>
+  <polyline points="9 22 13.5 16 17 20 22 14"/>`));
+
+// paste-styles: paste clipboard — sun dot + mountain ridge drawn directly inside the
+// clipboard body (no inner frame) + three dots on the right to signal "apply to all".
+IconRegistry.registerSymbol('paste-styles', 'paste-styles',
+    sym('paste-styles', `<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+  <rect x="8" y="2" width="8" height="4" rx="1"/>
+  <circle cx="8" cy="12" r="2" fill="currentColor" stroke="none"/>
+  <polyline points="4 21 9 14 13 17.5 19 11"/>
+  <circle cx="21" cy="12" r="1.2" fill="currentColor" stroke="none"/>
+  <circle cx="21" cy="16" r="1.2" fill="currentColor" stroke="none"/>
+  <circle cx="21" cy="20" r="1.2" fill="currentColor" stroke="none"/>`));
+
 // align-text
 
 IconRegistry.registerSymbol('text-left', 'text-left',
@@ -300,3 +319,76 @@ IconRegistry.registerSymbol('trapezoid', 'tool-trapezoid',
 
 IconRegistry.registerSymbol('document', 'tool-document',
     sym('tool-document', '<path d="M3 5 H21 V17 Q16 13 12 17 Q7 21 3 17 Z"/>'));
+
+// ── Image mode icons ─────────────────────────────────────────────────────────
+// Used in the ImageModeSelect toolbar widget.
+// All follow the standard 24×24 stroke convention used by toolbar icons.
+
+// image-mode-none: dashed-border box + diagonal X — image is not rendered
+IconRegistry.registerSymbol('image-mode-none', 'image-mode-none',
+    sym('image-mode-none', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="4 2" stroke-opacity="0.55"/>
+    <line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/>`));
+
+// image-mode-contain: outer frame + smaller wide rect inside — letterbox bars show image fits within bounds
+IconRegistry.registerSymbol('image-mode-contain', 'image-mode-contain',
+    sym('image-mode-contain', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/>
+    <rect x="3" y="7" width="18" height="10" rx="1"/>`));
+
+// image-mode-cover: frame with photo icon (sun + landscape) — image scales up to fill the frame, cropped as needed
+IconRegistry.registerSymbol('image-mode-cover', 'image-mode-cover',
+    sym('image-mode-cover', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/>
+    <circle cx="8" cy="9" r="2"/>
+    <polyline points="3 17 8 12 12 16 15 13 21 17"/>`));
+
+// image-mode-fit: frame with inner corner brackets — image is stretched to fill exactly, aspect ratio not preserved
+IconRegistry.registerSymbol('image-mode-fit', 'image-mode-fit',
+    sym('image-mode-fit', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/>
+    <polyline points="7 6 4 6 4 9"/><polyline points="17 6 20 6 20 9"/>
+    <polyline points="7 18 4 18 4 15"/><polyline points="17 18 20 18 20 15"/>`));
+
+// image-mode-pattern: 2×2 grid of squares — image is tiled as a repeating pattern fill
+IconRegistry.registerSymbol('image-mode-pattern', 'image-mode-pattern',
+    sym('image-mode-pattern', `<rect x="3" y="3" width="8" height="8" rx="1"/>
+    <rect x="13" y="3" width="8" height="8" rx="1"/>
+    <rect x="3" y="13" width="8" height="8" rx="1"/>
+    <rect x="13" y="13" width="8" height="8" rx="1"/>`));
+
+// ── Image align icons ─────────────────────────────────────────────────────────
+// Used in the ImageModeSelect alignment grid (visible for contain / fit modes).
+// Each shows a frame with a smaller image rect anchored to a specific position.
+
+// image-align-top-left: image rect anchored to top-left corner of frame
+IconRegistry.registerSymbol('image-align-top-left', 'image-align-top-left',
+    sym('image-align-top-left', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/><rect x="5" y="5" width="8" height="6" rx="1"/>`));
+
+// image-align-top: image rect anchored to top edge, horizontally centered
+IconRegistry.registerSymbol('image-align-top', 'image-align-top',
+    sym('image-align-top', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/><rect x="8" y="5" width="8" height="6" rx="1"/>`));
+
+// image-align-top-right: image rect anchored to top-right corner of frame
+IconRegistry.registerSymbol('image-align-top-right', 'image-align-top-right',
+    sym('image-align-top-right', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/><rect x="11" y="5" width="8" height="6" rx="1"/>`));
+
+// image-align-left: image rect anchored to left edge, vertically centered
+IconRegistry.registerSymbol('image-align-left', 'image-align-left',
+    sym('image-align-left', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/><rect x="5" y="9" width="8" height="6" rx="1"/>`));
+
+// image-align-center: image rect centered within the frame
+IconRegistry.registerSymbol('image-align-center', 'image-align-center',
+    sym('image-align-center', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/><rect x="8" y="9" width="8" height="6" rx="1"/>`));
+
+// image-align-right: image rect anchored to right edge, vertically centered
+IconRegistry.registerSymbol('image-align-right', 'image-align-right',
+    sym('image-align-right', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/><rect x="11" y="9" width="8" height="6" rx="1"/>`));
+
+// image-align-bottom-left: image rect anchored to bottom-left corner of frame
+IconRegistry.registerSymbol('image-align-bottom-left', 'image-align-bottom-left',
+    sym('image-align-bottom-left', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/><rect x="5" y="13" width="8" height="6" rx="1"/>`));
+
+// image-align-bottom: image rect anchored to bottom edge, horizontally centered
+IconRegistry.registerSymbol('image-align-bottom', 'image-align-bottom',
+    sym('image-align-bottom', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/><rect x="8" y="13" width="8" height="6" rx="1"/>`));
+
+// image-align-bottom-right: image rect anchored to bottom-right corner of frame
+IconRegistry.registerSymbol('image-align-bottom-right', 'image-align-bottom-right',
+    sym('image-align-bottom-right', `<rect x="3" y="3" width="18" height="18" rx="2" stroke-opacity="0.55"/><rect x="11" y="13" width="8" height="6" rx="1"/>`));

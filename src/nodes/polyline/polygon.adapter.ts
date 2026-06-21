@@ -5,7 +5,7 @@ import type { INodeCached } from "../../view/view.cache";
 import { PolylineAdapter } from "../polyline/polyline.adapter";
 import { RenderBasics } from "../render.basics";
 import type { HollowMode, TextOverflowMode } from "../../factory/node.adapter";
-import { imageMode } from "../../value.utils";
+
 
 /**
  * PolygonAdapter is a node adapter responsible for rendering polygon nodes in the diagram. 
@@ -40,16 +40,8 @@ export class PolygonAdapter extends PolylineAdapter {
             path.closePath();
 
             const rect = coordinates.getBoundingRect(node);
-            if (cached.img && imageMode(node) == 'frame') {
-                context.fill(path);
-
-                context.save();
-                context.clip(path);
-                context.drawImage(cached.img, rect.left, rect.top, rect.width, rect.height);
-                context.restore();
-            } else {
-                context.fill(path);
-            }
+            context.fill(path);
+            RenderBasics.renderImage(node, context, rect, path);
             context.stroke(path);
 
             cached.path = path;

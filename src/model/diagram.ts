@@ -25,10 +25,10 @@ export class Diagram implements IDiagram {
 
     public meta?: Record<string, any>;
 
-    private readonly assetStore = new AssetStore();
+    private readonly asset_store = new AssetStore();
 
     public get image_assets(): Record<string, string> {
-        return this.assetStore.snapshot() ?? {};
+        return this.asset_store.snapshot() ?? {};
     }
 
     constructor(id: string, initial?: Partial<Omit<IDiagram, 'id'>>) {
@@ -48,7 +48,7 @@ export class Diagram implements IDiagram {
      * Releases model-managed resources.
      */
     public destroy(): void {
-        this.assetStore.destroy();
+        this.asset_store.destroy();
     }
 
     // ======================================
@@ -146,7 +146,7 @@ export class Diagram implements IDiagram {
     /**
      * Assigns an image source to a node for background/content rendering.
      */
-    public setNodeImageSource(node: string | INode, imageSrc: string, mode: ImageMode = 'frame', imageId?: string): INode | undefined {
+    public setNodeImageSource(node: string | INode, imageSrc: string, mode: ImageMode = 'contain', imageId?: string): INode | undefined {
         const target = this.resolveNode(node);
         if (!target || !imageSrc) {
             return target;
@@ -160,7 +160,7 @@ export class Diagram implements IDiagram {
      * Assigns SVG markup or SVG source URL/data URL to a node.
      * Raw SVG markup is converted to a data URL.
      */
-    public setNodeSvgSource(node: string | INode, svgOrSrc: string, mode: ImageMode = 'frame', imageId?: string): INode | undefined {
+    public setNodeSvgSource(node: string | INode, svgOrSrc: string, mode: ImageMode = 'contain', imageId?: string): INode | undefined {
         const source = this.toSvgSource(svgOrSrc);
         return this.setNodeImageSource(node, source, mode, imageId);
     }
@@ -175,7 +175,7 @@ export class Diagram implements IDiagram {
         }
 
         target.image_id = undefined;
-        target.img_mode = 'none';
+        target.image_mode = 'none';
         return target;
     }
     /**
@@ -191,14 +191,21 @@ export class Diagram implements IDiagram {
             return undefined;
         }
 
-        return this.assetStore.resolve(target.image_id);
+        return this.asset_store.resolve(target.image_id);
+    }
+
+    /**
+     * The diagram's asset store, for registering and resolving image/SVG asset sources.
+     */
+    public get assetStore(): AssetStore {
+        return this.asset_store;
     }
 
     /**
      * Clears all in-memory image assets. Intended for teardown paths.
      */
     public clearImageAssets(): void {
-        this.assetStore.clear();
+        this.asset_store.clear();
     }
 
     /**
@@ -209,7 +216,7 @@ export class Diagram implements IDiagram {
         this.nodes = [];
         this.layers = [];
         this.deleteMeta();
-        this.assetStore.clear();
+        this.asset_store.clear();
     }
 
     // ======================================
@@ -346,7 +353,7 @@ export class Diagram implements IDiagram {
         }
 
         this.id = json.id;
-        this.assetStore.load(json.image_assets);
+        this.asset_store.merge(json.image_assets);
         this.nodes = (json.nodes ?? []).map(node => this.hydrateNode(node));
         this.layers = (json.layers ?? []).map(layer => this.hydrateLayer(layer));
         this.meta = json.meta ? { ...json.meta } : undefined;
@@ -361,11 +368,21 @@ export class Diagram implements IDiagram {
      * @returns The serialized diagram data.
      */
     public write(serializer: ISerializer): any {
-        const imageAssets = this.assetStore.snapshot();
+        const serializedNodes = this.nodes.map(node => this.serializeNode(node));
+        const allAssets = this.asset_store.snapshot();
+        let imageAssets: Record<string, string> | undefined;
+        if (allAssets) {
+            for (const node of serializedNodes) {
+                if (node.image_id && allAssets[node.image_id]) {
+                    imageAssets ??= {};
+                    imageAssets[node.image_id] = allAssets[node.image_id]!;
+                }
+            }
+        }
 
         return serializer.write({
             id: this.id,
-            nodes: this.nodes.map(node => this.serializeNode(node)),
+            nodes: serializedNodes,
             layers: this.layers.map(layer => ({
                 id: layer.id,
                 name: layer.name,
@@ -467,9 +484,9 @@ export class Diagram implements IDiagram {
         return `data:image/svg+xml;utf8,${encodeURIComponent(trimmed)}`;
     }
 
-    protected applyNodeImageSource(target: INode, imageSrc: string, mode: ImageMode = 'frame', imageId?: string): void {
-        target.image_id = this.assetStore.register(imageSrc, imageId);
-        target.img_mode = mode;
+    protected applyNodeImageSource(target: INode, imageSrc: string, mode: ImageMode = 'contain', imageId?: string): void {
+        target.image_id = this.asset_store.register(imageSrc, imageId);
+        target.image_mode = mode;
     }
 
     /**

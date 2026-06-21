@@ -1,6 +1,6 @@
 import { NodeRegistry } from "../../factory/node.registry";
 import { type IGrid, type INode } from "../../interfaces";
-import { NodeHandle, type IPoint } from "../../types";
+import { NodeHandle, type IPoint, type IRect } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { ConnectionBasics } from "../connection.basics";
@@ -164,6 +164,10 @@ export class PolylineAdapter implements INodeAdapter {
         return {
             segment: { from, to }
         };
+    }
+
+    public getVisualRect(_node: INode, rect: IRect): IRect {
+        return rect;
     }
 
     public write(node: INode, serializer: any): any {

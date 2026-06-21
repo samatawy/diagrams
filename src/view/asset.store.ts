@@ -54,6 +54,22 @@ export class AssetStore {
     }
 
     /**
+     * Merges assets from the given map into the store without clearing existing entries.
+     * Existing ids take precedence — an id already in the store is not overwritten.
+     * @param assets Assets to merge, keyed by id.
+     */
+    public merge(assets?: Record<string, string>): void {
+        if (!assets) return;
+        for (const [id, source] of Object.entries(assets)) {
+            const key = id.trim();
+            const value = source?.trim();
+            if (!key || !value || this.assetsById.has(key)) continue;
+            this.assetsById.set(key, value);
+            this.assetIdBySource.set(value, key);
+        }
+    }
+
+    /**
      * Replaces the store contents from a serialized asset map.
      * @param assets Serialized assets keyed by id.
      */

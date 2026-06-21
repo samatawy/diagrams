@@ -76,6 +76,9 @@ const DEFAULT_STYLES = `
 .font-select-control {
     position: relative;
     min-width: 140px;
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-family: var(--diagram-ui-font-family, system-ui);
+    line-height: 1.2;
 }
 .font-select-control .font-select-trigger,
 .font-select-control button[aria-haspopup='listbox'] {
@@ -91,7 +94,7 @@ const DEFAULT_STYLES = `
     border-radius: var(--diagram-ui-control-radius, 10px);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     color: var(--diagram-ui-text, #1f2937);
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
+    font-weight: 600;
 }
 .font-select-control .font-select-trigger::after {
     content: '▾';
@@ -105,7 +108,8 @@ const DEFAULT_STYLES = `
     border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
 }
 .font-select-preview {
-    font-size: var(--diagram-ui-font-size, 13px);
+    font-size: var(--diagram-ui-font-size, 14px);
+    font-weight: 400;
     line-height: 1.2;
     color: var(--diagram-ui-text, #1f2937);
     white-space: nowrap;
@@ -113,7 +117,9 @@ const DEFAULT_STYLES = `
     text-overflow: ellipsis;
 }
 .font-select-control .font-select-label {
-    font: 600 var(--diagram-ui-label-font-size, 11px)/1.1 var(--diagram-ui-font-family, system-ui);
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-weight: 400;
+    line-height: 1.2;
     color: var(--diagram-ui-text-muted, #334155);
     text-transform: lowercase;
     justify-self: end;

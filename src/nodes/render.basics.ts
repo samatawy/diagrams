@@ -1,9 +1,9 @@
 import type { INode } from "../interfaces";
-import type { IPoint, IRect } from "../types";
+import type { ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, shadowStyle, strokeStyle, textAlign, textBaseline, textColor } from "../value.utils";
+import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeStyle, textAlign, textBaseline, textColor } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
@@ -14,6 +14,14 @@ export interface TextOptions {
     from?: IPoint,
     to?: IPoint,
 }
+
+interface ImageBounds {
+    fx: number;
+    fy: number;
+    fw: number;
+    fh: number
+};
+
 
 /**
  * Provides basic rendering utilities for diagram nodes, including preparation of the canvas context for drawing nodes and their text.
@@ -39,6 +47,7 @@ export class RenderBasics {
 
         context.lineCap = 'round';
         context.lineJoin = 'round';
+        context.globalAlpha = nodeOpacity(node);
         context.lineWidth = lineWidth(node);
         context.strokeStyle = strokeStyle(node);
         context.fillStyle = fillStyle(node);
@@ -51,20 +60,8 @@ export class RenderBasics {
         context.shadowOffsetY = shadow.offset.y;
         context.shadowBlur = shadow.blur;
 
-        // if (node.shadowStyle) {
-        //     context.shadowColor = this.resolveShadowColor(node);
-        //     context.shadowOffsetX = node.shadowStyle.offset.x;
-        //     context.shadowOffsetY = node.shadowStyle.offset.y;
-        //     context.shadowBlur = node.shadowStyle.blur;
-        // } else {
-        //     context.shadowColor = 'transparent';
-        //     context.shadowOffsetX = 0;
-        //     context.shadowOffsetY = 0;
-        //     context.shadowBlur = 0;
-        // }
-
-        // Transparent shapes (hot spots) should not viewable in 'view' mode..
-        if (node.transparent) {
+        // Invisible shapes (hot spots) should not viewable in 'view' mode..
+        if (node.invisible) {
             if (diagram.render_mode == 'view') {
                 context.strokeStyle = 'transparent';
                 context.fillStyle = 'transparent';
@@ -83,15 +80,6 @@ export class RenderBasics {
             context.translate(center.x, center.y);
             context.rotate(node.angle);
             context.translate(-center.x, -center.y);
-
-            // let rect = this.getRect();
-            // let center = {x: rect.left + rect.width / 2, y: rect.top + rect.height / 2}
-            // context.transform(
-            //     this.cos, this.sin,
-            //     -this.cos, this.sin,
-            //     center.x, center.y
-            // )
-            // context.transform(1,0,0,1, -center.x, -center.y);
         }
     }
 
@@ -188,13 +176,129 @@ export class RenderBasics {
             context.translate(center.x, center.y);
             context.rotate(node.angle);
             context.translate(-center.x, -center.y);
+        }
+    }
 
-            // context.transform(
-            //     this.cos, this.sin,
-            //     -this.cos, this.sin,
-            //     center.x, center.y
-            // )
-            // context.transform(1,0,0,1, -center.x, -center.y);
+    /**
+     * Renders the node's image onto the canvas, clipped to the given shape path.
+     * Respects `image_mode`, `image_padding`, and `image_align` from the node.
+     *
+     * - `'fit'`     — stretches the image to fill the padded rect (ignores aspect ratio).
+     * - `'contain'` — scales the image to fit inside the padded rect, preserving aspect ratio,
+     *                 positioned according to `image_align` (default `'center'`).
+     * - `'pattern'` — no-op; pattern fill is applied in `prepare()` via `createPattern`.
+     * - `'none'`    — no-op.
+     *
+     * Must be called inside a `context.save()` / `context.restore()` block, after `prepare()`.
+     * Pass the shape's `path` for non-rectangular shapes so the image is clipped correctly.
+     *
+     * @param node The node being rendered.
+     * @param context The canvas rendering context.
+     * @param rect The node's bounding rect in canvas coordinates.
+     * @param path Optional clip path (the filled shape). When omitted the image is drawn unclipped.
+     */
+    public static renderImage(node: INode, context: CanvasRenderingContext2D, rect: IRect, path?: Path2D): void {
+        if (!context) return;
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return;
+
+        const cache = diagram.getCache();
+        const cached = cache.getNode(node) || {} as INodeCached;
+        const img = cached.img;
+        if (!img) return;
+
+        const mode: ImageMode = node.image_mode ?? 'contain';
+        if (mode === 'none' || mode === 'pattern') return;
+
+        // For cover mode use the adapter's visual rect (which may extend beyond
+        // the points-derived rect for shapes like document nodes).
+        const adapter = NodeRegistry.adapter(node.type);
+        const coverRect = mode === 'cover' && adapter
+            ? adapter.getVisualRect(node, rect)
+            : rect;
+
+        let bounds: ImageBounds | null = null;
+        switch (mode) {
+            case 'cover': bounds = RenderBasics.getCoverBounds(node, coverRect, img); break;
+            case 'contain': bounds = RenderBasics.getContainBounds(node, rect, img); break;
+            case 'fit': bounds = RenderBasics.getFitBounds(node, rect, img); break;
+        }
+
+        if (!bounds) return;
+        const { fx, fy, fw, fh } = bounds;
+
+        if (path) {
+            context.save();
+            context.clip(path);
+            context.drawImage(img, fx, fy, fw, fh);
+            context.restore();
+        } else {
+            context.drawImage(img, fx, fy, fw, fh);
+        }
+    }
+
+    private static getFitBounds(node: INode, rect: IRect, _img: HTMLImageElement): ImageBounds | null {
+        const pad = Math.max(0, node.image_padding ?? 0);
+        const fw = rect.width - pad * 2;
+        const fh = rect.height - pad * 2;
+        if (fw <= 0 || fh <= 0) return null;
+        return { fx: rect.left + pad, fy: rect.top + pad, fw, fh };
+    }
+
+    private static getContainBounds(node: INode, rect: IRect, img: HTMLImageElement): ImageBounds | null {
+        const pad = Math.max(0, node.image_padding ?? 0);
+        const bx = rect.left + pad, by = rect.top + pad;
+        const bw = rect.width - pad * 2, bh = rect.height - pad * 2;
+        if (bw <= 0 || bh <= 0) return null;
+
+        const imgW = img.naturalWidth || img.width;
+        const imgH = img.naturalHeight || img.height;
+
+        let fw = bw, fh = bh;
+        if (imgW > 0 && imgH > 0) {
+            const imgAspect = imgW / imgH;
+            if (imgAspect > bw / bh) { fw = bw; fh = bw / imgAspect; }
+            else { fh = bh; fw = bh * imgAspect; }
+        }
+
+        const box = { left: bx, top: by, width: bw, height: bh };
+        const { x: fx, y: fy } = RenderBasics.alignedPosition(node.image_align, box, fw, fh);
+        return { fx, fy, fw, fh };
+    }
+
+    private static getCoverBounds(node: INode, rect: IRect, img: HTMLImageElement): ImageBounds | null {
+
+        const imgW = img.naturalWidth || img.width;
+        const imgH = img.naturalHeight || img.height;
+        if (imgW <= 0 || imgH <= 0) return null;
+
+        const { left: bx, top: by, width: bw, height: bh } = rect;
+        const imgAspect = imgW / imgH;
+
+        let fw: number, fh: number;
+        if (imgAspect < bw / bh) { fw = bw; fh = bw / imgAspect; }
+        else { fh = bh; fw = bh * imgAspect; }
+
+        const { x: fx, y: fy } = RenderBasics.alignedPosition(node.image_align, rect, fw, fh);
+        return { fx, fy, fw, fh };
+    }
+
+    /**
+     * Computes the top-left position (fx, fy) to place a box of size (fw × fh)
+     * inside a container of size (cw × ch) at origin (cx, cy), according to align.
+     */
+    private static alignedPosition(align: INode['image_align'], rect: IRect, fw: number, fh: number): IPoint {
+        const { left: cx, top: cy, width: cw, height: ch } = rect;
+        switch (align ?? 'center') {
+            case 'top-left': return { x: cx, y: cy };
+            case 'top': return { x: cx + (cw - fw) / 2, y: cy };
+            case 'top-right': return { x: cx + cw - fw, y: cy };
+            case 'left': return { x: cx, y: cy + (ch - fh) / 2 };
+            case 'right': return { x: cx + cw - fw, y: cy + (ch - fh) / 2 };
+            case 'bottom-left': return { x: cx, y: cy + ch - fh };
+            case 'bottom': return { x: cx + (cw - fw) / 2, y: cy + ch - fh };
+            case 'bottom-right': return { x: cx + cw - fw, y: cy + ch - fh };
+            default: return { x: cx + (cw - fw) / 2, y: cy + (ch - fh) / 2 }; // center
         }
     }
 
@@ -456,7 +560,7 @@ export class RenderBasics {
 
         // Text should remain legible against the node fill and should not inherit shape shadows.
         context.shadowColor = 'transparent';
-        context.fillStyle = node.transparent && diagram.render_mode == 'view'
+        context.fillStyle = node.invisible && diagram.render_mode == 'view'
             ? 'transparent'
             : textColor(node);
 
@@ -516,7 +620,7 @@ export class RenderBasics {
 
         // Text should remain legible against the node fill and should not inherit shape shadows.
         context.shadowColor = 'transparent';
-        context.fillStyle = node.transparent && diagram.render_mode == 'view'
+        context.fillStyle = node.invisible && diagram.render_mode == 'view'
             ? 'transparent'
             : textColor(node);
 
@@ -577,7 +681,7 @@ export class RenderBasics {
             return explicit;
         }
         // No explicit color: derive from node visual colors.
-        if (node.transparent) return 'transparent';
+        if (node.invisible) return 'transparent';
         if (node.strokeStyle) return this.toAlphaColor(node.strokeStyle, 0.35);
         if (node.fillStyle) return this.toAlphaColor(node.fillStyle, 0.35);
         return 'rgba(0, 0, 0, 0.35)';

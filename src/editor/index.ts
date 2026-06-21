@@ -5,6 +5,9 @@ export * from './inputs/font.select';
 export * from './inputs/size.select';
 export * from './inputs/integer.range.select';
 export * from './inputs/arrow.select';
+export * from './inputs/image.select';
+export * from './inputs/image.mode.select';
+export * from './inputs/image.align.select';
 export * from './prompt.dialog';
 
 // Theming

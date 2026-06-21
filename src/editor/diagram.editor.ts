@@ -20,6 +20,9 @@ import { ToolPalette, type ToolPaletteConfig } from "./buttons/tool.palette";
 import { DIAGRAM_CHANGED_EVENT } from "../events/diagram.events";
 import { WidthSelect, type WidthSelectConfig } from "./inputs/width.select";
 import { ArrowSelect, type ArrowSelectConfig } from "./inputs/arrow.select";
+import { ImageSelect, type ImageSelectConfig } from "./inputs/image.select";
+import { ImageModeSelect } from "./inputs/image.mode.select";
+import { ImageAlignSelect } from "./inputs/image.align.select";
 import type { ArrowDirection } from "../types";
 import { IntegerRangeSelect, type IntegerRangeSelectConfig } from "./inputs/integer.range.select";
 import { DiagramInspector } from "./inspector/diagram.inspector";
@@ -57,6 +60,8 @@ export type DiagramEditorConfig = {
     shadowOffsetY?: IntegerRangeSelectConfig;
     shadowBlur?: IntegerRangeSelectConfig;
     fillColor?: ColorSelectConfig;
+    imageSelect?: ImageSelectConfig;
+    imagePadding?: IntegerRangeSelectConfig;
     inspector?: InspectorConfig;
 
     fileDialogs?: DiagramEditorFileDialogsConfig;
@@ -72,7 +77,9 @@ const DIAGRAM_EDITOR_STYLES = `
     height: 100%;
     min-height: 0;
     box-sizing: border-box;
+    font-size: var(--diagram-ui-font-size, 12px);
     font-family: var(--diagram-ui-font-family, system-ui);
+    line-height: 1.4;
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
 }
 .diagram-editor-header {
@@ -140,7 +147,7 @@ const DIAGRAM_EDITOR_STYLES = `
     align-items: center;
     gap: var(--diagram-ui-toolbar-gap, 6px);
     margin-inline-start: 4px;
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
+    font: 400 var(--diagram-ui-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
     color: var(--diagram-ui-text-muted, #475569);
 }
 .diagram-editor-shadow-enable-label {
@@ -148,7 +155,7 @@ const DIAGRAM_EDITOR_STYLES = `
     align-items: normal;
     gap: var(--diagram-ui-control-gap, 4px);
     margin-inline-start: 4px;
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
+    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
     color: var(--diagram-ui-text-muted, #475569);
     cursor: pointer;
     user-select: none;
@@ -230,6 +237,16 @@ export class DiagramEditor {
     protected fillStyleSelectHost?: HTMLElement;
     protected fillStyleSelect?: ColorSelect;
 
+    protected imageSelectHost?: HTMLElement;
+    protected imageSelect?: ImageSelect;
+
+    protected imageModeSelectHost?: HTMLElement;
+    protected imageModeSelect?: ImageModeSelect;
+    protected imageAlignSelectHost?: HTMLElement;
+    protected imageAlignSelect?: ImageAlignSelect;
+    protected imagePaddingHost?: HTMLElement;
+    protected imagePaddingSelect?: IntegerRangeSelect;
+
     protected listenerDisposers: Array<() => void> = [];
 
     protected syncingControls: boolean = false;
@@ -272,6 +289,10 @@ export class DiagramEditor {
         this.shadowOffsetYSelect?.destroy();
         this.shadowBlurSelect?.destroy();
         this.fillStyleSelect?.destroy();
+        this.imageSelect?.destroy();
+        this.imageModeSelect?.destroy();
+        this.imageAlignSelect?.destroy();
+        this.imagePaddingSelect?.destroy();
 
         this.host.innerHTML = '';
     }
@@ -332,7 +353,7 @@ export class DiagramEditor {
      * @returns The export result, or undefined when export was canceled.
      */
     public async exportDiagram(options?: DiagramExportOptions): Promise<string | Uint8Array | Blob | undefined> {
-        return await this.diagram.exportDiagram(options);
+        return await this.diagram.saveImageDiagram(options);
     }
 
     /**
@@ -535,6 +556,33 @@ export class DiagramEditor {
         this.fillStyleSelectHost = this.createControlHost(this.fillToolbar, 'diagram-editor-fill-color-select', 'Fill');
         this.fillStyleSelect = new ColorSelect(this.fillStyleSelectHost, config.fillColor || {});
 
+        this.imageSelectHost = document.createElement('div');
+        setClasses(this.imageSelectHost, 'diagram-editor-image-select');
+        this.fillToolbar.appendChild(this.imageSelectHost);
+        this.imageSelect = new ImageSelect(this.imageSelectHost, {
+            ...(config.imageSelect || {}),
+            assetStore: this.diagram.assetStore,
+        });
+
+        this.imageModeSelectHost = document.createElement('div');
+        setClasses(this.imageModeSelectHost, 'diagram-editor-image-mode-select');
+        this.fillToolbar.appendChild(this.imageModeSelectHost);
+        this.imageModeSelect = new ImageModeSelect(this.imageModeSelectHost);
+
+        this.imageAlignSelectHost = document.createElement('div');
+        setClasses(this.imageAlignSelectHost, 'diagram-editor-image-align-select');
+        this.fillToolbar.appendChild(this.imageAlignSelectHost);
+        this.imageAlignSelect = new ImageAlignSelect(this.imageAlignSelectHost);
+
+        this.imagePaddingHost = this.createControlHost(this.fillToolbar, 'diagram-editor-image-padding', 'Pad');
+        this.imagePaddingSelect = new IntegerRangeSelect(this.imagePaddingHost, {
+            min: 0,
+            max: 40,
+            step: 1,
+            ...(config.imagePadding || {}),
+            unit: 'px',
+        });
+
         // Initialize shadow toolbar
         this.shadowToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-shadow-toolbar');
 
@@ -696,6 +744,34 @@ export class DiagramEditor {
             });
         }
 
+        if (this.imageSelectHost) {
+            this.addManagedListener<string>(this.imageSelectHost, 'imagechange', (id) => {
+                if (this.syncingControls) return;
+                this.diagram.setImageId(id || undefined);
+            });
+        }
+
+        if (this.imageModeSelectHost) {
+            this.addManagedListener<string>(this.imageModeSelectHost, 'imagemodechange', (mode) => {
+                if (this.syncingControls) return;
+                this.diagram.applyNodePatch({ image_mode: mode }, 'image-mode');
+            });
+        }
+
+        if (this.imageAlignSelectHost) {
+            this.addManagedListener<string>(this.imageAlignSelectHost, 'imagealignchange', (align) => {
+                if (this.syncingControls) return;
+                this.diagram.applyNodePatch({ image_align: align }, 'image-align');
+            });
+        }
+
+        if (this.imagePaddingHost) {
+            this.addManagedListener<number>(this.imagePaddingHost, 'valuechange', (value) => {
+                if (this.syncingControls) return;
+                this.diagram.applyNodePatch({ image_padding: value }, 'image-padding');
+            });
+        }
+
         this.addManagedEventListener(this.host, DIAGRAM_CHANGED_EVENT, () => {
             this.reflectStyles();
         });
@@ -774,6 +850,40 @@ export class DiagramEditor {
                 this.fillStyleSelect.clearOptions();
                 this.fillStyleSelect.addOptions([color, ...frequent]);
                 this.fillStyleSelect.value = color;
+            }
+
+            if (this.imageSelect) {
+                this.imageSelect.setAssetStore(this.diagram.assetStore);
+                const imageId = this.diagram.imageId;
+                const nodes = this.diagram.selection().filter(n => n.image_id !== undefined);
+                const isMixed = !imageId && nodes.length > 0
+                    && new Set(this.diagram.selection().map(n => n.image_id ?? '')).size > 1;
+                this.imageSelect.setMixed(isMixed);
+                if (!isMixed) {
+                    this.imageSelect.value = imageId;
+                }
+            }
+
+            if (this.imageModeSelect) {
+                const hasImage = !!this.diagram.imageId;
+                this.imageModeSelect.disabled = !hasImage;
+                const mode = this.diagram.imageMode;
+                if (mode) this.imageModeSelect.mode = mode as any;
+            }
+
+            if (this.imageAlignSelect) {
+                const hasImage = !!this.diagram.imageId;
+                const mode = this.diagram.imageMode;
+                const alignable = hasImage && (mode === 'contain' || mode === 'fit' || !mode);
+                this.imageAlignSelect.disabled = !alignable;
+                const align = this.diagram.imageAlign;
+                if (align) this.imageAlignSelect.align = align as any;
+            }
+
+            if (this.imagePaddingSelect) {
+                const pad = this.diagram.imagePadding;
+                if (pad >= 0) this.imagePaddingSelect.value = pad;
+                this.imagePaddingSelect.disabled = !this.diagram.imageId;
             }
         } finally {
             this.syncingControls = false;

@@ -53,9 +53,9 @@ describe('Diagram', () => {
                     textBaseline: 'middle',
                     fontFace: 'Tahoma',
                     fontSize: 16,
-                    img_mode: 'none',
+                    image_mode: 'none',
                     ready: false,
-                    transparent: false,
+                    invisible: false,
                     strokeStyle: '#000000',
                     fillStyle: '#ffffff',
                     textColor: '#000000',
@@ -75,9 +75,9 @@ describe('Diagram', () => {
                     textBaseline: 'middle',
                     fontFace: 'Tahoma',
                     fontSize: 16,
-                    img_mode: 'none',
+                    image_mode: 'none',
                     ready: false,
-                    transparent: false,
+                    invisible: false,
                     strokeStyle: '#000000',
                     fillStyle: '#ffffff',
                     textColor: '#000000',
@@ -97,9 +97,9 @@ describe('Diagram', () => {
                     textBaseline: 'middle',
                     fontFace: 'Tahoma',
                     fontSize: 16,
-                    img_mode: 'none',
+                    image_mode: 'none',
                     ready: false,
-                    transparent: true,
+                    invisible: true,
                     strokeStyle: '#2563eb',
                     fillStyle: 'transparent',
                     textColor: '#000000',
@@ -231,14 +231,14 @@ describe('Diagram', () => {
 
         diagram.setNodeImageSource('node-1', 'https://example.com/bg.png', 'pattern', 'bg-1');
 
-        expect(diagram.node('node-1')?.img_mode).toBe('pattern');
+        expect(diagram.node('node-1')?.image_mode).toBe('pattern');
         expect(diagram.node('node-1')?.image_id).toBe('bg-1');
         expect(diagram.resolveNodeImageSource('node-1')).toBe('https://example.com/bg.png');
 
         diagram.clearNodeImageSource('node-1');
 
         expect(diagram.node('node-1')?.image_id).toBeUndefined();
-        expect(diagram.node('node-1')?.img_mode).toBe('none');
+        expect(diagram.node('node-1')?.image_mode).toBe('none');
         expect(diagram.resolveNodeImageSource('node-1')).toBeUndefined();
     });
 
@@ -250,7 +250,7 @@ describe('Diagram', () => {
         diagram.upsertNode(nodeB);
 
         const src = 'data:image/png;base64,AAAA';
-        diagram.setNodeImageSource('node-a', src, 'frame');
+        diagram.setNodeImageSource('node-a', src, 'contain');
         diagram.setNodeImageSource('node-b', src, 'pattern');
 
         expect(diagram.node('node-a')?.image_id).toBeDefined();
@@ -272,7 +272,7 @@ describe('Diagram', () => {
         diagram.upsertNode(node);
 
         const src = 'data:image/png;base64,BBBB';
-        diagram.setNodeImageSource('node-1', src, 'frame', 'img-1');
+        diagram.setNodeImageSource('node-1', src, 'contain', 'img-1');
 
         const payload = JSON.parse(diagram.write(jsonSerializer));
         expect(payload.image_assets).toEqual({ 'img-1': src });
@@ -292,6 +292,6 @@ describe('Diagram', () => {
         const src = diagram.resolveNodeImageSource('node-1') || '';
 
         expect(src.startsWith('data:image/svg+xml;utf8,')).toBe(true);
-        expect(diagram.node('node-1')?.img_mode).toBe('frame');
+        expect(diagram.node('node-1')?.image_mode).toBe('contain');
     });
 });

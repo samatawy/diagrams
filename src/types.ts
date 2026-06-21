@@ -41,13 +41,30 @@ export type ITextAlign = 'left' | 'center' | 'right';
 export type ITextBaseline = 'top' | 'middle' | 'bottom';
 
 /**
+ * ImageAlign defines the possible alignments for images within nodes. The options are:
+ * - 'center': The image is centered within the node.
+ * - 'top': The image is aligned to the top edge of the node.
+ * - 'bottom': The image is aligned to the bottom edge of the node.
+ * - 'left': The image is aligned to the left edge of the node.
+ * - 'right': The image is aligned to the right edge of the node.
+ * - 'top-left': The image is aligned to the top-left corner of the node.
+ * - 'top-right': The image is aligned to the top-right corner of the node.
+ * - 'bottom-left': The image is aligned to the bottom-left corner of the node.
+ * - 'bottom-right': The image is aligned to the bottom-right corner of the node.
+ * This property allows for flexible positioning of images within nodes, enabling both decorative and functional use of images in diagrams.
+ */
+export type ImageAlign = 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+
+/**
  * ImageMode defines how an image is rendered within a node. The options are:
+ * - 'contain': The image is scaled to fit within the node's area while maintaining its aspect ratio.
+ * - 'cover': The image is scaled to cover the node's area while maintaining its aspect ratio.
  * - 'pattern': The image is repeated to fill the node's area, creating a pattern effect.
- * - 'frame': The image is drawn once and scaled to fit the node's area, maintaining its aspect ratio.
+ * - 'fit': The image is drawn once within the node's bounding box, without scaling.
  * - 'none': The image is not rendered within the node.
  * This property allows for flexible use of images in nodes, enabling both decorative patterns and single-image frames depending on the desired visual style.
  */
-export type ImageMode = 'pattern' | 'frame' | 'none';
+export type ImageMode = 'contain' | 'cover' | 'pattern' | 'fit' | 'none';
 
 /**
  * ArrowDirection defines the possible directions for arrows on connections between nodes. The options are:

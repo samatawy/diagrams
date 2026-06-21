@@ -138,7 +138,7 @@ describe('RenderBasics', () => {
             type: 'svg',
             points: [{ x: 20, y: 30 }, { x: 180, y: 90 }],
             image_id: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>',
-            img_mode: 'frame',
+            image_mode: 'contain',
             strokeStyle: '#334155',
             owner,
         };

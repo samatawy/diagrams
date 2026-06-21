@@ -1,7 +1,7 @@
 import { Diagram } from "../model/diagram";
 import type { IConnection, IConnectionAnchor, IGrid, ILayer, INode } from "../interfaces";
 import { DiagramView, type RenderMode, type RenderScope } from "../view/diagram.view";
-import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode } from "../types";
+import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode, type ImageAlign } from "../types";
 import { HistoryStack } from "./history";
 import type { ShadowStyle } from "../shadows";
 
@@ -31,7 +31,12 @@ import {
     type DiagramEditContextMenu,
 } from "../events/diagram.events";
 import type { ISerializedNode } from "../io";
-import { lineWidth, nodeAngle, nodeText, strokeStyle, textAlign, textBaseline } from "../value.utils";
+
+interface DiagramClipboardEnvelope {
+    nodes: ISerializedNode[];
+    image_assets?: Record<string, string>;
+}
+import { lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 
 
@@ -82,6 +87,7 @@ export class DiagramEditView extends DiagramView {
         }
 
     protected settings: {
+        opacity: number;
         lineWidth: number;
         startArrow: boolean,
         endArrow: boolean,
@@ -94,7 +100,11 @@ export class DiagramEditView extends DiagramView {
         textAlign: ITextAlign;
         textBaseline: ITextBaseline;
         nodeText?: string;
+        imageMode?: ImageMode;
+        imageAlign?: ImageAlign;
+        imagePadding?: number;
     } = {
+            opacity: 100,
             lineWidth: DiagramConstants.DEFAULT_NODE_LINE_WIDTH,
             startArrow: false,
             endArrow: true,
@@ -107,6 +117,9 @@ export class DiagramEditView extends DiagramView {
             textAlign: DiagramConstants.DEFAULT_NODE_TEXT_ALIGN,
             textBaseline: DiagramConstants.DEFAULT_NODE_TEXT_BASELINE,
             nodeText: undefined,
+            imageMode: 'none',
+            imageAlign: 'center',
+            imagePadding: 0,
         };
 
     protected palette_mode: 'stroke' | 'fill' = 'stroke';
@@ -114,6 +127,8 @@ export class DiagramEditView extends DiagramView {
     protected modified: boolean = false;
 
     protected can_paste: boolean = false;
+
+    protected can_paste_styles: boolean = false;
 
     private clipboardSnapshot: string = '';
 
@@ -321,57 +336,58 @@ export class DiagramEditView extends DiagramView {
         });
     }
 
-    public async exportDiagram(options: DiagramExportOptions = {}): Promise<string | Uint8Array | Blob | undefined> {
-        const resolved: DiagramExportResult | undefined = this.fileDialogs
-            ? await this.fileDialogs.exportDiagram(options)
-            : { ...options };
-        if (!resolved) {
-            return undefined;
-        }
+    // public async exportDiagram(options: DiagramExportOptions = {}): Promise<string | Uint8Array | Blob | undefined> {
+    //     const resolved: DiagramExportResult | undefined = this.fileDialogs
+    //         ? await this.fileDialogs.exportDiagram(options)
+    //         : { ...options };
+    //     if (!resolved) {
+    //         return undefined;
+    //     }
 
-        const format = resolved.format ?? 'json';
-        const mimeType = resolved.mimeType ?? 'application/json';
-        const payload = this.export(format, resolved.pretty ?? true, resolved.serializer ?? jsonSerializer);
+    //     const format = resolved.format ?? 'json';
+    //     const mimeType = resolved.mimeType ?? 'application/json';
+    //     const payload = this.export(format, resolved.pretty ?? true, resolved.serializer ?? jsonSerializer);
 
-        if (resolved.handle) {
-            if (typeof payload === 'string') {
-                return await writeTextToFileHandle(resolved.handle, payload, mimeType);
-            }
+    //     if (resolved.handle) {
+    //         if (typeof payload === 'string') {
+    //             return await writeTextToFileHandle(resolved.handle, payload, mimeType);
+    //         }
 
-            if (payload instanceof Blob) {
-                return await writeBlobToFileHandle(resolved.handle, payload);
-            }
+    //         if (payload instanceof Blob) {
+    //             return await writeBlobToFileHandle(resolved.handle, payload);
+    //         }
 
-            const bytes = new Uint8Array(payload.byteLength);
-            bytes.set(payload);
-            const blob = new Blob([bytes], { type: mimeType });
-            return await writeBlobToFileHandle(resolved.handle, blob);
-        }
+    //         const bytes = new Uint8Array(payload.byteLength);
+    //         bytes.set(payload);
+    //         const blob = new Blob([bytes], { type: mimeType });
+    //         return await writeBlobToFileHandle(resolved.handle, blob);
+    //     }
 
-        if (format === 'json') {
-            return this.save({
-                fileName: resolved.fileName,
-                mimeType: mimeType,
-                pretty: resolved.pretty,
-                serializer: resolved.serializer,
-            });
-        }
+    //     if (format === 'json') {
+    //         return this.save({
+    //             fileName: resolved.fileName,
+    //             mimeType: mimeType,
+    //             pretty: resolved.pretty,
+    //             serializer: resolved.serializer,
+    //         });
+    //     }
 
-        if (payload instanceof Blob) {
-            return downloadBlob(payload, resolved.fileName ?? 'diagram.bin');
-        }
+    //     if (payload instanceof Blob) {
+    //         return downloadBlob(payload, resolved.fileName ?? 'diagram.bin');
+    //     }
 
-        if (typeof payload === 'string') {
-            const blob = exportTextBlob(payload, mimeType);
-            return downloadBlob(blob, resolved.fileName ?? 'diagram.json');
-        }
+    //     if (typeof payload === 'string') {
+    //         const blob = exportTextBlob(payload, mimeType);
+    //         return downloadBlob(blob, resolved.fileName ?? 'diagram.json');
+    //     }
 
-        const bytes = new Uint8Array(payload.byteLength);
-        bytes.set(payload);
-        return downloadBlob(new Blob([bytes], { type: mimeType }), resolved.fileName ?? 'diagram.bin');
-    }
+    //     const bytes = new Uint8Array(payload.byteLength);
+    //     bytes.set(payload);
+    //     return downloadBlob(new Blob([bytes], { type: mimeType }), resolved.fileName ?? 'diagram.bin');
+    // }
 
     private async applyDiagramSource(source: DiagramOpenSource): Promise<void> {
+        this.clear();
         if (source instanceof Diagram) {
             await this.read(source.write(jsonSerializer), jsonSerializer);
         } else if (typeof source === 'string') {
@@ -434,6 +450,26 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Gets the opacity of the first selected node, or the current default if nothing is selected.
+     * Returns a value in the range [0, 100].
+     */
+    public get opacity(): number {
+        const sel = this.selection();
+        if (sel.length) {
+            return nodeOpacity(sel[0] as any);
+        }
+        return this.settings.opacity;
+    }
+
+    /**
+     * Sets the default opacity and applies it to the current selection.
+     * @param value Opacity value in the range [0, 1].
+     */
+    public set opacity(value: number) {
+        this.setOpacity(value);
+    }
+
+    /**
      * Gets the current default line width for borders and connections.
      */
     public get lineWidth(): number {
@@ -472,7 +508,7 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Gets the current default fill color.
+     * Gets the current fill color.
      */
     public get fillColor(): string {
         return this.settings.fillColor;
@@ -606,6 +642,13 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Gets whether the diagram has styles in the clipboard that can be pasted onto selected nodes.
+     */
+    public get canPasteStyles(): boolean {
+        return this.can_paste_styles;
+    }
+
+    /**
      * Sets the current tool for the diagram. 
      * The default tool is 'select', which allows for selection and manipulation of existing nodes.
      * @param tool The name of the tool to set.
@@ -703,6 +746,79 @@ export class DiagramEditView extends DiagramView {
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-fill-color');
+    }
+
+    /**
+     * Gets the image asset id shared by the current selection.
+     * Returns the common id when all selected nodes agree, or an empty string
+     * when the selection is empty, no node has an image, or nodes have different ids.
+     */
+    public get imageId(): string {
+        const nodes = this.selection().filter(n => isNode(n));
+        if (!nodes.length) return '';
+        const first = nodes[0]?.image_id ?? '';
+        return nodes.every(n => (n.image_id ?? '') === first) ? first : '';
+    }
+
+    /** Returns the shared image_mode of the selection, or '' when mixed. */
+    public get imageMode(): string {
+        const nodes = this.selection().filter(n => isNode(n));
+        if (!nodes.length) return '';
+        const first = nodes[0]?.image_mode ?? 'contain';
+        return nodes.every(n => (n.image_mode ?? 'contain') === first) ? first : '';
+    }
+
+    /** Returns the shared image_align of the selection, or '' when mixed. */
+    public get imageAlign(): string {
+        const nodes = this.selection().filter(n => isNode(n));
+        if (!nodes.length) return '';
+        const first = nodes[0]?.image_align ?? 'center';
+        return nodes.every(n => (n.image_align ?? 'center') === first) ? first : '';
+    }
+
+    /** Returns the shared image_padding of the selection, or -1 when mixed. */
+    public get imagePadding(): number {
+        const nodes = this.selection().filter(n => isNode(n));
+        if (!nodes.length) return 0;
+        const first = nodes[0]?.image_padding ?? 0;
+        return nodes.every(n => (n.image_padding ?? 0) === first) ? first : -1;
+    }
+
+    /**
+     * Sets or clears the image asset id on all selected nodes.
+     * @param id Asset id to apply, or undefined / empty string to clear the image.
+     */
+    public setImageId(id: string | undefined): void {
+        const nodes = this.selection().filter(n => isNode(n));
+        if (!nodes.length) return;
+
+        this.addUndo();
+        const value = id || undefined;
+        for (const node of nodes) {
+            node.image_id = value;
+        }
+
+        this.render('all');
+        this.renderPreview();
+        this.eventDispatcher.styleChanged('set-image-id');
+    }
+
+    /**
+     * Sets the opacity for the selected nodes and the default for new nodes.
+     * @param value Opacity in the range [0, 100].
+     */
+    public setOpacity(value: number): void {
+        const clamped = Math.min(100, Math.max(0, value));
+        if (this.selection().length) {
+            this.addUndo();
+        }
+        this.settings.opacity = clamped;
+        for (const node of this.selection()) {
+            node.opacity = clamped;
+        }
+        this.render('all');
+        this.renderPreview();
+        this.eventDispatcher.styleChanged('set-opacity');
     }
 
     /**
@@ -872,14 +988,89 @@ export class DiagramEditView extends DiagramView {
         this.eventDispatcher.styleChanged('set-node-text');
     }
 
-    // /**
-    //  * Updates the grid settings for the diagram and re-renders it to reflect the changes.
-    //  * @param json A partial object containing the grid properties to update. Only the provided properties will be updated, while the others will remain unchanged.
-    //  */
-    // public updateGrid(json: Partial<IGrid>): void {
-    //     Object.assign(this.grid, json);
-    //     this.render('all');
-    // }
+    /**
+     * Applies a flat patch record to all currently selected nodes, adding an undo step.
+     * Intended for use by inspector-style editors that produce a key-value diff.
+     * Also mirrors patch values into diagram default settings where applicable.
+     * @param patch The key-value changes to apply.
+     * @param sourceKey The originating property key, used for the styleChanged event.
+     */
+    public applyNodePatch(patch: Record<string, unknown>, sourceKey: string): void {
+        const selected = this.selection();
+        if (!selected.length) return;
+
+        this.addUndo();
+
+        for (const node of selected) {
+            this.applyPatchToNode(node as unknown as Record<string, unknown>, patch);
+        }
+
+        // Mirror into diagram defaults so new nodes inherit changes.
+        if (patch['text'] !== undefined) this.settings.nodeText = String(patch['text']);
+        if (patch['fontFace'] !== undefined) this.settings.fontFace = String(patch['fontFace']);
+        if (patch['fontSize'] !== undefined) this.settings.fontSize = Number(patch['fontSize']);
+        if (patch['textColor'] !== undefined) this.settings.textColor = String(patch['textColor']);
+        if (patch['textAlign'] !== undefined) this.settings.textAlign = patch['textAlign'] as ITextAlign;
+        if (patch['textBaseline'] !== undefined) this.settings.textBaseline = patch['textBaseline'] as ITextBaseline;
+        if (patch['strokeStyle'] !== undefined) this.settings.strokeColor = String(patch['strokeStyle']);
+        if (patch['lineWidth'] !== undefined) this.settings.lineWidth = Number(patch['lineWidth']);
+        if (patch['opacity'] !== undefined) this.settings.opacity = Math.min(100, Math.max(0, Number(patch['opacity'])));
+        if (patch['startArrow'] !== undefined) this.settings.startArrow = Boolean(patch['startArrow']);
+        if (patch['endArrow'] !== undefined) this.settings.endArrow = Boolean(patch['endArrow']);
+        if (patch['fillStyle'] !== undefined) this.settings.fillColor = String(patch['fillStyle']);
+
+        this.render('all');
+        this.renderPreview();
+        this.eventDispatcher.styleChanged(sourceKey as any);
+    }
+
+    /**
+     * Applies a flat key-value patch directly onto a node object, traversing dot-separated paths.
+     * @param target The node object to mutate.
+     * @param patch The key-value pairs to apply.
+     */
+    private applyPatchToNode(target: Record<string, unknown>, patch: Record<string, unknown>): void {
+        for (const [path, value] of Object.entries(patch)) {
+            const segments = path.split('.').filter(s => s.length > 0);
+            if (!segments.length) continue;
+
+            if (segments[0] === 'shadowStyle') {
+                const cur = (target as any)['shadowStyle'];
+                (target as any)['shadowStyle'] = DiagramEditView.normalizeShadowStyle(cur);
+            }
+
+            let current: any = target;
+            for (let i = 0; i < segments.length - 1; i++) {
+                const key = segments[i] as string;
+                if (!current[key] || typeof current[key] !== 'object') {
+                    current[key] = {};
+                }
+                current = current[key];
+            }
+            current[segments[segments.length - 1] as string] = value;
+        }
+    }
+
+    /**
+     * Normalizes a raw shadow style value into the canonical shadow object shape.
+     */
+    private static normalizeShadowStyle(style: any): ShadowStyle {
+        const base = DiagramConstants.NO_SHADOW;
+        const next = style && typeof style === 'object' ? style : {};
+        const offset = next.offset && typeof next.offset === 'object' ? next.offset : {};
+        const blur = Number(next.blur);
+        const ox = Number(offset.x);
+        const oy = Number(offset.y);
+        return {
+            name: typeof next.name === 'string' && next.name.length > 0 ? next.name : base.name,
+            color: typeof next.color === 'string' ? next.color : base.color,
+            blur: Number.isFinite(blur) ? blur : base.blur,
+            offset: {
+                x: Number.isFinite(ox) ? ox : base.offset.x,
+                y: Number.isFinite(oy) ? oy : base.offset.y,
+            },
+        };
+    }
 
     /**
      * List colors used in this diagram in descending order of their usage frequency.
@@ -959,6 +1150,87 @@ export class DiagramEditView extends DiagramView {
     // ========== Clipboard methods ==========
     // ===================================================
 
+    public copyStyles(): void {
+        const selected = this.selection();
+        if (selected.length !== 1) return;
+
+        const style = selected[0]!;
+        const serialized = {
+            strokeStyle: style.strokeStyle,
+            fillStyle: style.fillStyle,
+            textColor: style.textColor,
+            lineWidth: style.lineWidth,
+            fontFace: style.fontFace,
+            fontSize: style.fontSize,
+            textAlign: style.textAlign,
+            textBaseline: style.textBaseline,
+            shadowStyle: style.shadowStyle,
+            image_id: isNode(style) ? style.image_id : undefined,
+            image_mode: isNode(style) ? style.image_mode : undefined,
+            image_align: isNode(style) ? style.image_align : undefined,
+            image_padding: isNode(style) ? style.image_padding : undefined,
+        };
+
+        this.can_paste_styles = true;
+
+        void this.writeClipboardText(jsonSerializer.write(serialized));
+    }
+
+    public pasteStyles(): void {
+        const selected = this.selection();
+        if (selected.length === 0) return;
+
+        void this.readClipboardText()
+            .then(async (json) => {
+                const style = JSON.parse(json);
+                if (!style || typeof style !== 'object') return;
+
+                this.addUndo();
+
+                for (const node of selected) {
+                    if (style.strokeStyle) node.strokeStyle = style.strokeStyle;
+                    if (style.fillStyle) node.fillStyle = style.fillStyle;
+                    if (style.textColor) node.textColor = style.textColor;
+                    if (style.lineWidth) node.lineWidth = style.lineWidth;
+                    if (style.fontFace) node.fontFace = style.fontFace;
+                    if (style.fontSize) node.fontSize = style.fontSize;
+                    if (style.textAlign) node.textAlign = style.textAlign;
+                    if (style.textBaseline) node.textBaseline = style.textBaseline;
+                    if (style.shadowStyle) node.shadowStyle = style.shadowStyle;
+                    if (isNode(node)) {
+                        if (style.image_id !== undefined) node.image_id = style.image_id;
+                        if (style.image_mode !== undefined) node.image_mode = style.image_mode;
+                        if (style.image_align !== undefined) node.image_align = style.image_align;
+                        if (style.image_padding !== undefined) node.image_padding = style.image_padding;
+                    }
+                }
+
+                this.render('all');
+                this.renderPreview();
+                this.eventDispatcher.styleChanged('paste-styles');
+            })
+    }
+
+    /**
+     * Checks if the clipboard contains styles that can be pasted into selected nodes.
+     */
+    public clipboardHasStyles(): void {
+        void this.readClipboardText()
+            .then(async (json) => {
+                this.can_paste_styles = false;
+
+                const style = JSON.parse(json);
+                if (!style || typeof style !== 'object') return;
+
+                if (style.strokeStyle || style.fillStyle || style.textColor || style.lineWidth
+                    || style.fontFace || style.fontSize || style.textAlign || style.textBaseline
+                    || style.shadowStyle
+                    || style.image_id || style.image_mode || style.image_align || style.image_padding) {
+                    this.can_paste_styles = true;
+                }
+            })
+    }
+
     /**
      * Cuts the selected nodes, copying them to the clipboard and then deleting them from the diagram.
      */
@@ -978,12 +1250,26 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
-        const json = nodes.map(node => this.serializeNode(node));
+        const serialized = nodes.map(node => this.serializeNode(node));
+
+        // Collect only the assets referenced by the copied nodes.
+        const allAssets = this.assetStore.snapshot();
+        let image_assets: Record<string, string> | undefined;
+        if (allAssets) {
+            for (const node of serialized) {
+                if (node.image_id && allAssets[node.image_id]) {
+                    image_assets ??= {};
+                    image_assets[node.image_id] = allAssets[node.image_id]!;
+                }
+            }
+        }
+
+        const envelope: DiagramClipboardEnvelope = { nodes: serialized, image_assets };
 
         this.can_paste = true;
         this.emitClipboardChange(operation, nodes);
 
-        void this.writeClipboardText(jsonSerializer.write(json));
+        void this.writeClipboardText(jsonSerializer.write(envelope));
     }
 
     /**
@@ -992,19 +1278,42 @@ export class DiagramEditView extends DiagramView {
     public pasteNodes(): void {
         void this.readClipboardText()
             .then(async (json) => {
-                const parsed = this.parseClipboardNodes(json)
-                    || this.parseClipboardNodes(this.clipboardSnapshot);
+                const envelope = this.parseClipboardEnvelope(json)
+                    || this.parseClipboardEnvelope(this.clipboardSnapshot);
 
-                if (!parsed || !parsed.length) {
+                if (!envelope || !envelope.nodes.length) {
                     return;
+                }
+
+                // Merge referenced assets into this diagram's store before hydrating.
+                if (envelope.image_assets) {
+                    this.assetStore.merge(envelope.image_assets);
                 }
 
                 this.addUndo();
                 const pastedNodes: INode[] = [];
                 const layer = this.ensureCurrentLayer();
 
-                for (let node of parsed) {
-                    const clone = this.cloneNode(node);
+                // First pass: assign new IDs so connection anchors within this
+                // paste batch can be remapped before any node is inserted.
+                const idMap = new Map<string, string>();
+                for (const node of envelope.nodes) {
+                    const newId = `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                    idMap.set(node.id, newId);
+                }
+
+                const remapAnchor = (anchor: IConnectionAnchor | undefined): IConnectionAnchor | undefined => {
+                    if (!anchor) return undefined;
+                    const oldId = typeof anchor.node === 'string' ? anchor.node : anchor.node.id;
+                    const newId = idMap.get(oldId);
+                    return newId ? { ...anchor, node: newId } : { ...anchor };
+                };
+
+                for (let node of envelope.nodes) {
+                    const clone = this.cloneNode(node, idMap.get(node.id));
+                    const conn = clone as INode & IConnection;
+                    conn.from = remapAnchor(conn.from);
+                    conn.to = remapAnchor(conn.to);
                     this.upsertNode(clone);
                     layer.nodes.push(clone.id);
 
@@ -1029,10 +1338,10 @@ export class DiagramEditView extends DiagramView {
             .then(async (json) => {
                 this.can_paste = false;
 
-                const parsed = this.parseClipboardNodes(json)
-                    || this.parseClipboardNodes(this.clipboardSnapshot);
+                const envelope = this.parseClipboardEnvelope(json)
+                    || this.parseClipboardEnvelope(this.clipboardSnapshot);
 
-                if (parsed?.length) {
+                if (envelope?.nodes.length) {
                     this.can_paste = true;
                 }
             })
@@ -1076,21 +1385,22 @@ export class DiagramEditView extends DiagramView {
         });
     }
 
-    private parseClipboardNodes(json: string): ISerializedNode[] | undefined {
-        if (!json || !json.length) {
-            return undefined;
-        }
-
+    private parseClipboardEnvelope(json: string): DiagramClipboardEnvelope | undefined {
+        if (!json?.length) return undefined;
         try {
             const payload = JSON.parse(json);
-            if (!Array.isArray(payload)) {
-                return undefined;
+            // New envelope format: { nodes: [...], image_assets?: {...} }
+            if (payload && typeof payload === 'object' && !Array.isArray(payload) && Array.isArray(payload.nodes)) {
+                return payload as DiagramClipboardEnvelope;
             }
-
-            return payload as ISerializedNode[];
+            // Legacy format: bare ISerializedNode[]
+            if (Array.isArray(payload)) {
+                return { nodes: payload as ISerializedNode[] };
+            }
         } catch {
-            return undefined;
+            // ignore
         }
+        return undefined;
     }
 
     // ================================================
@@ -1375,6 +1685,9 @@ export class DiagramEditView extends DiagramView {
             ...node,
             id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             points: node.points.map(p => ({ ...p })),
+            ...(node.shadowStyle && { shadowStyle: { ...node.shadowStyle } }),
+            ...(node.geometry && { geometry: { ...node.geometry } }),
+            ...(node.meta && { meta: { ...node.meta } }),
         } as INode;
     }
 
@@ -2686,7 +2999,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (tool === 'svg' && options?.url) {
-            this.applyNodeImageSource(draft, options.url, 'frame');
+            this.applyNodeImageSource(draft, options.url, 'contain');
         }
 
         return draft;
@@ -3588,7 +3901,7 @@ export class DiagramEditView extends DiagramView {
         //         // let src = (choice.tool as StencilTool).url;
         //         this.pickTool('svg', choice.tool);
         //         // if (this.current.shape) {
-        //         //     this.current.shape.setImage(src, 'frame');
+        //         //     this.current.shape.setImage(src, 'contain');
         //         // }
         //     } else {
         //         this.pickTool('select');
@@ -3631,7 +3944,7 @@ export class DiagramEditView extends DiagramView {
                     };
                 }
 
-                this.setSelectedNodeImageSource(reader.result + '', 'frame', undefined);
+                this.setSelectedNodeImageSource(reader.result + '', 'contain', undefined);
 
                 this.renderPreview();
             };
@@ -3641,7 +3954,7 @@ export class DiagramEditView extends DiagramView {
     /**
      * Applies an image source to all currently selected nodes.
      */
-    public setSelectedNodeImageSource(imageSrc: string, mode: ImageMode = 'frame', imageId?: string): void {
+    public setSelectedNodeImageSource(imageSrc: string, mode: ImageMode = 'contain', imageId?: string): void {
         if (!imageSrc) {
             return;
         }
@@ -3661,7 +3974,7 @@ export class DiagramEditView extends DiagramView {
     /**
      * Applies SVG markup or source URL/data URL to all currently selected nodes.
      */
-    public setSelectedNodeSvgSource(svgOrSrc: string, mode: ImageMode = 'frame', imageId?: string): void {
+    public setSelectedNodeSvgSource(svgOrSrc: string, mode: ImageMode = 'contain', imageId?: string): void {
         if (!svgOrSrc) {
             return;
         }

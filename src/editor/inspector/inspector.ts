@@ -246,23 +246,28 @@ const DEFAULT_STYLES = `
     font-style: italic;
 }
 .inspector .inspector-value.is-mixed .color-preset-trigger,
-.inspector .inspector-value.is-mixed .font-select-trigger {
+.inspector .inspector-value.is-mixed .font-select-trigger,
+.inspector .inspector-value.is-mixed .image-select-trigger {
     position: relative;
 }
 .inspector .inspector-value.is-unset .color-preset-trigger,
-.inspector .inspector-value.is-unset .font-select-trigger {
+.inspector .inspector-value.is-unset .font-select-trigger,
+.inspector .inspector-value.is-unset .image-select-trigger {
     position: relative;
 }
 .inspector .inspector-value.is-mixed .color-preset-trigger > *,
-.inspector .inspector-value.is-mixed .font-select-trigger > * {
+.inspector .inspector-value.is-mixed .font-select-trigger > *,
+.inspector .inspector-value.is-mixed .image-select-trigger > * {
     opacity: 0;
 }
 .inspector .inspector-value.is-unset .color-preset-trigger > *,
-.inspector .inspector-value.is-unset .font-select-trigger > * {
+.inspector .inspector-value.is-unset .font-select-trigger > *,
+.inspector .inspector-value.is-unset .image-select-trigger > * {
     opacity: 0;
 }
 .inspector .inspector-value.is-mixed .color-preset-trigger::after,
-.inspector .inspector-value.is-mixed .font-select-trigger::after {
+.inspector .inspector-value.is-mixed .font-select-trigger::after,
+.inspector .inspector-value.is-mixed .image-select-trigger::after {
     content: 'Multiple';
     position: absolute;
     inset: 0;
@@ -275,7 +280,8 @@ const DEFAULT_STYLES = `
     pointer-events: none;
 }
 .inspector .inspector-value.is-unset .color-preset-trigger::after,
-.inspector .inspector-value.is-unset .font-select-trigger::after {
+.inspector .inspector-value.is-unset .font-select-trigger::after,
+.inspector .inspector-value.is-unset .image-select-trigger::after {
     content: '\\00A0';
     position: absolute;
     inset: 0;
@@ -285,22 +291,8 @@ const DEFAULT_STYLES = `
     padding: 0 8px;
     pointer-events: none;
 }
-.inspector .inspector-value.is-mixed.has-number-editor::after {
-    content: 'Multiple';
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 0 8px;
-    color: var(--diagram-ui-text-muted, #94a3b8);
-    font-style: italic;
-    pointer-events: none;
-}
-
 /* Inspector-wide selection states */
 .inspector.inspector-selection-none .inspector-grid {
-    opacity: 0.45;
     pointer-events: none;
 }
 .inspector.inspector-selection-none::after {

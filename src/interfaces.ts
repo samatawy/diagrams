@@ -1,5 +1,5 @@
 import type { Serializable } from "./io/serialized.types";
-import type { ArrowDirection, ImageMode } from "./types";
+import type { ArrowDirection, ImageAlign, ImageMode } from "./types";
 import type { ShadowStyle } from "./shadows";
 import type { IPoint, ITextAlign, ITextBaseline, NodeHandle } from "./types";
 
@@ -70,17 +70,23 @@ export interface INode {
 
     // /**
     //  * The source URL of the image to be displayed within the node, which can be used to render an image inside the node instead of or in addition to text.
-    //  * This can be a resource URL or a data URL, and the rendering logic will determine how to display the image based on the specified img_mode.
+    //  * This can be a resource URL or a data URL, and the rendering logic will determine how to display the image based on the specified image_mode.
     //  */
     // image_src?: string;
 
     /**
      * The mode for rendering the image within the node, which can be:
-     * - 'pattern' to fill the node with a repeating pattern of the image,
-     * - 'frame' to draw the image once within the node's bounding box, or
-     * - 'none' to not render the image at all.
+     * - 'contain': The image is scaled to fit within the node's area while maintaining its aspect ratio.
+     * - 'cover': The image is scaled to cover the node's area while maintaining its aspect ratio.
+     * - 'pattern': The image is repeated to fill the node's area, creating a pattern effect.
+     * - 'fit': The image is drawn once within the node's bounding box, without scaling.
+     * - 'none': The image is not rendered within the node.
      */
-    img_mode?: ImageMode;
+    image_mode?: ImageMode;
+
+    image_padding?: number;
+
+    image_align?: ImageAlign;
 
     /**
      * Indicates whether the node is ready to be rendered, which can be used to control the creation process
@@ -94,9 +100,9 @@ export interface INode {
     hollow?: boolean;
 
     /**
-     * Indicates whether the node is transparent, which can be used to control the rendering style of the node.
+     * Indicates whether the node is invisible, which can be used to control the rendering style of the node.
      */
-    transparent?: boolean;
+    invisible?: boolean;
 
     /**
      * The stroke style of the node, which can be used to control the color and pattern of the node's border.
@@ -124,6 +130,12 @@ export interface INode {
      * The shadow style of the node, which can be used to apply a shadow effect to the node.
      */
     shadowStyle?: ShadowStyle;
+
+    /**
+     * The opacity of the node, from 0 (fully transparent) to 100 (fully opaque).
+     * Defaults to 100 when not set.
+     */
+    opacity?: number;
 
     /**
      * The rotation angle of the node, which can be used to rotate the node around its center.

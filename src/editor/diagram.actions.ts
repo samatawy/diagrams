@@ -10,7 +10,7 @@ export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
     'zoom-in' | 'zoom-out' | 'fit-width' | 'fit-all' |
     'undo' | 'redo' |
     'front' | 'back' |
-    'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' |
+    'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' | 'copy-styles' | 'paste-styles' |
     'align-left' | 'align-center' | 'align-right' | 'align-top' | 'align-middle' | 'align-bottom' | 'distribute-h' | 'distribute-v' |
     'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom';
 
@@ -76,7 +76,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'export',
         label: 'Export Diagram',
         tooltip: 'Export the diagram as an image or file',
-        execute: async (d) => { await d.exportDiagram(); },
+        execute: async (d) => { await d.saveImageDiagram(); },
     },
     {
         id: 'undo',
@@ -140,6 +140,20 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Paste (Ctrl+V)',
         execute: (d) => d.pasteNodes(),
         isEnabled: (d) => !!d.canPaste,
+    },
+    {
+        id: 'copy-styles',
+        label: 'Copy Styles',
+        tooltip: 'Copy Styles (Ctrl+Shift+C)',
+        execute: (d) => d.copyStyles(),
+        isEnabled: (d) => d.selection().length === 1,
+    },
+    {
+        id: 'paste-styles',
+        label: 'Paste Styles',
+        tooltip: 'Paste Styles (Ctrl+Shift+V)',
+        execute: (d) => d.pasteStyles(),
+        isEnabled: (d) => d.canPasteStyles && d.selection().length > 0,
     },
     {
         id: 'zoom-in',

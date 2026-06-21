@@ -4,7 +4,7 @@ import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
-import { imageMode, isHollow, nodeAngle } from "../../value.utils";
+import { isHollow, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 
 /**
@@ -68,16 +68,8 @@ export class TrapezoidAdapter extends RectangleAdapter {
             }
             path.closePath();
 
-            if (cached.img && imageMode(node) == 'frame') {
-                context.fill(path);
-
-                context.save();
-                context.clip(path);
-                context.drawImage(cached.img, rect.left, rect.top, rect.width, rect.height);
-                context.restore();
-            } else {
-                context.fill(path);
-            }
+            context.fill(path);
+            RenderBasics.renderImage(node, context, rect, path);
             if (!isHollow(node)) {
                 RenderBasics.skipShadow(context);
             }

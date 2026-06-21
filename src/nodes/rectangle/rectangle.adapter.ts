@@ -5,7 +5,7 @@ import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RenderBasics } from "../render.basics";
 import type { HollowMode, INodeAdapter, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
-import { imageMode, isHollow, lineWidth, nodeAngle } from "../../value.utils";
+import { isHollow, lineWidth, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 
 /**
@@ -163,12 +163,9 @@ export class RectangleAdapter implements INodeAdapter {
 
             const path = new Path2D();
             path.rect(rect.left, rect.top, rect.width, rect.height);
-            if (cached.img && imageMode(node) == 'frame') {
-                context.fill(path);
-                context.drawImage(cached.img, rect.left, rect.top, rect.width, rect.height);
-            } else {
-                context.fill(path);
-            }
+            context.fill(path);
+            RenderBasics.renderImage(node, context, rect, path);
+
             if (!isHollow(node)) {
                 RenderBasics.skipShadow(context);
             }
@@ -256,6 +253,10 @@ export class RectangleAdapter implements INodeAdapter {
             return { rect };
         }
         return {};
+    }
+
+    public getVisualRect(_node: INode, rect: IRect): IRect {
+        return rect;
     }
 
     public write(node: INode, serializer: any): any {

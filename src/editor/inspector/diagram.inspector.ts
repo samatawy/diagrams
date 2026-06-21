@@ -2,7 +2,6 @@ import type { INode } from "../../interfaces";
 import type { DiagramView } from "../../view";
 import { DiagramEditView } from "../../editview";
 import { DIAGRAM_CHANGED_EVENT, DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, DIAGRAM_NODE_POINTS_CHANGED_EVENT, DIAGRAM_SELECTION_EVENT } from "../../events";
-import { DiagramConstants } from "../../model/diagram.constants";
 
 import { Inspector, type InspectorConfig, type InspectorPropertyDefinition, type EditableRecord } from "./inspector";
 import type { ColorSelectConfig } from "../inputs/color.select";
@@ -18,6 +17,8 @@ import { SizeSelectAdapter } from "./size.select.adapter";
 import { AngleAdapter } from "./angle.adapter";
 import { EnumSelectAdapter, type EnumSelectAdapterConfig } from "./enum.select.adapter";
 import { PointAdapter } from "./point.adapter";
+import { ImageSelectAdapter } from "./image.select.adapter";
+import type { NumberInputAdapterConfig } from "./number.input.adapter";
 
 export type DiagramInspectorConfig = InspectorConfig & {
     colorSelect?: ColorSelectConfig;
@@ -85,10 +86,10 @@ export class DiagramInspector extends Inspector {
         Inspector.registerAdapter('ArrowSelect', ArrowSelectAdapter);
         Inspector.registerAdapter('FontSelect', FontSelectAdapter);
         Inspector.registerAdapter('SizeSelect', SizeSelectAdapter);
-        Inspector.registerAdapter('Angle', AngleAdapter);
         Inspector.registerAdapter('Point', PointAdapter);
         Inspector.registerAdapter('AngleEditor', AngleAdapter);
         Inspector.registerAdapter('EnumSelect', EnumSelectAdapter);
+        Inspector.registerAdapter('ImageSelect', ImageSelectAdapter);
     }
 
     /**
@@ -98,12 +99,36 @@ export class DiagramInspector extends Inspector {
         const readonly = this.readonly;
 
         const { grid: identity } = this.buildSection('Identity');
-        this.addRow(identity, { key: 'id', label: 'ID', type: 'string', readonly: true });
-        this.addRow(identity, { key: 'type', label: 'Type', type: 'string', readonly: true });
+        this.addRow(identity, {
+            key: 'id',
+            label: 'ID',
+            type: 'string',
+            readonly: true
+        });
+        this.addRow(identity, {
+            key: 'type',
+            label: 'Type',
+            type: 'string',
+            readonly: true
+        });
 
         const { grid: geometry } = this.buildSection('Geometry');
         this.geometryGrid = geometry;
-        this.addRow(geometry, { key: 'angle', label: 'Angle', type: 'number', editor: 'Angle', editorOptions: { precision: 4 }, readonly: readonly });
+        this.addRow(geometry, {
+            key: 'opacity',
+            label: 'Opacity',
+            type: 'number',
+            editorOptions: { min: 0, max: 100, precision: 0, defaultWhenUnset: 100 } as NumberInputAdapterConfig,
+            readonly: readonly
+        });
+        this.addRow(geometry, {
+            key: 'angle',
+            label: 'Angle',
+            type: 'number',
+            editor: 'AngleEditor',
+            editorOptions: { precision: 4 },
+            readonly: readonly
+        });
 
         const { grid: text } = this.buildSection('Text');
         this.addRow(text, {
@@ -193,8 +218,40 @@ export class DiagramInspector extends Inspector {
             editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.fillColor || {}) },
             readonly: readonly,
         });
-        this.addRow(fill, { key: 'img_mode', label: 'Mode', type: 'string', readonly: readonly });
-        this.addRow(fill, { key: 'image_id', label: 'Asset ID', type: 'string', readonly: readonly });
+        this.addRow(fill, {
+            key: 'image_id',
+            label: 'Image',
+            type: 'string',
+            editor: 'ImageSelect',
+            editorOptions: { diagram: this.diagram },
+            readonly: readonly,
+        });
+        this.addRow(fill, {
+            key: 'image_mode',
+            label: 'Mode',
+            type: 'select',
+            editor: 'EnumSelect',
+            editorOptions: {
+                options: ['contain', 'cover', 'fit', 'pattern', 'none'],
+            } as EnumSelectAdapterConfig,
+            readonly: readonly,
+        });
+        this.addRow(fill, {
+            key: 'image_align',
+            label: 'Align',
+            type: 'select',
+            editor: 'EnumSelect',
+            editorOptions: {
+                options: ['left', 'center', 'right', 'top', 'middle', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
+            } as EnumSelectAdapterConfig,
+            readonly: readonly,
+        });
+        this.addRow(fill, {
+            key: 'image_padding',
+            label: 'Padding',
+            type: 'number',
+            readonly: readonly,
+        });
 
         const { grid: shadow } = this.buildSection('Shadow');
         this.addRow(shadow, {
@@ -209,6 +266,7 @@ export class DiagramInspector extends Inspector {
             key: 'shadowStyle.blur',
             label: 'Blur',
             type: 'number',
+            editorOptions: { min: 0 } as NumberInputAdapterConfig,
             readonly: readonly,
         });
         this.addRow(shadow, {
@@ -522,14 +580,22 @@ export class DiagramInspector extends Inspector {
             return;
         }
 
+        const edit = this.diagram as any;
+
+        if (typeof edit.applyNodePatch === 'function') {
+            edit.applyNodePatch(patch ?? {}, sourceKey);
+            this.emitInspectorChanged(sourceKey);
+            this.refresh();
+            return;
+        }
+
+        // Fallback for readonly DiagramView (no undo, no defaults).
         for (const node of selected) {
             for (const [path, value] of Object.entries(patch ?? {})) {
                 this.setPathValue(node as unknown as Record<string, unknown>, path, value);
             }
         }
 
-        const edit = this.diagram as any;
-        this.updateDiagramDefaultsFromPatch(edit, patch);
         edit.render?.('all');
         edit.renderPreview?.();
         this.emitInspectorChanged(sourceKey);
@@ -537,77 +603,8 @@ export class DiagramInspector extends Inspector {
     }
 
     /**
-     * Mirrors inspector patch values into the diagram's default settings so new nodes inherit them.
-     * @param edit The diagram edit view (typed as any to avoid import overhead).
-     * @param patch The patch produced by the adapter.
-     */
-    private updateDiagramDefaultsFromPatch(edit: any, patch: EditableRecord | undefined): void {
-        if (patch === undefined) {
-            return;
-        }
-        // text
-        if (patch['text'] !== undefined) edit.settings.nodeText = String(patch['text']);
-        if (patch['fontFace'] !== undefined) edit.settings.fontFace = String(patch['fontFace']);
-        if (patch['fontSize'] !== undefined) edit.settings.fontSize = Number(patch['fontSize']);
-        if (patch['textColor'] !== undefined) edit.settings.textColor = String(patch['textColor']);
-        if (patch['textAlign'] !== undefined) edit.settings.textAlign = patch['textAlign'];
-        if (patch['textBaseline'] !== undefined) edit.settings.textBaseline = patch['textBaseline'];
-
-        // line
-        if (patch['strokeStyle'] !== undefined) edit.settings.strokeColor = String(patch['strokeStyle']);
-        if (patch['lineWidth'] !== undefined) edit.settings.lineWidth = Number(patch['lineWidth']);
-        if (patch['startArrow'] !== undefined) edit.settings.startArrow = Boolean(patch['startArrow']);
-        if (patch['endArrow'] !== undefined) edit.settings.endArrow = Boolean(patch['endArrow']);
-
-        // fill
-        if (patch['fillStyle'] !== undefined) edit.settings.fillColor = String(patch['fillStyle']);
-
-        const hasShadowPatch = Object.keys(patch).some((key) => key.startsWith('shadowStyle.'));
-        if (hasShadowPatch) {
-            edit.settings.shadowStyle = this.normalizeShadowStyle(edit.settings.shadowStyle);
-        }
-
-        const shadowColor = patch['shadowStyle.color'];
-        if (shadowColor !== undefined) {
-            edit.settings.shadowStyle = {
-                ...edit.settings.shadowStyle,
-                color: String(shadowColor),
-            };
-        }
-
-        const shadowBlur = patch['shadowStyle.blur'];
-        if (shadowBlur !== undefined) {
-            edit.settings.shadowStyle = {
-                ...edit.settings.shadowStyle,
-                blur: Number(shadowBlur),
-            };
-        }
-
-        const shadowOffsetX = patch['shadowStyle.offset.x'];
-        if (shadowOffsetX !== undefined) {
-            edit.settings.shadowStyle = {
-                ...edit.settings.shadowStyle,
-                offset: {
-                    ...edit.settings.shadowStyle.offset,
-                    x: Number(shadowOffsetX),
-                },
-            };
-        }
-
-        const shadowOffsetY = patch['shadowStyle.offset.y'];
-        if (shadowOffsetY !== undefined) {
-            edit.settings.shadowStyle = {
-                ...edit.settings.shadowStyle,
-                offset: {
-                    ...edit.settings.shadowStyle.offset,
-                    y: Number(shadowOffsetY),
-                },
-            };
-        }
-    }
-
-    /**
      * Writes a value at a dot-separated path inside a target object, creating intermediate objects as needed.
+     * Used only by the readonly fallback path in applyPatchToSelection.
      * @param target The root object to mutate.
      * @param path Dot-separated property path, e.g. 'shadowStyle.offset.x'.
      * @param value The value to set at the leaf.
@@ -616,11 +613,6 @@ export class DiagramInspector extends Inspector {
         const segments = path.split('.').filter((segment) => segment.length > 0);
         if (!segments.length) {
             return;
-        }
-
-        if (segments[0] === 'shadowStyle') {
-            const currentShadow = (target as any)['shadowStyle'];
-            (target as any)['shadowStyle'] = this.normalizeShadowStyle(currentShadow);
         }
 
         let current: any = target;
@@ -634,31 +626,6 @@ export class DiagramInspector extends Inspector {
         }
         const leafKey = segments[segments.length - 1] as string;
         current[leafKey] = value;
-    }
-
-    /**
-     * Normalizes a raw shadow style value into the canonical shadow object shape.
-     * @param style Any existing shadow style value (may be undefined or partial).
-     * @returns A fully-populated shadow style object.
-     */
-    private normalizeShadowStyle(style: any): { name: string; color: string; blur: number; offset: { x: number; y: number } } {
-        const base = DiagramConstants.NO_SHADOW;
-        const next = style && typeof style === 'object' ? style : {};
-        const offset = next.offset && typeof next.offset === 'object' ? next.offset : {};
-
-        const blur = Number(next.blur);
-        const ox = Number(offset.x);
-        const oy = Number(offset.y);
-
-        return {
-            name: typeof next.name === 'string' && next.name.length > 0 ? next.name : base.name,
-            color: typeof next.color === 'string' ? next.color : base.color,
-            blur: Number.isFinite(blur) ? blur : base.blur,
-            offset: {
-                x: Number.isFinite(ox) ? ox : base.offset.x,
-                y: Number.isFinite(oy) ? oy : base.offset.y,
-            },
-        };
     }
 
     /**
@@ -723,6 +690,7 @@ export class DiagramInspector extends Inspector {
         return {
             id: n.id,
             type: n.type,
+            opacity: n.opacity,
             angle: n.angle,
             points: n.points,
             geometry: n.geometry,
@@ -730,7 +698,7 @@ export class DiagramInspector extends Inspector {
             fillStyle: n.fillStyle,
             lineWidth: n.lineWidth,
             hollow: n.hollow,
-            transparent: n.transparent,
+            invisible: n.invisible,
             shadowStyle: n.shadowStyle,
             text: n.text,
             fontFace: n.fontFace,
@@ -740,7 +708,7 @@ export class DiagramInspector extends Inspector {
             textBaseline: n.textBaseline,
             startArrow: n.startArrow,
             endArrow: n.endArrow,
-            img_mode: n.img_mode,
+            image_mode: n.image_mode,
             image_id: n.image_id,
             meta: n.meta,
         };

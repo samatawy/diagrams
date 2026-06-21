@@ -72,6 +72,9 @@ const DEFAULT_STYLES = `
     position: relative;
     min-width: 72px;
     max-width: 100px;
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-family: var(--diagram-ui-font-family, system-ui);
+    line-height: 1.2;
 }
 .size-select-control .size-select-trigger,
 .size-select-control button[aria-haspopup='listbox'] {
@@ -87,7 +90,7 @@ const DEFAULT_STYLES = `
     border-radius: var(--diagram-ui-control-radius, 10px);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     color: var(--diagram-ui-text, #1f2937);
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
+    font-weight: 600;
 }
 .size-select-control .size-select-trigger::after {
     content: '▾';
@@ -101,7 +104,8 @@ const DEFAULT_STYLES = `
     border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
 }
 .size-select-preview {
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
+    font-weight: 400;
+    font-size: var(--diagram-ui-font-size, 12px);
     color: var(--diagram-ui-text, #1f2937);
     white-space: nowrap;
 }
@@ -134,7 +138,7 @@ const DEFAULT_STYLES = `
     background: transparent;
     padding: var(--diagram-ui-group-gap, 4px) var(--diagram-ui-control-padding-x, 8px);
     cursor: pointer;
-    font: var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
+    font: inherit;
     text-align: left;
 }
 .size-select-control .size-select-option:hover,

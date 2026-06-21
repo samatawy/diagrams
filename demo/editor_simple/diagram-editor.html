@@ -9,9 +9,32 @@
     <link rel="stylesheet"
           href="../demo.css" />
     <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        .page {
+            height: 100%;
+            padding: 12px;
+        }
+
+        .shell.shell-editor {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .canvas-card {
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
         #diagram-editor-host {
-            position: relative;
-            height: 800px;
+            flex: 1;
+            min-height: 0;
             border: 1px solid var(--border);
             border-radius: 18px;
             overflow: hidden;

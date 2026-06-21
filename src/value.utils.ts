@@ -38,8 +38,8 @@ export function fillStyle(node: INode): string {
     return node.fillStyle || '#ffffff';
 }
 
-export function isTransparent(node: INode): boolean {
-    return !!node.transparent;
+export function isInvisible(node: INode): boolean {
+    return !!node.invisible;
 }
 
 export function isHollow(node: INode): boolean {
@@ -51,7 +51,7 @@ export function isHollow(node: INode): boolean {
 }
 
 export function imageMode(node: INode): ImageMode {
-    return node.img_mode || 'none';
+    return node.image_mode ?? (node.image_id ? 'contain' : 'none');
 }
 
 export function imageId(node: INode): string | undefined {
@@ -67,6 +67,12 @@ export const SHADOW_NONE: ShadowStyle = {
 
 export function shadowStyle(node: INode): ShadowStyle {
     return node.shadowStyle ?? SHADOW_NONE;
+}
+
+export function nodeOpacity(node: INode): number {
+    const v = node.opacity;
+    if (v === undefined || v === null) return 1;
+    return Math.min(100, Math.max(0, v)) / 100;
 }
 
 export function nodeAngle(node: INode): number {

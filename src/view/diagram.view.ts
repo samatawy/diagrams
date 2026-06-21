@@ -495,7 +495,7 @@ export class DiagramView extends Diagram implements HasSelection {
         this.render();
     }
 
-    public override setNodeImageSource(node: string | INode, imageSrc: string, mode: ImageMode = 'frame', imageId?: string): INode | undefined {
+    public override setNodeImageSource(node: string | INode, imageSrc: string, mode: ImageMode = 'contain', imageId?: string): INode | undefined {
         const updated = super.setNodeImageSource(node, imageSrc, mode, imageId);
         if (!updated) {
             return updated;
@@ -506,7 +506,7 @@ export class DiagramView extends Diagram implements HasSelection {
         return updated;
     }
 
-    public override setNodeSvgSource(node: string | INode, svgOrSrc: string, mode: ImageMode = 'frame', imageId?: string): INode | undefined {
+    public override setNodeSvgSource(node: string | INode, svgOrSrc: string, mode: ImageMode = 'contain', imageId?: string): INode | undefined {
         const updated = super.setNodeSvgSource(node, svgOrSrc, mode, imageId);
         if (!updated) {
             return updated;
