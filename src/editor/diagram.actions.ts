@@ -1,6 +1,7 @@
 import type { DiagramEditView } from '../editview/diagram.edit.view';
 import { NodeRegistry } from '../factory';
 import { isConnection, isConnectionNode } from '../guards';
+import { textAlign, textBaseline } from '../value.utils';
 
 /**
  * Available built-in diagram actions. These can be used in the toolbar layout, context menu, etc.
@@ -219,7 +220,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to left edges',
         toggle: true,
         execute: (d) => d.setTextAlign('left'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => n.textAlign === 'left'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textAlign(n) === 'left'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
     },
     {
@@ -228,7 +229,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to horizontal centers',
         toggle: true,
         execute: (d) => d.setTextAlign('center'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => n.textAlign === 'center'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textAlign(n) === 'center'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
     },
     {
@@ -237,7 +238,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to right edges',
         toggle: true,
         execute: (d) => d.setTextAlign('right'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => n.textAlign === 'right'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textAlign(n) === 'right'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
     },
     {
@@ -246,7 +247,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to top edges',
         toggle: true,
         execute: (d) => d.setTextBaseline('top'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && n.textBaseline === 'top'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'top'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
     },
     {
@@ -255,7 +256,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to vertical centers',
         toggle: true,
         execute: (d) => d.setTextBaseline('middle'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && n.textBaseline === 'middle'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'middle'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
     },
     {
@@ -264,7 +265,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Align text to bottom edges',
         toggle: true,
         execute: (d) => d.setTextBaseline('bottom'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && n.textBaseline === 'bottom'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'bottom'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
     },
 

@@ -28,6 +28,7 @@ import { IntegerRangeSelect, type IntegerRangeSelectConfig } from "./inputs/inte
 import { DiagramInspector } from "./inspector/diagram.inspector";
 import type { InspectorConfig } from "./inspector/inspector";
 import { DiagramContextMenu } from "./menus/diagram.context.menu";
+import { DiagramConstants } from "../model/diagram.constants";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
@@ -636,7 +637,7 @@ export class DiagramEditor {
             this.addManagedListener<string>(this.fontSelectHost, 'fontchange', (font) => {
                 if (this.syncingControls) return;
                 if (font) {
-                    this.diagram.setFontFace(font);
+                    this.diagram.setTextStyle({ ...this.diagram.textStyle, fontFace: font });
                 }
             });
         }
@@ -645,7 +646,7 @@ export class DiagramEditor {
             this.addManagedListener<number>(this.fontSizeSelectHost, 'sizechange', (size) => {
                 if (this.syncingControls) return;
                 if (Number.isFinite(size) && size > 0) {
-                    this.diagram.setFontSize(size);
+                    this.diagram.setTextStyle({ ...this.diagram.textStyle, size });
                 }
             });
         }
@@ -654,7 +655,7 @@ export class DiagramEditor {
             this.addManagedListener<string>(this.textColorSelectHost, 'colorchange', (color) => {
                 if (this.syncingControls) return;
                 if (color) {
-                    this.diagram.setTextColor(color);
+                    this.diagram.setTextStyle({ ...this.diagram.textStyle, color });
                 }
             });
         }
@@ -696,14 +697,8 @@ export class DiagramEditor {
         if (this.shadowOffsetXHost) {
             this.addManagedListener<number>(this.shadowOffsetXHost, 'valuechange', (value) => {
                 if (this.syncingControls) return;
-                const current = this.diagram.shadowStyle;
                 this.diagram.setShadowStyle({
-                    ...current,
-                    color: undefined,
-                    offset: {
-                        ...current.offset,
-                        x: value,
-                    },
+                    offset: { ...this.diagram.shadowStyle.offset, x: value },
                 });
             });
         }
@@ -711,14 +706,8 @@ export class DiagramEditor {
         if (this.shadowOffsetYHost) {
             this.addManagedListener<number>(this.shadowOffsetYHost, 'valuechange', (value) => {
                 if (this.syncingControls) return;
-                const current = this.diagram.shadowStyle;
                 this.diagram.setShadowStyle({
-                    ...current,
-                    color: undefined,
-                    offset: {
-                        ...current.offset,
-                        y: value,
-                    },
+                    offset: { ...this.diagram.shadowStyle.offset, y: value },
                 });
             });
         }
@@ -726,12 +715,7 @@ export class DiagramEditor {
         if (this.shadowBlurHost) {
             this.addManagedListener<number>(this.shadowBlurHost, 'valuechange', (value) => {
                 if (this.syncingControls) return;
-                const current = this.diagram.shadowStyle;
-                this.diagram.setShadowStyle({
-                    ...current,
-                    color: undefined,
-                    blur: value,
-                });
+                this.diagram.setShadowStyle({ blur: value });
             });
         }
 
@@ -796,15 +780,15 @@ export class DiagramEditor {
             const frequent = this.diagram.getFrequentColors();
 
             if (this.fontSelect && this.fontSelectHost) {
-                this.fontSelect.value = this.diagram.fontFace;
+                this.fontSelect.value = this.diagram.textStyle.fontFace ?? DiagramConstants.DEFAULT_NODE_FONT_FACE;
             }
 
             if (this.fontSizeSelect && this.fontSizeSelectHost) {
-                this.fontSizeSelect.value = this.diagram.fontSize;
+                this.fontSizeSelect.value = this.diagram.textStyle.size ?? DiagramConstants.DEFAULT_NODE_FONT_SIZE;
             }
 
             if (this.textColorSelect) {
-                const color = this.diagram.textColor;
+                const color = this.diagram.textStyle.color ?? DiagramConstants.DEFAULT_NODE_TEXT_COLOR;
                 this.textColorSelect.clearOptions();
                 this.textColorSelect.addOptions([color, ...frequent]);
                 this.textColorSelect.value = color;
@@ -930,11 +914,9 @@ export class DiagramEditor {
      * @param enabled True to enable shadow, false to disable (sets color to transparent).
      */
     private applyShadowEnabledState(enabled: boolean): void {
-        const current = this.diagram.shadowStyle;
-        this.diagram.setShadowStyle({
-            ...current,
-            color: enabled ? undefined : 'transparent',
-        });
+        if (!enabled) {
+            this.diagram.setShadowStyle({ color: 'transparent' });
+        }
 
         if (this.shadowOffsetXSelect) this.shadowOffsetXSelect.disabled = !enabled;
         if (this.shadowOffsetYSelect) this.shadowOffsetYSelect.disabled = !enabled;

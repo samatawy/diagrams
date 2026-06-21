@@ -1,21 +1,26 @@
 import type { INode } from "./interfaces";
-import type { ShadowStyle } from "./shadows";
+import type { ShadowStyle, TextStyle } from "./shadows";
 import type { ImageMode, ITextAlign, ITextBaseline } from "./types";
+import { DiagramConstants } from "./model/diagram.constants";
+
+export function textStyle(node: INode): TextStyle {
+    return node.textStyle ?? {};
+}
 
 export function textAlign(node: INode): ITextAlign {
-    return node.textAlign || 'center';
+    return node.textStyle?.align || DiagramConstants.DEFAULT_NODE_TEXT_ALIGN;
 }
 
 export function textBaseline(node: INode): ITextBaseline {
-    return node.textBaseline || 'middle';
+    return node.textStyle?.baseline || DiagramConstants.DEFAULT_NODE_TEXT_BASELINE;
 }
 
 export function nodeFontFace(node: INode): string {
-    return node.fontFace || 'system';
+    return node.textStyle?.fontFace || DiagramConstants.DEFAULT_NODE_FONT_FACE;
 }
 
 export function nodeFontSize(node: INode): number {
-    return node.fontSize || 14;
+    return node.textStyle?.size || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
 }
 
 export function nodeText(node: INode): string {
@@ -23,7 +28,7 @@ export function nodeText(node: INode): string {
 }
 
 export function textColor(node: INode): string {
-    return node.textColor || node.strokeStyle || '#000000';
+    return node.textStyle?.color || node.strokeStyle || DiagramConstants.DEFAULT_NODE_TEXT_COLOR;
 }
 
 export function lineWidth(node: INode): number {

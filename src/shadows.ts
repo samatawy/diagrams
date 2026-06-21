@@ -1,4 +1,12 @@
-import type { IPoint } from "./types";
+import type { IPoint, ITextAlign, ITextBaseline } from "./types";
+
+export interface TextStyle {
+    fontFace?: string;
+    size?: number;
+    align?: ITextAlign;
+    baseline?: ITextBaseline;
+    color?: string;
+}
 
 /**
  * ShadowStyle defines the properties of a shadow effect that can be applied to nodes in the diagram.

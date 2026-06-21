@@ -188,7 +188,7 @@ textPresetHost?.addEventListener('colorchange', (event) => {
         return;
     }
     const color = normalizeColorPreset(event.detail, '#111827');
-    editor.setTextColor(color);
+    editor.setTextStyle({ ...editor.textStyle, color });
     scheduleRefreshState();
 });
 
@@ -227,7 +227,7 @@ fontFaceHost?.addEventListener('fontchange', (event) => {
     }
     const next = event.detail;
     if (next) {
-        editor.setFontFace(next);
+        editor.setTextStyle({ ...editor.textStyle, fontFace: next });
         scheduleRefreshState();
     }
 });
@@ -238,7 +238,7 @@ fontSizeHost?.addEventListener('sizechange', (event) => {
     }
     const next = Number(event.detail);
     if (Number.isFinite(next) && next > 0) {
-        editor.setFontSize(next);
+        editor.setTextStyle({ ...editor.textStyle, size: next });
         scheduleRefreshState();
     }
 });
@@ -247,15 +247,15 @@ function syncStyleControls() {
     syncingControls = true;
     try {
         if (fontFacePreset) {
-            fontFacePreset.value = editor.fontFace;
+            fontFacePreset.value = editor.textStyle.fontFace;
         }
         if (fontSizePreset) {
-            fontSizePreset.value = editor.fontSize;
+            fontSizePreset.value = editor.textStyle.size;
         }
 
         const stroke = normalizeColorPreset(editor.strokeColor, '#111827');
         const fill = normalizeColorPreset(editor.fillColor, '#ffffff');
-        const text = normalizeColorPreset(editor.textColor, '#111827');
+        const text = normalizeColorPreset(editor.textStyle.color, '#111827');
 
         const frequentColors = editor.getFrequentColors();
         const frequent = Array.isArray(frequentColors) ? frequentColors : [];

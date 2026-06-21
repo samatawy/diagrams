@@ -52,12 +52,14 @@ describe('RenderBasics', () => {
             type: 'rectangle',
             points: [{ x: 20, y: 30 }, { x: 180, y: 90 }],
             text: 'Visible label',
-            textAlign: 'center',
-            textBaseline: 'middle',
-            fontFace: 'Tahoma',
-            fontSize: 16,
+            textStyle: {
+                align: 'center',
+                baseline: 'middle',
+                fontFace: 'Tahoma',
+                size: 16,
+                color: '#000000',
+            },
             strokeStyle: '#334155',
-            textColor: '#000000',
             owner,
         };
 

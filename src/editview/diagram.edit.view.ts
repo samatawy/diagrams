@@ -3,7 +3,7 @@ import type { IConnection, IConnectionAnchor, IGrid, ILayer, INode } from "../in
 import { DiagramView, type RenderMode, type RenderScope } from "../view/diagram.view";
 import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode, type ImageAlign } from "../types";
 import { HistoryStack } from "./history";
-import type { ShadowStyle } from "../shadows";
+import type { ShadowStyle, TextStyle } from "../shadows";
 
 import { isConnection, isNode } from "../guards";
 
@@ -93,7 +93,10 @@ export class DiagramEditView extends DiagramView {
         endArrow: boolean,
         strokeColor: string;
         fillColor: string;
-        shadowStyle: ShadowStyle;
+        shadowColor: string;
+        shadowBlur: number;
+        shadowOffsetX: number;
+        shadowOffsetY: number;
         fontFace: string;
         fontSize: number;
         textColor: string;
@@ -110,8 +113,11 @@ export class DiagramEditView extends DiagramView {
             endArrow: true,
             strokeColor: DiagramConstants.DEFAULT_STROKE_STYLE,
             fillColor: DiagramConstants.DEFAULT_FILL_STYLE,
-            shadowStyle: DiagramConstants.NO_SHADOW,
-            fontFace: this.parseFontFace(DiagramConstants.DEFAULT_NODE_FONT),
+            shadowColor: DiagramConstants.NO_SHADOW.color ?? 'transparent',
+            shadowBlur: DiagramConstants.NO_SHADOW.blur,
+            shadowOffsetX: DiagramConstants.NO_SHADOW.offset.x,
+            shadowOffsetY: DiagramConstants.NO_SHADOW.offset.y,
+            fontFace: DiagramConstants.DEFAULT_NODE_FONT_FACE,
             fontSize: DiagramConstants.DEFAULT_NODE_FONT_SIZE,
             textColor: DiagramConstants.DEFAULT_NODE_TEXT_COLOR,
             textAlign: DiagramConstants.DEFAULT_NODE_TEXT_ALIGN,
@@ -523,25 +529,15 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Gets the current default text color.
-     */
-    public get textColor(): string {
-        return this.settings.textColor;
-    }
-
-    /**
-     * Sets the default text color and applies it to current selection.
-     * @param value Text color value.
-     */
-    public set textColor(value: string) {
-        this.setTextColor(value);
-    }
-
-    /**
      * Gets the current default shadow style.
      */
     public get shadowStyle(): ShadowStyle {
-        return this.settings.shadowStyle;
+        return {
+            name: 'Custom',
+            color: this.settings.shadowColor,
+            blur: this.settings.shadowBlur,
+            offset: { x: this.settings.shadowOffsetX, y: this.settings.shadowOffsetY },
+        };
     }
 
     /**
@@ -553,63 +549,24 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Gets the current default font family.
+     * Gets the current default text style as a composed object.
      */
-    public get fontFace(): string {
-        return this.settings.fontFace;
+    public get textStyle(): TextStyle {
+        return {
+            color: this.settings.textColor,
+            fontFace: this.settings.fontFace,
+            size: this.settings.fontSize,
+            align: this.settings.textAlign,
+            baseline: this.settings.textBaseline,
+        };
     }
 
     /**
-     * Sets the default font family and applies it to current selection.
-     * @param value Font family value.
+     * Sets the default text style and applies it to current selection.
+     * @param value Text style value.
      */
-    public set fontFace(value: string) {
-        this.setFontFace(value);
-    }
-
-    /**
-     * Gets the current default font size.
-     */
-    public get fontSize(): number {
-        return this.settings.fontSize;
-    }
-
-    /**
-     * Sets the default font size and applies it to current selection.
-     * @param value Font size value.
-     */
-    public set fontSize(value: number) {
-        this.setFontSize(value);
-    }
-
-    /**
-     * Gets the current default horizontal text alignment.
-     */
-    public get textAlign(): ITextAlign {
-        return this.settings.textAlign;
-    }
-
-    /**
-     * Sets the default horizontal text alignment and applies it to current selection.
-     * @param value Text alignment value.
-     */
-    public set textAlign(value: ITextAlign) {
-        this.setTextAlign(value);
-    }
-
-    /**
-     * Gets the current default vertical text baseline.
-     */
-    public get textBaseline(): ITextBaseline {
-        return this.settings.textBaseline;
-    }
-
-    /**
-     * Sets the default vertical text baseline and applies it to current selection.
-     * @param value Text baseline value.
-     */
-    public set textBaseline(value: ITextBaseline) {
-        this.setTextBaseline(value);
+    public set textStyle(value: TextStyle) {
+        this.setTextStyle(value);
     }
 
     /**
@@ -822,25 +779,6 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Sets the text color for the selected nodes and default style state.
-     * @param color The text color to apply.
-     */
-    public setTextColor(color: string): void {
-        if (this.selection().length) {
-            this.addUndo();
-        }
-
-        this.settings.textColor = color;
-
-        for (let node of this.selection()) {
-            node.textColor = color;
-        }
-        this.render('all');
-        this.renderPreview();
-        this.eventDispatcher.styleChanged('set-text-color');
-    }
-
-    /**
      * Sets the line width for the selected nodes and new nodes to be created.
      * @param width The line width to set.
      */
@@ -886,15 +824,27 @@ export class DiagramEditView extends DiagramView {
      * Sets the shadow style for the selected nodes and new nodes to be created.
      * @param style The shadow style to set.
      */
-    public setShadowStyle(style: ShadowStyle): void {
+    public setShadowStyle(style: Partial<ShadowStyle>): void {
         if (this.selection().length) {
             this.addUndo();
         }
 
-        this.settings.shadowStyle = style;
+        if (style.color !== undefined) this.settings.shadowColor = style.color;
+        if (style.blur !== undefined) this.settings.shadowBlur = style.blur;
+        if (style.offset !== undefined) {
+            this.settings.shadowOffsetX = style.offset.x;
+            this.settings.shadowOffsetY = style.offset.y;
+        }
+
+        const merged: ShadowStyle = {
+            name: style.name ?? 'Custom',
+            color: this.settings.shadowColor,
+            blur: this.settings.shadowBlur,
+            offset: { x: this.settings.shadowOffsetX, y: this.settings.shadowOffsetY },
+        };
 
         for (let node of this.selection()) {
-            node.shadowStyle = style;
+            node.shadowStyle = merged;
         }
         this.render('all');
         this.renderPreview();
@@ -902,79 +852,33 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Sets the font face for the selected nodes and new nodes to be created.
-     * @param face The font face to set.
+     * Sets the text style for the selected nodes and new nodes to be created.
+     * @param style The text style to set.
      */
-    public setFontFace(face: string): void {
+    public setTextStyle(style: TextStyle): void {
         if (this.selection().length) {
             this.addUndo();
         }
 
-        this.settings.fontFace = face;
+        // 'inherit' resets the node's text color to follow the stroke color (see textColor() in value.utils).
+        // It is a per-node signal and intentionally does not update the editor default (settings.textColor).
+        const colorIsInherit = style.color === 'inherit';
+        if (style.color !== undefined && !colorIsInherit) this.settings.textColor = style.color;
+        if (style.fontFace !== undefined) this.settings.fontFace = style.fontFace;
+        if (style.size !== undefined) this.settings.fontSize = style.size;
+        if (style.align !== undefined) this.settings.textAlign = style.align;
+        if (style.baseline !== undefined) this.settings.textBaseline = style.baseline;
 
         for (let node of this.selection()) {
-            node.fontFace = face;
+            node.textStyle = {
+                ...node.textStyle,
+                ...style,
+                color: colorIsInherit ? undefined : style.color,
+            };
         }
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-font-face');
-    }
-
-    /**
-     * Sets the font size for the selected nodes and new nodes to be created.
-     * @param size The font size to set.
-     */
-    public setFontSize(size: number): void {
-        if (this.selection().length) {
-            this.addUndo();
-        }
-
-        this.settings.fontSize = size;
-
-        for (let node of this.selection()) {
-            node.fontSize = size;
-        }
-        this.render('all');
-        this.renderPreview();
-        this.eventDispatcher.styleChanged('set-font-size');
-    }
-
-    /**
-     * Sets the text alignment for the selected nodes and new nodes to be created.
-     * @param align The text alignment to set.
-     */
-    public setTextAlign(align: ITextAlign | string): void {
-        if (this.selection().length) {
-            this.addUndo();
-        }
-
-        this.settings.textAlign = align as ITextAlign;
-
-        for (let node of this.selection()) {
-            node.textAlign = this.settings.textAlign;
-        }
-        this.render('all');
-        this.renderPreview();
-        this.eventDispatcher.styleChanged('set-text-align');
-    }
-
-    /**
-     * Sets the text baseline for the selected nodes and new nodes to be created.
-     * @param align The text baseline to set.
-     */
-    public setTextBaseline(align: ITextBaseline | string): void {
-        if (this.selection().length) {
-            this.addUndo();
-        }
-
-        this.settings.textBaseline = align as ITextBaseline;
-
-        for (let node of this.selection()) {
-            node.textBaseline = this.settings.textBaseline;
-        }
-        this.render('all');
-        this.renderPreview();
-        this.eventDispatcher.styleChanged('set-text-baseline');
+        this.eventDispatcher.styleChanged('set-text-style');
     }
 
     /**
@@ -1007,17 +911,21 @@ export class DiagramEditView extends DiagramView {
 
         // Mirror into diagram defaults so new nodes inherit changes.
         if (patch['text'] !== undefined) this.settings.nodeText = String(patch['text']);
-        if (patch['fontFace'] !== undefined) this.settings.fontFace = String(patch['fontFace']);
-        if (patch['fontSize'] !== undefined) this.settings.fontSize = Number(patch['fontSize']);
-        if (patch['textColor'] !== undefined) this.settings.textColor = String(patch['textColor']);
-        if (patch['textAlign'] !== undefined) this.settings.textAlign = patch['textAlign'] as ITextAlign;
-        if (patch['textBaseline'] !== undefined) this.settings.textBaseline = patch['textBaseline'] as ITextBaseline;
+        if (patch['textStyle.fontFace'] !== undefined) this.settings.fontFace = String(patch['textStyle.fontFace']);
+        if (patch['textStyle.size'] !== undefined) this.settings.fontSize = Number(patch['textStyle.size']);
+        if (patch['textStyle.color'] !== undefined) this.settings.textColor = String(patch['textStyle.color']);
+        if (patch['textStyle.align'] !== undefined) this.settings.textAlign = patch['textStyle.align'] as ITextAlign;
+        if (patch['textStyle.baseline'] !== undefined) this.settings.textBaseline = patch['textStyle.baseline'] as ITextBaseline;
         if (patch['strokeStyle'] !== undefined) this.settings.strokeColor = String(patch['strokeStyle']);
         if (patch['lineWidth'] !== undefined) this.settings.lineWidth = Number(patch['lineWidth']);
         if (patch['opacity'] !== undefined) this.settings.opacity = Math.min(100, Math.max(0, Number(patch['opacity'])));
         if (patch['startArrow'] !== undefined) this.settings.startArrow = Boolean(patch['startArrow']);
         if (patch['endArrow'] !== undefined) this.settings.endArrow = Boolean(patch['endArrow']);
         if (patch['fillStyle'] !== undefined) this.settings.fillColor = String(patch['fillStyle']);
+        if (patch['shadowStyle.color'] !== undefined) this.settings.shadowColor = String(patch['shadowStyle.color']);
+        if (patch['shadowStyle.blur'] !== undefined) this.settings.shadowBlur = Number(patch['shadowStyle.blur']);
+        if (patch['shadowStyle.offset.x'] !== undefined) this.settings.shadowOffsetX = Number(patch['shadowStyle.offset.x']);
+        if (patch['shadowStyle.offset.y'] !== undefined) this.settings.shadowOffsetY = Number(patch['shadowStyle.offset.y']);
 
         this.render('all');
         this.renderPreview();
@@ -1159,12 +1067,13 @@ export class DiagramEditView extends DiagramView {
             opacity: style.opacity,
             strokeStyle: style.strokeStyle,
             fillStyle: style.fillStyle,
-            textColor: style.textColor,
-            lineWidth: style.lineWidth,
-            fontFace: style.fontFace,
-            fontSize: style.fontSize,
-            textAlign: style.textAlign,
-            textBaseline: style.textBaseline,
+            textStyle: style.textStyle,
+            // textColor: style.textColor,
+            // lineWidth: style.lineWidth,
+            // fontFace: style.fontFace,
+            // fontSize: style.fontSize,
+            // textAlign: style.textAlign,
+            // textBaseline: style.textBaseline,
             shadowStyle: style.shadowStyle,
             image_id: isNode(style) ? style.image_id : undefined,
             image_mode: isNode(style) ? style.image_mode : undefined,
@@ -1192,12 +1101,13 @@ export class DiagramEditView extends DiagramView {
                     if (style.opacity !== undefined) node.opacity = style.opacity;
                     if (style.strokeStyle) node.strokeStyle = style.strokeStyle;
                     if (style.fillStyle) node.fillStyle = style.fillStyle;
-                    if (style.textColor) node.textColor = style.textColor;
+                    if (style.textStyle) node.textStyle = style.textStyle;
+                    // if (style.textColor) node.textColor = style.textColor;
                     if (style.lineWidth) node.lineWidth = style.lineWidth;
-                    if (style.fontFace) node.fontFace = style.fontFace;
-                    if (style.fontSize) node.fontSize = style.fontSize;
-                    if (style.textAlign) node.textAlign = style.textAlign;
-                    if (style.textBaseline) node.textBaseline = style.textBaseline;
+                    // if (style.fontFace) node.fontFace = style.fontFace;
+                    // if (style.fontSize) node.fontSize = style.fontSize;
+                    // if (style.textAlign) node.textAlign = style.textAlign;
+                    // if (style.textBaseline) node.textBaseline = style.textBaseline;
                     if (style.shadowStyle) node.shadowStyle = style.shadowStyle;
                     if (isNode(node)) {
                         if (style.image_id !== undefined) node.image_id = style.image_id;
@@ -1687,6 +1597,7 @@ export class DiagramEditView extends DiagramView {
             ...node,
             id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             points: node.points.map(p => ({ ...p })),
+            ...(node.textStyle && { textStyle: { ...node.textStyle } }),
             ...(node.shadowStyle && { shadowStyle: { ...node.shadowStyle } }),
             ...(node.geometry && { geometry: { ...node.geometry } }),
             ...(node.meta && { meta: { ...node.meta } }),
@@ -2982,16 +2893,18 @@ export class DiagramEditView extends DiagramView {
             points,
             hollow,
             text: tool === 'text' ? 'Text' : '', // tool === 'text' ? (this.nodeText || 'New Text') : (this.nodeText || ''),
-            textAlign: this.textAlign,
-            textBaseline: this.textBaseline,
-            fontFace: this.fontFace,
-            fontSize: this.fontSize,
+            textStyle: this.textStyle,
+            // this.textStyle,
+            // textAlign: this.textAlign,
+            // textBaseline: this.textBaseline,
+            // fontFace: this.fontFace,
+            // fontSize: this.fontSize,
             ready: false,
             strokeStyle: this.strokeColor,
             fillStyle,
-            textColor: this.textColor,
+            // textColor: this.textColor,
             lineWidth: this.lineWidth,
-            shadowStyle: this.shadowStyle,
+            shadowStyle: { ...this.shadowStyle },
             owner: this,
         };
 
@@ -3173,8 +3086,8 @@ export class DiagramEditView extends DiagramView {
         const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
         const baseline = textBaseline(node);
 
-        const fontFace = node.fontFace || this.fontFace;
-        const fontSize = node.fontSize || this.fontSize;
+        const fontFace = node.textStyle?.fontFace || this.textStyle.fontFace || DiagramConstants.DEFAULT_NODE_FONT_FACE;
+        const fontSize = node.textStyle?.size || this.textStyle.size || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
         const scaledFontSize = Math.max(1, fontSize * zoom);
         const scaledLineHeight = Math.max(scaledFontSize * 1.25, 1);
 
@@ -3841,22 +3754,20 @@ export class DiagramEditView extends DiagramView {
             this.settings.lineWidth = shape.lineWidth || 1;
             this.settings.strokeColor = shape.strokeStyle;
             this.settings.fillColor = shape.fillStyle || 'transparent';
-            this.settings.textColor = shape.textColor || shape.strokeStyle || '#111827';
+            this.settings.textColor = shape.textStyle?.color || shape.strokeStyle || '#111827';
 
-            const default_font = this.parseFontFace(DiagramConstants.DEFAULT_NODE_FONT);
+            const default_font = DiagramConstants.DEFAULT_NODE_FONT_FACE;
             const default_size = DiagramConstants.DEFAULT_NODE_FONT_SIZE;
-            this.settings.fontFace = shape.fontFace || default_font;
-            this.settings.fontSize = shape.fontSize || default_size;
+            this.settings.fontFace = shape.textStyle?.fontFace || default_font;
+            this.settings.fontSize = shape.textStyle?.size || default_size;
 
             this.settings.nodeText = shape.text || '';
 
-            this.settings.shadowStyle = shape.shadowStyle ?? DiagramConstants.NO_SHADOW;
+            this.settings.shadowColor = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).color ?? 'transparent';
+            this.settings.shadowBlur = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).blur;
+            this.settings.shadowOffsetX = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).offset.x;
+            this.settings.shadowOffsetY = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).offset.y;
         }
-    }
-
-    private parseFontFace(font: string): string {
-        const parts = font.split('px');
-        return (parts.length > 1 ? parts[1]!.trim() : font).trim() || 'Tahoma';
     }
 
     // ========================================

@@ -353,7 +353,7 @@ const textPresetControl = createColorPresetControl(textPresetSelect, (color) => 
     }
 
     const normalized = normalizeColorPreset(color, '#111827');
-    editor.setTextColor(normalized);
+    editor.setTextStyle({ ...editor.textStyle, color: normalized });
     if (textColorInput) {
         textColorInput.value = normalized === 'transparent' ? '#111827' : normalized;
     }
@@ -384,12 +384,12 @@ function syncStyleControls() {
         return;
     }
 
-    fillSelect(fontFaceSelect, FONT_FACES, editor.fontFace);
-    fillSelect(fontSizeSelect, FONT_SIZES, String(editor.fontSize));
+    fillSelect(fontFaceSelect, FONT_FACES, editor.textStyle.fontFace);
+    fillSelect(fontSizeSelect, FONT_SIZES, String(editor.textStyle.size));
 
     const stroke = normalizeColorPreset(editor.strokeColor, '#111827');
     const fill = normalizeColorPreset(editor.fillColor, '#ffffff');
-    const text = normalizeColorPreset(editor.textColor, '#111827');
+    const text = normalizeColorPreset(editor.textStyle.color, '#111827');
     if (textColorInput) {
         textColorInput.value = text === 'transparent' ? '#111827' : text;
     }
@@ -621,7 +621,7 @@ fontFaceSelect?.addEventListener('change', () => {
 
     const next = fontFaceSelect.value;
     if (next) {
-        editor.setFontFace(next);
+        editor.setTextStyle({ ...editor.textStyle, fontFace: next });
     }
 });
 
@@ -632,7 +632,7 @@ fontSizeSelect?.addEventListener('change', () => {
 
     const next = Number(fontSizeSelect.value);
     if (Number.isFinite(next) && next > 0) {
-        editor.setFontSize(next);
+        editor.setTextStyle({ ...editor.textStyle, size: next });
     }
 });
 
@@ -642,7 +642,7 @@ textColorInput?.addEventListener('input', () => {
     }
 
     const color = toHexColor(textColorInput.value);
-    editor.setTextColor(color);
+    editor.setTextStyle({ ...editor.textStyle, color });
     textPresetControl.setValue(color);
 });
 

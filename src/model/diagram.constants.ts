@@ -39,7 +39,7 @@ export const DEFAULT_NODE_TEXT_COLOR = 'DEFAULT_NODE_TEXT_COLOR';
 export const DEFAULT_NODE_TEXT_ALIGN = 'DEFAULT_NODE_TEXT_ALIGN';
 export const DEFAULT_NODE_TEXT_BASELINE = 'DEFAULT_NODE_TEXT_BASELINE';
 export const DEFAULT_NODE_CORNER_RADIUS = 'DEFAULT_NODE_CORNER_RADIUS';
-export const DEFAULT_NODE_FONT = 'DEFAULT_NODE_FONT';
+export const DEFAULT_NODE_FONT_FACE = 'DEFAULT_NODE_FONT_FACE';
 export const DEFAULT_NODE_FONT_SIZE = 'DEFAULT_NODE_FONT_SIZE';
 export const DEFAULT_TEXT_PADDING = 'DEFAULT_TEXT_PADDING';
 export const DEFAULT_NODE_LINE_WIDTH = 'DEFAULT_NODE_LINE_WIDTH';
@@ -98,8 +98,8 @@ export class DiagramConstants {
         DEFAULT_NODE_TEXT_ALIGN: 'center',
         DEFAULT_NODE_TEXT_BASELINE: 'middle',
         DEFAULT_NODE_CORNER_RADIUS: 5,
-        DEFAULT_NODE_FONT: '16px system-ui',
-        DEFAULT_NODE_FONT_SIZE: 16,
+        DEFAULT_NODE_FONT_FACE: 'system-ui',
+        DEFAULT_NODE_FONT_SIZE: 14,
         DEFAULT_TEXT_PADDING: 4,
         DEFAULT_NODE_LINE_WIDTH: 1,
         DEFAULT_NODE_TRANSPARENT: false,
@@ -237,8 +237,8 @@ export class DiagramConstants {
         return this.get(DEFAULT_NODE_CORNER_RADIUS);
     }
 
-    public static get DEFAULT_NODE_FONT(): string {
-        return this.get(DEFAULT_NODE_FONT);
+    public static get DEFAULT_NODE_FONT_FACE(): string {
+        return this.get(DEFAULT_NODE_FONT_FACE);
     }
 
     public static get DEFAULT_NODE_FONT_SIZE(): number {

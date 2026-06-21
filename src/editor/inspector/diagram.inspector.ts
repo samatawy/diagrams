@@ -139,7 +139,7 @@ export class DiagramInspector extends Inspector {
             readonly: readonly
         });
         this.addRow(text, {
-            key: 'fontFace',
+            key: 'textStyle.fontFace',
             label: 'Font Face',
             type: 'string',
             editor: 'FontSelect',
@@ -147,7 +147,7 @@ export class DiagramInspector extends Inspector {
             readonly: readonly,
         });
         this.addRow(text, {
-            key: 'fontSize',
+            key: 'textStyle.size',
             label: 'Font Size',
             type: 'number',
             editor: 'SizeSelect',
@@ -155,7 +155,7 @@ export class DiagramInspector extends Inspector {
             readonly: readonly,
         });
         this.addRow(text, {
-            key: 'textColor',
+            key: 'textStyle.color',
             label: 'Color',
             type: 'string',
             editor: 'ColorSelect',
@@ -163,7 +163,7 @@ export class DiagramInspector extends Inspector {
             readonly: readonly,
         });
         this.addRow(text, {
-            key: 'textAlign',
+            key: 'textStyle.align',
             label: 'Align',
             type: 'select',
             editor: 'EnumSelect',
@@ -173,7 +173,7 @@ export class DiagramInspector extends Inspector {
             readonly: readonly,
         });
         this.addRow(text, {
-            key: 'textBaseline',
+            key: 'textStyle.baseline',
             label: 'Baseline',
             type: 'select',
             editor: 'EnumSelect',
@@ -686,31 +686,6 @@ export class DiagramInspector extends Inspector {
      * @returns A flat record with all inspectable properties of the node.
      */
     private toValueRecord(node: INode): EditableRecord {
-        const n = node as any;
-        return {
-            id: n.id,
-            type: n.type,
-            opacity: n.opacity,
-            angle: n.angle,
-            points: n.points,
-            geometry: n.geometry,
-            strokeStyle: n.strokeStyle,
-            fillStyle: n.fillStyle,
-            lineWidth: n.lineWidth,
-            hollow: n.hollow,
-            invisible: n.invisible,
-            shadowStyle: n.shadowStyle,
-            text: n.text,
-            fontFace: n.fontFace,
-            fontSize: n.fontSize,
-            textColor: n.textColor,
-            textAlign: n.textAlign,
-            textBaseline: n.textBaseline,
-            startArrow: n.startArrow,
-            endArrow: n.endArrow,
-            image_mode: n.image_mode,
-            image_id: n.image_id,
-            meta: n.meta,
-        };
+        return node as unknown as EditableRecord;
     }
 }

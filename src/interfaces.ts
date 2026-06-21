@@ -1,6 +1,6 @@
 import type { Serializable } from "./io/serialized.types";
 import type { ArrowDirection, ImageAlign, ImageMode } from "./types";
-import type { ShadowStyle } from "./shadows";
+import type { ShadowStyle, TextStyle } from "./shadows";
 import type { IPoint, ITextAlign, ITextBaseline, NodeHandle } from "./types";
 
 /**
@@ -34,30 +34,30 @@ export interface INode {
      */
     text?: string,
 
-    /**
-     * The horizontal alignment of the text within the node, which can be left-aligned, centered, or right-aligned.
-     */
-    textAlign?: ITextAlign,
+    // /**
+    //  * The horizontal alignment of the text within the node, which can be left-aligned, centered, or right-aligned.
+    //  */
+    // textAlign?: ITextAlign,
 
-    /**
-     * The vertical alignment of the text within the node, which can be top-aligned, middle-aligned, or bottom-aligned.
-     */
-    textBaseline?: ITextBaseline,
+    // /**
+    //  * The vertical alignment of the text within the node, which can be top-aligned, middle-aligned, or bottom-aligned.
+    //  */
+    // textBaseline?: ITextBaseline,
 
     // /**
     //  * The font used for the node's text, which can include font family, size, weight, and other CSS font properties.
     //  */
     // font?: string,
 
-    /**
-     * The font face used for the node's text, which specifies the font family to be used for rendering the text.
-     */
-    fontFace?: string;
+    // /**
+    //  * The font face used for the node's text, which specifies the font family to be used for rendering the text.
+    //  */
+    // fontFace?: string;
 
-    /**
-     * The size of the font used for the node's text, which specifies the size of the text (in pixels).
-     */
-    fontSize?: number;
+    // /**
+    //  * The size of the font used for the node's text, which specifies the size of the text (in pixels).
+    //  */
+    // fontSize?: number;
 
     // The following are cached in the diagram's ViewCache
     // path?: Path2D;
@@ -114,10 +114,10 @@ export interface INode {
      */
     fillStyle?: string;
 
-    /**
-     * The text color of the node, which can be used to control the color of the text displayed within the node.
-     */
-    textColor?: string;
+    // /**
+    //  * The text color of the node, which can be used to control the color of the text displayed within the node.
+    //  */
+    // textColor?: string;
 
     /**
      * The line width of the node's border, which can be used to control the thickness of the node's outline.
@@ -125,6 +125,8 @@ export interface INode {
     lineWidth?: number;
 
     arrow?: ArrowDirection;
+
+    textStyle?: TextStyle;
 
     /**
      * The shadow style of the node, which can be used to apply a shadow effect to the node.
