@@ -1156,6 +1156,7 @@ export class DiagramEditView extends DiagramView {
 
         const style = selected[0]!;
         const serialized = {
+            opacity: style.opacity,
             strokeStyle: style.strokeStyle,
             fillStyle: style.fillStyle,
             textColor: style.textColor,
@@ -1188,6 +1189,7 @@ export class DiagramEditView extends DiagramView {
                 this.addUndo();
 
                 for (const node of selected) {
+                    if (style.opacity !== undefined) node.opacity = style.opacity;
                     if (style.strokeStyle) node.strokeStyle = style.strokeStyle;
                     if (style.fillStyle) node.fillStyle = style.fillStyle;
                     if (style.textColor) node.textColor = style.textColor;
