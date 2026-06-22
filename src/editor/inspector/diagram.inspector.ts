@@ -45,6 +45,7 @@ export class DiagramInspector extends Inspector {
 
     private geometryGrid?: HTMLElement;
     private metaGrid?: HTMLElement;
+    private diagramMetaGrid?: HTMLElement;
 
     /**
      * Creates a DiagramInspector bound to the given diagram view.
@@ -97,242 +98,138 @@ export class DiagramInspector extends Inspector {
      */
     protected initialize(): void {
         const readonly = this.readonly;
+        const hasSel = () => this.diagram.selection().length > 0;
+        const noSel = () => this.diagram.selection().length === 0;
 
+        // ---- Diagram section (visible only when nothing is selected) ----
+        const { grid: diagramGrid } = this.buildSection('Diagram');
+        this.addRow(diagramGrid, {
+            key: 'diagram.id',
+            label: 'ID',
+            type: 'string',
+            readonly: true,
+            isVisible: noSel,
+        });
+        this.addRow(diagramGrid, {
+            key: 'diagram.background',
+            label: 'Background',
+            type: 'string',
+            editor: 'ColorSelect',
+            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), allowEmpty: true },
+            readonly: readonly,
+            isVisible: noSel,
+        });
+        const { grid: diagramMetaGridEl } = this.buildSection('Diagram Metadata');
+        this.diagramMetaGrid = diagramMetaGridEl;
+        // TODO: Replace this placeholder with a real key/value adder row for diagram meta entries.
+        this.addRow(diagramMetaGridEl, {
+            key: 'diagram.meta.__add',
+            label: 'Add key/value',
+            type: 'string',
+            readonly: true,
+            isVisible: noSel,
+        });
+
+        // ---- Node sections (visible only when at least one node is selected) ----
         const { grid: identity } = this.buildSection('Identity');
         this.addRow(identity, {
             key: 'id',
             label: 'ID',
             type: 'string',
-            readonly: true
+            readonly: true,
+            isVisible: hasSel,
         });
         this.addRow(identity, {
             key: 'type',
             label: 'Type',
             type: 'string',
-            readonly: true
+            readonly: true,
+            isVisible: hasSel,
         });
 
         const { grid: geometry } = this.buildSection('Geometry');
         this.geometryGrid = geometry;
+        this.addRow(geometry, { key: 'locked', label: 'Locked', type: 'boolean', readonly: readonly, isVisible: hasSel });
+        this.addRow(geometry, { key: 'locked_aspect', label: 'Lock Aspect', type: 'boolean', readonly: readonly, isVisible: hasSel });
         this.addRow(geometry, {
-            key: 'locked',
-            label: 'Locked',
-            type: 'boolean',
-            readonly: readonly
-        });
-        this.addRow(geometry, {
-            key: 'locked_aspect',
-            label: 'Lock Aspect',
-            type: 'boolean',
-            readonly: readonly
-        });
-        this.addRow(geometry, {
-            key: 'opacity',
-            label: 'Opacity',
-            type: 'number',
+            key: 'opacity', label: 'Opacity', type: 'number',
             editorOptions: { min: 0, max: 100, precision: 0, defaultWhenUnset: 100 } as NumberInputAdapterConfig,
-            readonly: readonly
+            readonly: readonly, isVisible: hasSel,
         });
         this.addRow(geometry, {
-            key: 'angle',
-            label: 'Angle',
-            type: 'number',
-            editor: 'AngleEditor',
-            editorOptions: { precision: 4 },
-            readonly: readonly
+            key: 'angle', label: 'Angle', type: 'number',
+            editor: 'AngleEditor', editorOptions: { precision: 4 },
+            readonly: readonly, isVisible: hasSel,
         });
 
         const { grid: text } = this.buildSection('Text');
+        this.addRow(text, { key: 'text', label: 'Content', type: 'string', editorOptions: { multiline: true }, readonly: readonly, isVisible: hasSel });
+        this.addRow(text, { key: 'textStyle.fontFace', label: 'Font Face', type: 'string', editor: 'FontSelect', editorOptions: this.inspectorConfig.fontSelect || {}, readonly: readonly, isVisible: hasSel });
+        this.addRow(text, { key: 'textStyle.size', label: 'Font Size', type: 'number', editor: 'SizeSelect', editorOptions: this.inspectorConfig.sizeSelect || {}, readonly: readonly, isVisible: hasSel });
+        this.addRow(text, { key: 'textStyle.color', label: 'Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.textColor || {}) }, readonly: readonly, isVisible: hasSel });
         this.addRow(text, {
-            key: 'text',
-            label: 'Content',
-            type: 'string',
-            editorOptions: { multiline: true },
-            readonly: readonly
+            key: 'textStyle.weight', label: 'Weight', type: 'select', editor: 'EnumSelect',
+            editorOptions: { options: [100, 200, 300, 400, 500, 600, 700, 800, 900].map((w) => ({ value: w, label: w })) },
+            readonly: readonly, isVisible: hasSel,
+        });
+        this.addRow(text, { key: 'textStyle.italic', label: 'Italic', type: 'boolean', readonly: readonly, isVisible: hasSel });
+        this.addRow(text, {
+            key: 'textStyle.align', label: 'Align', type: 'select', editor: 'EnumSelect',
+            editorOptions: { options: this.inspectorConfig.textAlignOptions || ['left', 'center', 'right'] } as EnumSelectAdapterConfig,
+            readonly: readonly, isVisible: hasSel,
         });
         this.addRow(text, {
-            key: 'textStyle.fontFace',
-            label: 'Font Face',
-            type: 'string',
-            editor: 'FontSelect',
-            editorOptions: this.inspectorConfig.fontSelect || {},
-            readonly: readonly,
+            key: 'textStyle.baseline', label: 'Baseline', type: 'select', editor: 'EnumSelect',
+            editorOptions: { options: this.inspectorConfig.textBaselineOptions || ['top', 'middle', 'bottom'] } as EnumSelectAdapterConfig,
+            readonly: readonly, isVisible: hasSel,
         });
         this.addRow(text, {
-            key: 'textStyle.size',
-            label: 'Font Size',
-            type: 'number',
-            editor: 'SizeSelect',
-            editorOptions: this.inspectorConfig.sizeSelect || {},
-            readonly: readonly,
-        });
-        this.addRow(text, {
-            key: 'textStyle.color',
-            label: 'Color',
-            type: 'string',
-            editor: 'ColorSelect',
-            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.textColor || {}) },
-            readonly: readonly,
-        });
-        this.addRow(text, {
-            key: 'textStyle.weight',
-            label: 'Weight',
-            type: 'select',
-            editor: 'EnumSelect',
-            editorOptions: {
-                // options: IFontWeight.map((w) => ({ value: w, label: w })),
-                options: [100, 200, 300, 400, 500, 600, 700, 800, 900].map((w) => ({ value: w, label: w })),
-            },
-            readonly: readonly,
-        });
-        this.addRow(text, {
-            key: 'textStyle.italic',
-            label: 'Italic',
-            type: 'boolean',
-            readonly: readonly,
-        });
-        this.addRow(text, {
-            key: 'textStyle.align',
-            label: 'Align',
-            type: 'select',
-            editor: 'EnumSelect',
-            editorOptions: {
-                options: this.inspectorConfig.textAlignOptions || ['left', 'center', 'right'],
-            } as EnumSelectAdapterConfig,
-            readonly: readonly,
-        });
-        this.addRow(text, {
-            key: 'textStyle.baseline',
-            label: 'Baseline',
-            type: 'select',
-            editor: 'EnumSelect',
-            editorOptions: {
-                options: this.inspectorConfig.textBaselineOptions || ['top', 'middle', 'bottom'],
-            } as EnumSelectAdapterConfig,
-            readonly: readonly,
-        });
-        this.addRow(text, {
-            key: 'textStyle.orientation',
-            label: 'Orientation',
-            type: 'select',
-            editor: 'EnumSelect',
-            editorOptions: {
-                options: ['horizontal', 'vertical'],
-            } as EnumSelectAdapterConfig,
-            readonly: readonly,
+            key: 'textStyle.orientation', label: 'Orientation', type: 'select', editor: 'EnumSelect',
+            editorOptions: { options: ['horizontal', 'vertical'] } as EnumSelectAdapterConfig,
+            readonly: readonly, isVisible: hasSel,
         });
 
         const { grid: line } = this.buildSection('Line');
+        this.addRow(line, { key: 'strokeStyle', label: 'Line Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.strokeColor || {}) }, readonly: readonly, isVisible: hasSel });
+        this.addRow(line, { key: 'lineWidth', label: 'Line width', type: 'number', editor: 'WidthSelect', editorOptions: this.inspectorConfig.widthSelect || {}, readonly: readonly, isVisible: hasSel });
+        this.addRow(line, { key: 'arrow', label: 'Arrow', type: 'string', editor: 'ArrowSelect', editorOptions: this.inspectorConfig.arrowSelect || {}, readonly: readonly, isVisible: hasSel });
         this.addRow(line, {
-            key: 'strokeStyle',
-            label: 'Line Color',
-            type: 'string',
-            editor: 'ColorSelect',
-            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.strokeColor || {}) },
-            readonly: readonly,
-        });
-        this.addRow(line, {
-            key: 'lineWidth',
-            label: 'Line width',
-            type: 'number',
-            editor: 'WidthSelect',
-            editorOptions: this.inspectorConfig.widthSelect || {},
-            readonly: readonly,
-        });
-        this.addRow(line, {
-            key: 'arrow',
-            label: 'Arrow',
-            type: 'string',
-            editor: 'ArrowSelect',
-            editorOptions: this.inspectorConfig.arrowSelect || {},
-            readonly: readonly,
-        });
-        this.addRow(line, {
-            key: 'labelOrientation',
-            label: 'Label Orientation',
-            type: 'select',
-            editor: 'EnumSelect',
-            editorOptions: {
-                options: ['horizontal', 'path'],
-            } as EnumSelectAdapterConfig,
-            readonly: readonly,
+            key: 'labelOrientation', label: 'Label Orientation', type: 'select', editor: 'EnumSelect',
+            editorOptions: { options: ['horizontal', 'path'] } as EnumSelectAdapterConfig,
+            readonly: readonly, isVisible: hasSel,
         });
 
         const { grid: fill } = this.buildSection('Fill');
+        this.addRow(fill, { key: 'fillStyle', label: 'Fill Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.fillColor || {}) }, readonly: readonly, isVisible: hasSel });
+        this.addRow(fill, { key: 'image_id', label: 'Image', type: 'string', editor: 'ImageSelect', editorOptions: { diagram: this.diagram }, readonly: readonly, isVisible: hasSel });
         this.addRow(fill, {
-            key: 'fillStyle',
-            label: 'Fill Color',
-            type: 'string',
-            editor: 'ColorSelect',
-            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.fillColor || {}) },
-            readonly: readonly,
+            key: 'image_mode', label: 'Mode', type: 'select', editor: 'EnumSelect',
+            editorOptions: { options: ['contain', 'cover', 'fit', 'pattern', 'none'] } as EnumSelectAdapterConfig,
+            readonly: readonly, isVisible: hasSel,
         });
         this.addRow(fill, {
-            key: 'image_id',
-            label: 'Image',
-            type: 'string',
-            editor: 'ImageSelect',
-            editorOptions: { diagram: this.diagram },
-            readonly: readonly,
+            key: 'image_align', label: 'Align', type: 'select', editor: 'EnumSelect',
+            editorOptions: { options: ['left', 'center', 'right', 'top', 'middle', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right'] } as EnumSelectAdapterConfig,
+            readonly: readonly, isVisible: hasSel,
         });
-        this.addRow(fill, {
-            key: 'image_mode',
-            label: 'Mode',
-            type: 'select',
-            editor: 'EnumSelect',
-            editorOptions: {
-                options: ['contain', 'cover', 'fit', 'pattern', 'none'],
-            } as EnumSelectAdapterConfig,
-            readonly: readonly,
-        });
-        this.addRow(fill, {
-            key: 'image_align',
-            label: 'Align',
-            type: 'select',
-            editor: 'EnumSelect',
-            editorOptions: {
-                options: ['left', 'center', 'right', 'top', 'middle', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
-            } as EnumSelectAdapterConfig,
-            readonly: readonly,
-        });
-        this.addRow(fill, {
-            key: 'image_padding',
-            label: 'Padding',
-            type: 'number',
-            readonly: readonly,
-        });
+        this.addRow(fill, { key: 'image_padding', label: 'Padding', type: 'number', readonly: readonly, isVisible: hasSel });
 
         const { grid: shadow } = this.buildSection('Shadow');
-        this.addRow(shadow, {
-            key: 'shadowStyle.color',
-            label: 'Color',
-            type: 'string',
-            editor: 'ColorSelect',
-            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.shadowColor || {}) },
-            readonly: readonly,
-        });
-        this.addRow(shadow, {
-            key: 'shadowStyle.blur',
-            label: 'Blur',
-            type: 'number',
-            editorOptions: { min: 0 } as NumberInputAdapterConfig,
-            readonly: readonly,
-        });
-        this.addRow(shadow, {
-            key: 'shadowStyle.offset.x',
-            label: 'Offset X',
-            type: 'number',
-            readonly: readonly,
-        });
-        this.addRow(shadow, {
-            key: 'shadowStyle.offset.y',
-            label: 'Offset Y',
-            type: 'number',
-            readonly: readonly,
-        });
+        this.addRow(shadow, { key: 'shadowStyle.color', label: 'Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.shadowColor || {}) }, readonly: readonly, isVisible: hasSel });
+        this.addRow(shadow, { key: 'shadowStyle.blur', label: 'Blur', type: 'number', editorOptions: { min: 0 } as NumberInputAdapterConfig, readonly: readonly, isVisible: hasSel });
+        this.addRow(shadow, { key: 'shadowStyle.offset.x', label: 'Offset X', type: 'number', readonly: readonly, isVisible: hasSel });
+        this.addRow(shadow, { key: 'shadowStyle.offset.y', label: 'Offset Y', type: 'number', readonly: readonly, isVisible: hasSel });
 
         const { grid: meta } = this.buildSection('Metadata');
         this.metaGrid = meta;
+        // TODO: Replace this placeholder with a real key/value adder row for node meta entries.
+        this.addRow(meta, {
+            key: 'meta.__add',
+            label: 'Add key/value',
+            type: 'string',
+            readonly: true,
+            isVisible: hasSel,
+        });
     }
 
     /**
@@ -396,11 +293,14 @@ export class DiagramInspector extends Inspector {
         this.syncingAdapters = true;
         try {
             const selected = this.diagram.selection();
-
-            const values = this.collectNodeValues(selected);
             const colors = this.readonly ? [] : (this.diagram as DiagramEditView).getFrequentColors();
-            const state = this.resolveSelectionState(selected.length, values);
 
+            // Use node values when something is selected; diagram values when empty.
+            const values = selected.length > 0
+                ? this.collectNodeValues(selected)
+                : this.collectDiagramValues();
+
+            const state = this.resolveSelectionState(selected.length, values);
             this.applySelectionState(state);
 
             for (const [key, cell] of this.cells) {
@@ -414,9 +314,7 @@ export class DiagramInspector extends Inspector {
                 }
 
                 const adapter = this.adapters.get(key);
-                if (!adapter) {
-                    continue;
-                }
+                if (!adapter) continue;
 
                 if (valueSet.size > 1) {
                     adapter.setMixed?.(true);
@@ -426,11 +324,12 @@ export class DiagramInspector extends Inspector {
                     adapter.setMixed?.(false);
                     adapter.showValue({ [key]: v });
                 }
-
                 if (adapter instanceof ColorSelectAdapter) {
                     (adapter as ColorSelectAdapter).setColors(colors);
                 }
             }
+
+            this.syncRowVisibility();
         } finally {
             this.syncingAdapters = false;
         }
@@ -452,6 +351,15 @@ export class DiagramInspector extends Inspector {
             this.adapters.delete(key);
         }
 
+        if (selected.length === 0) {
+            if (this.diagramMetaGrid) {
+                for (const def of this.buildDiagramMetaRowDefinitions()) {
+                    this.addRow(this.diagramMetaGrid, def);
+                }
+            }
+            return;
+        }
+
         const pointDefs = this.buildPointRowDefinitions(selected);
         for (const def of pointDefs) {
             this.addRow(this.geometryGrid, def);
@@ -462,7 +370,7 @@ export class DiagramInspector extends Inspector {
             this.addRow(this.geometryGrid, def);
         }
 
-        const metaDefs = this.buildMetaRowDefinitions(selected);
+        const metaDefs = this.buildNodeMetaRowDefinitions(selected);
         for (const def of metaDefs) {
             this.addRow(this.metaGrid, def);
         }
@@ -534,7 +442,7 @@ export class DiagramInspector extends Inspector {
      * @param selected Currently selected nodes.
      * @returns An array of volatile property definitions for meta rows.
      */
-    private buildMetaRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
+    private buildNodeMetaRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
         const keys = this.collectFlatRecordKeys(selected, 'meta');
         return keys.map((key) => ({
             key: `meta.${key}`,
@@ -543,6 +451,26 @@ export class DiagramInspector extends Inspector {
             readonly: this.readonly,
             volatile: true,
         }));
+    }
+
+    /**
+     * Builds volatile property definitions for each flat key in the diagram's meta record.
+     */
+    private buildDiagramMetaRowDefinitions(): InspectorPropertyDefinition[] {
+        const meta = (this.diagram as any).meta as Record<string, unknown> | undefined;
+        if (!meta || typeof meta !== 'object' || Array.isArray(meta)) return [];
+        const noSel = () => this.diagram.selection().length === 0;
+        return Object.entries(meta)
+            .filter(([, v]) => typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([key, v]) => ({
+                key: `diagram.meta.${key}`,
+                label: key,
+                type: (typeof v === 'number' ? 'number' : typeof v === 'boolean' ? 'boolean' : 'string') as 'string' | 'number' | 'boolean',
+                readonly: this.readonly,
+                volatile: true,
+                isVisible: noSel,
+            }));
     }
 
     /**
@@ -626,6 +554,8 @@ export class DiagramInspector extends Inspector {
     private applyPatchToSelection(patch: EditableRecord | undefined, sourceKey: string): void {
         const selected = this.diagram.selection();
         if (!selected.length) {
+            // Route to diagram-level writes when nothing is selected.
+            this.applyPatchToDiagram(patch, sourceKey);
             return;
         }
 
@@ -645,8 +575,26 @@ export class DiagramInspector extends Inspector {
             }
         }
 
-        edit.render?.('all');
-        edit.renderPreview?.();
+        edit.render('all');
+        edit.renderPreview();
+        this.emitInspectorChanged(sourceKey);
+        this.refresh();
+    }
+
+    /**
+     * Applies a patch to the diagram itself (used when nothing is selected).
+     * Keys use the 'diagram.' prefix used in the Diagram section rows.
+     */
+    private applyPatchToDiagram(patch: EditableRecord | undefined, sourceKey: string): void {
+        if (!patch || this.readonly) return;
+        const edit = this.diagram as any;
+        for (const [key, value] of Object.entries(patch)) {
+            // Strip the 'diagram.' prefix then write via path helper.
+            const path = key.startsWith('diagram.') ? key.slice('diagram.'.length) : key;
+            this.setPathValue(edit, path, value);
+        }
+        edit.render('all');
+        edit.renderPreview();
         this.emitInspectorChanged(sourceKey);
         this.refresh();
     }
@@ -736,5 +684,26 @@ export class DiagramInspector extends Inspector {
      */
     private toValueRecord(node: INode): EditableRecord {
         return node as unknown as EditableRecord;
+    }
+
+    /**
+     * Collects current diagram-level property values keyed by their 'diagram.*' row keys.
+     * Used as the value source when no nodes are selected.
+     */
+    private collectDiagramValues(): Record<string, Set<unknown>> {
+        const result: Record<string, Set<unknown>> = {};
+        const diagramRecord = this.diagram as unknown as EditableRecord;
+        for (const key of Object.keys(this.definitions)) {
+            const def = this.definitions[key];
+            if (!def?.isVisible || def.isVisible()) {
+                // Strip 'diagram.' prefix to read from the diagram object.
+                const recordKey = key.startsWith('diagram.') ? key.slice('diagram.'.length) : key;
+                const value = this.readRecordValue(diagramRecord, recordKey);
+                const set = new Set<unknown>();
+                if (value !== undefined) set.add(value);
+                result[key] = set;
+            }
+        }
+        return result;
     }
 }

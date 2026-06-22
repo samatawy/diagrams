@@ -23,6 +23,8 @@ export class Diagram implements IDiagram {
 
     public layers: ILayer[] = [];
 
+    public background?: string;
+
     public meta?: Record<string, any>;
 
     private readonly asset_store = new AssetStore();
@@ -35,6 +37,7 @@ export class Diagram implements IDiagram {
         this.id = id;
         this.nodes = [];
         this.layers = initial?.layers ? initial.layers.map(layer => this.createLayer(layer.id, layer.name, layer.visible, layer.nodes)) : [];
+        this.background = initial?.background;
         this.meta = initial?.meta ? { ...initial.meta } : undefined;
 
         if (initial?.nodes) {
@@ -356,6 +359,7 @@ export class Diagram implements IDiagram {
         this.asset_store.merge(json.image_assets);
         this.nodes = (json.nodes ?? []).map(node => this.hydrateNode(node));
         this.layers = (json.layers ?? []).map(layer => this.hydrateLayer(layer));
+        this.background = json.background;
         this.meta = json.meta ? { ...json.meta } : undefined;
         // this.grid = json.grid ? { ...defaultGrid, ...json.grid } : { ...defaultGrid };
         this.pruneMissingLayerNodes();
@@ -390,6 +394,7 @@ export class Diagram implements IDiagram {
                 nodes: [...layer.nodes],
             })),
             image_assets: imageAssets,
+            background: this.background,
             meta: this.meta ? { ...this.meta } : undefined,
             // grid: { ...this.grid },
         } satisfies ISerializedDiagram);

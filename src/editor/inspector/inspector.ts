@@ -291,20 +291,15 @@ const DEFAULT_STYLES = `
     padding: 0 8px;
     pointer-events: none;
 }
+/* Row-level visibility controlled by isVisible() */
+.inspector [data-row-key].is-hidden {
+    display: none;
+}
+/* Section auto-hide when all rows are hidden */
+.inspector .inspector-section.is-hidden {
+    display: none;
+}
 /* Inspector-wide selection states */
-.inspector.inspector-selection-none .inspector-grid {
-    pointer-events: none;
-}
-.inspector.inspector-selection-none::after {
-    content: 'No selection';
-    display: block;
-    margin-top: 6px;
-    padding: 4px 2px;
-    color: var(--diagram-ui-text-muted, #64748b);
-    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-}
 .inspector.inspector-selection-mixed .inspector-heading {
     color: var(--diagram-ui-text, #0f172a);
 }
@@ -356,6 +351,11 @@ export interface InspectorPropertyDefinition {
      * Marks the row as volatile so it can be rebuilt for selection-specific structures.
      */
     volatile?: boolean;
+    /**
+     * Optional callback evaluated on every refresh. When it returns false the row is hidden.
+     * If omitted the row is always visible.
+     */
+    isVisible?: () => boolean;
 }
 
 /**
@@ -408,6 +408,25 @@ export class Inspector {
     // public static registerEditor(name: string, editorClass: InspectorAdapterClass): void {
     //     Inspector.registerAdapter(name, editorClass);
     // }
+
+    /**
+     * Evaluates every row's isVisible() callback and toggles the 'is-hidden' CSS class on
+     * its label and value cells. Also hides sections whose every row is hidden.
+     * Subclasses may override to apply additional visibility rules.
+     */
+    protected syncRowVisibility(): void {
+        for (const [key, def] of Object.entries(this.definitions)) {
+            const visible = def.isVisible ? def.isVisible() : true;
+            this.host.querySelectorAll<HTMLElement>(`[data-row-key="${key}"]`)
+                .forEach(el => el.classList.toggle('is-hidden', !visible));
+        }
+        // Auto-hide sections where every row cell is hidden.
+        for (const section of this.host.querySelectorAll<HTMLElement>(`.${DEFAULT_CONFIG.sectionClassName}`)) {
+            const rows = section.querySelectorAll<HTMLElement>('[data-row-key]');
+            const anyVisible = [...rows].some(r => !r.classList.contains('is-hidden'));
+            section.classList.toggle('is-hidden', !anyVisible);
+        }
+    }
 
     /**
      * Removes a previously registered adapter by name.

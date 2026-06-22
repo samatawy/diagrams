@@ -550,9 +550,10 @@ export class DiagramView extends Diagram implements HasSelection {
         this.coordinates.resetTransform(this.context);
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        if (this.canvasBackgroundColor && this.canvasBackgroundColor !== 'transparent') {
+        const background = this.background ?? this.canvasBackgroundColor;
+        if (background && background !== 'transparent') {
             this.context.save();
-            this.context.fillStyle = this.canvasBackgroundColor;
+            this.context.fillStyle = background;
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.context.restore();
         }

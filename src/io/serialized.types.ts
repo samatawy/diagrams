@@ -51,6 +51,7 @@ export interface ISerializedDiagram {
     id: string;
     nodes: ISerializedNode[];
     layers: ISerializedLayer[];
+    background?: string;
     meta?: Record<string, unknown>;
     image_assets?: Record<string, string>;
 }
