@@ -3,7 +3,7 @@ import type { ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { fillStyle, imageMode, imageId, labelOrientation, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeStyle, textAlign, textBaseline, textColor, isLocked } from "../value.utils";
+import { fillStyle, imageMode, imageId, labelOrientation, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeStyle, textAlign, textBaseline, textColor, textHaloColor, isLocked } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
@@ -433,9 +433,26 @@ export class RenderBasics {
         const align = textAlign(node);
         const baseline = textBaseline(node);
 
+        const haloColor = textHaloColor(node);
+        const fontSize = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+        const haloWidth = Math.max(2, fontSize * 0.12);
+
         for (let i = 0; i < lines.length; i++) {
             let x = textRect.left;
             let y = startline + (i * lineHeight);
+            if (haloColor) {
+                context.save();
+                context.strokeStyle = haloColor;
+                context.lineWidth = haloWidth * 2;
+                context.lineJoin = 'round';
+                context.lineCap = 'round';
+                switch (align) {
+                    case 'left':    context.strokeText(lines[i]!, x, y); break;
+                    case 'center':  context.strokeText(lines[i]!, x + textRect.width / 2, y); break;
+                    case 'right':   context.strokeText(lines[i]!, x + textRect.width, y); break;
+                }
+                context.restore();
+            }
             switch (align) {
                 case 'left':
                     context.fillText(lines[i]!, x, y);
@@ -520,6 +537,18 @@ export class RenderBasics {
 
             context.textAlign = 'center';
             context.textBaseline = 'middle';
+
+            const haloColorH = textHaloColor(node);
+            if (haloColorH) {
+                const fszH = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+                context.save();
+                context.strokeStyle = haloColorH;
+                context.lineWidth = Math.max(2, fszH * 0.12) * 2;
+                context.lineJoin = 'round';
+                context.lineCap = 'round';
+                context.strokeText(line, anchorX, anchorY);
+                context.restore();
+            }
             context.fillText(line, anchorX, anchorY);
 
             // Axis-aligned hit box — no rotation math needed.
@@ -558,6 +587,15 @@ export class RenderBasics {
         context.translate(-midX, -midY);
         context.textAlign = 'left';
         context.textBaseline = 'bottom';
+        const haloColorP = textHaloColor(node);
+        if (haloColorP) {
+            const fszP = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+            context.strokeStyle = haloColorP;
+            context.lineWidth = Math.max(2, fszP * 0.12) * 2;
+            context.lineJoin = 'round';
+            context.lineCap = 'round';
+            context.strokeText(line, x, y);
+        }
         context.fillText(line, x, y);
         context.restore();
 

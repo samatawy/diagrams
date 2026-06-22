@@ -22,10 +22,17 @@ export interface ColorSelectConfig {
      * 'none' - do not show
      */
     showNativeInput?: 'start' | 'end' | 'option' | 'none';
+
     /**
      * Aria label for the native color input. Default is 'Custom color'.
      */
     nativeInputAriaLabel?: string;
+    /**
+     * When true, prepends an 'inherit' option to the menu so the user can reset the value
+     * to the inherited default (e.g. fill color, diagram background).
+     * Default is false.
+     */
+    showInheritOption?: boolean;
     /**
      * Optional class name for the host element.
      */
@@ -82,6 +89,7 @@ const DEFAULT_CONFIG: Required<ColorSelectConfig> = {
     showSwatch: true,
     showLabel: true,
     showNativeInput: 'option',
+    showInheritOption: false,
     nativeInputAriaLabel: 'Custom color',
     hostClassName: 'color-preset-control',
     triggerClassName: 'color-preset-trigger',
@@ -378,7 +386,7 @@ export class ColorSelect {
         this.customInput?.addEventListener('input', this.onCustomInput);
         document.addEventListener('click', this.onDocumentClick);
 
-        this.placeCustomOption();
+        this.insertBasicOptions();
         this.syncTrigger();
     }
 
@@ -415,12 +423,8 @@ export class ColorSelect {
      */
     public addOption(color: string, label?: string): void {
         const option = this.buildOption(color, label);
-        if (this.customOption && this.customOption.parentElement === this.menu) {
-            this.menu.insertBefore(option, this.customOption);
-        } else {
-            this.menu.appendChild(option);
-        }
-        this.placeCustomOption();
+        this.menu.appendChild(option);
+        this.insertBasicOptions();
         this.syncSelectedOption();
     }
 
@@ -444,8 +448,7 @@ export class ColorSelect {
      */
     public clearOptions(): void {
         this.menu.innerHTML = '';
-        this.placeTransparentOption();
-        this.placeCustomOption();
+        this.insertBasicOptions();
     }
 
     /**
@@ -615,8 +618,12 @@ export class ColorSelect {
      * @returns The CSS background shorthand value.
      */
     protected colorStyleForSwatch(color: string): string {
-        if (color.trim().toLowerCase() === 'transparent') {
+        const lc = color.trim().toLowerCase();
+        if (lc === 'transparent') {
             return 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #e2e8f0 6px, #e2e8f0 12px)';
+        }
+        if (lc === 'inherit') {
+            return 'linear-gradient(135deg, #e2e8f0 0%, #94a3b8 50%, #475569 100%)';
         }
         return color;
     }
@@ -642,7 +649,10 @@ export class ColorSelect {
      * @returns Display label string.
      */
     protected displayColorLabel(color: string): string {
-        return color.trim().toLowerCase() === 'transparent' ? 'clear' : color;
+        const lc = color.trim().toLowerCase();
+        if (lc === 'transparent') return 'clear';
+        if (lc === 'inherit') return 'inherit';
+        return color;
     }
 
     /**
@@ -653,7 +663,7 @@ export class ColorSelect {
      */
     protected nativeInputValue(color: string): string {
         const value = color.trim().toLowerCase();
-        if (value === 'transparent') {
+        if (value === 'transparent' || value === 'inherit') {
             return '#111827';
         }
         const short = value.match(/^#([0-9a-f]{3})$/i);
@@ -698,42 +708,38 @@ export class ColorSelect {
     }
 
     /**
-     * Inserts the custom option button into the correct position in the dropdown menu.
+     * Rebuilds basic options in canonical order at the top of the menu: inherit, clear, custom.
+     * Existing basic option elements are reused when possible to preserve listeners/state.
      */
-    protected placeCustomOption(): void {
-        if (!this.customOption) {
-            return;
-        }
-
+    protected insertBasicOptions(): void {
+        const inheritOption = this.menu.querySelector<HTMLElement>('[data-color="inherit"]');
         const clearOption = this.menu.querySelector<HTMLElement>('[data-color="transparent"]');
-        if (clearOption && clearOption.nextSibling) {
-            this.menu.insertBefore(this.customOption, clearOption.nextSibling);
-        } else if (clearOption) {
-            this.menu.appendChild(this.customOption);
-        } else {
-            this.menu.appendChild(this.customOption);
+        const customOption = this.customOption;
+
+        inheritOption?.remove();
+        clearOption?.remove();
+        customOption?.remove();
+
+        const orderedBasics: HTMLElement[] = [];
+
+        if (this.config.showInheritOption) {
+            const option = inheritOption ?? this.buildOption('inherit', 'inherit');
+            option.dataset.fixed = 'true';
+            orderedBasics.push(option);
         }
 
-        // const afterColor = this.normalizeComparableColor('transparent');
-        // const options = Array.from(this.menu.querySelectorAll<HTMLElement>('[data-color]'));
-        // const anchor = options.find((option) => this.normalizeComparableColor(option.dataset.color ?? '') === afterColor);
-        // if (anchor && anchor.nextSibling) {
-        //     this.menu.insertBefore(this.customOption, anchor.nextSibling);
-        //     return;
-        // }
-        // this.menu.appendChild(this.customOption);
-    }
+        const clear = clearOption ?? this.buildOption('transparent', 'clear');
+        clear.dataset.fixed = 'true';
+        orderedBasics.push(clear);
 
-    /**
-     * Prepends a 'transparent' / 'clear' option to the menu if not already present.
-     */
-    protected placeTransparentOption(): void {
-        const transparentColor = 'transparent';
-        if (this.hasOption(transparentColor)) {
-            return;
+        if (customOption) {
+            customOption.dataset.fixed = 'true';
+            orderedBasics.push(customOption);
         }
-        const option = this.buildOption(transparentColor, 'clear');
-        this.menu.insertBefore(option, this.menu.firstChild);
+
+        for (let i = orderedBasics.length - 1; i >= 0; i -= 1) {
+            this.menu.insertBefore(orderedBasics[i]!, this.menu.firstChild);
+        }
     }
 
     /**
@@ -754,7 +760,7 @@ export class ColorSelect {
      */
     protected normalizeComparableColor(color: string): string {
         const value = color.trim().toLowerCase();
-        if (value === 'transparent') {
+        if (value === 'transparent' || value === 'inherit') {
             return value;
         }
         const short = value.match(/^#([0-9a-f]{3})$/i);

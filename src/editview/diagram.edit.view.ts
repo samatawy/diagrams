@@ -101,6 +101,7 @@ export class DiagramEditView extends DiagramView {
         textColor: string;
         textWeight: IFontWeight;
         textItalic: boolean;
+        textHalo: string;
         textAlign: ITextAlign;
         textBaseline: ITextBaseline;
         textOrientation?: ITextOrientation;
@@ -126,6 +127,7 @@ export class DiagramEditView extends DiagramView {
             textBaseline: DiagramConstants.DEFAULT_NODE_TEXT_BASELINE,
             textWeight: NORMAL_FONT_WEIGHT,
             textItalic: false,
+            textHalo: 'transparent',
             nodeText: undefined,
             imageMode: 'none',
             imageAlign: 'center',
@@ -572,6 +574,7 @@ export class DiagramEditView extends DiagramView {
             orientation: this.settings.textOrientation,
             weight: this.settings.textWeight,
             italic: this.settings.textItalic,
+            halo: this.settings.textHalo || undefined,
         };
     }
 
@@ -755,6 +758,14 @@ export class DiagramEditView extends DiagramView {
         return nodes.every(n => (n.image_padding ?? 0) === first) ? first : -1;
     }
 
+    public setBackground(color: string): void {
+        this.addUndo();
+        this.background = color;
+        this.render('all');
+        this.renderPreview();
+        this.eventDispatcher.styleChanged('set-background');
+    }
+
     /**
      * Sets or clears the image asset id on all selected nodes.
      * @param id Asset id to apply, or undefined / empty string to clear the image.
@@ -878,6 +889,7 @@ export class DiagramEditView extends DiagramView {
         if (style.size !== undefined) this.settings.fontSize = style.size;
         if (style.align !== undefined) this.settings.textAlign = style.align;
         if (style.baseline !== undefined) this.settings.textBaseline = style.baseline;
+        if (style.halo !== undefined) this.settings.textHalo = style.halo;
 
         for (let node of this.selection()) {
             node.textStyle = {
@@ -931,10 +943,11 @@ export class DiagramEditView extends DiagramView {
         if (patch['textStyle.orientation'] !== undefined) this.settings.textOrientation = patch['textStyle.orientation'] as ITextOrientation;
         if (patch['textStyle.weight'] !== undefined) this.settings.textWeight = patch['textStyle.weight'] as IFontWeight;
         if (patch['textStyle.italic'] !== undefined) this.settings.textItalic = Boolean(patch['textStyle.italic']);
+        if (patch['textStyle.halo'] !== undefined) this.settings.textHalo = String(patch['textStyle.halo']);
 
         if (patch['strokeStyle'] !== undefined) this.settings.strokeColor = String(patch['strokeStyle']);
         if (patch['lineWidth'] !== undefined) this.settings.lineWidth = Number(patch['lineWidth']);
-        if (patch['arrow'] !== undefined) this.setArrow(patch['arrow'] as ArrowDirection);
+        if (patch['arrow'] !== undefined) this.settings.arrow = patch['arrow'] as ArrowDirection;
         if (patch['labelOrientation'] !== undefined) this.settings.labelOrientation = patch['labelOrientation'] as IConnectionLabelOrientation;
 
         if (patch['fillStyle'] !== undefined) this.settings.fillColor = String(patch['fillStyle']);
@@ -942,6 +955,38 @@ export class DiagramEditView extends DiagramView {
         if (patch['shadowStyle.blur'] !== undefined) this.settings.shadowBlur = Number(patch['shadowStyle.blur']);
         if (patch['shadowStyle.offset.x'] !== undefined) this.settings.shadowOffsetX = Number(patch['shadowStyle.offset.x']);
         if (patch['shadowStyle.offset.y'] !== undefined) this.settings.shadowOffsetY = Number(patch['shadowStyle.offset.y']);
+
+        this.render('all');
+        this.renderPreview();
+        this.eventDispatcher.styleChanged(sourceKey as any);
+    }
+
+    /**
+     * Applies a flat patch record to the diagram itself, adding an undo step.
+     * Intended for inspector-style editors that produce diagram.* key-value diffs.
+     * @param patch The key-value changes to apply.
+     * @param sourceKey The originating property key, used for the styleChanged event.
+     */
+    public applyDiagramPatch(patch: Record<string, unknown>, sourceKey: string): void {
+        if (!Object.keys(patch).length) return;
+
+        this.addUndo();
+
+        for (const [rawPath, value] of Object.entries(patch)) {
+            const path = rawPath.startsWith('diagram.') ? rawPath.slice('diagram.'.length) : rawPath;
+            const segments = path.split('.').filter(s => s.length > 0);
+            if (!segments.length) continue;
+
+            let current: any = this;
+            for (let i = 0; i < segments.length - 1; i++) {
+                const key = segments[i] as string;
+                if (!current[key] || typeof current[key] !== 'object') {
+                    current[key] = {};
+                }
+                current = current[key];
+            }
+            current[segments[segments.length - 1] as string] = value;
+        }
 
         this.render('all');
         this.renderPreview();
@@ -3796,6 +3841,7 @@ export class DiagramEditView extends DiagramView {
             this.settings.textOrientation = textOrientation(shape);
             this.settings.textWeight = shape.textStyle?.weight || NORMAL_FONT_WEIGHT;
             this.settings.textItalic = shape.textStyle?.italic || false;
+            this.settings.textHalo = shape.textStyle?.halo || 'transparent';
 
             const default_font = DiagramConstants.DEFAULT_NODE_FONT_FACE;
             const default_size = DiagramConstants.DEFAULT_NODE_FONT_SIZE;

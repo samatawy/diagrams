@@ -246,6 +246,7 @@ export class DiagramEditor {
 
     protected shadowToolbar?: HTMLElement;
     protected shadowEnableCheckbox?: HTMLInputElement;
+    protected haloEnableCheckbox?: HTMLInputElement;
     protected shadowOffsetXHost?: HTMLElement;
     protected shadowOffsetYHost?: HTMLElement;
     protected shadowBlurHost?: HTMLElement;
@@ -634,6 +635,17 @@ export class DiagramEditor {
         shadowEnableLabel.appendChild(this.shadowEnableCheckbox);
         this.shadowToolbar.appendChild(shadowEnableLabel);
 
+        // Halo enable checkbox — alongside Shadow
+        const haloEnableLabel = document.createElement('label');
+        setClasses(haloEnableLabel, 'diagram-editor-shadow-enable-label');
+        this.haloEnableCheckbox = document.createElement('input');
+        this.haloEnableCheckbox.type = 'checkbox';
+        const haloEnableText = document.createElement('span');
+        haloEnableText.textContent = 'Halo';
+        haloEnableLabel.appendChild(haloEnableText);
+        haloEnableLabel.appendChild(this.haloEnableCheckbox);
+        this.shadowToolbar.appendChild(haloEnableLabel);
+
         /* TODO: shadow sliders moved to inspector — re-enable if a compact toolbar control is designed
         this.shadowOffsetXHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-x', 'X');
         this.shadowOffsetYHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-y', 'Y');
@@ -729,6 +741,13 @@ export class DiagramEditor {
             this.addManagedEventListener(this.shadowEnableCheckbox, 'change', () => {
                 if (this.syncingControls) return;
                 this.applyShadowEnabledState(this.shadowEnableCheckbox!.checked);
+            });
+        }
+
+        if (this.haloEnableCheckbox) {
+            this.addManagedEventListener(this.haloEnableCheckbox, 'change', () => {
+                if (this.syncingControls) return;
+                this.diagram.setTextStyle({ ...this.diagram.textStyle, halo: this.haloEnableCheckbox!.checked ? 'inherit' : 'transparent' });
             });
         }
 
@@ -872,6 +891,11 @@ export class DiagramEditor {
                     this.shadowBlurSelect.disabled = !enabled;
                 }
                 */
+            }
+
+            if (this.haloEnableCheckbox) {
+                const halo = this.diagram.textStyle.halo;
+                this.haloEnableCheckbox.checked = !!halo && halo !== 'transparent';
             }
 
             if (this.fillStyleSelect) {

@@ -23,6 +23,13 @@ export interface TextStyle {
     color?: string;
 
     /**
+     * The color of a halo rendered around text to improve its visibility against complex backgrounds, 
+     * which can be a CSS color string (e.g., '#ffffff' for white) or undefined for no halo.
+     * Use 'inherit' to use the same color as the node's fillstyle or diagram background.
+     */
+    halo?: string;
+
+    /**
      * The alignment of the text relative to its anchor point, which can be 'left', 'center', or 'right'.
      */
     align?: ITextAlign;
