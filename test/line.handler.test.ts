@@ -34,8 +34,7 @@ function createNode(owner: any, overrides: Partial<INode & IConnection> = {}): I
         points: overrides.points || [],
         from: overrides.from,
         to: overrides.to,
-        startArrow: overrides.startArrow,
-        endArrow: overrides.endArrow,
+        arrow: overrides.arrow,
         hollow: overrides.hollow,
         strokeStyle: overrides.strokeStyle || '#111827',
         lineWidth: overrides.lineWidth,
@@ -100,7 +99,7 @@ describe('LineHandler', () => {
             id: 'line',
             points: [{ x: 0, y: 0 }, { x: 40, y: 10 }, { x: 80, y: 40 }, { x: 120, y: 80 }],
             from: { node: 'target', handle: NodeHandle.E, xOffset: 1, yOffset: 0.5 },
-            endArrow: true,
+            arrow: 'end',
         });
 
         owner.nodes.push(target, line);

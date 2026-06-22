@@ -54,31 +54,6 @@ export class LineAdapter extends PolylineAdapter {
         }
     }
 
-    renderSelection(node: INode, context: CanvasRenderingContext2D): void {
-        super.renderSelection(node, context);
-
-        if (!context || node.points.length <= 2) return;
-
-        context.save();
-        RenderBasics.prepareHandles(node, context);
-        context.strokeStyle = 'rgba(0,0,0,.25)';
-        context.setLineDash([4, 2]);
-
-        const handles = new Path2D();
-
-        handles.moveTo(node.points[0]!.x, node.points[0]!.y);
-        handles.lineTo(node.points[1]!.x, node.points[1]!.y);
-
-        if (node.points.length > 3) {
-            handles.moveTo(node.points[node.points.length - 1]!.x, node.points[node.points.length - 1]!.y);
-            handles.lineTo(node.points[node.points.length - 2]!.x, node.points[node.points.length - 2]!.y);
-        }
-        context.fill(handles);
-        context.stroke(handles);
-
-        context.restore();
-    }
-
     private renderLine(node: INode, path: Path2D): void {
         const from = node.points[0]!;
         const to = node.points[node.points.length - 1]!;

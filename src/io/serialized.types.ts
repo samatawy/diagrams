@@ -32,8 +32,6 @@ export interface ISerializedConnectionAnchor extends Omit<IConnectionAnchor, 'no
 export interface ISerializedNode extends Omit<INode, 'owner'> {
     from?: ISerializedConnectionAnchor;
     to?: ISerializedConnectionAnchor;
-    startArrow?: boolean;
-    endArrow?: boolean;
 }
 
 /**

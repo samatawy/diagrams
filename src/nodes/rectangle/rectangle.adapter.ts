@@ -189,7 +189,6 @@ export class RectangleAdapter implements INodeAdapter {
         if (node.points.length > 1) {
             const rect = coordinates.getBoundingRect(node);
             const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
-            const two_epsilon = epsilon * 2;
 
             context.save();
             RenderBasics.prepareHandles(node, context);
@@ -197,42 +196,33 @@ export class RectangleAdapter implements INodeAdapter {
             const handles = new Path2D();
 
             // NW
-            handles.rect(rect.left - epsilon, rect.top - epsilon, two_epsilon, two_epsilon);
+            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
 
             // SW
-            handles.rect(rect.left - epsilon, rect.top + rect.height - epsilon, two_epsilon, two_epsilon);
+            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height }, handles, context);
 
             // NE
-            handles.rect(rect.left + rect.width - epsilon, rect.top - epsilon, two_epsilon, two_epsilon);
+            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top }, handles, context);
 
             // SE
-            handles.rect(rect.left + rect.width - epsilon, rect.top + rect.height - epsilon, two_epsilon, two_epsilon);
+            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height }, handles, context);
 
             // N
-            handles.rect(rect.left + rect.width / 2 - epsilon, rect.top - epsilon, two_epsilon, two_epsilon);
+            RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top }, handles, context);
 
             // S
-            handles.rect(rect.left + rect.width / 2 - epsilon, rect.top + rect.height - epsilon, two_epsilon, two_epsilon);
+            RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top + rect.height }, handles, context);
 
             // E
-            handles.rect(rect.left + rect.width - epsilon, rect.top + rect.height / 2 - epsilon, two_epsilon, two_epsilon);
+            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
 
             // W
-            handles.rect(rect.left - epsilon, rect.top + rect.height / 2 - epsilon, two_epsilon, two_epsilon);
+            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
 
-            handles.roundRect(
-                rect.left + rect.width + 8,
-                rect.top + rect.height / 2 - epsilon,
-                two_epsilon, two_epsilon,
-                epsilon
-            );
-
-            // let rotator = new Path2D();
-            // rotator.arc(
-            //     rect.left + rect.width + 8 + epsilon,
-            //     rect.top + rect.height / 2,
-            //     two_epsilon / 2,
-            //     0, 2 * Math.PI);
+            RenderBasics.renderRotateHandle(node, {
+                x: rect.left + rect.width + 8 + epsilon,
+                y: rect.top + rect.height / 2
+            }, handles, context);
 
             context.fill(handles);
             context.stroke(handles);

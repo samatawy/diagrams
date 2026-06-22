@@ -1,5 +1,5 @@
-import type { ShadowStyle } from "../shadows";
-import type { ITextAlign, ITextBaseline } from "../types";
+import type { ShadowStyle } from "../style.interfaces";
+import type { IConnectionLabelOrientation, ITextAlign, ITextBaseline } from "../types";
 
 // ========= Zoom ==========
 
@@ -44,6 +44,7 @@ export const DEFAULT_NODE_FONT_SIZE = 'DEFAULT_NODE_FONT_SIZE';
 export const DEFAULT_TEXT_PADDING = 'DEFAULT_TEXT_PADDING';
 export const DEFAULT_NODE_LINE_WIDTH = 'DEFAULT_NODE_LINE_WIDTH';
 export const DEFAULT_NODE_TRANSPARENT = 'DEFAULT_NODE_TRANSPARENT';
+export const DEFAULT_LABEL_ORIENTATION = 'DEFAULT_LABEL_ORIENTATION';
 
 // ========= Shadows ==========
 
@@ -103,9 +104,11 @@ export class DiagramConstants {
         DEFAULT_TEXT_PADDING: 4,
         DEFAULT_NODE_LINE_WIDTH: 1,
         DEFAULT_NODE_TRANSPARENT: false,
+        DEFAULT_LABEL_ORIENTATION: 'path',
 
         // ========== Shadows ==========
         NO_SHADOW: { name: 'No Shadow', color: 'transparent', blur: 0, offset: { x: 0, y: 0 } },
+        DEFAULT_SHADOW: { name: 'Shadow', color: 'inherit', blur: 8, offset: { x: 4, y: 4 } },
 
         // ========== Icons ==========
         ICON_SIZE: 18,
@@ -257,10 +260,18 @@ export class DiagramConstants {
         return this.get(DEFAULT_NODE_TRANSPARENT);
     }
 
+    public static get DEFAULT_LABEL_ORIENTATION(): IConnectionLabelOrientation {
+        return this.get(DEFAULT_LABEL_ORIENTATION);
+    }
+
     // ========== Shadows ==========
 
     public static get NO_SHADOW(): ShadowStyle {
         return this.get('NO_SHADOW') as ShadowStyle;
+    }
+
+    public static get DEFAULT_SHADOW(): ShadowStyle {
+        return this.get('DEFAULT_SHADOW') as ShadowStyle;
     }
 
     // ========== Icons ==========

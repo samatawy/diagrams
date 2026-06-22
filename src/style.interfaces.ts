@@ -1,12 +1,61 @@
-import type { IPoint, ITextAlign, ITextBaseline } from "./types";
+import type { IFontWeight, IPoint, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 
+/**
+ * TextStyle defines the properties of text that can be rendered on nodes in the diagram, including font, size, alignment, and color.
+ */
 export interface TextStyle {
+    /**
+     * The font face of the text, which can be a CSS font-family string (e.g., 'Arial', 'Helvetica', 'Times New Roman') or undefined for a default font.
+     * If the font face is undefined, the rendering logic may choose a default font based on the node's properties or theme.
+     */
     fontFace?: string;
+
+    /**
+     * The font size of the text, which can be a number representing the size in pixels or undefined for a default size.
+     * If the font size is undefined, the rendering logic may choose a default size based on the node's properties or theme.
+     */
     size?: number;
-    align?: ITextAlign;
-    baseline?: ITextBaseline;
+
+    /**
+     * The color of the text, which can be a CSS color string (e.g., '#000000' for black) or undefined for a default color.
+     * If the color is undefined, the rendering logic may choose a default text color based on the node's properties or theme.
+     */
     color?: string;
+
+    /**
+     * The alignment of the text relative to its anchor point, which can be 'left', 'center', or 'right'.
+     */
+    align?: ITextAlign;
+
+    /**
+     * The baseline of the text relative to its anchor point, which can be 'top', 'middle', or 'bottom'.
+     */
+    baseline?: ITextBaseline;
+
+    /**
+     * The orientation of the text, which can be 'horizontal' for normal left-to-right text or 'vertical' for text that is rotated 90 degrees clockwise.
+     */
+    orientation?: ITextOrientation;
+
+    // /**
+    //  * Whether the text is bold, which can be true for bold text, false for normal weight, or undefined for a default weight.
+    //  */
+    // bold?: boolean;
+
+    weight?: IFontWeight;
+
+    /**
+     * Whether the text is italicized, which can be true for italic text, false for normal style, or undefined for a default style.
+     */
+    italic?: boolean;
+
+    // underline?: boolean;
+    // strikethrough?: boolean;
 }
+
+export const NORMAL_FONT_WEIGHT: IFontWeight = 400;
+
+export const BOLD_FONT_WEIGHT: IFontWeight = 700;
 
 /**
  * ShadowStyle defines the properties of a shadow effect that can be applied to nodes in the diagram.

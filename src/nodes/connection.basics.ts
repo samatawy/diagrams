@@ -197,11 +197,11 @@ export class ConnectionBasics {
         points = points || node.points;
         if (points.length < 2) return;
 
-        if (node.startArrow) {
+        if (node.arrow === 'start' || node.arrow === 'both') {
             this.renderArrow(points[1]!, points[0]!, context);
         }
 
-        if (node.endArrow) {
+        if (node.arrow === 'end' || node.arrow === 'both') {
             this.renderArrow(points[points.length - 2]!, points[points.length - 1]!, context);
         }
     }

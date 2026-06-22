@@ -60,3 +60,18 @@ export const DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT: DiagramActionId[] = [
     'text-middle',
     'text-bottom',
 ];
+
+export const DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT: DiagramActionId[] = [
+    'text-bold',
+    'text-italic',
+];
+
+export const DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT: DiagramActionId[] = [
+    'text-orientation-horizontal',
+    'text-orientation-vertical',
+];
+
+export const DIAGRAM_LABEL_ORIENTATION_ACTION_LAYOUT: DiagramActionId[] = [
+    'label-orientation-horizontal',
+    'label-orientation-path',
+];

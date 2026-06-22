@@ -2,7 +2,7 @@ import type { INode } from "../interfaces";
 import { NodeHandle, type IPoint, type IRect } from "../types";
 import { isDiagramViewLike, isNode } from "../guards";
 import type { INodeCached } from "../view/view.cache";
-import { isHollow } from "../value.utils";
+import { isAspectLocked, isHollow, isLocked } from "../value.utils";
 
 /**
  * Provides basic operations for manipulating nodes, such as moving, resizing, rotating, and checking for overlaps or containment.
@@ -20,6 +20,9 @@ export class NodeBasics {
      * @param flags Optional flags for movement behavior.
      */
     public static moveBy(node: INode, byX: number, byY: number, flags?: null | 'ignore_scale') {
+
+        if (isLocked(node)) return;
+
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
@@ -42,7 +45,11 @@ export class NodeBasics {
      * @param byY The vertical delta.
      * @param preserveAspect Whether to preserve the aspect ratio.
      */
-    public static resizeBy(node: INode, byX: number, byY: number, preserveAspect?: boolean): void {
+    private static resizeBy(node: INode, byX: number, byY: number, preserveAspect?: boolean): void {
+
+        if (isLocked(node)) return;
+        preserveAspect = preserveAspect || isAspectLocked(node);
+
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
@@ -54,28 +61,67 @@ export class NodeBasics {
         rect.width = rect.width || 0.001;
         rect.height = rect.height || 0.001;
 
-        // prevent reaching zero width or height..
-        let minWidth = (node.owner.grid?.forced) ? node.owner.grid.width : 8;
-        if (rect.width + (byX) <= minWidth) {
-            byX = 0;
-        }
-        let minHeight = (node.owner.grid?.forced) ? node.owner.grid.height : 8;
-        if (rect.height + (byY) <= minHeight) {
-            byY = 0;
+        if (preserveAspect) {
+            ({ byX, byY } = this.constrainDeltasByAspectRatio(rect, byX, byY));
+
+        } else {
+            // prevent reaching zero width or height..
+            let minWidth = (node.owner.grid?.forced) ? node.owner.grid.width : 8;
+            if (rect.width + (byX) <= minWidth) {
+                byX = 0;
+            }
+            let minHeight = (node.owner.grid?.forced) ? node.owner.grid.height : 8;
+            if (rect.height + (byY) <= minHeight) {
+                byY = 0;
+            }
         }
 
-        if (preserveAspect) {
-            byY = byX * (rect.height / rect.width); // * Math.sign(byY);
-        }
-        // let wRatio = byX / rect.width;      //(rect.width + byX) / rect.width;
-        // let hRatio = byY / rect.height;     //(rect.height + byY) / rect.height;
         for (let pt of node.points) {
-            let wRatio = Math.abs(pt.x - rect.left) / rect.width;      //(rect.width + byX) / rect.width;
-            let hRatio = Math.abs(pt.y - rect.top) / rect.height;     //(rect.height + byY) / rect.height;
+            let wRatio = Math.abs(pt.x - rect.left) / rect.width;
+            let hRatio = Math.abs(pt.y - rect.top) / rect.height;
 
             pt.x += byX * wRatio;
             pt.y += byY * hRatio;
         }
+    }
+
+    private static constrainDeltasByAspectRatio(rect: IRect, byX: number, byY: number): { byX: number, byY: number } {
+        const ratio = rect.width / rect.height;
+        const minSmallest = 20;
+
+        const minWidth = ratio >= 1 ? minSmallest * ratio : minSmallest;
+        const minHeight = ratio >= 1 ? minSmallest : minSmallest / ratio;
+
+        const requestedWidth = rect.width + byX;
+        const requestedHeight = rect.height + byY;
+
+        const overshoots = (candidate: number, current: number, requested: number): boolean => {
+            if (requested >= current) return candidate > requested;
+            return candidate < requested;
+        };
+
+        // Try width-driven first, then switch to height-driven if it exceeds the dragged bound.
+        let nextWidth = requestedWidth;
+        let nextHeight = nextWidth / ratio;
+
+        if (overshoots(nextHeight, rect.height, requestedHeight)) {
+            nextHeight = requestedHeight;
+            nextWidth = nextHeight * ratio;
+        }
+
+        // Aspect-preserving minimum size floor.
+        if (nextWidth < minWidth) {
+            nextWidth = minWidth;
+            nextHeight = nextWidth / ratio;
+        }
+        if (nextHeight < minHeight) {
+            nextHeight = minHeight;
+            nextWidth = nextHeight * ratio;
+        }
+
+        byX = nextWidth - rect.width;
+        byY = nextHeight - rect.height;
+        return { byX, byY };
     }
 
     /**
@@ -87,10 +133,14 @@ export class NodeBasics {
      * @param preserveAspect Whether to preserve the aspect ratio during resizing.
      */
     public static resizeHandle(node: INode, handle: NodeHandle, byX: number, byY: number, preserveAspect?: boolean): void {
+
+        if (isLocked(node)) return;
+        preserveAspect = preserveAspect || isAspectLocked(node);
+
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
-        const cache = diagram.getCache();
+        // const cache = diagram.getCache();
 
         // To preserve ratio, we can rely on Shape resizing..
         let ratio = 1;
@@ -99,6 +149,15 @@ export class NodeBasics {
             let rect = coordinates.getBoundingRect(node);
             ratio = rect.width / rect.height;
             byY = (byX / ratio);
+            // if (Math.abs(byX) >= Math.abs(byY * ratio)) {
+            //     byY = byX / ratio;
+            // } else {
+            //     byX = byY * ratio;
+            // }
+            // byY = (byX / ratio);
+            // console.log('preserveAspect', preserveAspect, 'ratio', ratio, 'byX', byX, 'byY', byY);
+        } else {
+            // console.log('preserveAspect', preserveAspect, 'locked', isAspectLocked(node));
         }
 
         switch (handle) {
@@ -189,6 +248,9 @@ export class NodeBasics {
      * @param kind The unit of the angle, either 'degrees' or 'radians'.
      */
     public static rotateTo(node: INode, degrees: number, kind: 'degrees' | 'radians' = 'degrees'): void {
+
+        if (isLocked(node)) return;
+
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const cache = diagram.getCache();

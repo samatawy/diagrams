@@ -150,7 +150,7 @@ export class PolylineAdapter implements INodeAdapter {
             const handles = new Path2D();
 
             for (const point of node.points) {
-                handles.rect(point.x - 4, point.y - 4, 8, 8);
+                RenderBasics.renderHandle(node, point, handles, context);
             }
             context.fill(handles);
             context.stroke(handles);

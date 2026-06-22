@@ -1,9 +1,9 @@
 import { Diagram } from "../model/diagram";
 import type { IConnection, IConnectionAnchor, IGrid, ILayer, INode } from "../interfaces";
 import { DiagramView, type RenderMode, type RenderScope } from "../view/diagram.view";
-import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode, type ImageAlign } from "../types";
+import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode, type ImageAlign, type ITextOrientation, type IConnectionLabelOrientation, type IFontWeight } from "../types";
 import { HistoryStack } from "./history";
-import type { ShadowStyle, TextStyle } from "../shadows";
+import { NORMAL_FONT_WEIGHT, type ShadowStyle, type TextStyle } from "../style.interfaces";
 
 import { isConnection, isNode } from "../guards";
 
@@ -36,7 +36,7 @@ interface DiagramClipboardEnvelope {
     nodes: ISerializedNode[];
     image_assets?: Record<string, string>;
 }
-import { lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline } from "../value.utils";
+import { isLocked, labelOrientation, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 
 
@@ -89,8 +89,7 @@ export class DiagramEditView extends DiagramView {
     protected settings: {
         opacity: number;
         lineWidth: number;
-        startArrow: boolean,
-        endArrow: boolean,
+        arrow: ArrowDirection;
         strokeColor: string;
         fillColor: string;
         shadowColor: string;
@@ -100,8 +99,12 @@ export class DiagramEditView extends DiagramView {
         fontFace: string;
         fontSize: number;
         textColor: string;
+        textWeight: IFontWeight;
+        textItalic: boolean;
         textAlign: ITextAlign;
         textBaseline: ITextBaseline;
+        textOrientation?: ITextOrientation;
+        labelOrientation?: IConnectionLabelOrientation;
         nodeText?: string;
         imageMode?: ImageMode;
         imageAlign?: ImageAlign;
@@ -109,8 +112,7 @@ export class DiagramEditView extends DiagramView {
     } = {
             opacity: 100,
             lineWidth: DiagramConstants.DEFAULT_NODE_LINE_WIDTH,
-            startArrow: false,
-            endArrow: true,
+            arrow: 'none',
             strokeColor: DiagramConstants.DEFAULT_STROKE_STYLE,
             fillColor: DiagramConstants.DEFAULT_FILL_STYLE,
             shadowColor: DiagramConstants.NO_SHADOW.color ?? 'transparent',
@@ -122,6 +124,8 @@ export class DiagramEditView extends DiagramView {
             textColor: DiagramConstants.DEFAULT_NODE_TEXT_COLOR,
             textAlign: DiagramConstants.DEFAULT_NODE_TEXT_ALIGN,
             textBaseline: DiagramConstants.DEFAULT_NODE_TEXT_BASELINE,
+            textWeight: NORMAL_FONT_WEIGHT,
+            textItalic: false,
             nodeText: undefined,
             imageMode: 'none',
             imageAlign: 'center',
@@ -491,6 +495,13 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Gets the current arrow direction derived from the settings flags.
+     */
+    public get arrow(): ArrowDirection {
+        return this.settings.arrow || 'none';
+    }
+
+    /**
      * Sets the default arrow direction and applies it to current selection.
      * @param value Arrow direction value.
      */
@@ -558,6 +569,9 @@ export class DiagramEditView extends DiagramView {
             size: this.settings.fontSize,
             align: this.settings.textAlign,
             baseline: this.settings.textBaseline,
+            orientation: this.settings.textOrientation,
+            weight: this.settings.textWeight,
+            italic: this.settings.textItalic,
         };
     }
 
@@ -806,14 +820,10 @@ export class DiagramEditView extends DiagramView {
             this.addUndo();
         }
 
-        this.settings.startArrow = arrow == 'start' || arrow == 'both';
-        this.settings.endArrow = arrow == 'end' || arrow == 'both';
+        this.settings.arrow = arrow;
 
         for (let node of this.selection()) {
-            if (isConnection(node)) {
-                (node as IConnection).startArrow = this.settings.startArrow;
-                (node as IConnection).endArrow = this.settings.endArrow;
-            }
+            node.arrow = arrow;
         }
         this.render('all');
         this.renderPreview();
@@ -910,17 +920,23 @@ export class DiagramEditView extends DiagramView {
         }
 
         // Mirror into diagram defaults so new nodes inherit changes.
+        if (patch['opacity'] !== undefined) this.settings.opacity = Math.min(100, Math.max(0, Number(patch['opacity'])));
+
         if (patch['text'] !== undefined) this.settings.nodeText = String(patch['text']);
         if (patch['textStyle.fontFace'] !== undefined) this.settings.fontFace = String(patch['textStyle.fontFace']);
         if (patch['textStyle.size'] !== undefined) this.settings.fontSize = Number(patch['textStyle.size']);
         if (patch['textStyle.color'] !== undefined) this.settings.textColor = String(patch['textStyle.color']);
         if (patch['textStyle.align'] !== undefined) this.settings.textAlign = patch['textStyle.align'] as ITextAlign;
         if (patch['textStyle.baseline'] !== undefined) this.settings.textBaseline = patch['textStyle.baseline'] as ITextBaseline;
+        if (patch['textStyle.orientation'] !== undefined) this.settings.textOrientation = patch['textStyle.orientation'] as ITextOrientation;
+        if (patch['textStyle.weight'] !== undefined) this.settings.textWeight = patch['textStyle.weight'] as IFontWeight;
+        if (patch['textStyle.italic'] !== undefined) this.settings.textItalic = Boolean(patch['textStyle.italic']);
+
         if (patch['strokeStyle'] !== undefined) this.settings.strokeColor = String(patch['strokeStyle']);
         if (patch['lineWidth'] !== undefined) this.settings.lineWidth = Number(patch['lineWidth']);
-        if (patch['opacity'] !== undefined) this.settings.opacity = Math.min(100, Math.max(0, Number(patch['opacity'])));
-        if (patch['startArrow'] !== undefined) this.settings.startArrow = Boolean(patch['startArrow']);
-        if (patch['endArrow'] !== undefined) this.settings.endArrow = Boolean(patch['endArrow']);
+        if (patch['arrow'] !== undefined) this.setArrow(patch['arrow'] as ArrowDirection);
+        if (patch['labelOrientation'] !== undefined) this.settings.labelOrientation = patch['labelOrientation'] as IConnectionLabelOrientation;
+
         if (patch['fillStyle'] !== undefined) this.settings.fillColor = String(patch['fillStyle']);
         if (patch['shadowStyle.color'] !== undefined) this.settings.shadowColor = String(patch['shadowStyle.color']);
         if (patch['shadowStyle.blur'] !== undefined) this.settings.shadowBlur = Number(patch['shadowStyle.blur']);
@@ -1610,11 +1626,8 @@ export class DiagramEditView extends DiagramView {
      */
     public pickArrow(where: 'start' | 'end' | 'both' | 'none'): void {
         if (this.selection().length == 1) {
-            let node = this.selection()[0];
-            if (isConnection(node)) {
-                node.startArrow = (where == 'start' || where == 'both');
-                node.endArrow = (where == 'end' || where == 'both');
-            }
+            let node = this.selection()[0]!;
+            node.arrow = where;
         }
         this.render('all');
         this.renderPreview();
@@ -2056,7 +2069,9 @@ export class DiagramEditView extends DiagramView {
                 this.addUndo();
                 this.moveSelected(byX, byY);
                 for (const node of this.selection()) {
-                    this.movedNodes.add(node);
+                    if (!isLocked(node)) {
+                        this.movedNodes.add(node);
+                    }
                 }
                 this.render('all');
                 this.renderPreview();
@@ -2402,7 +2417,9 @@ export class DiagramEditView extends DiagramView {
 
                     this.moveSelected(movePos.x - this.downPos.x, movePos.y - this.downPos.y);
                     for (const node of this.selection()) {
-                        this.movedNodes.add(node);
+                        if (!isLocked(node)) {
+                            this.movedNodes.add(node);
+                        }
                     }
                     this.downPos = movePos;
 
@@ -2427,7 +2444,9 @@ export class DiagramEditView extends DiagramView {
                         preserveAspect
                     );
                     for (const node of this.selection()) {
-                        this.resizedNodes.add(node);
+                        if (!isLocked(node)) {
+                            this.resizedNodes.add(node);
+                        }
                     }
                     this.downPos = movePos;
 
@@ -2436,6 +2455,8 @@ export class DiagramEditView extends DiagramView {
                 }
                 case NodeHandle.POINT: {
                     if (this.downShape) {
+                        if (isLocked(this.downShape)) break;
+
                         let movePos = { x: event.offsetX, y: event.offsetY }
 
                         this.moveSelectedPoint(this.downShape,
@@ -2457,6 +2478,8 @@ export class DiagramEditView extends DiagramView {
                 }
                 case NodeHandle.ROTATE:
                     if (this.downShape) {
+                        if (isLocked(this.downShape)) break;
+
                         let movePos = { x: event.offsetX, y: event.offsetY }
 
                         let rect = this.coordinates.getBoundingRect(this.downShape);
@@ -2481,6 +2504,8 @@ export class DiagramEditView extends DiagramView {
 
                 case NodeHandle.ALTER:
                     if (this.downShape) {
+                        if (isLocked(this.downShape)) break;
+
                         const movePos = { x: event.offsetX, y: event.offsetY };
                         NodeRegistry.adapter(this.downShape.type)?.onAlterMove?.(this.downShape, movePos);
                         this.alteredNodes.add(this.downShape);
@@ -2909,8 +2934,7 @@ export class DiagramEditView extends DiagramView {
         };
 
         if (this.isConnectorType(tool)) {
-            (draft as INode & IConnection).startArrow = this.settings.startArrow;
-            (draft as INode & IConnection).endArrow = this.settings.endArrow;
+            draft.arrow = this.settings.arrow;
         }
 
         if (tool === 'svg' && options?.url) {
@@ -3088,6 +3112,11 @@ export class DiagramEditView extends DiagramView {
 
         const fontFace = node.textStyle?.fontFace || this.textStyle.fontFace || DiagramConstants.DEFAULT_NODE_FONT_FACE;
         const fontSize = node.textStyle?.size || this.textStyle.size || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+        const fontItalic = node.textStyle?.italic ? 'italic' : '';
+        const rawWeight = node.textStyle?.weight;
+        const fontWeight = (typeof rawWeight === 'number' && Number.isFinite(rawWeight))
+            ? Math.min(900, Math.max(100, Math.round(rawWeight / 100) * 100))
+            : 400;
         const scaledFontSize = Math.max(1, fontSize * zoom);
         const scaledLineHeight = Math.max(scaledFontSize * 1.25, 1);
 
@@ -3215,7 +3244,7 @@ export class DiagramEditView extends DiagramView {
             const text = nodeText(node);
             const measureContext = this.context;
             measureContext.save();
-            measureContext.font = fontFace.replace(/\d+(?:\.\d+)?px/, `${scaledFontSize}px`);
+            measureContext.font = [fontItalic, fontWeight, `${scaledFontSize}px`, fontFace].filter(Boolean).join(' ');
             const wrapped = this.wrapEditorTextLines(text, editorWidth, measureContext);
             measureContext.restore();
 
@@ -3242,9 +3271,8 @@ export class DiagramEditView extends DiagramView {
 
             rect = this.coordinates.getBoundingRect(node);
 
-            // Normalise direction the same way the renderer does, so the normal always points "above" the line.
+            // Normalise direction the same way the renderer does.
             const { from, to } = NodeBasics.normalizeLine(placement.segment.from, placement.segment.to);
-            const angle = NodeBasics.calculateAngle(from, to);
 
             const worldToScreen = (x: number, y: number): IPoint => ({
                 x: canvasRect.left + (x * zoom) - pan.x,
@@ -3255,16 +3283,26 @@ export class DiagramEditView extends DiagramView {
             const toScreen = worldToScreen(to.x, to.y);
             const midScreen = { x: (fromScreen.x + toScreen.x) / 2, y: (fromScreen.y + toScreen.y) / 2 };
 
-            // After normalisation the line is left-to-right, so (sin, -cos) points upward in canvas Y-down coords.
-            const nx = Math.sin(angle);
-            const ny = -Math.cos(angle);
-            const offset = scaledLineHeight / 2;
+            if (labelOrientation(node) === 'horizontal') {
+                // Horizontal label: anchor at segment midpoint shifted up by half a line, no rotation.
+                editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
+                editorHeight = scaledLineHeight;
+                left = midScreen.x - editorWidth / 2;
+                top = midScreen.y - editorHeight / 2;
+                // transform stays undefined — no rotation on the textarea.
+            } else {
+                // Path label: rotate the textarea to follow the segment angle.
+                const angle = NodeBasics.calculateAngle(from, to);
+                const nx = Math.sin(angle);
+                const ny = -Math.cos(angle);
+                const offset = scaledLineHeight / 2;
 
-            editorWidth = Math.max(24, NodeBasics.calculateLength(fromScreen, toScreen));
-            editorHeight = scaledLineHeight;
-            left = midScreen.x + nx * offset - editorWidth / 2;
-            top = midScreen.y + ny * offset - editorHeight / 2;
-            transform = `rotate(${angle}rad)`;
+                editorWidth = Math.max(24, NodeBasics.calculateLength(fromScreen, toScreen));
+                editorHeight = scaledLineHeight;
+                left = midScreen.x + nx * offset - editorWidth / 2;
+                top = midScreen.y + ny * offset - editorHeight / 2;
+                transform = `rotate(${angle}rad)`;
+            }
         } else {
             return;
         }
@@ -3293,7 +3331,7 @@ export class DiagramEditView extends DiagramView {
         textarea.style.background = 'transparent';
         textarea.style.color = strokeStyle(node);
         textarea.style.caretColor = 'currentColor';
-        textarea.style.font = `${scaledFontSize}px ${fontFace}`;
+        textarea.style.font = [fontItalic, fontWeight, `${scaledFontSize}px`, fontFace].filter(Boolean).join(' ');
         textarea.style.lineHeight = `${scaledLineHeight}px`;
         textarea.style.textAlign = textAlign(node);
         textarea.style.zIndex = '2147483647';
@@ -3755,6 +3793,9 @@ export class DiagramEditView extends DiagramView {
             this.settings.strokeColor = shape.strokeStyle;
             this.settings.fillColor = shape.fillStyle || 'transparent';
             this.settings.textColor = shape.textStyle?.color || shape.strokeStyle || '#111827';
+            this.settings.textOrientation = textOrientation(shape);
+            this.settings.textWeight = shape.textStyle?.weight || NORMAL_FONT_WEIGHT;
+            this.settings.textItalic = shape.textStyle?.italic || false;
 
             const default_font = DiagramConstants.DEFAULT_NODE_FONT_FACE;
             const default_size = DiagramConstants.DEFAULT_NODE_FONT_SIZE;
@@ -3767,6 +3808,9 @@ export class DiagramEditView extends DiagramView {
             this.settings.shadowBlur = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).blur;
             this.settings.shadowOffsetX = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).offset.x;
             this.settings.shadowOffsetY = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).offset.y;
+
+            this.settings.arrow = shape.arrow || 'none';
+            this.settings.labelOrientation = labelOrientation(shape);
         }
     }
 

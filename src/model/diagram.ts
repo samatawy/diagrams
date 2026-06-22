@@ -515,12 +515,6 @@ export class Diagram implements IDiagram {
         if ('to' in connection) {
             serialized.to = this.serializeAnchor(connection.to);
         }
-        if ('startArrow' in connection) {
-            serialized.startArrow = connection.startArrow;
-        }
-        if ('endArrow' in connection) {
-            serialized.endArrow = connection.endArrow;
-        }
         if ('ready' in connection) {
             serialized.ready = connection.ready;
         }

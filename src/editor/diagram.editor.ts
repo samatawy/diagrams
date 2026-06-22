@@ -12,6 +12,7 @@ import {
 import { Diagram } from "../model/diagram";
 import { ColorSelect, type ColorSelectConfig } from "./inputs/color.select";
 import { DiagramToolBar, type DiagramToolBarConfig } from "./buttons/diagram.toolbar";
+import { DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT, DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT, DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT, DIAGRAM_LABEL_ORIENTATION_ACTION_LAYOUT } from "./diagram.action.layouts";
 import { injectStyles, setClasses } from "./editor.utils";
 import { FontSelect, type FontSelectConfig } from "./inputs/font.select";
 import { PromptDialog } from "./prompt.dialog";
@@ -131,10 +132,8 @@ const DIAGRAM_EDITOR_STYLES = `
     width: 100%;
     height: 100%;
 }
-.diagram-editor-font-toolbar,
-.diagram-editor-stroke-toolbar,
-.diagram-editor-shadow-toolbar,
-.diagram-editor-fill-toolbar {
+
+.diagram-editor-shadow-toolbar {
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
@@ -156,6 +155,7 @@ const DIAGRAM_EDITOR_STYLES = `
     align-items: normal;
     gap: var(--diagram-ui-control-gap, 4px);
     margin-inline-start: 4px;
+    margin-inline-end: 4px;     // added when checkbox stands alone
     font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
     color: var(--diagram-ui-text-muted, #475569);
     cursor: pointer;
@@ -168,8 +168,26 @@ const DIAGRAM_EDITOR_STYLES = `
     accent-color: var(--diagram-ui-accent, #0f766e);
     margin: 0;
 }
-.diagram-editor-shadow-toolbar {
-    gap: var(--diagram-ui-control-gap, 4px);
+.diagram-editor-text-toolbar,
+.diagram-editor-stroke-toolbar,
+.diagram-editor-fill-toolbar {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--diagram-ui-toolbar-gap, 6px);
+    margin: 0;
+    padding: 4px var(--diagram-ui-control-padding-x, 8px) 6px;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    border-radius: var(--diagram-ui-panel-radius, 12px);
+}
+.diagram-editor-text-toolbar > legend,
+.diagram-editor-stroke-toolbar > legend,
+.diagram-editor-fill-toolbar > legend {
+    padding: 0 4px;
+    font: 600 10px/1 var(--diagram-ui-font-family, system-ui);
+    color: var(--diagram-ui-text-muted, #475569);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
 }
 .diagram-editor-shadow-toolbar .diagram-editor-control-label {
     min-width: 30px;
@@ -208,13 +226,15 @@ export class DiagramEditor {
     protected inspectorHost?: HTMLElement;
     protected inspector?: DiagramInspector;
 
-    protected fontToolbar?: HTMLElement;
+    protected textToolbar?: HTMLElement;
     protected fontSelectHost?: HTMLElement;
     protected fontSizeSelectHost?: HTMLElement;
     protected textColorSelectHost?: HTMLElement;
     protected fontSelect?: FontSelect;
     protected fontSizeSelect?: SizeSelect;
     protected textColorSelect?: ColorSelect;
+    protected textAlignToolbar?: DiagramToolBar;
+    protected textFormatToolbar?: DiagramToolBar;
 
     protected strokeToolbar?: HTMLElement;
     protected strokeColorSelectHost?: HTMLElement;
@@ -283,6 +303,8 @@ export class DiagramEditor {
         this.fontSelect?.destroy();
         this.fontSizeSelect?.destroy();
         this.textColorSelect?.destroy();
+        this.textAlignToolbar?.destroy();
+        this.textFormatToolbar?.destroy();
         this.strokeColorSelect?.destroy();
         this.strokeWidthSelect?.destroy();
         this.arrowSelect?.destroy();
@@ -529,21 +551,33 @@ export class DiagramEditor {
             this.toolbars.push(defaultToolbar);
         }
 
-        // Initialize font toolbar
-        this.fontToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-font-toolbar');
+        // Initialize text toolbar
+        this.textToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-text-toolbar', 'Text');
 
-        this.fontSelectHost = this.createControlHost(this.fontToolbar, 'diagram-editor-font-face-select', 'Font');
-        this.fontSizeSelectHost = this.createControlHost(this.fontToolbar, 'diagram-editor-font-size-select');
-        this.textColorSelectHost = this.createControlHost(this.fontToolbar, 'diagram-editor-text-color-select');
+        this.fontSelectHost = this.createControlHost(this.textToolbar, 'diagram-editor-font-face-select');
+        this.fontSizeSelectHost = this.createControlHost(this.textToolbar, 'diagram-editor-font-size-select');
+        this.textColorSelectHost = this.createControlHost(this.textToolbar, 'diagram-editor-text-color-select');
 
         this.fontSelect = new FontSelect(this.fontSelectHost, config.fontSelect || {});
         this.fontSizeSelect = new SizeSelect(this.fontSizeSelectHost, config.fontSizeSelect || {});
         this.textColorSelect = new ColorSelect(this.textColorSelectHost, config.textColor || {});
 
-        // Initialize stroke toolbar
-        this.strokeToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-stroke-toolbar');
+        const textAlignHost = document.createElement('div');
+        this.textToolbar.appendChild(textAlignHost);
+        this.textAlignToolbar = new DiagramToolBar(textAlignHost, this.diagram, {
+            layout: DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT,
+        });
 
-        this.strokeColorSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-color-select', 'Line');
+        const textFormatHost = document.createElement('div');
+        this.textToolbar.appendChild(textFormatHost);
+        this.textFormatToolbar = new DiagramToolBar(textFormatHost, this.diagram, {
+            layout: [...DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT, '|', ...DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT, '|', ...DIAGRAM_LABEL_ORIENTATION_ACTION_LAYOUT],
+        });
+
+        // Initialize stroke toolbar
+        this.strokeToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-stroke-toolbar', 'Line');
+
+        this.strokeColorSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-color-select');
         this.strokeWidthSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-width-select');
         this.arrowSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
 
@@ -552,9 +586,9 @@ export class DiagramEditor {
         this.arrowSelect = new ArrowSelect(this.arrowSelectHost, config.arrowSelect || {});
 
         // Initialize fill toolbar
-        this.fillToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-fill-toolbar');
+        this.fillToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-fill-toolbar', 'Fill');
 
-        this.fillStyleSelectHost = this.createControlHost(this.fillToolbar, 'diagram-editor-fill-color-select', 'Fill');
+        this.fillStyleSelectHost = this.createControlHost(this.fillToolbar, 'diagram-editor-fill-color-select');
         this.fillStyleSelect = new ColorSelect(this.fillStyleSelectHost, config.fillColor || {});
 
         this.imageSelectHost = document.createElement('div');
@@ -575,6 +609,7 @@ export class DiagramEditor {
         this.fillToolbar.appendChild(this.imageAlignSelectHost);
         this.imageAlignSelect = new ImageAlignSelect(this.imageAlignSelectHost);
 
+        /* TODO: image padding moved to inspector — re-enable if a compact toolbar control is designed
         this.imagePaddingHost = this.createControlHost(this.fillToolbar, 'diagram-editor-image-padding', 'Pad');
         this.imagePaddingSelect = new IntegerRangeSelect(this.imagePaddingHost, {
             min: 0,
@@ -583,6 +618,7 @@ export class DiagramEditor {
             ...(config.imagePadding || {}),
             unit: 'px',
         });
+        */
 
         // Initialize shadow toolbar
         this.shadowToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-shadow-toolbar');
@@ -598,6 +634,7 @@ export class DiagramEditor {
         shadowEnableLabel.appendChild(this.shadowEnableCheckbox);
         this.shadowToolbar.appendChild(shadowEnableLabel);
 
+        /* TODO: shadow sliders moved to inspector — re-enable if a compact toolbar control is designed
         this.shadowOffsetXHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-x', 'X');
         this.shadowOffsetYHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-y', 'Y');
         this.shadowBlurHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-blur', 'Blur');
@@ -623,6 +660,7 @@ export class DiagramEditor {
             ...(config.shadowBlur || {}),
             unit: 'px',
         });
+        */
 
 
         this.attachListeners();
@@ -694,6 +732,7 @@ export class DiagramEditor {
             });
         }
 
+        /* TODO: shadow slider listeners — paired with commented-out construction above
         if (this.shadowOffsetXHost) {
             this.addManagedListener<number>(this.shadowOffsetXHost, 'valuechange', (value) => {
                 if (this.syncingControls) return;
@@ -718,6 +757,7 @@ export class DiagramEditor {
                 this.diagram.setShadowStyle({ blur: value });
             });
         }
+        */
 
         if (this.fillStyleSelectHost) {
             this.addManagedListener<string>(this.fillStyleSelectHost, 'colorchange', (color) => {
@@ -749,12 +789,14 @@ export class DiagramEditor {
             });
         }
 
+        /* TODO: image padding listener — paired with commented-out construction above
         if (this.imagePaddingHost) {
             this.addManagedListener<number>(this.imagePaddingHost, 'valuechange', (value) => {
                 if (this.syncingControls) return;
                 this.diagram.applyNodePatch({ image_padding: value }, 'image-padding');
             });
         }
+        */
 
         this.addManagedEventListener(this.host, DIAGRAM_CHANGED_EVENT, () => {
             this.reflectStyles();
@@ -805,14 +847,16 @@ export class DiagramEditor {
                 this.strokeWidthSelect.value = this.diagram.lineWidth;
             }
 
-            if (this.shadowEnableCheckbox || this.shadowOffsetXSelect || this.shadowOffsetYSelect || this.shadowBlurSelect) {
+            if (this.arrowSelect) {
+                this.arrowSelect.value = this.diagram.arrow;
+            }
+
+            if (this.shadowEnableCheckbox) {
                 const shadow = this.diagram.shadowStyle;
                 const enabled = shadow.color !== 'transparent';
+                this.shadowEnableCheckbox.checked = enabled;
 
-                if (this.shadowEnableCheckbox) {
-                    this.shadowEnableCheckbox.checked = enabled;
-                }
-
+                /* TODO: shadow slider sync — paired with commented-out construction above
                 if (this.shadowOffsetXSelect) {
                     this.shadowOffsetXSelect.value = shadow.offset.x;
                     this.shadowOffsetXSelect.disabled = !enabled;
@@ -827,6 +871,7 @@ export class DiagramEditor {
                     this.shadowBlurSelect.value = shadow.blur;
                     this.shadowBlurSelect.disabled = !enabled;
                 }
+                */
             }
 
             if (this.fillStyleSelect) {
@@ -864,11 +909,13 @@ export class DiagramEditor {
                 if (align) this.imageAlignSelect.align = align as any;
             }
 
+            /* TODO: image padding reflect — paired with commented-out construction above
             if (this.imagePaddingSelect) {
                 const pad = this.diagram.imagePadding;
                 if (pad >= 0) this.imagePaddingSelect.value = pad;
                 this.imagePaddingSelect.disabled = !this.diagram.imageId;
             }
+            */
         } finally {
             this.syncingControls = false;
         }
@@ -886,6 +933,19 @@ export class DiagramEditor {
         parent.appendChild(bar);
 
         return bar;
+    }
+
+    /**
+     * Creates a `<fieldset>` toolbar group with a `<legend>` label cutting into the border.
+     */
+    private createGroupToolbar(parent: HTMLElement, className: string, label: string): HTMLElement {
+        const fieldset = document.createElement('fieldset');
+        setClasses(fieldset, className);
+        const legend = document.createElement('legend');
+        legend.textContent = label;
+        fieldset.appendChild(legend);
+        parent.appendChild(fieldset);
+        return fieldset;
     }
 
     /**
@@ -914,7 +974,14 @@ export class DiagramEditor {
      * @param enabled True to enable shadow, false to disable (sets color to transparent).
      */
     private applyShadowEnabledState(enabled: boolean): void {
-        if (!enabled) {
+        if (enabled) {
+            // Only apply the default if the shadow is currently invisible (transparent / zero-blur)
+            const current = this.diagram.shadowStyle;
+            const isBlank = current.color === 'transparent' || (current.blur === 0 && current.offset.x === 0 && current.offset.y === 0);
+            if (isBlank) {
+                this.diagram.setShadowStyle(DiagramConstants.DEFAULT_SHADOW);
+            }
+        } else {
             this.diagram.setShadowStyle({ color: 'transparent' });
         }
 

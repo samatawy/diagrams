@@ -40,6 +40,12 @@ export type ITextAlign = 'left' | 'center' | 'right';
  */
 export type ITextBaseline = 'top' | 'middle' | 'bottom';
 
+
+export type ITextOrientation = 'horizontal' | 'vertical';
+
+export type IConnectionLabelOrientation = 'horizontal' | 'path';
+
+export type IFontWeight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
 /**
  * ImageAlign defines the possible alignments for images within nodes. The options are:
  * - 'center': The image is centered within the node.

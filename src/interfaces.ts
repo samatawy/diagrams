@@ -1,6 +1,6 @@
 import type { Serializable } from "./io/serialized.types";
-import type { ArrowDirection, ImageAlign, ImageMode } from "./types";
-import type { ShadowStyle, TextStyle } from "./shadows";
+import type { ArrowDirection, IConnectionLabelOrientation, ImageAlign, ImageMode } from "./types";
+import type { ShadowStyle, TextStyle } from "./style.interfaces";
 import type { IPoint, ITextAlign, ITextBaseline, NodeHandle } from "./types";
 
 /**
@@ -34,45 +34,16 @@ export interface INode {
      */
     text?: string,
 
-    // /**
-    //  * The horizontal alignment of the text within the node, which can be left-aligned, centered, or right-aligned.
-    //  */
-    // textAlign?: ITextAlign,
-
-    // /**
-    //  * The vertical alignment of the text within the node, which can be top-aligned, middle-aligned, or bottom-aligned.
-    //  */
-    // textBaseline?: ITextBaseline,
-
-    // /**
-    //  * The font used for the node's text, which can include font family, size, weight, and other CSS font properties.
-    //  */
-    // font?: string,
-
-    // /**
-    //  * The font face used for the node's text, which specifies the font family to be used for rendering the text.
-    //  */
-    // fontFace?: string;
-
-    // /**
-    //  * The size of the font used for the node's text, which specifies the size of the text (in pixels).
-    //  */
-    // fontSize?: number;
-
-    // The following are cached in the diagram's ViewCache
-    // path?: Path2D;
-    // img?: HTMLImageElement;
+    /**
+     * The text style properties of the node, which can be used to control the appearance of the node's text, 
+     * including font, size, color, alignment, and baseline.
+     */
+    textStyle?: TextStyle;
 
     /**
      * The ID of the image source stored in the diagram-level image_assets dictionary.
      */
     image_id?: string;
-
-    // /**
-    //  * The source URL of the image to be displayed within the node, which can be used to render an image inside the node instead of or in addition to text.
-    //  * This can be a resource URL or a data URL, and the rendering logic will determine how to display the image based on the specified image_mode.
-    //  */
-    // image_src?: string;
 
     /**
      * The mode for rendering the image within the node, which can be:
@@ -84,8 +55,14 @@ export interface INode {
      */
     image_mode?: ImageMode;
 
+    /**
+     * The padding in pixels between the image and the node's borders, used when mode is 'contain'.
+     */
     image_padding?: number;
 
+    /**
+     * Alignment of the image within the node, used when mode is 'contain'. 
+     */
     image_align?: ImageAlign;
 
     /**
@@ -93,6 +70,16 @@ export interface INode {
      * and ensure that all necessary information is available before finalizing creation.
      */
     ready?: boolean;
+
+    /**
+     * Indicates whether the node is locked, which can be used to prevent any modifications to the node's properties or geometry.
+     */
+    locked?: boolean;
+
+    /**
+     * Indicates whether the node's aspect ratio is locked, which can be used to maintain the original proportions of the node when resizing.
+     */
+    locked_aspect?: boolean;
 
     /**
      * Indicates whether the whole area of the node is selectable or only its border.
@@ -114,19 +101,12 @@ export interface INode {
      */
     fillStyle?: string;
 
-    // /**
-    //  * The text color of the node, which can be used to control the color of the text displayed within the node.
-    //  */
-    // textColor?: string;
-
     /**
      * The line width of the node's border, which can be used to control the thickness of the node's outline.
      */
     lineWidth?: number;
 
     arrow?: ArrowDirection;
-
-    textStyle?: TextStyle;
 
     /**
      * The shadow style of the node, which can be used to apply a shadow effect to the node.
@@ -200,21 +180,7 @@ export interface IConnection {
      */
     to?: IConnectionAnchor;
 
-    /**
-     * An optional boolean indicating whether the connection should have an arrow at the starting point, which can be used to indicate directionality of the connection.
-     */
-    startArrow?: boolean;
-
-    /**
-     * An optional boolean indicating whether the connection should have an arrow at the ending point, which can be used to indicate directionality of the connection.
-     */
-    endArrow?: boolean;
-
-    /**
-     * An optional boolean indicating whether the connection is ready to be rendered, which can be used to control the rendering process 
-     * and ensure that all necessary information is available before drawing the connection.
-     */
-    ready?: boolean;
+    labelOrientation?: IConnectionLabelOrientation;
 }
 
 /**
@@ -287,6 +253,7 @@ export interface IDiagram extends Serializable {
     id: string;
     nodes: INode[];
     layers: ILayer[];
+    background?: string;
     meta?: Record<string, unknown>;
     grid?: IGrid;
 

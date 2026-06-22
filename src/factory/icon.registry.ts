@@ -221,6 +221,61 @@ IconRegistry.registerSymbol('text-bottom', 'text-bottom',
         <line x1="7" y1="16" x2="19" y2="16"/>
         <line x1="7" y1="20" x2="16" y2="20"/>`));
 
+// text-bold: filled serif "B" letterform
+IconRegistry.registerSymbol('text-bold', 'text-bold',
+    sym('text-bold', `<text x="4" y="18" font-family="serif" font-size="18" font-weight="700"
+        fill="currentColor" stroke="none">B</text>`));
+
+// text-italic: angled serif "i" letterform
+IconRegistry.registerSymbol('text-italic', 'text-italic',
+    sym('text-italic', `<text x="8" y="18" font-family="serif" font-size="18" font-style="italic"
+        fill="currentColor" stroke="none">i</text>`));
+
+// text-orientation-horizontal: three horizontal text lines + filled right arrow (gap before arrow)
+IconRegistry.registerSymbol('text-orientation-horizontal', 'text-orientation-horizontal',
+    sym('text-orientation-horizontal', `
+        <line x1="3" y1="8" x2="13" y2="8"/>
+        <line x1="3" y1="12" x2="13" y2="12"/>
+        <line x1="3" y1="16" x2="10" y2="16"/>
+        <polygon points="16 8 21 12 16 16" fill="currentColor" stroke="none"/>`));
+
+// text-orientation-vertical-down: three vertical text lines + filled down arrow (gap before arrow)
+IconRegistry.registerSymbol('text-orientation-vertical-down', 'text-orientation-vertical-down',
+    sym('text-orientation-vertical-down', `
+        <line x1="8" y1="3" x2="8" y2="13"/>
+        <line x1="12" y1="3" x2="12" y2="13"/>
+        <line x1="16" y1="3" x2="16" y2="10"/>
+        <polygon points="8 16 12 21 16 16" fill="currentColor" stroke="none"/>`));
+
+// text-orientation-vertical: three vertical text lines + filled up arrow (same design, flipped direction)
+IconRegistry.registerSymbol('text-orientation-vertical', 'text-orientation-vertical',
+    sym('text-orientation-vertical', `
+        <line x1="8" y1="11" x2="8" y2="21"/>
+        <line x1="12" y1="11" x2="12" y2="21"/>
+        <line x1="16" y1="14" x2="16" y2="21"/>
+        <polygon points="8 8 12 3 16 8" fill="currentColor" stroke="none"/>`));
+
+// label-orientation-horizontal: sloping path + short horizontal label line across it
+// "horizontal" = label drawn level regardless of path angle
+IconRegistry.registerSymbol('label-orientation-horizontal', 'label-orientation-horizontal',
+    sym('label-orientation-horizontal', `
+        <line x1="3" y1="18" x2="21" y2="6" stroke-opacity="0.55"/>
+        <line x1="9" y1="12" x2="15" y2="12"/>`));
+
+// label-orientation-path: sloping path + short label line parallel to the path
+// "path" = label tilts to follow the path angle
+IconRegistry.registerSymbol('label-orientation-path', 'label-orientation-path',
+    sym('label-orientation-path', `
+        <line x1="3" y1="18" x2="21" y2="6" stroke-opacity="0.55"/>
+        <line x1="7" y1="13" x2="15" y2="7"/>`));;
+
+// text-orientation-path: "A" label above a curved line with arrow
+IconRegistry.registerSymbol('text-orientation-path', 'text-orientation-path',
+    sym('text-orientation-path', `
+        <text x="8" y="10" font-family="sans-serif" font-size="9" fill="currentColor" stroke="none">Aa</text>
+        <path d="M3 18 Q8 10 12 15 Q16 20 21 14" stroke-opacity="0.5"/>
+        <polyline points="18 11 21 14 18 17"/>`));
+
 // align nodes
 
 IconRegistry.registerSymbol('align-left', 'align-left',

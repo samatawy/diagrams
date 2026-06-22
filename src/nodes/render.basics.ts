@@ -3,7 +3,7 @@ import type { ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeStyle, textAlign, textBaseline, textColor } from "../value.utils";
+import { fillStyle, imageMode, imageId, labelOrientation, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeStyle, textAlign, textBaseline, textColor, isLocked } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
@@ -176,6 +176,36 @@ export class RenderBasics {
             context.translate(center.x, center.y);
             context.rotate(node.angle);
             context.translate(-center.x, -center.y);
+        }
+    }
+
+    public static renderHandle(node: INode, point: IPoint, path: Path2D, canvas: CanvasRenderingContext2D): void {
+        const size = DiagramConstants.SELECTION_HANDLE_SIZE;
+        if (isLocked(node)) {
+            path.roundRect(point.x - size / 2, point.y - size / 2, size, size, size / 2);
+
+            const line_offset = size * (Math.SQRT2 / 2) / 2;
+            const groove = new Path2D();
+            groove.moveTo(point.x - line_offset, point.y + line_offset);
+            groove.lineTo(point.x + line_offset, point.y - line_offset);
+            canvas.stroke(groove);
+        } else {
+            path.rect(point.x - size / 2, point.y - size / 2, size, size);
+        }
+    }
+
+    public static renderRotateHandle(node: INode, point: IPoint, path: Path2D, canvas: CanvasRenderingContext2D): void {
+        const size = DiagramConstants.SELECTION_HANDLE_SIZE;
+        if (isLocked(node)) {
+            path.roundRect(point.x - size / 2, point.y - size / 2, size, size, size / 2);
+
+            const line_offset = size * (Math.SQRT2 / 2) / 2;
+            const groove = new Path2D();
+            groove.moveTo(point.x - line_offset, point.y + line_offset);
+            groove.lineTo(point.x + line_offset, point.y - line_offset);
+            canvas.stroke(groove);
+        } else {
+            path.roundRect(point.x - size / 2, point.y - size / 2, size, size, size / 2);
         }
     }
 
@@ -475,16 +505,38 @@ export class RenderBasics {
 
         ({ from, to } = NodeBasics.normalizeLine(from, to));
 
-        const angle = NodeBasics.calculateAngle(from, to);
-
-        const { lines, lineHeight, startline } = this.getTextLayoutSloped(node, context, from, to);
+        const { lines, lineHeight } = this.getTextLayoutSloped(node, context, from, to);
 
         const midX = (from.x + to.x) / 2;
         const midY = (from.y + to.y) / 2;
-        const epsilon = 4;
-
         const line = lines[0] || '';
         const width = context.measureText(line).width;
+        const padding = DiagramConstants.HANDLE_HIT_EPSILON;
+
+        if (labelOrientation(node) === 'horizontal') {
+            // Draw the label horizontally, centered on the segment midpoint, shifted up by half a line.
+            const anchorX = midX;
+            const anchorY = midY;
+
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(line, anchorX, anchorY);
+
+            // Axis-aligned hit box — no rotation math needed.
+            const path = new Path2D();
+            path.rect(
+                anchorX - width / 2 - padding,
+                anchorY - lineHeight / 2 - padding,
+                width + padding * 2,
+                lineHeight + padding * 2,
+            );
+            return path;
+        }
+
+        // --- path orientation (default): rotate canvas to follow the segment angle ---
+        const angle = NodeBasics.calculateAngle(from, to);
+        const epsilon = 4;
+        const { startline } = this.getTextLayoutSloped(node, context, from, to);
         const y = startline - epsilon;
 
         let x = from.x;
@@ -509,9 +561,7 @@ export class RenderBasics {
         context.fillText(line, x, y);
         context.restore();
 
-        // Now add padding to calculate the hit text path and return it.
-
-        const padding = DiagramConstants.HANDLE_HIT_EPSILON;
+        // Rotated hit box.
         const boxLeft = x - padding;
         const boxTop = y - lineHeight - padding;
         const boxWidth = Math.max(width + padding * 2, padding * 2);
@@ -567,10 +617,9 @@ export class RenderBasics {
         context.textAlign = textAlign(node);
         context.textBaseline = textBaseline(node);
 
-        context.font = `${nodeFontSize(node)}px ${nodeFontFace(node)}`;
+        context.font = this.buildTextFont(node);
 
-        let fparts = context.font.split('px');
-        let fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || DiagramConstants.DEFAULT_NODE_FONT_SIZE : DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+        const fontSize = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
         let lineHeight = (fontSize * 1.25);
         const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
         const textRect = {
@@ -627,10 +676,9 @@ export class RenderBasics {
         context.textAlign = textAlign(node);
         // context.textBaseline = textBaseline(node);
 
-        context.font = `${nodeFontSize(node)}px ${nodeFontFace(node)} `;
+        context.font = this.buildTextFont(node);
 
-        let fparts = context.font.split('px');
-        let fontSize = (fparts.length > 0) ? +(fparts[0]!.trim()) || DiagramConstants.DEFAULT_NODE_FONT_SIZE : DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+        const fontSize = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
         let lineHeight = (fontSize * 1.25);
         let lines = this.getLines(node.text, width, context);
         let startline = 0;
@@ -675,12 +723,27 @@ export class RenderBasics {
         return lines;
     }
 
+    private static buildTextFont(node: INode): string {
+        const style = node.textStyle?.italic ? 'italic ' : '';
+        const weight = this.normalizeFontWeight(node.textStyle?.weight);
+        return `${style}${weight} ${nodeFontSize(node)}px ${nodeFontFace(node)}`;
+    }
+
+    private static normalizeFontWeight(weight: unknown): number {
+        if (typeof weight !== 'number' || !Number.isFinite(weight)) {
+            return 400;
+        }
+
+        const rounded = Math.round(weight / 100) * 100;
+        return Math.min(900, Math.max(100, rounded));
+    }
+
     private static resolveShadowColor(node: INode): string {
         const explicit = (node.shadowStyle?.color ?? '').trim();
-        if (explicit) {
+        if (explicit && explicit !== 'inherit') {
             return explicit;
         }
-        // No explicit color: derive from node visual colors.
+        // 'inherit' or empty: derive from node visual colors.
         if (node.invisible) return 'transparent';
         if (node.strokeStyle) return this.toAlphaColor(node.strokeStyle, 0.35);
         if (node.fillStyle) return this.toAlphaColor(node.fillStyle, 0.35);

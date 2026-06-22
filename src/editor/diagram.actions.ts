@@ -1,7 +1,8 @@
 import type { DiagramEditView } from '../editview/diagram.edit.view';
 import { NodeRegistry } from '../factory';
 import { isConnection, isConnectionNode } from '../guards';
-import { textAlign, textBaseline } from '../value.utils';
+import { textAlign, textBaseline, textBold, textItalic, textOrientation, labelOrientation } from '../value.utils';
+import { NORMAL_FONT_WEIGHT, BOLD_FONT_WEIGHT } from '../style.interfaces';
 
 /**
  * Available built-in diagram actions. These can be used in the toolbar layout, context menu, etc.
@@ -13,7 +14,9 @@ export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
     'front' | 'back' |
     'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' | 'copy-styles' | 'paste-styles' |
     'align-left' | 'align-center' | 'align-right' | 'align-top' | 'align-middle' | 'align-bottom' | 'distribute-h' | 'distribute-v' |
-    'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom';
+    'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom' |
+    'text-bold' | 'text-italic' | 'text-orientation-horizontal' | 'text-orientation-vertical' |
+    'label-orientation-horizontal' | 'label-orientation-path';
 
 export interface DiagramAction {
     /**
@@ -219,7 +222,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Align Text Left',
         tooltip: 'Align text to left edges',
         toggle: true,
-        execute: (d) => d.setTextAlign('left'),
+        execute: (d) => d.setTextStyle({ align: 'left' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textAlign(n) === 'left'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
     },
@@ -228,7 +231,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Align Text Center',
         tooltip: 'Align text to horizontal centers',
         toggle: true,
-        execute: (d) => d.setTextAlign('center'),
+        execute: (d) => d.setTextStyle({ align: 'center' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textAlign(n) === 'center'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
     },
@@ -237,7 +240,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Align Text Right',
         tooltip: 'Align text to right edges',
         toggle: true,
-        execute: (d) => d.setTextAlign('right'),
+        execute: (d) => d.setTextStyle({ align: 'right' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textAlign(n) === 'right'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
     },
@@ -246,7 +249,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Align Text Top',
         tooltip: 'Align text to top edges',
         toggle: true,
-        execute: (d) => d.setTextBaseline('top'),
+        execute: (d) => d.setTextStyle({ baseline: 'top' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'top'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
     },
@@ -255,7 +258,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Align Text Middle',
         tooltip: 'Align text to vertical centers',
         toggle: true,
-        execute: (d) => d.setTextBaseline('middle'),
+        execute: (d) => d.setTextStyle({ baseline: 'middle' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'middle'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
     },
@@ -264,9 +267,71 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Align Text Bottom',
         tooltip: 'Align text to bottom edges',
         toggle: true,
-        execute: (d) => d.setTextBaseline('bottom'),
+        execute: (d) => d.setTextStyle({ baseline: 'bottom' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'bottom'),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
+    },
+
+    // text formatting
+    {
+        id: 'text-bold',
+        label: 'Bold',
+        tooltip: 'Toggle bold',
+        toggle: true,
+        execute: (d) => {
+            const isBold = d.selection().length > 0 && d.selection().every((n) => textBold(n));
+            d.setTextStyle({ weight: isBold ? NORMAL_FONT_WEIGHT : BOLD_FONT_WEIGHT });
+        },
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textBold(n)),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
+    },
+    {
+        id: 'text-italic',
+        label: 'Italic',
+        tooltip: 'Toggle italic',
+        toggle: true,
+        execute: (d) => {
+            const isItalic = d.selection().length > 0 && d.selection().every((n) => textItalic(n));
+            d.setTextStyle({ italic: !isItalic });
+        },
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textItalic(n)),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
+    },
+    {
+        id: 'text-orientation-horizontal',
+        label: 'Horizontal Text',
+        tooltip: 'Set text orientation to horizontal',
+        toggle: true,
+        execute: (d) => d.setTextStyle({ orientation: 'horizontal' }),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textOrientation(n) === 'horizontal'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text && !isConnectionNode(n)),
+    },
+    {
+        id: 'text-orientation-vertical',
+        label: 'Vertical Text',
+        tooltip: 'Set text orientation to vertical',
+        toggle: true,
+        execute: (d) => d.setTextStyle({ orientation: 'vertical' }),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textOrientation(n) === 'vertical'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text && !isConnectionNode(n)),
+    },
+    {
+        id: 'label-orientation-horizontal',
+        label: 'Label Horizontal',
+        tooltip: 'Show connection label horizontally',
+        toggle: true,
+        execute: (d) => d.applyNodePatch({ labelOrientation: 'horizontal' }, 'label-orientation'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => labelOrientation(n) === 'horizontal'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => isConnectionNode(n)),
+    },
+    {
+        id: 'label-orientation-path',
+        label: 'Label Along Path',
+        tooltip: 'Show connection label along the path',
+        toggle: true,
+        execute: (d) => d.applyNodePatch({ labelOrientation: 'path' }, 'label-orientation'),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => labelOrientation(n) === 'path'),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => isConnectionNode(n)),
     },
 
     // Align nodes

@@ -2,7 +2,7 @@
 // common
 export * from './types';
 export * from './interfaces';
-export * from './shadows';
+export * from './style.interfaces';
 
 // model
 export * from './model/diagram';

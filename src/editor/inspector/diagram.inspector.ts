@@ -115,6 +115,18 @@ export class DiagramInspector extends Inspector {
         const { grid: geometry } = this.buildSection('Geometry');
         this.geometryGrid = geometry;
         this.addRow(geometry, {
+            key: 'locked',
+            label: 'Locked',
+            type: 'boolean',
+            readonly: readonly
+        });
+        this.addRow(geometry, {
+            key: 'locked_aspect',
+            label: 'Lock Aspect',
+            type: 'boolean',
+            readonly: readonly
+        });
+        this.addRow(geometry, {
             key: 'opacity',
             label: 'Opacity',
             type: 'number',
@@ -163,6 +175,23 @@ export class DiagramInspector extends Inspector {
             readonly: readonly,
         });
         this.addRow(text, {
+            key: 'textStyle.weight',
+            label: 'Weight',
+            type: 'select',
+            editor: 'EnumSelect',
+            editorOptions: {
+                // options: IFontWeight.map((w) => ({ value: w, label: w })),
+                options: [100, 200, 300, 400, 500, 600, 700, 800, 900].map((w) => ({ value: w, label: w })),
+            },
+            readonly: readonly,
+        });
+        this.addRow(text, {
+            key: 'textStyle.italic',
+            label: 'Italic',
+            type: 'boolean',
+            readonly: readonly,
+        });
+        this.addRow(text, {
             key: 'textStyle.align',
             label: 'Align',
             type: 'select',
@@ -179,6 +208,16 @@ export class DiagramInspector extends Inspector {
             editor: 'EnumSelect',
             editorOptions: {
                 options: this.inspectorConfig.textBaselineOptions || ['top', 'middle', 'bottom'],
+            } as EnumSelectAdapterConfig,
+            readonly: readonly,
+        });
+        this.addRow(text, {
+            key: 'textStyle.orientation',
+            label: 'Orientation',
+            type: 'select',
+            editor: 'EnumSelect',
+            editorOptions: {
+                options: ['horizontal', 'vertical'],
             } as EnumSelectAdapterConfig,
             readonly: readonly,
         });
@@ -206,6 +245,16 @@ export class DiagramInspector extends Inspector {
             type: 'string',
             editor: 'ArrowSelect',
             editorOptions: this.inspectorConfig.arrowSelect || {},
+            readonly: readonly,
+        });
+        this.addRow(line, {
+            key: 'labelOrientation',
+            label: 'Label Orientation',
+            type: 'select',
+            editor: 'EnumSelect',
+            editorOptions: {
+                options: ['horizontal', 'path'],
+            } as EnumSelectAdapterConfig,
             readonly: readonly,
         });
 
