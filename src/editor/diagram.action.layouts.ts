@@ -34,9 +34,11 @@ export const DIAGRAM_ZORDER_ACTION_LAYOUT: DiagramActionId[] = [
 export const DIAGRAM_CLIPBOARD_ACTION_LAYOUT: DiagramActionId[] = [
     'delete',
     'duplicate',
+    '|',
     'cut',
     'copy',
     'paste',
+    '|',
     'copy-styles',
     'paste-styles',
 ];

@@ -18,6 +18,8 @@ export class CoordinateSystem {
 
     private zoom_factor: number = 1;
 
+    private pixel_ratio: number = 1;
+
     /**
      * Creates an instance of CoordinateSystem and attaches it to a canvas rendering context.
      * The CoordinateSystem will use this context to apply transformations and perform hit testing.
@@ -51,18 +53,27 @@ export class CoordinateSystem {
         this.origin = value;
     }
 
+    get pixelRatio(): number {
+        return this.pixel_ratio;
+    }
+
+    set pixelRatio(value: number) {
+        this.pixel_ratio = Number.isFinite(value) && value > 0 ? value : 1;
+    }
+
     /**
      * Applies the current viewport transformation to the specified canvas context, including zooming and panning.
      * @param context the CanvasRenderingContext2D to apply the transformation to
      */
     public applyViewportTransform(context: CanvasRenderingContext2D = this.context): void {
+        const scale = this.zoom_factor * this.pixel_ratio;
         context.setTransform(
-            this.zoom_factor,
+            scale,
             0,
             0,
-            this.zoom_factor,
-            -this.origin.x,
-            -this.origin.y,
+            scale,
+            -this.origin.x * this.pixel_ratio,
+            -this.origin.y * this.pixel_ratio,
         );
     }
 
@@ -71,7 +82,7 @@ export class CoordinateSystem {
      * @param context the CanvasRenderingContext2D to reset the transformation for
      */
     public resetTransform(context: CanvasRenderingContext2D = this.context): void {
-        context.setTransform(1, 0, 0, 1, 0, 0);
+        context.setTransform(this.pixel_ratio, 0, 0, this.pixel_ratio, 0, 0);
     }
 
     /**

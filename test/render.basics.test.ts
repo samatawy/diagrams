@@ -1,12 +1,17 @@
 import type { INode } from '../src/interfaces';
 import { DiagramView } from '../src/view/diagram.view';
 import { RenderBasics } from '../src/nodes/render.basics';
+import { registerBasicAdapters } from '../src/nodes';
 
 class FakePath2D {
     rect(): void { }
 }
 
 describe('RenderBasics', () => {
+    beforeAll(() => {
+        registerBasicAdapters();
+    });
+
     it('renders text using node textColor instead of fill or stroke color', () => {
         const originalPath2D = globalThis.Path2D;
         globalThis.Path2D = FakePath2D as unknown as typeof Path2D;

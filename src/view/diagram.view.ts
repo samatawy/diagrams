@@ -71,6 +71,8 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected context: CanvasRenderingContext2D;
 
+    protected pixelRatio: number = 1;
+
     protected canvasBackgroundColor: string = DiagramConstants.CANVAS_BACKGROUND_COLOR;
 
     protected readonly eventDispatcher: EventDispatcher;
@@ -418,9 +420,16 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param centerX The x coordinate (canvas space) to keep visually stable during zoom.
      * @param centerY The y coordinate (canvas space) to keep visually stable during zoom.
      */
-    public zoomTo(zoom: number, centerX: number = this.canvas.width / 2, centerY: number = this.canvas.height / 2): void {
+    public zoomTo(zoom: number, centerX?: number, centerY?: number): void {
         if (!Number.isFinite(zoom) || zoom <= 0) {
             return;
+        }
+
+        if (centerX === undefined || centerY === undefined) {
+            const width = this.host.clientWidth || this.canvas.clientWidth || Math.max(1, this.canvas.width / this.pixelRatio);
+            const height = this.host.clientHeight || this.canvas.clientHeight || Math.max(1, this.canvas.height / this.pixelRatio);
+            centerX = centerX ?? width / 2;
+            centerY = centerY ?? height / 2;
         }
 
         const currentZoom = this.coordinates.zoom;
@@ -444,7 +453,7 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param centerX The x coordinate (canvas space) to keep visually stable during zoom.
      * @param centerY The y coordinate (canvas space) to keep visually stable during zoom.
      */
-    public zoomBy(factor: number, centerX: number = this.canvas.width / 2, centerY: number = this.canvas.height / 2): void {
+    public zoomBy(factor: number, centerX?: number, centerY?: number): void {
         if (!Number.isFinite(factor) || factor <= 0) {
             return;
         }
@@ -607,14 +616,14 @@ export class DiagramView extends Diagram implements HasSelection {
         const { zoom, pan } = this.coordinates;
         const cellW = (this.grid.width || DiagramConstants.GRID_CELL_WIDTH) * zoom;
         const cellH = (this.grid.height || DiagramConstants.GRID_CELL_HEIGHT) * zoom;
-        const canvasW = this.canvas!.width;
-        const canvasH = this.canvas!.height;
+        const canvasW = this.canvas!.width / this.pixelRatio;
+        const canvasH = this.canvas!.height / this.pixelRatio;
 
         const startX = -((pan.x % cellW) + cellW) % cellW;
         const startY = -((pan.y % cellH) + cellH) % cellH;
 
         context.save();
-        context.setTransform(1, 0, 0, 1, 0, 0);
+        this.coordinates.resetTransform(context);
         context.strokeStyle = this.grid.color || DiagramConstants.GRID_LINE_COLOR;   // lightgray
         context.lineWidth = 0.5;
         context.globalAlpha = 0.6;
@@ -1141,15 +1150,27 @@ export class DiagramView extends Diagram implements HasSelection {
     }
 
     private syncCanvasSize(): void {
-        const width = Math.max(1, this.host.clientWidth || this.canvas.clientWidth || this.canvas.width || 1);
-        const height = Math.max(1, this.host.clientHeight || this.canvas.clientHeight || this.canvas.height || 1);
+        const cssWidth = Math.max(1, this.host.clientWidth || this.canvas.clientWidth || Math.floor(this.canvas.width / this.pixelRatio) || 1);
+        const cssHeight = Math.max(1, this.host.clientHeight || this.canvas.clientHeight || Math.floor(this.canvas.height / this.pixelRatio) || 1);
+        const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
+        // const dpr = 1; To turn off when testing.
+        const width = Math.max(1, Math.round(cssWidth * dpr));
+        const height = Math.max(1, Math.round(cssHeight * dpr));
 
-        if (this.canvas.width === width && this.canvas.height === height) {
+        if (this.canvas.width === width && this.canvas.height === height && this.pixelRatio === dpr) {
             return;
         }
 
+        this.pixelRatio = dpr;
+        this.coordinates.pixelRatio = dpr;
+
         this.canvas.width = width;
         this.canvas.height = height;
+
+        if (this.host === this.canvas) {
+            this.canvas.style.width = `${cssWidth}px`;
+            this.canvas.style.height = `${cssHeight}px`;
+        }
     }
 
     private bindResizeObserver(): void {

@@ -100,6 +100,8 @@ You can tailor the editor for your own product:
 ## Version History
 
 - Since version `0.3.0`
+  - Improved Inspector layout with added features
+  - Added text styling capabilities
   - Context menu
 - Since version `0.2.0`
   - Improved in-place editing for nodes and connections
