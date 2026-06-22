@@ -1054,7 +1054,8 @@ export class DiagramView extends Diagram implements HasSelection {
         event.stopImmediatePropagation();
 
         if (event.ctrlKey || event.metaKey) {
-            const zoomFactor = event.deltaY > 0 ? 1.1 : 1 / 1.1;
+            const wheelZoomStep = 1.01;
+            const zoomFactor = event.deltaY > 0 ? wheelZoomStep : 1 / wheelZoomStep;
             this.zoomBy(zoomFactor, event.offsetX, event.offsetY);
         } else {
             this.panBy(event.deltaX, event.deltaY);

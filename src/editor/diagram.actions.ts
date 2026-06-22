@@ -163,13 +163,13 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'zoom-in',
         label: 'Zoom In',
         tooltip: 'Zoom in',
-        execute: (d) => d.zoomBy(1.15),
+        execute: (d) => d.zoomBy(1.05),
     },
     {
         id: 'zoom-out',
         label: 'Zoom Out',
         tooltip: 'Zoom out',
-        execute: (d) => d.zoomBy(1 / 1.15),
+        execute: (d) => d.zoomBy(1 / 1.05),
     },
     {
         id: 'fit-width',
