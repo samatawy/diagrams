@@ -20,6 +20,7 @@ import { EnumSelectAdapter, type EnumSelectAdapterConfig } from "./enum.select.a
 import { PointAdapter } from "./point.adapter";
 import { ImageSelectAdapter } from "./image.select.adapter";
 import type { NumberInputAdapterConfig } from "./number.input.adapter";
+import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./meta.kv.adapters";
 
 export type DiagramInspectorConfig = InspectorConfig & {
     colorSelect?: ColorSelectConfig;
@@ -47,6 +48,7 @@ export class DiagramInspector extends Inspector {
     private geometryGrid?: HTMLElement;
     private metaGrid?: HTMLElement;
     private diagramMetaGrid?: HTMLElement;
+    private pendingMetaValueFocusPath?: string;
 
     /**
      * Creates a DiagramInspector bound to the given diagram view.
@@ -92,6 +94,8 @@ export class DiagramInspector extends Inspector {
         Inspector.registerAdapter('AngleEditor', AngleAdapter);
         Inspector.registerAdapter('EnumSelect', EnumSelectAdapter);
         Inspector.registerAdapter('ImageSelect', ImageSelectAdapter);
+        Inspector.registerAdapter('MetaValue', MetaValueAdapter);
+        Inspector.registerAdapter('MetaAdd', MetaAddAdapter);
     }
 
     /**
@@ -125,13 +129,14 @@ export class DiagramInspector extends Inspector {
         });
         const { grid: diagramMetaGridEl } = this.buildSection('Diagram Metadata');
         this.diagramMetaGrid = diagramMetaGridEl;
-        // TODO: Replace this placeholder with a real key/value adder row for diagram meta entries.
         this.addRow(diagramMetaGridEl, {
             key: 'diagram.meta.__add',
-            label: 'Add key/value',
+            label: 'Add',
             type: 'string',
-            readonly: true,
-            isVisible: noSelection,
+            editor: 'MetaAdd',
+            editorOptions: { basePath: 'diagram.meta', buttonLabel: '+' },
+            readonly: readonly,
+            isVisible: () => noSelection() && !readonly,
         });
 
         // ---- Node sections (visible only when at least one node is selected) ----
@@ -243,13 +248,14 @@ export class DiagramInspector extends Inspector {
 
         const { grid: meta } = this.buildSection('Metadata');
         this.metaGrid = meta;
-        // TODO: Replace this placeholder with a real key/value adder row for node meta entries.
         this.addRow(meta, {
             key: 'meta.__add',
-            label: 'Add key/value',
+            label: 'Add',
             type: 'string',
-            readonly: true,
-            isVisible: hasSelected,
+            editor: 'MetaAdd',
+            editorOptions: { basePath: 'meta', buttonLabel: '+' },
+            readonly: readonly,
+            isVisible: () => hasSelected() && !readonly,
         });
     }
 
@@ -351,6 +357,7 @@ export class DiagramInspector extends Inspector {
             }
 
             this.syncRowVisibility();
+            this.schedulePendingMetaValueFocus();
         } finally {
             this.syncingAdapters = false;
         }
@@ -377,6 +384,7 @@ export class DiagramInspector extends Inspector {
                 for (const def of this.buildDiagramMetaRowDefinitions()) {
                     this.addRow(this.diagramMetaGrid, def);
                 }
+                this.ensureRowAtEnd(this.diagramMetaGrid, 'diagram.meta.__add');
             }
             return;
         }
@@ -395,6 +403,7 @@ export class DiagramInspector extends Inspector {
         for (const def of metaDefs) {
             this.addRow(this.metaGrid, def);
         }
+        this.ensureRowAtEnd(this.metaGrid, 'meta.__add');
     }
 
     /**
@@ -464,11 +473,12 @@ export class DiagramInspector extends Inspector {
      * @returns An array of volatile property definitions for meta rows.
      */
     private buildNodeMetaRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
-        const keys = this.collectFlatRecordKeys(selected, 'meta');
+        const keys = this.collectFlatRecordKeys(selected, 'meta', false);
         return keys.map((key) => ({
             key: `meta.${key}`,
             label: key,
             type: this.resolveFlatValueType(selected, 'meta', key),
+            editor: 'MetaValue',
             readonly: this.readonly,
             volatile: true,
         }));
@@ -483,11 +493,11 @@ export class DiagramInspector extends Inspector {
         const noSelection = () => this.diagram.selection().length === 0;
         return Object.entries(meta)
             .filter(([, v]) => typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean')
-            .sort(([a], [b]) => a.localeCompare(b))
             .map(([key, v]) => ({
                 key: `diagram.meta.${key}`,
                 label: key,
                 type: (typeof v === 'number' ? 'number' : typeof v === 'boolean' ? 'boolean' : 'string') as 'string' | 'number' | 'boolean',
+                editor: 'MetaValue',
                 readonly: this.readonly,
                 volatile: true,
                 isVisible: noSelection,
@@ -498,9 +508,10 @@ export class DiagramInspector extends Inspector {
      * Collects the union of all flat string/number/boolean keys from the given container across every selected node.
      * @param selected Currently selected nodes.
      * @param container Either 'geometry' or 'meta'.
+     * @param sort Whether to sort keys alphabetically. Defaults to true.
      * @returns Sorted array of unique key names.
      */
-    private collectFlatRecordKeys(selected: INode[], container: 'geometry' | 'meta'): string[] {
+    private collectFlatRecordKeys(selected: INode[], container: 'geometry' | 'meta', sort: boolean = true): string[] {
         const keySet = new Set<string>();
         for (const node of selected) {
             const record = (node as any)[container];
@@ -515,13 +526,17 @@ export class DiagramInspector extends Inspector {
             }
         }
 
-        return [...keySet].sort();
+        const keys = [...keySet];
+        if (sort) {
+            keys.sort();
+        }
+        return keys;
     }
 
     /**
      * Determines the TypeScript primitive type for a flat container key across the selection.
      * @param selected Currently selected nodes.
-     * @param container Either 'geometry' or 'meta'.
+    * @param container Either 'geometry' or 'meta'.
      * @param key The flat key to inspect.
      * @returns 'number', 'boolean', or 'string'.
      */
@@ -562,6 +577,31 @@ export class DiagramInspector extends Inspector {
      * @param value The new value (unused; adapter value is read directly).
      */
     private applyInspectorChange(key: string, value: unknown): void {
+
+        // Special handling for meta objects
+        if (this.isMetaAddChange(value)) {
+            this.pendingMetaValueFocusPath = value.path;
+            const patch: EditableRecord = { [value.path]: '' };
+            if (this.diagram.selection().length === 0) {
+                this.applyPatchToDiagram(patch, key);
+            } else {
+                this.applyPatchToSelection(patch, key);
+            }
+            return;
+        }
+
+        if (this.isMetaDeleteChange(value)) {
+            const patch: EditableRecord = { [value.path]: undefined };
+            if (this.diagram.selection().length === 0) {
+                this.applyPatchToDiagram(patch, key);
+            } else {
+                this.applyPatchToSelection(patch, key);
+            }
+            return;
+        }
+
+        // Default handling for known properties.
+
         const adapter = this.adapters.get(key);
         const patch = adapter?.getValue();
 
@@ -590,6 +630,7 @@ export class DiagramInspector extends Inspector {
         if (typeof edit.applyNodePatch === 'function') {
             edit.applyNodePatch(patch ?? {}, sourceKey);
             this.emitInspectorChanged(sourceKey);
+            this.syncDynamicRows(this.diagram.selection());
             this.refresh();
             return;
         }
@@ -604,6 +645,7 @@ export class DiagramInspector extends Inspector {
         edit.render('all');
         edit.renderPreview();
         this.emitInspectorChanged(sourceKey);
+        this.syncDynamicRows(this.diagram.selection());
         this.refresh();
     }
 
@@ -619,6 +661,7 @@ export class DiagramInspector extends Inspector {
         if (typeof edit.applyDiagramPatch === 'function') {
             edit.applyDiagramPatch(patch ?? {}, sourceKey);
             this.emitInspectorChanged(sourceKey);
+            this.syncDynamicRows(this.diagram.selection());
             this.refresh();
             return;
         }
@@ -632,7 +675,67 @@ export class DiagramInspector extends Inspector {
         edit.render('all');
         edit.renderPreview();
         this.emitInspectorChanged(sourceKey);
+        this.syncDynamicRows(this.diagram.selection());
         this.refresh();
+    }
+
+    /**
+     * Type guard for metadata add-row changes.
+     */
+    private isMetaAddChange(value: unknown): value is MetaAddChange {
+        if (!value || typeof value !== 'object') return false;
+        const v = value as Record<string, unknown>;
+        return v['kind'] === 'add' && typeof v['path'] === 'string';
+    }
+
+    /**
+     * Type guard for metadata key delete changes.
+     */
+    private isMetaDeleteChange(value: unknown): value is MetaDeleteChange {
+        if (!value || typeof value !== 'object') return false;
+        const v = value as Record<string, unknown>;
+        return v['kind'] === 'delete' && typeof v['path'] === 'string';
+    }
+
+    /**
+     * Moves the given row to the end of its grid so add-rows always stay last.
+     */
+    private ensureRowAtEnd(grid: HTMLElement, rowKey: string): void {
+        const nodes = Array.from(grid.querySelectorAll<HTMLElement>(`[data-row-key="${rowKey}"]`));
+        if (!nodes.length) {
+            return;
+        }
+        nodes.forEach((node) => grid.appendChild(node));
+    }
+
+    /**
+     * Schedules focus for the value input of a newly added metadata row after DOM updates settle.
+     */
+    private schedulePendingMetaValueFocus(): void {
+        if (!this.pendingMetaValueFocusPath) {
+            return;
+        }
+
+        const path = this.pendingMetaValueFocusPath;
+        this.pendingMetaValueFocusPath = undefined;
+
+        const tryFocus = (remainingAttempts: number): void => {
+            const cell = this.cells.get(path);
+            const input = cell?.querySelector<HTMLInputElement>('input[type="text"]');
+            if (input) {
+                input.focus();
+                input.select();
+                return;
+            }
+
+            if (remainingAttempts <= 0) {
+                return;
+            }
+
+            window.setTimeout(() => tryFocus(remainingAttempts - 1), 16);
+        };
+
+        window.setTimeout(() => tryFocus(1), 0);
     }
 
     /**
