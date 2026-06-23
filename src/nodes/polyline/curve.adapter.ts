@@ -91,8 +91,28 @@ export class CurveAdapter extends PolylineAdapter {
         while (node.points.length < 4) {
             node.points.push({ ...point });
         }
-        node.points[1] = { x: point.x, y: node.points[0]!.y };
-        node.points[2] = { x: node.points[0]!.x, y: point.y };
+
+        const p0 = node.points[0]!;
+        const dx = point.x - p0.x;
+        const dy = point.y - p0.y;
+
+        // Use the same stub as Manhattan routing for a consistent minimum handle offset.
+        const stub = 24;
+
+        const sx = Math.sign(dx) || 1;
+        const sy = Math.sign(dy) || 1;
+
+        const ctrl1: IPoint = {
+            x: p0.x + sx * stub,
+            y: p0.y + sy * stub,
+        };
+        const ctrl2: IPoint = {
+            x: point.x - sx * stub,
+            y: point.y - sy * stub,
+        };
+
+        node.points[1] = ctrl1;
+        node.points[2] = ctrl2;
         node.points[3] = { ...point };
     }
 

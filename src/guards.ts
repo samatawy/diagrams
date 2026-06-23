@@ -1,3 +1,4 @@
+import { NodeRegistry } from "./factory";
 import type { IConnection, IDiagram, INode } from "./interfaces";
 import type { CoordinateSystem } from "./view/coordinate.system";
 import type { ViewCache } from "./view/view.cache";
@@ -21,6 +22,10 @@ export function isConnection(value: unknown): value is IConnection {
         return false;
     }
 
+    if ((value as INode).type) {
+        return NodeRegistry.adapter((value as INode).type)?.is_connector === true;
+    }
+    // fallback check that should not be normally reached
     return 'from' in value
         || 'to' in value;
 }

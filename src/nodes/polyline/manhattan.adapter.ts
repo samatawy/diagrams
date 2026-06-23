@@ -1,4 +1,4 @@
-import type { IConnectionAnchor, INode } from "../../interfaces";
+import type { IConnectionAnchor, IDiagram, INode } from "../../interfaces";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { PolylineAdapter } from "./polyline.adapter";
@@ -6,7 +6,8 @@ import { RenderBasics } from "../render.basics";
 import type { HollowMode, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
 import { ConnectionBasics } from "../connection.basics";
 import { NodeBasics } from "../node.basics";
-import { type IPoint, NodeHandle } from "../../types";
+import { type IPoint, type IRect, NodeHandle } from "../../types";
+import type { DiagramView } from "../../view/diagram.view";
 
 type CardinalDirection = 'east' | 'west' | 'north' | 'south';   // | 'north_east' | 'north_west' | 'south_east' | 'south_west';
 
@@ -27,13 +28,17 @@ export class ManhattanAdapter extends PolylineAdapter {
     text_overflow: TextOverflowMode = 'hidden';
 
     afterConnect(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor | null): void {
-        if (direction === 'from') {
+        if (direction === 'from' && anchor) {
             node.geometry = node.geometry || {} as any;
-            node.geometry!.from_handle = String(anchor?.handle);
-        } else if (direction === 'to') {
+            const target = this.resolveNode(node.owner, anchor);
+            node.geometry!.from_handle = this.normalizeHandle(anchor, target);
+
+        } else if (direction === 'to' && anchor) {
             node.geometry = node.geometry || {} as any;
-            node.geometry!.to_handle = String(anchor?.handle);
+            const target = this.resolveNode(node.owner, anchor);
+            node.geometry!.to_handle = this.normalizeHandle(anchor, target);
         }
+
 
         // Ensure at least one midpoint exists.
         // if (node.points.length === 2 && node.geometry?.from_handle && node.geometry?.to_handle) {
@@ -331,33 +336,59 @@ export class ManhattanAdapter extends PolylineAdapter {
 
     // Helper routines
 
-    private infer_cardinal_from_handle(fromHandle?: NodeHandle, toHandle?: NodeHandle): CardinalDirection {
-        if (fromHandle) {
-            switch (fromHandle) {
-                case NodeHandle.E: return 'east';
-                case NodeHandle.W: return 'west';
-                case NodeHandle.N:
-                case NodeHandle.NE:
-                case NodeHandle.NW:
-                    return 'north';
-                case NodeHandle.S:
-                case NodeHandle.SE:
-                case NodeHandle.SW:
-                    return 'south';
+    private normalizeHandle(anchor: IConnectionAnchor, node?: INode): NodeHandle {
+        const given = anchor.handle;
+        if (given === NodeHandle.N || given === NodeHandle.S || given === NodeHandle.E || given === NodeHandle.W) {
+            return given;
+        }
+
+        if (!node) {
+            return given;
+        }
+
+        const diagram = node.owner as DiagramView;
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(node);
+        switch (given) {
+            case NodeHandle.NE:
+                return (rect.width > rect.height) ? NodeHandle.N : NodeHandle.E;
+            case NodeHandle.NW:
+                return (rect.width > rect.height) ? NodeHandle.N : NodeHandle.W;
+            case NodeHandle.SE:
+                return (rect.width > rect.height) ? NodeHandle.S : NodeHandle.E;
+            case NodeHandle.SW:
+                return (rect.width > rect.height) ? NodeHandle.S : NodeHandle.W;
+            default:
+                return given;
+        }
+    }
+
+    private resolveNode(diagram: IDiagram, anchor: IConnectionAnchor): INode | undefined {
+        if (anchor.node) {
+            if (typeof anchor.node === 'string') {
+                return diagram.node(anchor.node);
+            } else {
+                return anchor.node;
             }
-        } else if (toHandle) {
-            switch (toHandle) {
-                case NodeHandle.E: return 'west';
-                case NodeHandle.W: return 'east';
-                case NodeHandle.N:
-                case NodeHandle.NE:
-                case NodeHandle.NW:
-                    return 'south';
-                case NodeHandle.S:
-                case NodeHandle.SE:
-                case NodeHandle.SW:
-                    return 'north';
-            }
+        }
+    }
+
+    private infer_cardinal_from_handle(fromHandle?: NodeHandle): CardinalDirection {
+        switch (fromHandle) {
+            case NodeHandle.E: return 'east';
+            case NodeHandle.W: return 'west';
+            case NodeHandle.N: return 'north';
+            case NodeHandle.S: return 'south';
+        }
+        return 'east';
+    }
+
+    private infer_cardinal_to_handle(toHandle?: NodeHandle): CardinalDirection {
+        switch (toHandle) {
+            case NodeHandle.E: return 'west';
+            case NodeHandle.W: return 'east';
+            case NodeHandle.N: return 'south';
+            case NodeHandle.S: return 'north';
         }
         return 'east';
     }

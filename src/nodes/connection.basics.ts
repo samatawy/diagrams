@@ -282,6 +282,8 @@ export class ConnectionBasics {
         }
         if (!atPoint.length) return undefined;
 
+        let moveFallback: IConnectionAnchor | undefined;
+
         for (const source of atPoint) {
             if (source.id === node.id) continue;
 
@@ -305,12 +307,14 @@ export class ConnectionBasics {
             if (handle === NodeHandle.MOVE) {
                 anchor.xOffset = rect.width ? (point.x - rect.left) / rect.width : 0.5;
                 anchor.yOffset = rect.height ? (point.y - rect.top) / rect.height : 0.5;
+                moveFallback = moveFallback || anchor;
+                continue;
             }
 
             return anchor;
         }
 
-        return undefined;
+        return moveFallback;
     }
 
     private static getPointIndex(node: INode, x: number, y: number): number {

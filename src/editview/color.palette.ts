@@ -45,6 +45,12 @@ export class ColorPalette {
             if (node.fillStyle && !node.invisible && !isHollow(node)) {
                 if (node.fillStyle) this.addColor(node.fillStyle);
             }
+            if (node.textStyle?.color) {
+                this.addColor(node.textStyle.color);
+            }
+            if (node.shadowStyle?.color) {
+                this.addColor(node.shadowStyle.color);
+            }
         }
     }
 

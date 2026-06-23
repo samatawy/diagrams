@@ -112,7 +112,7 @@ export class DiagramEditView extends DiagramView {
     } = {
             opacity: 100,
             lineWidth: DiagramConstants.DEFAULT_NODE_LINE_WIDTH,
-            arrow: 'none',
+            arrow: 'end',
             strokeColor: DiagramConstants.DEFAULT_STROKE_STYLE,
             fillColor: DiagramConstants.DEFAULT_FILL_STYLE,
             shadowColor: DiagramConstants.NO_SHADOW.color ?? 'transparent',
@@ -410,6 +410,7 @@ export class DiagramEditView extends DiagramView {
         this.modified = false;
         this.history.clear();
         this.ensureCurrentLayer();
+        this.fitToNodes();
         this.render('all');
         this.renderPreview();
     }
@@ -499,7 +500,7 @@ export class DiagramEditView extends DiagramView {
      * Gets the current arrow direction derived from the settings flags.
      */
     public get arrow(): ArrowDirection {
-        return this.settings.arrow || 'none';
+        return this.settings.arrow || 'end';
     }
 
     /**
@@ -958,6 +959,8 @@ export class DiagramEditView extends DiagramView {
         if (patch['shadowStyle.offset.x'] !== undefined) this.settings.shadowOffsetX = Number(patch['shadowStyle.offset.x']);
         if (patch['shadowStyle.offset.y'] !== undefined) this.settings.shadowOffsetY = Number(patch['shadowStyle.offset.y']);
 
+        this.color_palette.refresh();
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged(sourceKey as any);
@@ -989,6 +992,8 @@ export class DiagramEditView extends DiagramView {
             }
             current[segments[segments.length - 1] as string] = value;
         }
+
+        this.color_palette.refresh();
 
         this.render('all');
         this.renderPreview();
@@ -2245,6 +2250,7 @@ export class DiagramEditView extends DiagramView {
     downHandle?: NodeHandle;
 
     downRect?: IRect;
+    private inSelectGesture = false;
 
     private selectDown(event: PointerEvent): void {
         if (!this.canvas) return;
@@ -2260,6 +2266,7 @@ export class DiagramEditView extends DiagramView {
             && (event.shiftKey || localNodes.length === 0);
 
         // Record this point since we may want to move or resize?
+        this.inSelectGesture = true;
         this.downPos = { x: event.offsetX, y: event.offsetY }
 
         if (this.isSpacePanning) {
@@ -2614,6 +2621,8 @@ export class DiagramEditView extends DiagramView {
 
     private selectUp(event: PointerEvent): void {
         if (!this.canvas) return;
+        if (!this.inSelectGesture) return;
+        this.inSelectGesture = false;
 
         if (this.downRect && this.downPos) {
             const movePos = { x: event.offsetX, y: event.offsetY }
@@ -3870,7 +3879,9 @@ export class DiagramEditView extends DiagramView {
             this.settings.shadowOffsetX = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).offset.x;
             this.settings.shadowOffsetY = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).offset.y;
 
-            this.settings.arrow = shape.arrow || 'none';
+            if (isConnection(shape)) {
+                this.settings.arrow = shape.arrow || 'end';
+            }
             // this.settings.labelOrientation = labelOrientation(shape);
         }
     }
