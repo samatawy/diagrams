@@ -38,6 +38,7 @@ interface DiagramClipboardEnvelope {
 }
 import { isLocked, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
+import { DiagramEditViewKeyboard } from "./edit.keyboard";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -71,6 +72,8 @@ export class DiagramEditView extends DiagramView {
         render: (what?: 'nodes' | 'selection' | 'all') => this.render(what ?? 'all'),
         renderPreview: (layer?: ILayer) => this.renderPreview(layer),
     };
+
+    private editKeyboard: DiagramEditViewKeyboard;
 
     protected current: {
         layer?: ILayer,
@@ -190,6 +193,8 @@ export class DiagramEditView extends DiagramView {
         this.history = new HistoryStack(this);
         this.zOrder = new ZOrder(this.zOrderHost);
         this.color_palette = new ColorPalette(this);
+        this.editKeyboard = new DiagramEditViewKeyboard();
+
         window.addEventListener('pointerup', this.handleWindowPointerUp, true);
         window.addEventListener('pointercancel', this.handleWindowPointerCancel, true);
     }
@@ -876,7 +881,7 @@ export class DiagramEditView extends DiagramView {
      * Sets the text style for the selected nodes and new nodes to be created.
      * @param style The text style to set.
      */
-    public setTextStyle(style: TextStyle): void {
+    public setTextStyle(style: Partial<TextStyle>): void {
         if (this.selection().length) {
             this.addUndo();
         }
@@ -887,6 +892,8 @@ export class DiagramEditView extends DiagramView {
         if (style.color !== undefined && !colorIsInherit) this.settings.textColor = style.color;
         if (style.fontFace !== undefined) this.settings.fontFace = style.fontFace;
         if (style.size !== undefined) this.settings.fontSize = style.size;
+        if (style.weight !== undefined) this.settings.textWeight = style.weight;
+        if (style.italic !== undefined) this.settings.textItalic = style.italic;
         if (style.align !== undefined) this.settings.textAlign = style.align;
         if (style.baseline !== undefined) this.settings.textBaseline = style.baseline;
         if (style.halo !== undefined) this.settings.textHalo = style.halo;
@@ -2064,6 +2071,11 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
+        if (this.editKeyboard.invokeEvent(this, event)) {
+            this.exitDrawing();
+            return;
+        }
+
         if (key === 'escape') {
             this.exitDrawing();
             return;
@@ -2094,116 +2106,116 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
-        if (key === 'delete' || key === 'backspace') {
-            consumeEvent();
-            this.exitDrawing();
-            this.deleteSelected();
-            return;
-        }
+        // if (key === 'delete' || key === 'backspace') {
+        //     consumeEvent();
+        //     this.exitDrawing();
+        //     this.deleteSelected();
+        //     return;
+        // }
 
-        if (key === 'arrowup' || key === 'arrowdown' || key === 'arrowleft' || key === 'arrowright') {
-            if (this.selection().length) {
-                consumeEvent();
-                this.exitDrawing();
+        // if (key === 'arrowup' || key === 'arrowdown' || key === 'arrowleft' || key === 'arrowright') {
+        //     if (this.selection().length) {
+        //         consumeEvent();
+        //         this.exitDrawing();
 
-                let step = 1;
-                if (event.shiftKey) {
-                    if (key === 'arrowup' || key === 'arrowdown') {
-                        step = this.grid.height || 10;
-                    } else {
-                        step = this.grid.width || 10;
-                    }
-                } else if (event.altKey) {
-                    step = 0.5;
-                }
+        //         let step = 1;
+        //         if (event.shiftKey) {
+        //             if (key === 'arrowup' || key === 'arrowdown') {
+        //                 step = this.grid.height || 10;
+        //             } else {
+        //                 step = this.grid.width || 10;
+        //             }
+        //         } else if (event.altKey) {
+        //             step = 0.5;
+        //         }
 
-                let byX = 0;
-                let byY = 0;
-                if (key === 'arrowleft') byX = -step;
-                if (key === 'arrowright') byX = step;
-                if (key === 'arrowup') byY = -step;
-                if (key === 'arrowdown') byY = step;
+        //         let byX = 0;
+        //         let byY = 0;
+        //         if (key === 'arrowleft') byX = -step;
+        //         if (key === 'arrowright') byX = step;
+        //         if (key === 'arrowup') byY = -step;
+        //         if (key === 'arrowdown') byY = step;
 
-                this.addUndo();
-                this.moveSelected(byX, byY);
-                for (const node of this.selection()) {
-                    if (!isLocked(node)) {
-                        this.movedNodes.add(node);
-                    }
-                }
-                this.render('all');
-                this.renderPreview();
-                this.emitPendingMutationEvents();
-            }
-            return;
-        }
+        //         this.addUndo();
+        //         this.moveSelected(byX, byY);
+        //         for (const node of this.selection()) {
+        //             if (!isLocked(node)) {
+        //                 this.movedNodes.add(node);
+        //             }
+        //         }
+        //         this.render('all');
+        //         this.renderPreview();
+        //         this.emitPendingMutationEvents();
+        //     }
+        //     return;
+        // }
 
-        if (event.ctrlKey || event.metaKey) {
-            if (key === 'n') {
-                consumeEvent();
-                this.exitDrawing();
-                void this.newDiagram();
-                return;
-            }
-            if (key === 'o') {
-                consumeEvent();
-                this.exitDrawing();
-                void this.openDiagram();
-                return;
-            }
-            if (key === 's') {
-                consumeEvent();
-                this.exitDrawing();
-                void this.saveDiagram();
-                return;
-            }
-            if (key === 'e') {
-                consumeEvent();
-                this.exitDrawing();
-                void this.saveImageDiagram({ mimeType: 'image/png' });
-                return;
-            }
-            if (key === 'c') {
-                consumeEvent();
-                this.exitDrawing();
-                this.copySelected();
-                return;
-            }
-            if (key === 'v') {
-                consumeEvent();
-                this.exitDrawing();
-                this.pasteNodes();
-                return;
-            }
-            if (key === 'x') {
-                consumeEvent();
-                this.exitDrawing();
-                this.cutSelected();
-                return;
-            }
-            if (key === 'z') {
-                consumeEvent();
-                this.exitDrawing();
-                if (event.shiftKey) {
-                    void this.redo();
-                } else {
-                    void this.undo();
-                }
-                return;
-            }
-            if (key === 'y') {
-                consumeEvent();
-                this.exitDrawing();
-                void this.redo();
-                return;
-            }
-            if (key === 'a') {
-                consumeEvent();
-                this.exitDrawing();
-                this.selectAll();
-                return;
-            }
-        }
+        // if (event.ctrlKey || event.metaKey) {
+        //     if (key === 'n') {
+        //         consumeEvent();
+        //         this.exitDrawing();
+        //         void this.newDiagram();
+        //         return;
+        //     }
+        //     if (key === 'o') {
+        //         consumeEvent();
+        //         this.exitDrawing();
+        //         void this.openDiagram();
+        //         return;
+        //     }
+        //     if (key === 's') {
+        //         consumeEvent();
+        //         this.exitDrawing();
+        //         void this.saveDiagram();
+        //         return;
+        //     }
+        //     if (key === 'e') {
+        //         consumeEvent();
+        //         this.exitDrawing();
+        //         void this.saveImageDiagram({ mimeType: 'image/png' });
+        //         return;
+        //     }
+        //     if (key === 'c') {
+        //         consumeEvent();
+        //         this.exitDrawing();
+        //         this.copySelected();
+        //         return;
+        //     }
+        //     if (key === 'v') {
+        //         consumeEvent();
+        //         this.exitDrawing();
+        //         this.pasteNodes();
+        //         return;
+        //     }
+        //     if (key === 'x') {
+        //         consumeEvent();
+        //         this.exitDrawing();
+        //         this.cutSelected();
+        //         return;
+        //     }
+        //     if (key === 'z') {
+        //         consumeEvent();
+        //         this.exitDrawing();
+        //         if (event.shiftKey) {
+        //             void this.redo();
+        //         } else {
+        //             void this.undo();
+        //         }
+        //         return;
+        //     }
+        //     if (key === 'y') {
+        //         consumeEvent();
+        //         this.exitDrawing();
+        //         void this.redo();
+        //         return;
+        //     }
+        //     if (key === 'a') {
+        //         consumeEvent();
+        //         this.exitDrawing();
+        //         this.selectAll();
+        //         return;
+        //     }
+        // }
 
         super.keydown(event);
     }
@@ -2476,14 +2488,14 @@ export class DiagramEditView extends DiagramView {
                     let movePos = { x: event.offsetX, y: event.offsetY }
 
                     this.moveSelected(movePos.x - this.downPos.x, movePos.y - this.downPos.y);
-                    for (const node of this.selection()) {
-                        if (!isLocked(node)) {
-                            this.movedNodes.add(node);
-                        }
-                    }
+                    // for (const node of this.selection()) {
+                    //     if (!isLocked(node)) {
+                    //         this.movedNodes.add(node);
+                    //     }
+                    // }
                     this.downPos = movePos;
 
-                    this.render('all');
+                    // this.render('all');
                     break;
                 }
                 case NodeHandle.N:
@@ -3122,7 +3134,7 @@ export class DiagramEditView extends DiagramView {
     //     return id;
     // }
 
-    private exitDrawing(): boolean {
+    protected exitDrawing(): boolean {
         this.guides = [];
         this.pendingGuideSnap = undefined;
 
@@ -3643,13 +3655,15 @@ export class DiagramEditView extends DiagramView {
         };
     }
 
-    private moveSelected(byX: number, byY: number): void {
+    public moveSelected(byX: number, byY: number): void {
         const nodes = this.selection();
         if (!nodes.length) {
             this.guides = [];
             this.pendingGuideSnap = undefined;
             return;
         }
+
+        this.addUndo();
 
         for (const node of nodes) {
             NodeBasics.moveBy(node, byX, byY);
@@ -3673,6 +3687,15 @@ export class DiagramEditView extends DiagramView {
                 this.guides = this.guideOptions.render ? guideResult.guides : [];
             }
         }
+
+        for (const node of this.selection()) {
+            if (!isLocked(node)) {
+                this.movedNodes.add(node);
+            }
+        }
+        this.render('all');
+        this.renderPreview();
+        this.emitPendingMutationEvents();
     }
 
     private resizeSelected(handle: NodeHandle, byX: number, byY: number, preserveAspect?: boolean): void {

@@ -25,6 +25,8 @@ import { DiagramConstants } from "../model/diagram.constants";
 import type { DiagramGuide } from "../layout";
 import { ContextMenu } from '../editor/menus/context.menu';
 import { isConnection } from "../guards";
+import { DiagramKeyboard } from "../keyboard/diagram.keyboard";
+import { DiagramViewKeyboard } from "./view.keyboard";
 
 export type RenderMode = 'view' | 'editing';
 
@@ -64,6 +66,8 @@ export class DiagramView extends Diagram implements HasSelection {
     protected coordinates: CoordinateSystem;
 
     protected cache: ViewCache;
+
+    private keyboard: DiagramViewKeyboard;
 
     protected host: HTMLElement;
 
@@ -156,6 +160,8 @@ export class DiagramView extends Diagram implements HasSelection {
         this.cache = new ViewCache();
         this.fitViewport = new FitViewport(this);
 
+        this.keyboard = new DiagramViewKeyboard();
+
         this.grid = initial?.grid ? { ...initial.grid } : { ...defaultGrid };
         this.grid.color = DiagramConstants.GRID_LINE_COLOR;
         this.grid.width = DiagramConstants.GRID_CELL_WIDTH;
@@ -217,6 +223,7 @@ export class DiagramView extends Diagram implements HasSelection {
      * Gets the active render mode for this view.
      * - 'view': optimized for static viewing of diagrams, with limited interactivity and simplified rendering.
      * - 'editing': optimized for user interaction and mutation of the diagram.
+     * @returns The current render mode, either 'view' or 'editing'.
      */
     public get render_mode(): RenderMode {
         return 'view';
@@ -224,6 +231,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     /**
      * Returns the cache used by the DiagramView.
+     * @returns The ViewCache instance storing precomputed values for efficient rendering.
      */
     public getCache(): ViewCache {
         return this.cache;
@@ -231,9 +239,26 @@ export class DiagramView extends Diagram implements HasSelection {
 
     /**
      * Returns the coordinate system used by the DiagramView.
+     * @returns The CoordinateSystem instance managing transformations for this view.
      */
     public getCoordinates(): CoordinateSystem {
         return this.coordinates;
+    }
+
+    /**
+     * Returns the keyboard manager used by the DiagramView.
+     * @returns The DiagramKeyboard instance managing keyboard interactions for this view.
+     */
+    public getKeyboard(): DiagramKeyboard<DiagramView> {
+        return this.keyboard;
+    }
+
+    /**
+     * Sets the keyboard manager for the DiagramView, allowing custom key mappings.
+     * @param keyboard The DiagramKeyboard instance to set for this view.
+     */
+    public setKeyboard(keyboard: DiagramViewKeyboard): void {
+        this.keyboard = keyboard;
     }
 
     /**
@@ -674,6 +699,7 @@ export class DiagramView extends Diagram implements HasSelection {
     public updateGrid(json: Partial<IGrid>): void {
         Object.assign(this.grid, json);
         this.render('all');
+        this.eventDispatcher.styleChanged('update-grid');
     }
 
     /**
@@ -682,6 +708,8 @@ export class DiagramView extends Diagram implements HasSelection {
      */
     public updateGuides(options: Partial<DiagramGuideOptions>): void {
         Object.assign(this.guideOptions, options);
+        this.render('all');
+        this.eventDispatcher.styleChanged('update-guides');
     }
 
     public setGuides(guides: DiagramGuide[]): void {
@@ -1095,6 +1123,10 @@ export class DiagramView extends Diagram implements HasSelection {
         const key = event.key.toLowerCase();
         if (key === ' ' || key === 'space' || key === 'spacebar') {
             this.isSpacePanning = true;
+        }
+
+        if (this.keyboard.invokeEvent(this, event)) {
+            return;
         }
     }
 
