@@ -36,31 +36,79 @@ export class ManhattanAdapter extends PolylineAdapter {
         }
 
         // Ensure at least one midpoint exists.
-        if (node.points.length === 2 && node.geometry?.from_handle && node.geometry?.to_handle) {
+        // if (node.points.length === 2 && node.geometry?.from_handle && node.geometry?.to_handle) {
 
+        //     const first = node.points[0]!;
+        //     const second = node.points[1]!;
+        //     let mid_x = (first.x + second.x) / 2;
+        //     let mid_y = (first.y + second.y) / 2;
+        //     let offset: number;
+
+        //     switch (anchor?.handle) {
+        //         case NodeHandle.N:
+        //             offset = -24;
+        //             node.points.splice(1, 0, { x: mid_x, y: first.y + offset });
+        //             break;
+        //         case NodeHandle.S:
+        //             offset = 24;
+        //             node.points.splice(1, 0, { x: mid_x, y: first.y + offset });
+        //             break;
+        //         case NodeHandle.W:
+        //             offset = -24;
+        //             node.points.splice(1, 0, { x: first.x + offset, y: mid_y });
+        //             break;
+        //         case NodeHandle.E:
+        //             offset = 24;
+        //             node.points.splice(1, 0, { x: first.x + offset, y: mid_y });
+        //             break;
+        //     }
+        // }
+
+        // Single-waypoint rule: compute from/to stub tips and insert one elbow only when useful.
+        if (node.points.length === 2 && node.geometry?.from_handle && node.geometry?.to_handle) {
             const first = node.points[0]!;
             const second = node.points[1]!;
-            let mid_x = (first.x + second.x) / 2;
-            let mid_y = (first.y + second.y) / 2;
-            let offset: number;
 
-            switch (anchor?.handle) {
-                case NodeHandle.N:
-                    offset = -24;
-                    node.points.splice(1, 0, { x: mid_x, y: first.y + offset });
-                    break;
-                case NodeHandle.S:
-                    offset = 24;
-                    node.points.splice(1, 0, { x: mid_x, y: first.y + offset });
-                    break;
-                case NodeHandle.W:
-                    offset = -24;
-                    node.points.splice(1, 0, { x: first.x + offset, y: mid_y });
-                    break;
-                case NodeHandle.E:
-                    offset = 24;
-                    node.points.splice(1, 0, { x: first.x + offset, y: mid_y });
-                    break;
+            const fromHandle = node.geometry.from_handle as NodeHandle;
+            const toHandle = node.geometry.to_handle as NodeHandle;
+
+            const stub = 24;
+            const fromDir = this.infer_cardinal_from_handle(fromHandle);
+            const toDir = this.infer_cardinal_from_handle(toHandle);
+            const fromStub = this.makeRelativePoint(first, fromDir, stub);
+            const toStub = this.makeRelativePoint(second, toDir, stub);
+
+            // If stub tips are already aligned, the midpoint between them is enough.
+            if (fromStub.x === toStub.x || fromStub.y === toStub.y) {
+                node.points.splice(1, 0, {
+                    x: (fromStub.x + toStub.x) / 2,
+                    y: (fromStub.y + toStub.y) / 2,
+                });
+                return;
+            }
+
+            const candidates: IPoint[] = [
+                { x: fromStub.x, y: toStub.y },
+                { x: toStub.x, y: fromStub.y },
+            ];
+
+            const selected = candidates.find((candidate) => {
+                const degenerateFrom = this.samePoint(fromStub, candidate);
+                const degenerateTo = this.samePoint(candidate, toStub);
+                if (degenerateFrom || degenerateTo) {
+                    return false;
+                }
+
+                const depart = this.infer_cardinal_from_points(fromStub, candidate);
+                const arrive = this.infer_cardinal_from_points(candidate, toStub);
+
+                // Do not immediately reverse the start stub, and do not approach end stub
+                // in the same direction as the stub itself (would backtrack on final hop).
+                return depart !== this.invert_cardinal(fromDir) && arrive !== toDir;
+            });
+
+            if (selected) {
+                node.points.splice(1, 0, selected);
             }
         }
     }
@@ -288,15 +336,27 @@ export class ManhattanAdapter extends PolylineAdapter {
             switch (fromHandle) {
                 case NodeHandle.E: return 'east';
                 case NodeHandle.W: return 'west';
-                case NodeHandle.N: return 'north';
-                case NodeHandle.S: return 'south';
+                case NodeHandle.N:
+                case NodeHandle.NE:
+                case NodeHandle.NW:
+                    return 'north';
+                case NodeHandle.S:
+                case NodeHandle.SE:
+                case NodeHandle.SW:
+                    return 'south';
             }
         } else if (toHandle) {
             switch (toHandle) {
                 case NodeHandle.E: return 'west';
                 case NodeHandle.W: return 'east';
-                case NodeHandle.N: return 'south';
-                case NodeHandle.S: return 'north';
+                case NodeHandle.N:
+                case NodeHandle.NE:
+                case NodeHandle.NW:
+                    return 'south';
+                case NodeHandle.S:
+                case NodeHandle.SE:
+                case NodeHandle.SW:
+                    return 'north';
             }
         }
         return 'east';

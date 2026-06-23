@@ -1,7 +1,7 @@
 import type { DiagramEditView } from '../editview/diagram.edit.view';
 import { NodeRegistry } from '../factory';
 import { isConnection, isConnectionNode } from '../guards';
-import { textAlign, textBaseline, textBold, textItalic, textOrientation, labelOrientation } from '../value.utils';
+import { textAlign, textBaseline, textBold, textItalic, textOrientation } from '../value.utils';
 import { NORMAL_FONT_WEIGHT, BOLD_FONT_WEIGHT } from '../style.interfaces';
 
 /**
@@ -15,8 +15,7 @@ export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
     'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' | 'copy-styles' | 'paste-styles' |
     'align-left' | 'align-center' | 'align-right' | 'align-top' | 'align-middle' | 'align-bottom' | 'distribute-h' | 'distribute-v' |
     'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom' |
-    'text-bold' | 'text-italic' | 'text-orientation-horizontal' | 'text-orientation-vertical' |
-    'label-orientation-horizontal' | 'label-orientation-path';
+    'text-bold' | 'text-italic' | 'text-orientation-horizontal' | 'text-orientation-vertical' | 'text-orientation-path';
 
 export interface DiagramAction {
     /**
@@ -304,7 +303,8 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ orientation: 'horizontal' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textOrientation(n) === 'horizontal'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text && !isConnectionNode(n)),
+        isEnabled: (d) => d.selection().length > 0
+            && d.selection().some((n) => (NodeRegistry.adapter(n.type)?.text_orientations.includes('horizontal') ?? true)),
     },
     {
         id: 'text-orientation-vertical',
@@ -313,25 +313,18 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ orientation: 'vertical' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textOrientation(n) === 'vertical'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text && !isConnectionNode(n)),
+        isEnabled: (d) => d.selection().length > 0
+            && d.selection().some((n) => (NodeRegistry.adapter(n.type)?.text_orientations.includes('vertical') ?? true)),
     },
     {
-        id: 'label-orientation-horizontal',
-        label: 'Label Horizontal',
-        tooltip: 'Show connection label horizontally',
+        id: 'text-orientation-path',
+        label: 'Text Along Path',
+        tooltip: 'Show text along the path',
         toggle: true,
-        execute: (d) => d.applyNodePatch({ labelOrientation: 'horizontal' }, 'label-orientation'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => labelOrientation(n) === 'horizontal'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => isConnectionNode(n)),
-    },
-    {
-        id: 'label-orientation-path',
-        label: 'Label Along Path',
-        tooltip: 'Show connection label along the path',
-        toggle: true,
-        execute: (d) => d.applyNodePatch({ labelOrientation: 'path' }, 'label-orientation'),
-        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => labelOrientation(n) === 'path'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => isConnectionNode(n)),
+        execute: (d) => d.setTextStyle({ orientation: 'path' }),
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textOrientation(n) === 'path'),
+        isEnabled: (d) => d.selection().length > 0
+            && d.selection().some((n) => (NodeRegistry.adapter(n.type)?.text_orientations.includes('path') ?? true)),
     },
 
     // Align nodes

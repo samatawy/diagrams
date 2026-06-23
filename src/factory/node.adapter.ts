@@ -1,5 +1,5 @@
 import type { IConnectionAnchor, IGrid, INode } from "../interfaces";
-import type { IPoint, IRect, NodeHandle } from "../types";
+import type { ITextOrientation, IPoint, IRect, NodeHandle } from "../types";
 import type { IconSource } from "./icon.registry";
 
 export type { IconSource };
@@ -92,6 +92,14 @@ export interface INodeAdapter {
      * This property is used to control the visual appearance of text within the node and how it behaves when the text content is too large for the available space.
      */
     text_overflow: TextOverflowMode;
+
+    /**
+     * Returns the text orientation values this node type supports.
+     * Only relevant for nodes that support text (`has_text === true`).
+     * When not defined, all orientations are assumed to be supported.
+     * Adapters that render text differently (e.g. curved text) should override this to return a restricted subset.
+     */
+    text_orientations: ITextOrientation[];
 
     /**
      * Updates the draft node's points while the user is dragging during creation.

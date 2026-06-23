@@ -12,7 +12,11 @@ import {
 import { Diagram } from "../model/diagram";
 import { ColorSelect, type ColorSelectConfig } from "./inputs/color.select";
 import { DiagramToolBar, type DiagramToolBarConfig } from "./buttons/diagram.toolbar";
-import { DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT, DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT, DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT, DIAGRAM_LABEL_ORIENTATION_ACTION_LAYOUT } from "./diagram.action.layouts";
+import {
+    DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT,
+    DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT,
+    DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT,
+} from "./diagram.action.layouts";
 import { injectStyles, setClasses } from "./editor.utils";
 import { FontSelect, type FontSelectConfig } from "./inputs/font.select";
 import { PromptDialog } from "./prompt.dialog";
@@ -572,7 +576,7 @@ export class DiagramEditor {
         const textFormatHost = document.createElement('div');
         this.textToolbar.appendChild(textFormatHost);
         this.textFormatToolbar = new DiagramToolBar(textFormatHost, this.diagram, {
-            layout: [...DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT, '|', ...DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT, '|', ...DIAGRAM_LABEL_ORIENTATION_ACTION_LAYOUT],
+            layout: [...DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT, '|', ...DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT],
         });
 
         // Initialize stroke toolbar

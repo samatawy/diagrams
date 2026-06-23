@@ -40,12 +40,21 @@ export type ITextAlign = 'left' | 'center' | 'right';
  */
 export type ITextBaseline = 'top' | 'middle' | 'bottom';
 
+/**
+ * Text orientation options for nodes, which determine the direction in which the text is rendered.
+ * - horizontal: Renders text in a standard horizontal orientation.
+ * - vertical: Renders text in a vertical orientation, typically rotated 90 degrees.
+ * - path: Renders text along a specified path, allowing for curved or angled text placement.
+ * This property is useful for creating visually dynamic diagrams where text needs to follow specific shapes or directions.
+ * For example, text can be oriented along a curved connection line or around a circular node.
+ */
+export type ITextOrientation = 'horizontal' | 'vertical' | 'path';
 
-export type ITextOrientation = 'horizontal' | 'vertical';
-
-export type IConnectionLabelOrientation = 'horizontal' | 'path';
-
+/**
+ * Font weight options for text within nodes, represented as numeric values corresponding to standard font weights.
+ */
 export type IFontWeight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
+
 /**
  * ImageAlign defines the possible alignments for images within nodes. The options are:
  * - 'center': The image is centered within the node.

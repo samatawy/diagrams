@@ -1,6 +1,6 @@
 import { NodeRegistry } from "../../factory/node.registry";
 import { type INode } from "../../interfaces";
-import { type IPoint } from "../../types";
+import { type ITextOrientation, type IPoint } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { ConnectionBasics } from "../connection.basics";
@@ -19,7 +19,8 @@ export class CurveAdapter extends PolylineAdapter {
 
     public static NAME = 'curve';
 
-    has_text = false;
+    has_text = true;
+    text_orientations: ITextOrientation[] = ['horizontal'];
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
@@ -40,6 +41,18 @@ export class CurveAdapter extends PolylineAdapter {
             context.stroke(path);
             if (isConnectionNode(node)) {
                 ConnectionBasics.renderArrows(node, context);
+            }
+
+            if (node.text) {
+                const placement = this.textPlacement(node);
+                const segment = placement?.segment;
+                if (segment) {
+                    RenderBasics.renderText(node, context, {
+                        overflow: this.text_overflow,
+                        from: segment.from,
+                        to: segment.to,
+                    });
+                }
             }
 
             cached.path = path;

@@ -1,7 +1,7 @@
 import { Diagram } from "../model/diagram";
 import type { IConnection, IConnectionAnchor, IGrid, ILayer, INode } from "../interfaces";
 import { DiagramView, type RenderMode, type RenderScope } from "../view/diagram.view";
-import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode, type ImageAlign, type ITextOrientation, type IConnectionLabelOrientation, type IFontWeight } from "../types";
+import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode, type ImageAlign, type ITextOrientation, type IFontWeight } from "../types";
 import { HistoryStack } from "./history";
 import { NORMAL_FONT_WEIGHT, type ShadowStyle, type TextStyle } from "../style.interfaces";
 
@@ -36,7 +36,7 @@ interface DiagramClipboardEnvelope {
     nodes: ISerializedNode[];
     image_assets?: Record<string, string>;
 }
-import { isLocked, labelOrientation, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
+import { isLocked, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 
 
@@ -105,7 +105,6 @@ export class DiagramEditView extends DiagramView {
         textAlign: ITextAlign;
         textBaseline: ITextBaseline;
         textOrientation?: ITextOrientation;
-        labelOrientation?: IConnectionLabelOrientation;
         nodeText?: string;
         imageMode?: ImageMode;
         imageAlign?: ImageAlign;
@@ -892,11 +891,14 @@ export class DiagramEditView extends DiagramView {
         if (style.halo !== undefined) this.settings.textHalo = style.halo;
 
         for (let node of this.selection()) {
-            node.textStyle = {
-                ...node.textStyle,
-                ...style,
-                color: colorIsInherit ? undefined : style.color,
-            };
+            const styleToApply = { ...style, color: colorIsInherit ? undefined : style.color };
+            if (styleToApply.orientation !== undefined) {
+                const allowed = NodeRegistry.adapter(node.type)?.text_orientations;
+                if (allowed && !allowed.includes(styleToApply.orientation)) {
+                    delete styleToApply.orientation;
+                }
+            }
+            node.textStyle = { ...node.textStyle, ...styleToApply };
         }
         this.render('all');
         this.renderPreview();
@@ -948,7 +950,7 @@ export class DiagramEditView extends DiagramView {
         if (patch['strokeStyle'] !== undefined) this.settings.strokeColor = String(patch['strokeStyle']);
         if (patch['lineWidth'] !== undefined) this.settings.lineWidth = Number(patch['lineWidth']);
         if (patch['arrow'] !== undefined) this.settings.arrow = patch['arrow'] as ArrowDirection;
-        if (patch['labelOrientation'] !== undefined) this.settings.labelOrientation = patch['labelOrientation'] as IConnectionLabelOrientation;
+        // if (patch['labelOrientation'] !== undefined) this.settings.labelOrientation = patch['labelOrientation'] as IConnectionLabelOrientation;
 
         if (patch['fillStyle'] !== undefined) this.settings.fillColor = String(patch['fillStyle']);
         if (patch['shadowStyle.color'] !== undefined) this.settings.shadowColor = String(patch['shadowStyle.color']);
@@ -1002,6 +1004,12 @@ export class DiagramEditView extends DiagramView {
         for (const [path, value] of Object.entries(patch)) {
             const segments = path.split('.').filter(s => s.length > 0);
             if (!segments.length) continue;
+
+            // Guard: silently skip orientation values not supported by this node's adapter.
+            if (path === 'textStyle.orientation') {
+                const allowed = NodeRegistry.adapter((target as any).type as string)?.text_orientations;
+                if (allowed && !allowed.includes(value as ITextOrientation)) continue;
+            }
 
             if (segments[0] === 'shadowStyle') {
                 const cur = (target as any)['shadowStyle'];
@@ -2962,17 +2970,11 @@ export class DiagramEditView extends DiagramView {
             type: tool,
             points,
             hollow,
-            text: tool === 'text' ? 'Text' : '', // tool === 'text' ? (this.nodeText || 'New Text') : (this.nodeText || ''),
-            textStyle: this.textStyle,
-            // this.textStyle,
-            // textAlign: this.textAlign,
-            // textBaseline: this.textBaseline,
-            // fontFace: this.fontFace,
-            // fontSize: this.fontSize,
+            text: tool === 'text' ? 'Text' : '',
+            textStyle: { ...this.textStyle },
             ready: false,
             strokeStyle: this.strokeColor,
             fillStyle,
-            // textColor: this.textColor,
             lineWidth: this.lineWidth,
             shadowStyle: { ...this.shadowStyle },
             owner: this,
@@ -2980,6 +2982,11 @@ export class DiagramEditView extends DiagramView {
 
         if (this.isConnectorType(tool)) {
             draft.arrow = this.settings.arrow;
+            draft.textStyle = {
+                ...(draft.textStyle || {}),
+                orientation: 'horizontal',
+                halo: 'inherit',
+            };
         }
 
         if (tool === 'svg' && options?.url) {
@@ -3328,14 +3335,7 @@ export class DiagramEditView extends DiagramView {
             const toScreen = worldToScreen(to.x, to.y);
             const midScreen = { x: (fromScreen.x + toScreen.x) / 2, y: (fromScreen.y + toScreen.y) / 2 };
 
-            if (labelOrientation(node) === 'horizontal') {
-                // Horizontal label: anchor at segment midpoint shifted up by half a line, no rotation.
-                editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
-                editorHeight = scaledLineHeight;
-                left = midScreen.x - editorWidth / 2;
-                top = midScreen.y - editorHeight / 2;
-                // transform stays undefined — no rotation on the textarea.
-            } else {
+            if (textOrientation(node) === 'path') {
                 // Path label: rotate the textarea to follow the segment angle.
                 const angle = NodeBasics.calculateAngle(from, to);
                 const nx = Math.sin(angle);
@@ -3347,6 +3347,21 @@ export class DiagramEditView extends DiagramView {
                 left = midScreen.x + nx * offset - editorWidth / 2;
                 top = midScreen.y + ny * offset - editorHeight / 2;
                 transform = `rotate(${angle}rad)`;
+
+            } else if (textOrientation(node) === 'horizontal') {
+                // Horizontal label: anchor at segment midpoint shifted up by half a line, no rotation.
+                editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
+                editorHeight = scaledLineHeight;
+                left = midScreen.x - editorWidth / 2;
+                top = midScreen.y - editorHeight / 2;
+                // transform stays undefined — no rotation on the textarea.
+
+            } else {
+                // Unknown orientation: fallback to horizontal.
+                editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
+                editorHeight = scaledLineHeight;
+                left = midScreen.x - editorWidth / 2;
+                top = midScreen.y - editorHeight / 2;
             }
         } else {
             return;
@@ -3856,7 +3871,7 @@ export class DiagramEditView extends DiagramView {
             this.settings.shadowOffsetY = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).offset.y;
 
             this.settings.arrow = shape.arrow || 'none';
-            this.settings.labelOrientation = labelOrientation(shape);
+            // this.settings.labelOrientation = labelOrientation(shape);
         }
     }
 

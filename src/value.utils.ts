@@ -1,7 +1,8 @@
-import type { IConnection, INode } from "./interfaces";
+import type { INode } from "./interfaces";
 import { BOLD_FONT_WEIGHT, NORMAL_FONT_WEIGHT, type ShadowStyle, type TextStyle } from "./style.interfaces";
-import type { IConnectionLabelOrientation, ImageMode, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
+import type { ImageMode, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 import { DiagramConstants } from "./model/diagram.constants";
+import { NodeRegistry } from "./factory/node.registry";
 
 export function isLocked(node: INode): boolean {
     return !!node.locked;
@@ -24,7 +25,12 @@ export function textBaseline(node: INode): ITextBaseline {
 }
 
 export function textOrientation(node: INode): ITextOrientation {
-    return node.textStyle?.orientation || 'horizontal';
+    const stored = node.textStyle?.orientation || DiagramConstants.DEFAULT_TEXT_ORIENTATION;
+    const allowed = NodeRegistry.adapter(node.type)?.text_orientations;
+    if (allowed && !allowed.includes(stored)) {
+        return allowed[0]!;
+    }
+    return stored;
 }
 
 export function textBold(node: INode): boolean {
@@ -38,10 +44,6 @@ export function textWeight(node: INode): number {
 
 export function textItalic(node: INode): boolean {
     return !!node.textStyle?.italic;
-}
-
-export function labelOrientation(node: INode): IConnectionLabelOrientation {
-    return (node as IConnection).labelOrientation || DiagramConstants.DEFAULT_LABEL_ORIENTATION;
 }
 
 export function nodeFontFace(node: INode): string {

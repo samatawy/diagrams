@@ -3,7 +3,7 @@ import type { ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { fillStyle, imageMode, imageId, labelOrientation, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeStyle, textAlign, textBaseline, textColor, textHaloColor, isLocked } from "../value.utils";
+import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeStyle, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
@@ -447,9 +447,9 @@ export class RenderBasics {
                 context.lineJoin = 'round';
                 context.lineCap = 'round';
                 switch (align) {
-                    case 'left':    context.strokeText(lines[i]!, x, y); break;
-                    case 'center':  context.strokeText(lines[i]!, x + textRect.width / 2, y); break;
-                    case 'right':   context.strokeText(lines[i]!, x + textRect.width, y); break;
+                    case 'left': context.strokeText(lines[i]!, x, y); break;
+                    case 'center': context.strokeText(lines[i]!, x + textRect.width / 2, y); break;
+                    case 'right': context.strokeText(lines[i]!, x + textRect.width, y); break;
                 }
                 context.restore();
             }
@@ -530,7 +530,7 @@ export class RenderBasics {
         const width = context.measureText(line).width;
         const padding = DiagramConstants.HANDLE_HIT_EPSILON;
 
-        if (labelOrientation(node) === 'horizontal') {
+        if (textOrientation(node) === 'horizontal') {
             // Draw the label horizontally, centered on the segment midpoint, shifted up by half a line.
             const anchorX = midX;
             const anchorY = midY;

@@ -1,8 +1,10 @@
 import type { INode } from "../../interfaces";
+import type { ITextOrientation } from "../../types";
 import type { DiagramView } from "../../view";
 import { DiagramEditView } from "../../editview";
 import { DIAGRAM_CHANGED_EVENT, DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, DIAGRAM_NODE_POINTS_CHANGED_EVENT, DIAGRAM_SELECTION_EVENT } from "../../events";
 import { isConnection } from "../../guards";
+import { NodeRegistry } from "../../factory/node.registry";
 
 import { Inspector, type InspectorConfig, type InspectorPropertyDefinition, type EditableRecord } from "./inspector";
 import type { ColorSelectConfig } from "../inputs/color.select";
@@ -107,6 +109,9 @@ export class DiagramInspector extends Inspector {
         const hasSelected = () => selected().length > 0;
         const noSelection = () => selected().length === 0;
         const hasConnections = () => selected().some((node) => isConnection(node));
+        // const hasConnectionsWithMultipleOrientations = () => selected().some(
+        //     (node) => isConnection(node) && ((NodeRegistry.adapter(node.type)?.text_orientations.length ?? 2) > 1)
+        // );
         const hasNonConnections = () => selected().some((node) => !isConnection(node));
 
         // ---- Diagram section (visible only when nothing is selected) ----
@@ -199,7 +204,16 @@ export class DiagramInspector extends Inspector {
         });
         this.addRow(text, {
             key: 'textStyle.orientation', label: 'Orientation', type: 'select', editor: 'EnumSelect',
-            editorOptions: { options: ['horizontal', 'vertical'] } as EnumSelectAdapterConfig,
+            editorOptions: {
+                options: () => {
+                    const sel = this.diagram.selection();
+                    if (!sel.length) return ['horizontal', 'vertical', 'path'];
+                    const ALL: ITextOrientation[] = ['horizontal', 'vertical', 'path'];
+                    const perNode = sel.map(n => NodeRegistry.adapter(n.type)?.text_orientations ?? ALL);
+                    // Intersection: keep only orientations every selected node supports.
+                    return perNode.reduce((acc, cur) => acc.filter(o => cur.includes(o)));
+                },
+            } as EnumSelectAdapterConfig,
             readonly: readonly, isVisible: hasSelected,
         });
 
@@ -207,11 +221,11 @@ export class DiagramInspector extends Inspector {
         this.addRow(line, { key: 'strokeStyle', label: 'Line Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.strokeColor || {}) }, readonly: readonly, isVisible: hasSelected });
         this.addRow(line, { key: 'lineWidth', label: 'Line width', type: 'number', editor: 'WidthSelect', editorOptions: this.inspectorConfig.widthSelect || {}, readonly: readonly, isVisible: hasSelected });
         this.addRow(line, { key: 'arrow', label: 'Arrow', type: 'string', editor: 'ArrowSelect', editorOptions: this.inspectorConfig.arrowSelect || {}, readonly: readonly, isVisible: hasConnections });
-        this.addRow(line, {
-            key: 'labelOrientation', label: 'Label Orientation', type: 'select', editor: 'EnumSelect',
-            editorOptions: { options: ['horizontal', 'path'] } as EnumSelectAdapterConfig,
-            readonly: readonly, isVisible: hasConnections,
-        });
+        // this.addRow(line, {
+        //     key: 'labelOrientation', label: 'Label Orientation', type: 'select', editor: 'EnumSelect',
+        //     editorOptions: { options: ['horizontal', 'path'] } as EnumSelectAdapterConfig,
+        //     readonly: readonly, isVisible: hasConnectionsWithMultipleOrientations,
+        // });
 
         const { grid: fill } = this.buildSection('Fill');
         this.addRow(fill, { key: 'fillStyle', label: 'Fill Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.fillColor || {}) }, readonly: readonly, isVisible: hasSelected });
@@ -342,6 +356,10 @@ export class DiagramInspector extends Inspector {
 
                 const adapter = this.adapters.get(key);
                 if (!adapter) continue;
+
+                if (adapter instanceof EnumSelectAdapter) {
+                    adapter.refreshOptions();
+                }
 
                 if (valueSet.size > 1) {
                     adapter.setMixed?.(true);

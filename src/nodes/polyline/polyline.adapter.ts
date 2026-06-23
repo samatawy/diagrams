@@ -1,6 +1,6 @@
 import { NodeRegistry } from "../../factory/node.registry";
 import { type IGrid, type INode } from "../../interfaces";
-import { NodeHandle, type IPoint, type IRect } from "../../types";
+import { NodeHandle, type IPoint, type IRect, type ITextOrientation } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { ConnectionBasics } from "../connection.basics";
@@ -34,6 +34,7 @@ export class PolylineAdapter implements INodeAdapter {
     multistep_create = true;
     has_text = true;
     text_overflow: TextOverflowMode = 'visible';
+    text_orientations: ITextOrientation[] = ['horizontal', 'path'];
 
     /**
      * Registers the PolylineAdapter with the NodeRegistry.

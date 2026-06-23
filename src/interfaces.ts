@@ -1,7 +1,7 @@
 import type { Serializable } from "./io/serialized.types";
-import type { ArrowDirection, IConnectionLabelOrientation, ImageAlign, ImageMode } from "./types";
+import type { ArrowDirection, ImageAlign, ImageMode } from "./types";
 import type { ShadowStyle, TextStyle } from "./style.interfaces";
-import type { IPoint, ITextAlign, ITextBaseline, NodeHandle } from "./types";
+import type { IPoint, NodeHandle } from "./types";
 
 /**
  * INode defines the properties of a node in the diagram, including its ID, type, geometry (points), text properties, styling options, and its relationship to the diagram it belongs to.
@@ -179,8 +179,6 @@ export interface IConnection {
      * The target anchor of the connection, which specifies where the connection ends on the target node. It includes information about the node, handle, and optional offsets.
      */
     to?: IConnectionAnchor;
-
-    labelOrientation?: IConnectionLabelOrientation;
 }
 
 /**

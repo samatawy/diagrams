@@ -9,8 +9,10 @@ export type EnumSelectOption = string | { value: string; label?: string };
 export interface EnumSelectAdapterConfig {
     /**
      * Allowed option values, with optional display labels.
+     * May be a static array or a zero-argument factory called on every refresh,
+     * which lets the inspector narrow the list based on the current selection.
      */
-    options: EnumSelectOption[];
+    options: EnumSelectOption[] | (() => EnumSelectOption[]);
     /**
      * Optional placeholder text when no value is selected.
      */
@@ -25,7 +27,9 @@ export class EnumSelectAdapter extends InspectorAdapter {
     private readonly host: HTMLDivElement;
     private readonly trigger: HTMLButtonElement;
     private readonly menu: HTMLDivElement;
-    private readonly options: Array<{ value: string; label: string }>;
+    private readonly allOptions: Array<{ value: string; label: string }>;
+    private readonly optionsFn: (() => Array<{ value: string; label: string }>) | null;
+    private currentOptions: Array<{ value: string; label: string }> = [];
     private value: string = '';
     private isOpen: boolean = false;
     private readonly onDocumentPointerDown: (event: PointerEvent) => void;
@@ -34,12 +38,22 @@ export class EnumSelectAdapter extends InspectorAdapter {
         super(cell, mixedClassName);
 
         const cfg = (initial.def.editorOptions as EnumSelectAdapterConfig | undefined) || { options: [] };
-        this.options = (cfg.options || []).map((option) => {
-            if (typeof option === 'string') {
-                return { value: option, label: option };
-            }
-            return { value: option.value, label: option.label || option.value };
-        });
+        const rawOptions = cfg.options;
+        const mapOptions = (opts: EnumSelectOption[]) =>
+            opts.map((option) => {
+                if (typeof option === 'string') return { value: option, label: option };
+                return { value: option.value, label: option.label || option.value };
+            });
+
+        if (typeof rawOptions === 'function') {
+            this.optionsFn = () => mapOptions(rawOptions());
+            this.allOptions = mapOptions(rawOptions());
+        } else {
+            this.optionsFn = null;
+            this.allOptions = mapOptions(rawOptions);
+        }
+
+        this.currentOptions = [...this.allOptions];
 
         this.host = document.createElement('div');
         this.host.className = 'enum-select-control';
@@ -65,15 +79,7 @@ export class EnumSelectAdapter extends InspectorAdapter {
         this.menu.style.display = 'none';
         this.menu.style.zIndex = '20';
 
-        for (const option of this.options) {
-            const el = document.createElement('button');
-            el.type = 'button';
-            el.className = 'color-preset-option';
-            el.dataset['value'] = option.value;
-            el.textContent = option.label;
-            el.addEventListener('click', () => this.selectValue(option.value));
-            this.menu.appendChild(el);
-        }
+        this.renderOptions();
 
         this.host.appendChild(this.trigger);
         this.host.appendChild(this.menu);
@@ -93,9 +99,16 @@ export class EnumSelectAdapter extends InspectorAdapter {
     override showValue(editable: EditableRecord): void {
         const { key, value } = this.extractValueFrom(editable);
         this.returnKey = key;
+        this.refreshOptions();
         this.value = value !== undefined && value !== null ? String(value) : '';
         this.syncOptionSelection();
         this.updateTriggerLabel();
+    }
+
+    public refreshOptions(): void {
+        const next = this.optionsFn ? this.optionsFn() : this.allOptions;
+        this.currentOptions = [...next];
+        this.renderOptions();
     }
 
     override getValue(): EditableRecord {
@@ -122,6 +135,19 @@ export class EnumSelectAdapter extends InspectorAdapter {
         this.setOpen(false);
     }
 
+    private renderOptions(): void {
+        this.menu.innerHTML = '';
+        for (const option of this.currentOptions) {
+            const el = document.createElement('button');
+            el.type = 'button';
+            el.className = 'color-preset-option';
+            el.dataset['value'] = option.value;
+            el.textContent = option.label;
+            el.addEventListener('click', () => this.selectValue(option.value));
+            this.menu.appendChild(el);
+        }
+    }
+
     private syncOptionSelection(): void {
         const options = this.menu.querySelectorAll<HTMLButtonElement>('.color-preset-option');
         for (const option of options) {
@@ -132,7 +158,8 @@ export class EnumSelectAdapter extends InspectorAdapter {
     }
 
     private updateTriggerLabel(): void {
-        const selected = this.options.find((option) => option.value === this.value);
+        const selected = this.currentOptions.find((option) => option.value === this.value)
+            || this.allOptions.find((option) => option.value === this.value);
         this.trigger.textContent = selected ? selected.label : (this.value || '\u00A0');
     }
 }

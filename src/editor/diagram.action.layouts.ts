@@ -71,9 +71,10 @@ export const DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT: DiagramActionId[] = [
 export const DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT: DiagramActionId[] = [
     'text-orientation-horizontal',
     'text-orientation-vertical',
+    'text-orientation-path'
 ];
 
-export const DIAGRAM_LABEL_ORIENTATION_ACTION_LAYOUT: DiagramActionId[] = [
-    'label-orientation-horizontal',
-    'label-orientation-path',
-];
+// export const DIAGRAM_LABEL_ORIENTATION_ACTION_LAYOUT: DiagramActionId[] = [
+//     'label-orientation-horizontal',
+//     'label-orientation-path',
+// ];

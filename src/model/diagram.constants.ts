@@ -1,5 +1,5 @@
 import type { ShadowStyle } from "../style.interfaces";
-import type { IConnectionLabelOrientation, ITextAlign, ITextBaseline } from "../types";
+import type { ITextAlign, ITextBaseline, ITextOrientation } from "../types";
 
 // ========= Zoom ==========
 
@@ -44,7 +44,7 @@ export const DEFAULT_NODE_FONT_SIZE = 'DEFAULT_NODE_FONT_SIZE';
 export const DEFAULT_TEXT_PADDING = 'DEFAULT_TEXT_PADDING';
 export const DEFAULT_NODE_LINE_WIDTH = 'DEFAULT_NODE_LINE_WIDTH';
 export const DEFAULT_NODE_TRANSPARENT = 'DEFAULT_NODE_TRANSPARENT';
-export const DEFAULT_LABEL_ORIENTATION = 'DEFAULT_LABEL_ORIENTATION';
+export const DEFAULT_TEXT_ORIENTATION = 'DEFAULT_TEXT_ORIENTATION';
 
 // ========= Shadows ==========
 
@@ -104,7 +104,7 @@ export class DiagramConstants {
         DEFAULT_TEXT_PADDING: 4,
         DEFAULT_NODE_LINE_WIDTH: 1,
         DEFAULT_NODE_TRANSPARENT: false,
-        DEFAULT_LABEL_ORIENTATION: 'path',
+        DEFAULT_TEXT_ORIENTATION: 'horizontal',
 
         // ========== Shadows ==========
         NO_SHADOW: { name: 'No Shadow', color: 'transparent', blur: 0, offset: { x: 0, y: 0 } },
@@ -260,8 +260,8 @@ export class DiagramConstants {
         return this.get(DEFAULT_NODE_TRANSPARENT);
     }
 
-    public static get DEFAULT_LABEL_ORIENTATION(): IConnectionLabelOrientation {
-        return this.get(DEFAULT_LABEL_ORIENTATION);
+    public static get DEFAULT_TEXT_ORIENTATION(): ITextOrientation {
+        return this.get(DEFAULT_TEXT_ORIENTATION);
     }
 
     // ========== Shadows ==========

@@ -1,6 +1,6 @@
 import { NodeRegistry } from "../../factory/node.registry";
 import type { IGrid, INode } from "../../interfaces";
-import { NodeHandle, type IPoint, type IRect } from "../../types";
+import { NodeHandle, type IPoint, type IRect, type ITextOrientation } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RenderBasics } from "../render.basics";
@@ -28,6 +28,7 @@ export class RectangleAdapter implements INodeAdapter {
     drag_create = true;
     has_text = true;
     text_overflow: TextOverflowMode = 'hidden';
+    text_orientations: ITextOrientation[] = ['horizontal'];
 
     /**
      * Registers the RectangleAdapter with the NodeRegistry.
