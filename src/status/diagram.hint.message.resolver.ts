@@ -1,4 +1,6 @@
 import { ACTION_MAP } from "../editor/diagram.actions";
+import { DiagramEditViewKeyboard } from "../editview/edit.keyboard";
+import { DiagramKeyboard } from "../keyboard/diagram.keyboard";
 import type { DiagramHintAccessSurface, DiagramHintPoolItem } from "./hint.types";
 
 const ACCESS_LABELS: Record<DiagramHintAccessSurface, string> = {
@@ -13,8 +15,11 @@ export class DiagramHintMessageResolver {
 
     private readonly isMac: boolean;
 
-    constructor() {
+    private readonly keyboard: DiagramKeyboard<any>;
+
+    constructor(keyboard: DiagramKeyboard<any> = new DiagramEditViewKeyboard()) {
         this.isMac = this.detectMacPlatform();
+        this.keyboard = keyboard;
     }
 
     public resolve(item: DiagramHintPoolItem): string | undefined {
@@ -25,11 +30,18 @@ export class DiagramHintMessageResolver {
         const action = item.actionId ? ACTION_MAP.get(item.actionId) : undefined;
         const label = action?.label?.trim();
         const shortcut = this.formatShortcut(item.shortcut);
+        const shortcutHelp = this.resolveShortcutHelp(item.shortcut);
         const access = this.formatAccess(item.access, !!shortcut);
 
-        // For non-action hints, prefer explicit fallback phrasing over a raw shortcut string.
-        if (!label && item.fallbackMessage?.trim()) {
-            return item.fallbackMessage.trim();
+        if (shortcutHelp) {
+            const parts: string[] = [shortcutHelp];
+            if (access) {
+                parts.push(`from the ${access}`);
+            }
+            if (shortcut) {
+                parts.push(`(${shortcut})`);
+            }
+            return `${parts.join(" ")}.`;
         }
 
         if (label) {
@@ -41,10 +53,6 @@ export class DiagramHintMessageResolver {
                 parts.push(`(${shortcut})`);
             }
             return `${parts.join(" ")}.`;
-        }
-
-        if (shortcut) {
-            return `Use ${shortcut}.`;
         }
 
         if (item.fallbackMessage?.trim()) {
@@ -83,6 +91,27 @@ export class DiagramHintMessageResolver {
         const head = labels.slice(0, -1).join(", ");
         const tail = labels[labels.length - 1];
         return `${head}, or ${tail}`;
+    }
+
+    private resolveShortcutHelp(shortcut?: string | string[]): string | undefined {
+        if (!shortcut) {
+            return undefined;
+        }
+
+        const options = Array.isArray(shortcut) ? shortcut : [shortcut];
+        for (const option of options) {
+            const help = this.findShortcutHelp(option);
+            if (help) {
+                return help;
+            }
+        }
+
+        return undefined;
+    }
+
+    private findShortcutHelp(shortcut: string): string | undefined {
+        const match = this.keyboard.getShortcutBySyntax(shortcut);
+        return match?.help?.trim() || undefined;
     }
 
     private formatShortcut(shortcut?: string | string[]): string | undefined {

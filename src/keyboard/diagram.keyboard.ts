@@ -116,6 +116,16 @@ export class DiagramKeyboard<T> {
         );
     }
 
+    public getShortcutBySyntax(syntax: string): KeyboardShortcut<T> | undefined {
+        const parsed = this.parseShortcutSyntax(syntax);
+        if (!parsed) {
+            return undefined;
+        }
+
+        const { key, shift, ctrl, alt, meta } = parsed;
+        return this.getShortcut(key, { shift, ctrl, alt, meta });
+    }
+
     public getEventShortcut(event: KeyboardEvent): KeyboardShortcut<T> | undefined {
         const key = event.key;
         const shift = event.shiftKey;
