@@ -2,6 +2,7 @@ import type { DiagramEditView } from "../editview";
 import { DIAGRAM_CHANGED_EVENT, DIAGRAM_TOOL_CHANGED_EVENT, type DiagramChanged } from "../events/diagram.events";
 import { injectStyles, setClasses, toggleClasses } from "../editor/editor.utils";
 import { IconRegistry } from "../factory/icon.registry";
+import { AutoFixLayout } from "../layout/auto.fix";
 import { DiagramQualityService, type DiagramQualityMetrics } from "./diagram.quality.service";
 import { humanize } from "../value.utils";
 
@@ -114,6 +115,30 @@ const STATUS_BAR_STYLES = `
 
 .diagram-status-bar .diagram-status-quality-menu[hidden] {
     display: none;
+}
+
+.diagram-status-bar .diagram-status-fix-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: calc(100% - 20px);
+    margin: 6px 10px 4px;
+    padding: 4px 8px;
+    appearance: none;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    border-radius: var(--diagram-status-radius);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text-muted, #334155);
+    font: 600 11px/1.2 var(--diagram-ui-font-family, system-ui);
+    cursor: pointer;
+    transition: border-color var(--diagram-ui-transition-fast, 100ms ease), color var(--diagram-ui-transition-fast, 100ms ease);
+}
+
+.diagram-status-bar .diagram-status-fix-button:hover,
+.diagram-status-bar .diagram-status-fix-button:focus-visible {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    color: var(--diagram-ui-accent, #0f766e);
 }
 
 .diagram-status-bar .diagram-status-quality-menu-title {
@@ -511,6 +536,23 @@ export class DiagramStatusBar {
         this.appendQualityMetric('Isolated Nodes', metrics.isolated_nodes);
         this.appendQualityMetric('Dangling Connections', metrics.dangling_connections);
         this.appendQualityMetric('Orphaned Connections', metrics.orphaned_connections);
+
+        const fixSeparator = document.createElement('div');
+        fixSeparator.className = 'diagram-status-quality-menu-separator';
+        this.qualityMenu.appendChild(fixSeparator);
+
+        const fixButton = document.createElement('button');
+        fixButton.type = 'button';
+        fixButton.className = 'diagram-status-fix-button';
+        fixButton.setAttribute('title', 'Auto-fix: connect dangling connections, align near edges, equalize spacing');
+        const fixIcon = IconRegistry.createElement('hint', 14);
+        if (fixIcon) fixButton.appendChild(fixIcon as Node);
+        fixButton.append(document.createTextNode('Auto Fix'));
+        fixButton.addEventListener('click', () => {
+            new AutoFixLayout(this.diagram).apply();
+            this.updateQualityMetrics();
+        });
+        this.qualityMenu.appendChild(fixButton);
     }
 
     private appendQualityMetric(name: string, value: number): void {

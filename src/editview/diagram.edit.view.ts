@@ -26,6 +26,8 @@ import { ZOrder, type ZOrderHost } from "../layout/z.order";
 import { Guides, type SnapGuideResult } from "../layout";
 import { ColorPalette } from "./color.palette";
 import {
+    DIAGRAM_CHANGED_EVENT,
+    type DiagramChanged,
     type DiagramDeleteRequest,
     type DiagramClipboardOperation,
     type DiagramEditContextMenu,
@@ -227,6 +229,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
+        this.emitDiagramModelChanged('clear');
     }
 
     // ===================================================
@@ -421,6 +424,15 @@ export class DiagramEditView extends DiagramView {
         this.fitToNodes();
         this.render('all');
         this.renderPreview();
+        this.emitDiagramModelChanged('load');
+    }
+
+    private emitDiagramModelChanged(sourceEvent: string): void {
+        const host = (this as any).host as HTMLElement | undefined;
+        host?.dispatchEvent(new CustomEvent<DiagramChanged>(DIAGRAM_CHANGED_EVENT, {
+            detail: { scope: 'model', sourceEvent },
+            bubbles: true,
+        }));
     }
 
     private async confirmReplaceIfNeeded(reason: DiagramEditViewPromptReason): Promise<boolean> {
