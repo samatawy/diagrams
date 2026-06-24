@@ -507,7 +507,7 @@ export class Diagram implements IDiagram {
      * @param layer The layer whose nodes should be returned.
      * @returns An array of nodes within the specified layer.
      */
-    protected layerNodes(layer: ILayer): INode[] {
+    public layerNodes(layer: ILayer): INode[] {
         return layer.nodes
             .map(nodeId => this.node(nodeId))
             .filter((node): node is INode => !!node);

@@ -256,17 +256,6 @@ export interface IDiagram extends Serializable {
     grid?: IGrid;
 
     node(id: string): INode | undefined;
-    upsertNode(node: INode): INode;
-    deleteNode(id: string): void;
-    layer(id: string): ILayer | undefined;
-    upsertLayer(layer: string | ILayer): ILayer;
-    deleteLayer(id: string): void;
-
-    setNodeImageSource(node: string | INode, imageSrc: string, mode?: ImageMode, imageId?: string): INode | undefined;
-    setNodeSvgSource(node: string | INode, svgOrSrc: string, mode?: ImageMode, imageId?: string): INode | undefined;
-    clearNodeImageSource(node: string | INode): INode | undefined;
-    resolveNodeImageSource(node: string | INode): string | undefined;
-    destroy(): void;
 }
 
 /**

@@ -23,6 +23,7 @@ import { PointAdapter } from "./point.adapter";
 import { ImageSelectAdapter } from "./image.select.adapter";
 import type { NumberInputAdapterConfig } from "./number.input.adapter";
 import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./meta.kv.adapters";
+import { humanize } from "../../value.utils";
 
 export type DiagramInspectorConfig = InspectorConfig & {
     colorSelect?: ColorSelectConfig;
@@ -109,13 +110,10 @@ export class DiagramInspector extends Inspector {
         const hasSelected = () => selected().length > 0;
         const noSelection = () => selected().length === 0;
         const hasConnections = () => selected().some((node) => isConnection(node));
-        // const hasConnectionsWithMultipleOrientations = () => selected().some(
-        //     (node) => isConnection(node) && ((NodeRegistry.adapter(node.type)?.text_orientations.length ?? 2) > 1)
-        // );
         const hasNonConnections = () => selected().some((node) => !isConnection(node));
 
         // ---- Diagram section (visible only when nothing is selected) ----
-        const { grid: diagramGrid } = this.buildSection('Diagram');
+        const { grid: diagramGrid } = this.buildSection('Diagram', 'expanded');
         this.addRow(diagramGrid, {
             key: 'diagram.id',
             label: 'ID',
@@ -132,7 +130,7 @@ export class DiagramInspector extends Inspector {
             readonly: readonly,
             isVisible: noSelection,
         });
-        const { grid: diagramMetaGridEl } = this.buildSection('Diagram Metadata');
+        const { grid: diagramMetaGridEl } = this.buildSection('Diagram Metadata', 'expanded');
         this.diagramMetaGrid = diagramMetaGridEl;
         this.addRow(diagramMetaGridEl, {
             key: 'diagram.meta.__add',
@@ -145,7 +143,7 @@ export class DiagramInspector extends Inspector {
         });
 
         // ---- Node sections (visible only when at least one node is selected) ----
-        const { grid: identity } = this.buildSection('Identity');
+        const { grid: identity } = this.buildSection('Identity', 'expanded');
         this.addRow(identity, {
             key: 'id',
             label: 'ID',
@@ -161,7 +159,7 @@ export class DiagramInspector extends Inspector {
             isVisible: hasSelected,
         });
 
-        const { grid: geometry } = this.buildSection('Geometry');
+        const { grid: geometry } = this.buildSection('Geometry', 'collapsed');
         this.geometryGrid = geometry;
         this.addRow(geometry, { key: 'locked', label: 'Locked', type: 'boolean', readonly: readonly, isVisible: hasSelected });
         this.addRow(geometry, { key: 'locked_aspect', label: 'Lock Aspect', type: 'boolean', readonly: readonly, isVisible: hasSelected });
@@ -176,7 +174,7 @@ export class DiagramInspector extends Inspector {
             readonly: readonly, isVisible: hasSelected,
         });
 
-        const { grid: text } = this.buildSection('Text');
+        const { grid: text } = this.buildSection('Text', 'collapsed');
         this.addRow(text, { key: 'text', label: 'Content', type: 'string', editorOptions: { multiline: true }, readonly: readonly, isVisible: hasSelected });
         this.addRow(text, { key: 'textStyle.fontFace', label: 'Font Face', type: 'string', editor: 'FontSelect', editorOptions: this.inspectorConfig.fontSelect || {}, readonly: readonly, isVisible: hasSelected });
         this.addRow(text, { key: 'textStyle.size', label: 'Font Size', type: 'number', editor: 'SizeSelect', editorOptions: this.inspectorConfig.sizeSelect || {}, readonly: readonly, isVisible: hasSelected });
@@ -217,17 +215,12 @@ export class DiagramInspector extends Inspector {
             readonly: readonly, isVisible: hasSelected,
         });
 
-        const { grid: line } = this.buildSection('Line');
+        const { grid: line } = this.buildSection('Line', 'collapsed');
         this.addRow(line, { key: 'strokeStyle', label: 'Line Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.strokeColor || {}) }, readonly: readonly, isVisible: hasSelected });
         this.addRow(line, { key: 'lineWidth', label: 'Line width', type: 'number', editor: 'WidthSelect', editorOptions: this.inspectorConfig.widthSelect || {}, readonly: readonly, isVisible: hasSelected });
         this.addRow(line, { key: 'arrow', label: 'Arrow', type: 'string', editor: 'ArrowSelect', editorOptions: this.inspectorConfig.arrowSelect || {}, readonly: readonly, isVisible: hasConnections });
-        // this.addRow(line, {
-        //     key: 'labelOrientation', label: 'Label Orientation', type: 'select', editor: 'EnumSelect',
-        //     editorOptions: { options: ['horizontal', 'path'] } as EnumSelectAdapterConfig,
-        //     readonly: readonly, isVisible: hasConnectionsWithMultipleOrientations,
-        // });
 
-        const { grid: fill } = this.buildSection('Fill');
+        const { grid: fill } = this.buildSection('Fill', 'collapsed');
         this.addRow(fill, { key: 'fillStyle', label: 'Fill Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.fillColor || {}) }, readonly: readonly, isVisible: hasSelected });
         this.addRow(fill, { key: 'image_id', label: 'Image', type: 'string', editor: 'ImageSelect', editorOptions: { diagram: this.diagram }, readonly: readonly, isVisible: hasNonConnections });
         this.addRow(fill, {
@@ -242,7 +235,7 @@ export class DiagramInspector extends Inspector {
         });
         this.addRow(fill, { key: 'image_padding', label: 'Padding', type: 'number', readonly: readonly, isVisible: hasNonConnections });
 
-        const { grid: shadow } = this.buildSection('Shadow');
+        const { grid: shadow } = this.buildSection('Shadow', 'collapsed');
         this.addRow(shadow, {
             key: 'shadowStyle.color',
             label: 'Color',
@@ -260,7 +253,7 @@ export class DiagramInspector extends Inspector {
         this.addRow(shadow, { key: 'shadowStyle.offset.x', label: 'Offset X', type: 'number', readonly: readonly, isVisible: hasSelected });
         this.addRow(shadow, { key: 'shadowStyle.offset.y', label: 'Offset Y', type: 'number', readonly: readonly, isVisible: hasSelected });
 
-        const { grid: meta } = this.buildSection('Metadata');
+        const { grid: meta } = this.buildSection('Metadata', 'collapsed');
         this.metaGrid = meta;
         this.addRow(meta, {
             key: 'meta.__add',
@@ -365,9 +358,12 @@ export class DiagramInspector extends Inspector {
                     adapter.setMixed?.(true);
                 } else {
                     const v = [...valueSet][0];
+                    const displayValue = key === 'type' && typeof v === 'string'
+                        ? humanize(v)
+                        : v;
                     cell.classList.remove(this.config.mixedClassName);
                     adapter.setMixed?.(false);
-                    adapter.showValue({ [key]: v });
+                    adapter.showValue({ [key]: displayValue });
                 }
                 if (adapter instanceof ColorSelectAdapter) {
                     (adapter as ColorSelectAdapter).setColors(colors);

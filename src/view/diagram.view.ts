@@ -879,6 +879,14 @@ export class DiagramView extends Diagram implements HasSelection {
         return this.double_click_listener;
     }
 
+    public onEvent<T>(event: string, listener: (event: CustomEvent<T>) => void) {
+        this.host.addEventListener(event, listener as EventListener);
+    }
+
+    public clearEvent<T>(event: string, listener: (event: CustomEvent<T>) => void) {
+        this.host.removeEventListener(event, listener as EventListener);
+    }
+
     // =============================================
     // ========== Event handling methods. ==========
     // =============================================

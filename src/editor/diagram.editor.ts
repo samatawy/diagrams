@@ -80,6 +80,7 @@ const DIAGRAM_EDITOR_STYLE_ID = 'diagram-editor-layout';
 
 const DIAGRAM_EDITOR_STYLES = `
 .diagram-editor {
+    --diagram-inspector-width: 300px;
     display: flex;
     flex-direction: column;
     width: 100%;

@@ -5,6 +5,7 @@ import { IconRegistry } from "../factory/icon.registry";
 import { AutoFixLayout } from "../layout/auto.fix";
 import { DiagramQualityService, type DiagramQualityMetrics } from "./diagram.quality.service";
 import { humanize } from "../value.utils";
+import { MinimapView } from "../view/minimap.view";
 
 const STATUS_BAR_STYLE_ID = 'diagram-status-bar-defaults';
 
@@ -16,7 +17,7 @@ const STATUS_BAR_STYLES = `
     --diagram-status-radius: calc(var(--diagram-ui-control-radius, 10px) - 3px);
 
     display: grid;
-    grid-template-columns: minmax(120px, max-content) minmax(200px, 1fr) max-content minmax(160px, max-content);
+    grid-template-columns: minmax(120px, max-content) minmax(200px, 1fr) max-content var(--diagram-inspector-width, 300px);
     align-items: center;
     gap: var(--diagram-status-gap);
     min-height: var(--diagram-status-height);
@@ -73,7 +74,10 @@ const STATUS_BAR_STYLES = `
 .diagram-status-bar .diagram-status-section--quality {
     position: relative;
     justify-self: end;
+    width: 100%;
     min-width: 0;
+    padding-inline-start: 8px;
+    box-sizing: border-box;
 }
 
 .diagram-status-bar .diagram-status-quality-button {
@@ -277,6 +281,8 @@ export class DiagramStatusBar {
 
     private readonly minimapButton: HTMLButtonElement;
 
+    private minimapView?: MinimapView;
+
     private minimapVisible = false;
 
     private qualityMenuOpen = false;
@@ -284,8 +290,6 @@ export class DiagramStatusBar {
     private latestQualityMetrics: DiagramQualityMetrics | null = null;
 
     private qualityUpdateTimer?: ReturnType<typeof setTimeout>;
-
-    private onMinimapToggle?: (visible: boolean) => void;
 
     private readonly onDiagramChanged = (event: Event): void => {
         this.updateStatus();
@@ -362,7 +366,6 @@ export class DiagramStatusBar {
         this.minimapButton.textContent = 'Map';
         this.minimapButton.addEventListener('click', () => {
             this.setMinimapVisible(!this.minimapVisible);
-            this.onMinimapToggle?.(this.minimapVisible);
         });
         buttonsWrap.appendChild(this.minimapButton);
         this.sectionButtons.appendChild(buttonsWrap);
@@ -401,6 +404,8 @@ export class DiagramStatusBar {
     }
 
     public destroy(): void {
+        this.minimapView?.destroy();
+        this.minimapView = undefined;
         this.closeQualityMenu();
         this.cancelScheduledQualityUpdate();
         this.unbindDiagramEvents();
@@ -435,10 +440,20 @@ export class DiagramStatusBar {
         toggleClasses(this.minimapButton, visible, 'is-active');
         this.minimapButton.setAttribute('aria-pressed', visible ? 'true' : 'false');
         this.minimapButton.textContent = visible ? 'Map On' : 'Map';
-    }
 
-    public setOnMinimapToggle(callback: (visible: boolean) => void): void {
-        this.onMinimapToggle = callback;
+        if (visible) {
+            const container = this.resolveMinimapContainer();
+            if (!container) return;
+
+            if (!this.minimapView) {
+                this.minimapView = new MinimapView(this.diagram);
+            }
+
+            this.minimapView.show(container);
+            return;
+        }
+
+        this.minimapView?.hide();
     }
 
     private updateStatus(): void {
@@ -594,5 +609,9 @@ export class DiagramStatusBar {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.removeEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
         source?.removeEventListener(DIAGRAM_TOOL_CHANGED_EVENT, this.onToolChanged);
+    }
+
+    private resolveMinimapContainer(): HTMLElement | undefined {
+        return (this.diagram as any).host as HTMLElement | undefined;
     }
 }

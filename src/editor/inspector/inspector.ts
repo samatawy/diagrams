@@ -80,8 +80,8 @@ const DEFAULT_STYLES = `
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    width: 300px;
-    min-width: 300px;
+    width: var(--diagram-inspector-width, 300px);
+    min-width: var(--diagram-inspector-width, 300px);
     --inspector-base: 15, 118, 110;
     --inspector-header-bg: rgba(var(--inspector-base), 0.14);
     --inspector-header-border: rgba(var(--inspector-base), 0.34);
@@ -674,7 +674,7 @@ export class Inspector {
      * Creates a collapsible section element with a heading and a two-column property grid inside.
      * Returns the section root and the inner grid so rows can be appended to it.
      */
-    protected buildSection(heading: string): { section: HTMLElement; grid: HTMLElement } {
+    protected buildSection(heading: string, state: 'expanded' | 'collapsed'): { section: HTMLElement; grid: HTMLElement } {
         const section = document.createElement('div');
         setClasses(section, DEFAULT_CONFIG.sectionClassName, this.config.sectionClassName);
 
@@ -682,6 +682,10 @@ export class Inspector {
         setClasses(h, DEFAULT_CONFIG.headingClassName, this.config.headingClassName);
         h.textContent = heading;
         section.appendChild(h);
+
+        if (state === 'collapsed') {
+            section.classList.add('is-collapsed');
+        }
 
         const body = document.createElement('div');
         body.className = 'inspector-section-body';
