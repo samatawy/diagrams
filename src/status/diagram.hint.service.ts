@@ -7,7 +7,13 @@ type HintLayer = 'interaction' | 'focus' | 'hover' | 'idle' | 'base';
 
 export class DiagramHintService {
 
-    private static readonly IDLE_REFRESH_MS = 5000;
+    private static readonly IDLE_REFRESH_MS = 10_000;
+
+    private static readonly INTERACTION_TTL_MS = 10_000;
+
+    private static readonly FOCUS_TTL_MS = 15_000;
+
+    private static readonly HOVER_TTL_MS = 10_000;
 
     private readonly diagram: DiagramEditView;
 
@@ -18,6 +24,8 @@ export class DiagramHintService {
     private readonly hints = new Map<HintLayer, string>();
 
     private readonly hintListeners: Array<(hint: string) => void> = [];
+
+    private readonly layerExpiryTimers = new Map<HintLayer, ReturnType<typeof setTimeout>>();
 
     private idleRefreshTimer?: ReturnType<typeof setInterval>;
 
@@ -47,6 +55,7 @@ export class DiagramHintService {
 
     public destroy(): void {
         this.stopIdleHintRefresh();
+        this.clearAllLayerExpiryTimers();
         this.unbind();
         this.hintListeners.length = 0;
     }
@@ -83,14 +92,17 @@ export class DiagramHintService {
 
         const previous = this.hints.get(layer);
         if (previous === next) {
+            this.scheduleLayerExpiry(layer);
             return;
         }
 
         this.hints.set(layer, next);
+        this.scheduleLayerExpiry(layer);
         this.updateHint();
     }
 
     private clearHintLayer(layer: HintLayer): void {
+        this.clearLayerExpiryTimer(layer);
         if (this.hints.delete(layer)) {
             this.updateHint();
         }
@@ -164,6 +176,50 @@ export class DiagramHintService {
             default:
                 return undefined;
         }
+    }
+
+    private scheduleLayerExpiry(layer: HintLayer): void {
+        const ttlMs = this.layerTtlMs(layer);
+        if (!ttlMs) {
+            this.clearLayerExpiryTimer(layer);
+            return;
+        }
+
+        this.clearLayerExpiryTimer(layer);
+        const timer = setTimeout(() => {
+            this.layerExpiryTimers.delete(layer);
+            this.clearHintLayer(layer);
+            this.refreshIdleHint();
+        }, ttlMs);
+
+        this.layerExpiryTimers.set(layer, timer);
+    }
+
+    private layerTtlMs(layer: HintLayer): number | undefined {
+        switch (layer) {
+            case 'interaction':
+                return DiagramHintService.INTERACTION_TTL_MS;
+            case 'focus':
+                return DiagramHintService.FOCUS_TTL_MS;
+            case 'hover':
+                return DiagramHintService.HOVER_TTL_MS;
+            default:
+                return undefined;
+        }
+    }
+
+    private clearLayerExpiryTimer(layer: HintLayer): void {
+        const timer = this.layerExpiryTimers.get(layer);
+        if (!timer) return;
+        clearTimeout(timer);
+        this.layerExpiryTimers.delete(layer);
+    }
+
+    private clearAllLayerExpiryTimers(): void {
+        for (const timer of this.layerExpiryTimers.values()) {
+            clearTimeout(timer);
+        }
+        this.layerExpiryTimers.clear();
     }
 
     private updateHint(): void {

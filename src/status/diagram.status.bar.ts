@@ -1,6 +1,7 @@
 import type { DiagramEditView } from "../editview";
 import { DIAGRAM_CHANGED_EVENT, DIAGRAM_TOOL_CHANGED_EVENT, type DiagramChanged } from "../events/diagram.events";
 import { injectStyles, setClasses, toggleClasses } from "../editor/editor.utils";
+import { IconRegistry } from "../factory/icon.registry";
 import { DiagramQualityService, type DiagramQualityMetrics } from "./diagram.quality.service";
 import { humanize } from "../value.utils";
 
@@ -8,7 +9,7 @@ const STATUS_BAR_STYLE_ID = 'diagram-status-bar-defaults';
 
 const STATUS_BAR_STYLES = `
 .diagram-status-bar {
-    --diagram-status-height: 24px;
+    --diagram-status-height: 28px;
     --diagram-status-gap: var(--diagram-ui-control-gap, 4px);
     --diagram-status-padding-x: var(--diagram-ui-control-padding-x, 8px);
     --diagram-status-radius: calc(var(--diagram-ui-control-radius, 10px) - 3px);
@@ -40,8 +41,28 @@ const STATUS_BAR_STYLES = `
 }
 
 .diagram-status-bar .diagram-status-section--middle {
+    display: inline-grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
     min-width: 0;
     overflow: hidden;
+}
+
+.diagram-status-bar .diagram-status-hint-lead {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(var(--diagram-status-height) - 10px);
+    margin-inline-end: 6px;
+    padding-inline-end: 6px;
+    border-inline-end: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    color: var(--diagram-ui-text-muted, #64748b);
+}
+
+.diagram-status-bar .diagram-status-hint-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
 }
 
 .diagram-status-bar .diagram-status-section--buttons {
@@ -304,7 +325,7 @@ export class DiagramStatusBar {
 
         this.hintValue = document.createElement('span');
         setClasses(this.hintValue, 'diagram-status-value', 'diagram-status-hint');
-        this.sectionMiddle.appendChild(this.hintValue);
+        this.sectionMiddle.append(this.buildHintLead(), this.hintValue);
 
         const buttonsWrap = document.createElement('div');
         buttonsWrap.className = 'diagram-status-buttons';
@@ -512,6 +533,19 @@ export class DiagramStatusBar {
         const source = (this.diagram as any).host as HTMLElement | undefined;
         source?.addEventListener(DIAGRAM_CHANGED_EVENT, this.onDiagramChanged);
         source?.addEventListener(DIAGRAM_TOOL_CHANGED_EVENT, this.onToolChanged);
+    }
+
+    private buildHintLead(): HTMLElement {
+        const lead = document.createElement('span');
+        lead.className = 'diagram-status-hint-lead';
+        lead.setAttribute('aria-hidden', 'true');
+
+        const icon = IconRegistry.createElement('info', 16);
+        if (icon) {
+            icon.classList.add('diagram-status-hint-icon');
+            lead.appendChild(icon as Node);
+        }
+        return lead;
     }
 
     private unbindDiagramEvents(): void {

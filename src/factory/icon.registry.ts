@@ -176,6 +176,14 @@ IconRegistry.registerSymbol('copy', 'copy',
 IconRegistry.registerSymbol('paste', 'paste',
     sym('paste', '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>'));
 
+// hint: lightbulb cue for discoverability tips and contextual guidance.
+IconRegistry.registerSymbol('hint', 'hint',
+    sym('hint', '<path d="M12 2a7 7 0 0 0-4.2 12.6c.6.45 1.2 1.3 1.2 2.08h6c0-.78.6-1.63 1.2-2.08A7 7 0 0 0 12 2Z"/><path d="M9 19h6v1.4A1.6 1.6 0 0 1 13.4 22h-2.8A1.6 1.6 0 0 1 9 20.4V19Z"/>'));
+
+// info: neutral informational indicator for status text.
+IconRegistry.registerSymbol('info', 'info',
+    sym('info', '<circle cx="12" cy="12" r="9" stroke-opacity="0.55"/><line x1="12" y1="10" x2="12" y2="17"/><circle cx="12" cy="7" r="1" fill="currentColor" stroke="none"/>'));
+
 // copy-styles: copy icon (two overlapping pages) — sun dot + mountain ridge drawn
 // directly inside the front page rect (no inner frame).
 IconRegistry.registerSymbol('copy-styles', 'copy-styles',

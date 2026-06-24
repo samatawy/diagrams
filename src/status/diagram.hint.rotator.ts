@@ -95,15 +95,15 @@ export class DiagramHintRotator {
         this.seen_hints.set(hint.id, Date.now());
     }
 
-    private clearOldHints(options: { seconds: number, keep: number } = { seconds: 2 * 60, keep: 5 }): void {
+    private clearOldHints(options: { seconds: number, keep: number } = { seconds: 2 * 60, keep: 10 }): void {
+        if (this.seen_hints.size <= options.keep) return;
 
-        const oldest = Array.from(this.seen_hints.entries())
-            .filter(([_, timestamp]) => Date.now() - timestamp > options.seconds * 1000)
-            .sort((a, b) => a[1] - b[1])
-            .slice(0, -options.keep);
-
-        for (const [id] of oldest) {
-            this.seen_hints.delete(id);
+        const sorted = Array.from(this.seen_hints.entries()).sort((a, b) => a[1] - b[1]);
+        for (const [id, timestamp] of sorted) {
+            if (this.seen_hints.size <= options.keep) break;
+            if (Date.now() - timestamp > options.seconds * 1000) {
+                this.seen_hints.delete(id);
+            }
         }
     }
 }
