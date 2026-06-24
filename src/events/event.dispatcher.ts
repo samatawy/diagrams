@@ -6,6 +6,7 @@ import {
     DIAGRAM_CONNECTION_DISCONNECTED_EVENT,
     DIAGRAM_DELETE_REQUEST_EVENT,
     DIAGRAM_EDIT_CONTEXT_MENU_EVENT,
+    DIAGRAM_HINT_EVENT,
     DIAGRAM_NODE_CLICK_EVENT,
     DIAGRAM_NODE_ADDED_EVENT,
     DIAGRAM_NODE_DELETED_EVENT,
@@ -23,6 +24,7 @@ import {
     type DiagramConnectionChange,
     type DiagramDeleteRequest,
     type DiagramEditContextMenu,
+    type DiagramHintChange,
     type DiagramNodeChange,
     type DiagramSelectionChange,
     type DiagramToolChange,
@@ -185,6 +187,14 @@ export class EventDispatcher {
         this.dispatchInternal(DIAGRAM_CLIPBOARD_EVENT, detail);
     }
 
+    /**
+     * Emits the diagram-hint event.
+     * @param detail Hint payload.
+     */
+    public hintChanged(detail: DiagramHintChange): void {
+        this.dispatchInternal(DIAGRAM_HINT_EVENT, detail);
+    }
+
     private dispatchInternal<T>(eventName: string, detail: T, cancelable: boolean = false): boolean {
         const dispatched = this.host.dispatchEvent(new CustomEvent<T>(eventName, {
             detail,
@@ -222,6 +232,7 @@ export class EventDispatcher {
                 return "view";
             case DIAGRAM_TOOL_CHANGED_EVENT:
                 return "style";
+            case DIAGRAM_HINT_EVENT:
             default:
                 return undefined;
         }

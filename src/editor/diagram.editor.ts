@@ -22,7 +22,8 @@ import { FontSelect, type FontSelectConfig } from "./inputs/font.select";
 import { PromptDialog } from "./prompt.dialog";
 import { SizeSelect, type SizeSelectConfig } from "./inputs/size.select";
 import { ToolPalette, type ToolPaletteConfig } from "./buttons/tool.palette";
-import { DIAGRAM_CHANGED_EVENT } from "../events/diagram.events";
+import { DIAGRAM_CHANGED_EVENT, type DiagramHintChange } from "../events/diagram.events";
+import { EventDispatcher } from "../events/event.dispatcher";
 import { WidthSelect, type WidthSelectConfig } from "./inputs/width.select";
 import { ArrowSelect, type ArrowSelectConfig } from "./inputs/arrow.select";
 import { ImageSelect, type ImageSelectConfig } from "./inputs/image.select";
@@ -34,6 +35,8 @@ import { DiagramInspector } from "./inspector/diagram.inspector";
 import type { InspectorConfig } from "./inspector/inspector";
 import { DiagramContextMenu } from "./menus/diagram.context.menu";
 import { DiagramConstants } from "../model/diagram.constants";
+import { DiagramStatusBar } from "../status/diagram.status.bar";
+import { DiagramHintService } from "../status/diagram.hint.service";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
@@ -113,6 +116,10 @@ const DIAGRAM_EDITOR_STYLES = `
 }
 .diagram-editor-stage.no-inspector {
     grid-template-columns: max-content minmax(0, 1fr);
+}
+.diagram-editor-status-host {
+    flex: 0 0 auto;
+    min-height: 0;
 }
 .diagram-editor-tool-palette {
     border-right: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
@@ -214,12 +221,15 @@ export class DiagramEditor {
 
     protected host: HTMLElement;
 
+    protected readonly eventDispatcher: EventDispatcher;
+
     protected config: DiagramEditorConfig;
 
     protected diagram: DiagramEditView;
 
     protected headerHost?: HTMLElement;
     protected stageHost?: HTMLElement;
+    protected statusBarHost?: HTMLElement;
 
     protected toolbarsHost?: HTMLElement;
     protected toolbars: DiagramToolBar[] = [];
@@ -229,6 +239,8 @@ export class DiagramEditor {
 
     protected inspectorHost?: HTMLElement;
     protected inspector?: DiagramInspector;
+    protected statusBar?: DiagramStatusBar;
+    protected hintService?: DiagramHintService;
 
     protected textToolbar?: HTMLElement;
     protected fontSelectHost?: HTMLElement;
@@ -277,6 +289,10 @@ export class DiagramEditor {
 
     protected syncingControls: boolean = false;
 
+    private hoverHint?: string;
+
+    private focusHint?: string;
+
     /**
      * Creates an instance of DiagramEditor.
      * @param host The container element that will receive the editor layout.
@@ -285,6 +301,7 @@ export class DiagramEditor {
      */
     constructor(host: HTMLElement, config?: DiagramEditorConfig, diagram?: Diagram) {
         this.host = host;
+        this.eventDispatcher = new EventDispatcher(host);
         this.config = config || {};
 
         this.initialize(this.host, this.config, diagram);
@@ -297,10 +314,12 @@ export class DiagramEditor {
      */
     public destroy(): void {
         this.detachListeners();
+        this.hintService?.destroy();
         this.diagram.destroy();
 
         this.toolbox?.destroy();
         this.inspector?.destroy();
+        this.statusBar?.destroy();
         for (const toolbar of this.toolbars) {
             toolbar.destroy();
         }
@@ -505,6 +524,10 @@ export class DiagramEditor {
         }
         host.appendChild(this.stageHost);
 
+        this.statusBarHost = document.createElement('div');
+        setClasses(this.statusBarHost, 'diagram-editor-status-host');
+        host.appendChild(this.statusBarHost);
+
         this.toolbarsHost = document.createElement('div');
         setClasses(this.toolbarsHost, 'diagram-editor-toolbars');
         this.headerHost.appendChild(this.toolbarsHost);
@@ -535,6 +558,18 @@ export class DiagramEditor {
 
         if (this.inspectorHost) {
             this.inspector = new DiagramInspector(this.inspectorHost, this.diagram, config.inspector || {});
+        }
+
+        if (this.statusBarHost) {
+            this.statusBar = new DiagramStatusBar(this.diagram, this.statusBarHost);
+        }
+
+        if (this.statusBar) {
+            this.hintService = new DiagramHintService(this.diagram, this.host, this);
+            this.statusBar.setHint(this.hintService.hint);
+            this.hintService.onHintChanged((hint) => {
+                this.statusBar?.setHint(hint);
+            });
         }
 
         if (diagram) this.diagram.read(diagram);
@@ -687,6 +722,47 @@ export class DiagramEditor {
      * Connects editor controls to the underlying diagram view and change events.
      */
     protected attachListeners(): void {
+        // Following were added to support hint changes
+
+        this.addManagedEventListener(this.host, 'pointerover', (event) => {
+            const pointer = event as PointerEvent;
+            if (pointer.pointerType === 'touch') {
+                return;
+            }
+            const hint = this.resolveTooltip(event.target);
+            this.hoverHint = hint || undefined;
+            this.emitEditorHint('editor-hover', hint, !!hint);
+        });
+
+        this.addManagedEventListener(this.host, 'pointerout', (event) => {
+            const pointer = event as PointerEvent;
+            if (pointer.pointerType === 'touch') {
+                return;
+            }
+
+            const next = pointer.relatedTarget as Node | null;
+            if (!next || !this.host.contains(next)) {
+                this.hoverHint = undefined;
+                this.emitEditorHint('editor-hover', undefined, false);
+            }
+        });
+
+        this.addManagedEventListener(this.host, 'focusin', (event) => {
+            const hint = this.resolveTooltip(event.target);
+            this.focusHint = hint || undefined;
+            this.emitEditorHint('editor-focus', hint, !!hint);
+        });
+
+        this.addManagedEventListener(this.host, 'focusout', () => {
+            const active = document.activeElement;
+            if (!active || !this.host.contains(active)) {
+                this.focusHint = undefined;
+                this.emitEditorHint('editor-focus', undefined, false);
+            }
+        });
+
+        // End of hint change support
+
         if (this.fontSelectHost) {
             this.addManagedListener<string>(this.fontSelectHost, 'fontchange', (font) => {
                 if (this.syncingControls) return;
@@ -1043,15 +1119,38 @@ export class DiagramEditor {
      * @param eventName The event name to listen for.
      * @param handler Callback invoked on each event.
      */
-    private addManagedEventListener(element: HTMLElement, eventName: string, handler: () => void): void {
-        const wrapped = () => {
-            handler();
+    private addManagedEventListener(element: HTMLElement, eventName: string, handler: (event: Event) => void): void {
+        const wrapped = (event: Event) => {
+            handler(event);
         };
 
         element.addEventListener(eventName, wrapped as EventListener);
         this.listenerDisposers.push(() => {
             element.removeEventListener(eventName, wrapped as EventListener);
         });
+    }
+
+    private resolveTooltip(target: EventTarget | null): string {
+        if (!(target instanceof Element)) {
+            return '';
+        }
+
+        const el = target.closest<HTMLElement>('[title], [aria-label], [data-tooltip], [data-title], [placeholder]');
+        if (!el) {
+            return '';
+        }
+
+        return (el.getAttribute('title')
+            || el.getAttribute('aria-label')
+            || el.getAttribute('data-tooltip')
+            || el.getAttribute('data-title')
+            || el.getAttribute('placeholder')
+            || '').trim();
+    }
+
+    private emitEditorHint(source: DiagramHintChange['source'], hint?: string, active: boolean = true): void {
+        const detail: DiagramHintChange = { source, hint, active };
+        this.eventDispatcher.hintChanged(detail);
     }
 
     /**

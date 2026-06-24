@@ -156,6 +156,8 @@ export class DiagramEditView extends DiagramView {
 
     private pendingGuideSnap?: SnapGuideResult;
 
+    private interactionHint?: string;
+
     private connectionBeforeEdit?: { node: INode & IConnection; from?: string; to?: string };
 
     protected activeTextEditor?: {
@@ -210,6 +212,7 @@ export class DiagramEditView extends DiagramView {
     }
 
     public override clear(): void {
+        this.setInteractionHint(undefined);
         this.closeTextEditor(true);
         this.clearDragCreateDraft();
         this.guides = [];
@@ -2356,6 +2359,7 @@ export class DiagramEditView extends DiagramView {
             // begin selection rect..
             let canvasPos = this.getCoordinates().getPoint(this.downPos.x, this.downPos.y, 'ignore_grid');
             this.downRect = { left: canvasPos.x, top: canvasPos.y, width: 1, height: 1 }
+            this.setInteractionHint('Dragging selection rectangle');
         } else {
             // don't use selection rect..
             this.downRect = undefined;
@@ -2477,6 +2481,11 @@ export class DiagramEditView extends DiagramView {
         }
 
         this.render('all');
+
+        // Don't overwrite the rect-gesture hint that was already set above.
+        if (!this.downRect) {
+            this.updateInteractionHintForHandle(this.downHandle);
+        }
     }
 
     private selectMove(event: PointerEvent): void {
@@ -2496,6 +2505,7 @@ export class DiagramEditView extends DiagramView {
                     this.downPos = movePos;
 
                     // this.render('all');
+                    this.setInteractionHint('Dragging selection');
                     break;
                 }
                 case NodeHandle.N:
@@ -2523,6 +2533,7 @@ export class DiagramEditView extends DiagramView {
                     this.downPos = movePos;
 
                     this.render('all');
+                    this.setInteractionHint('Resizing selection');
                     break;
                 }
                 case NodeHandle.POINT: {
@@ -2545,6 +2556,8 @@ export class DiagramEditView extends DiagramView {
                     if (this.downShape && isConnection(this.downShape)) {
                         this.renderConnectorTargets(this.downShape, event.offsetX, event.offsetY);
                     }
+
+                    this.setInteractionHint('Dragging point');
 
                     break;
                 }
@@ -2571,6 +2584,7 @@ export class DiagramEditView extends DiagramView {
                         this.downPos = movePos;
 
                         this.render('all');
+                        this.setInteractionHint('Rotating selection');
                     }
                     break;
 
@@ -2582,6 +2596,7 @@ export class DiagramEditView extends DiagramView {
                         NodeRegistry.adapter(this.downShape.type)?.onAlterMove?.(this.downShape, movePos);
                         this.alteredNodes.add(this.downShape);
                         this.render('all');
+                        this.setInteractionHint('Altering shape geometry');
                     }
                     break;
 
@@ -2606,6 +2621,7 @@ export class DiagramEditView extends DiagramView {
                         this.downPos = movePos;
 
                         this.render('all');
+                        this.setInteractionHint('Panning canvas');
                     }
             }
         } else {
@@ -2692,6 +2708,7 @@ export class DiagramEditView extends DiagramView {
         this.canvas.style.cursor = this.getCursor(handle) || 'default';
 
         this.renderPreview();
+        this.setInteractionHint(undefined);
 
         // Double-click is handled in dblClick() override.
     }
@@ -2730,6 +2747,7 @@ export class DiagramEditView extends DiagramView {
 
             this.canvas.style.cursor = 'crosshair';
             this.render('all');
+            this.setInteractionHint(`Drawing ${draft.type}`);
             if (this.isConnectorType(draft.type)) {
                 this.renderConnectorTargets(draft as INode & IConnection, event.offsetX, event.offsetY);
             }
@@ -2752,6 +2770,7 @@ export class DiagramEditView extends DiagramView {
 
             this.render('all');
             this.renderConnectorTargets(draft, event.offsetX, event.offsetY);
+            this.setInteractionHint(`Drawing ${draft.type}`);
             this.finishDraftIfReady();
             return;
         }
@@ -2761,6 +2780,7 @@ export class DiagramEditView extends DiagramView {
             this.current.draft.points[movingIndex] = { ...point };
             this.current.draft.points.push({ ...point });
             this.render('all');
+            this.setInteractionHint(`Drawing ${this.current.draft.type}`);
         }
     }
 
@@ -2773,6 +2793,7 @@ export class DiagramEditView extends DiagramView {
         NodeRegistry.adapter(draft.type)?.onCreateMove(draft, point);
 
         this.render('all');
+        this.setInteractionHint(`Drawing ${draft.type}`);
 
         if (this.isConnectorType(draft.type)) {
             this.renderConnectorTargets(draft as INode & IConnection, event.offsetX, event.offsetY);
@@ -2856,6 +2877,7 @@ export class DiagramEditView extends DiagramView {
     private cancelDragCreateDraft(): void {
         if (!this.dragCreateDraft) return;
         this.clearDragCreateDraft();
+        this.setInteractionHint(undefined);
         this.render('all');
         void this.setTool('select');
     }
@@ -3043,6 +3065,7 @@ export class DiagramEditView extends DiagramView {
 
         this.setTool('select');
         this.canvas.style.cursor = 'default';
+        this.setInteractionHint(undefined);
     }
 
     async init() {
@@ -3172,6 +3195,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         this.closeTextEditor(true);
+        this.setInteractionHint('Editing text');
 
         // Prepare shortcuts and rrequired data for all cases:
 
@@ -3567,8 +3591,52 @@ export class DiagramEditView extends DiagramView {
         editor.element.remove();
         this.canvas.focus?.();
         this.canvas.style.cursor = 'default';
+        this.setInteractionHint(undefined);
 
         return true;
+    }
+
+    private updateInteractionHintForHandle(handle: NodeHandle): void {
+        switch (handle) {
+            case NodeHandle.MOVE:
+                this.setInteractionHint('Dragging selection');
+                break;
+            case NodeHandle.POINT:
+                this.setInteractionHint('Dragging point');
+                break;
+            case NodeHandle.ALTER:
+                this.setInteractionHint('Altering shape geometry');
+                break;
+            case NodeHandle.ROTATE:
+                this.setInteractionHint('Rotating selection');
+                break;
+            case NodeHandle.N:
+            case NodeHandle.S:
+            case NodeHandle.E:
+            case NodeHandle.W:
+            case NodeHandle.NE:
+            case NodeHandle.NW:
+            case NodeHandle.SE:
+            case NodeHandle.SW:
+                this.setInteractionHint('Resizing selection');
+                break;
+            default:
+                this.setInteractionHint(undefined);
+                break;
+        }
+    }
+
+    private setInteractionHint(hint: string | undefined): void {
+        if (this.interactionHint === hint) {
+            return;
+        }
+
+        this.interactionHint = hint;
+        this.eventDispatcher.hintChanged({
+            source: 'diagram-interaction',
+            hint,
+            active: !!hint,
+        });
     }
 
     private wrapEditorTextLines(text: string, maxWidth: number, context: CanvasRenderingContext2D): string[] {
@@ -3663,8 +3731,6 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
-        this.addUndo();
-
         for (const node of nodes) {
             NodeBasics.moveBy(node, byX, byY);
         }
@@ -3688,6 +3754,7 @@ export class DiagramEditView extends DiagramView {
             }
         }
 
+        // Store the moved nodes so we can emit events later. We only want to emit events for nodes that are not locked.
         for (const node of this.selection()) {
             if (!isLocked(node)) {
                 this.movedNodes.add(node);
@@ -3695,6 +3762,16 @@ export class DiagramEditView extends DiagramView {
         }
         this.render('all');
         this.renderPreview();
+    }
+
+    public moveSelectedWithUndo(byX: number, byY: number): void {
+        if (!this.selection().length) {
+            return;
+        }
+
+        this.addUndo();
+        this.moveSelected(byX, byY);
+
         this.emitPendingMutationEvents();
     }
 

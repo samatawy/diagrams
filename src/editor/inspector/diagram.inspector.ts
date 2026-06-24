@@ -647,7 +647,6 @@ export class DiagramInspector extends Inspector {
         // For DiagramEditView supporting patches
         if (typeof edit.applyNodePatch === 'function') {
             edit.applyNodePatch(patch ?? {}, sourceKey);
-            this.emitInspectorChanged(sourceKey);
             this.syncDynamicRows(this.diagram.selection());
             this.refresh();
             return;
@@ -678,7 +677,6 @@ export class DiagramInspector extends Inspector {
         // For DiagramEditView supporting patches
         if (typeof edit.applyDiagramPatch === 'function') {
             edit.applyDiagramPatch(patch ?? {}, sourceKey);
-            this.emitInspectorChanged(sourceKey);
             this.syncDynamicRows(this.diagram.selection());
             this.refresh();
             return;

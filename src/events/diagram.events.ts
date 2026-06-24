@@ -24,6 +24,7 @@ export const DIAGRAM_CONNECTION_DISCONNECTED_EVENT = "connection-disconnected";
 export const DIAGRAM_EDIT_CONTEXT_MENU_EVENT = "diagram-edit-contextmenu";
 export const DIAGRAM_TOOL_CHANGED_EVENT = "tool-changed";
 export const DIAGRAM_CLIPBOARD_EVENT = "clipboard-change";
+export const DIAGRAM_HINT_EVENT = "diagram-hint";
 
 /**
  * Broad compatibility event.
@@ -245,4 +246,12 @@ export interface DiagramClipboardEventDetail {
      * IDs of nodes involved in the operation.
      */
     nodeIds: string[];
+}
+
+export type DiagramHintSource = 'diagram-interaction' | 'editor-hover' | 'editor-focus' | 'editor-context';
+
+export interface DiagramHintChange {
+    source: DiagramHintSource;
+    hint?: string;
+    active?: boolean;
 }

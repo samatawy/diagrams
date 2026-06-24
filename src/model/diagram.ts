@@ -362,7 +362,11 @@ export class Diagram implements IDiagram {
         this.background = json.background;
         this.meta = json.meta ? { ...json.meta } : undefined;
         // this.grid = json.grid ? { ...defaultGrid, ...json.grid } : { ...defaultGrid };
-        this.pruneMissingLayerNodes();
+        if (this.layers.length === 0) {
+            this.buildMissingLayer();
+        } else {
+            this.pruneMissingLayerNodes();
+        }
         return this;
     }
 
@@ -373,6 +377,16 @@ export class Diagram implements IDiagram {
      */
     public write(serializer: ISerializer): any {
         const serializedNodes = this.nodes.map(node => this.serializeNode(node));
+
+        const serializedLayers = this.isImplicitSingleLayer()
+            ? []
+            : this.layers.map(layer => ({
+                id: layer.id,
+                name: layer.name,
+                visible: layer.visible,
+                nodes: [...layer.nodes],
+            }));
+
         const allAssets = this.asset_store.snapshot();
         let imageAssets: Record<string, string> | undefined;
         if (allAssets) {
@@ -387,16 +401,10 @@ export class Diagram implements IDiagram {
         return serializer.write({
             id: this.id,
             nodes: serializedNodes,
-            layers: this.layers.map(layer => ({
-                id: layer.id,
-                name: layer.name,
-                visible: layer.visible,
-                nodes: [...layer.nodes],
-            })),
+            layers: serializedLayers,
             image_assets: imageAssets,
             background: this.background,
             meta: this.meta ? { ...this.meta } : undefined,
-            // grid: { ...this.grid },
         } satisfies ISerializedDiagram);
     }
 
@@ -594,6 +602,40 @@ export class Diagram implements IDiagram {
             layer.visible,
             layer.nodes.filter(nodeId => validIds.has(nodeId)),
         ));
+    }
+
+    private buildMissingLayer(): void {
+        const layer = this.createLayer('layer-1', 'layer-1', true,
+            this.nodes.map(node => node.id)
+        );
+        this.layers = [layer];
+    }
+
+    private isImplicitSingleLayer(): boolean {
+        // Multiple layers must all be serialized.
+        if (this.layers.length !== 1) {
+            return false;
+        }
+
+        const layer = this.layers[0]!;
+        // Check layer metadata.
+        if (layer.id !== 'layer-1' || layer.name !== 'layer-1' || layer.visible !== true) {
+            return false;
+        }
+
+        // Check nodes count.
+        if (layer.nodes.length !== this.nodes.length) {
+            return false;
+        }
+
+        // Check nodes order.
+        for (let i = 0; i < this.nodes.length; i++) {
+            if (layer.nodes[i] !== this.nodes[i]!.id) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 }

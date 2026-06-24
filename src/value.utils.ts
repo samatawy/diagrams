@@ -4,6 +4,15 @@ import type { ImageMode, ITextAlign, ITextBaseline, ITextOrientation } from "./t
 import { DiagramConstants } from "./model/diagram.constants";
 import { NodeRegistry } from "./factory/node.registry";
 
+export function humanize(key: string): string {
+    const parts = key.split(/[-_]/).filter(Boolean);
+    return parts.map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+}
+
+export function nodeId(node: INode | string): string {
+    return typeof node === 'string' ? node : node.id;
+}
+
 export function isLocked(node: INode): boolean {
     return !!node.locked;
 }

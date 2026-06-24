@@ -1,5 +1,5 @@
 import type { IGrid, ILayer, INode } from "../interfaces";
-import type { IPoint, IRect } from "../types";
+import type { IRect } from "../types";
 import { NodeBasics } from "./node.basics";
 import type { CoordinateSystem } from "../view/coordinate.system";
 
@@ -58,20 +58,15 @@ export class SelectionBasics {
      * @returns An array of nodes that are inside or touching the rectangle.
      */
     public static nodesTouchingRect(diagram: SelectionDiagram, rect: IRect): INode[] {
-        const selected = new Map<string, INode>();
+        const selected: INode[] = [];
 
-        for (const node of this.nodesInsideRect(diagram, rect)) {
-            selected.set(node.id, node);
-        }
-
-        for (const point of this.samplePoints(rect, diagram.grid)) {
-            const canvasPoint = this.toCanvasPoint(diagram.getCoordinates(), point);
-            for (const node of diagram.hitNodes(canvasPoint.x, canvasPoint.y)) {
-                selected.set(node.id, node);
+        for (const node of this.visibleNodes(diagram)) {
+            if (NodeBasics.overlaps(node, rect)) {
+                selected.push(node);
             }
         }
 
-        return [...selected.values()];
+        return selected;
     }
 
     private static visibleNodes(diagram: SelectionDiagram): INode[] {
@@ -91,37 +86,4 @@ export class SelectionBasics {
         return nodes;
     }
 
-    private static samplePoints(rect: IRect, grid: IGrid): IPoint[] {
-        const xs = this.axisSamples(rect.left, rect.width, grid.width || 16);
-        const ys = this.axisSamples(rect.top, rect.height, grid.height || 16);
-        const points: IPoint[] = [];
-
-        for (const x of xs) {
-            for (const y of ys) {
-                points.push({ x, y });
-            }
-        }
-
-        return points;
-    }
-
-    private static axisSamples(start: number, length: number, step: number): number[] {
-        if (length <= 0) {
-            return [start];
-        }
-
-        const values = [start, start + length / 2, start + length];
-        for (let offset = step; offset < length; offset += step) {
-            values.push(start + offset);
-        }
-
-        return values.filter((value, index, all) => all.findIndex(other => Math.abs(other - value) < 0.001) === index);
-    }
-
-    private static toCanvasPoint(coordinates: CoordinateSystem, point: IPoint): IPoint {
-        return {
-            x: point.x * coordinates.zoom - coordinates.pan.x,
-            y: point.y * coordinates.zoom - coordinates.pan.y,
-        };
-    }
 }

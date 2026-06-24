@@ -100,7 +100,7 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
         kb.setShortcut(['Shift+ArrowUp'], (d: DiagramEditView) => {
             const dy = (d.grid.forced) ? d.grid.width : 4;
             if (d.selection().length > 0) {
-                d.moveSelected(0, -dy);
+                d.moveSelectedWithUndo(0, -dy);
             } else {
                 d.panBy(0, -dy);
                 d.render();
@@ -110,7 +110,7 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
         kb.setShortcut(['Shift+ArrowDown'], (d: DiagramEditView) => {
             const dy = (d.grid.forced) ? d.grid.width : 4;
             if (d.selection().length > 0) {
-                d.moveSelected(0, dy);
+                d.moveSelectedWithUndo(0, dy);
             } else {
                 d.panBy(0, dy);
                 d.render();
@@ -120,7 +120,7 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
         kb.setShortcut(['Shift+ArrowLeft'], (d: DiagramEditView) => {
             const dx = (d.grid.forced) ? d.grid.width : 4;
             if (d.selection().length > 0) {
-                d.moveSelected(-dx, 0);
+                d.moveSelectedWithUndo(-dx, 0);
             } else {
                 d.panBy(-dx, 0);
                 d.render();
@@ -130,7 +130,7 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
         kb.setShortcut(['Shift+ArrowRight'], (d: DiagramEditView) => {
             const dx = (d.grid.forced) ? d.grid.width : 4;
             if (d.selection().length > 0) {
-                d.moveSelected(dx, 0);
+                d.moveSelectedWithUndo(dx, 0);
             } else {
                 d.panBy(dx, 0);
                 d.render();
@@ -141,25 +141,25 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
 
         kb.setShortcut(['Ctrl+Alt+ArrowUp', 'Cmd+Alt+ArrowUp'], (d: DiagramEditView) => {
             if (d.selection().length > 0) {
-                d.moveSelected(0, -0.5);
+                d.moveSelectedWithUndo(0, -0.5);
             }
         }, 'Nudge up');
 
         kb.setShortcut(['Ctrl+Alt+ArrowDown', 'Cmd+Alt+ArrowDown'], (d: DiagramEditView) => {
             if (d.selection().length > 0) {
-                d.moveSelected(0, 0.5);
+                d.moveSelectedWithUndo(0, 0.5);
             }
         }, 'Nudge down');
 
         kb.setShortcut(['Ctrl+Alt+ArrowLeft', 'Cmd+Alt+ArrowLeft'], (d: DiagramEditView) => {
             if (d.selection().length > 0) {
-                d.moveSelected(-0.5, 0);
+                d.moveSelectedWithUndo(-0.5, 0);
             }
         }, 'Nudge left');
 
         kb.setShortcut(['Ctrl+Alt+ArrowRight', 'Cmd+Alt+ArrowRight'], (d: DiagramEditView) => {
             if (d.selection().length > 0) {
-                d.moveSelected(0.5, 0);
+                d.moveSelectedWithUndo(0.5, 0);
             }
         }, 'Nudge right');
 

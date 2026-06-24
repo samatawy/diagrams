@@ -21,10 +21,14 @@ export * from './factory/index';
 
 // control
 export * from './editview/index';
+export * from './keyboard/index';
 
 // view
 export * from './layout/index';
 export * from './view/index';
+
+// status
+export * from './status/index';
 
 // elements
 export * from './elements/diagram.view.element';
