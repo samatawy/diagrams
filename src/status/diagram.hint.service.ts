@@ -1,26 +1,35 @@
 import type { DiagramEditView } from "../editview";
 import type { DiagramEditor } from "../editor";
 import { DIAGRAM_HINT_EVENT, DIAGRAM_TOOL_CHANGED_EVENT, type DiagramHintChange } from "../events";
+import { DiagramHintRotator } from "./diagram.hint.rotator";
 
-type HintLayer = 'interaction' | 'focus' | 'hover' | 'base';
+type HintLayer = 'interaction' | 'focus' | 'hover' | 'idle' | 'base';
 
 export class DiagramHintService {
+
+    private static readonly IDLE_REFRESH_MS = 5000;
 
     private readonly diagram: DiagramEditView;
 
     private readonly host: HTMLElement;
 
+    private readonly rotator = new DiagramHintRotator();
+
     private readonly hints = new Map<HintLayer, string>();
 
     private readonly hintListeners: Array<(hint: string) => void> = [];
 
+    private idleRefreshTimer?: ReturnType<typeof setInterval>;
+
     private readonly onDiagramToolChanged = (): void => {
         this.setHintLayer('base', `Tool: ${this.diagram.currentTool || 'select'}`);
+        this.refreshIdleHint();
     };
 
     private readonly onHintEvent = (event: Event): void => {
         const detail = (event as CustomEvent<DiagramHintChange>).detail;
         this.applyHintEvent(detail);
+        this.refreshIdleHint();
     };
 
     constructor(diagram: DiagramEditView, host: HTMLElement, editor?: DiagramEditor) {
@@ -33,9 +42,11 @@ export class DiagramHintService {
         this.setHintLayer('base', `Tool: ${this.diagram.currentTool || 'select'}`);
 
         this.bind();
+        this.startIdleHintRefresh();
     }
 
     public destroy(): void {
+        this.stopIdleHintRefresh();
         this.unbind();
         this.hintListeners.length = 0;
     }
@@ -44,6 +55,7 @@ export class DiagramHintService {
         return this.hints.get('interaction')
             || this.hints.get('focus')
             || this.hints.get('hover')
+            || this.hints.get('idle')
             || this.hints.get('base')
             || '';
     }
@@ -103,6 +115,40 @@ export class DiagramHintService {
         }
 
         this.setHintLayer(layer, next);
+    }
+
+    private startIdleHintRefresh(): void {
+        this.refreshIdleHint();
+
+        this.idleRefreshTimer = setInterval(() => {
+            this.refreshIdleHint();
+        }, DiagramHintService.IDLE_REFRESH_MS);
+    }
+
+    private stopIdleHintRefresh(): void {
+        if (this.idleRefreshTimer) {
+            clearInterval(this.idleRefreshTimer);
+            this.idleRefreshTimer = undefined;
+        }
+    }
+
+    private refreshIdleHint(): void {
+        if (this.hints.get('interaction') || this.hints.get('focus') || this.hints.get('hover')) {
+            this.clearHintLayer('idle');
+            return;
+        }
+
+        const hint = this.rotator.getNextHint({
+            tool: this.diagram.currentTool,
+            selection: this.diagram.selection(),
+        });
+
+        if (hint) {
+            this.setHintLayer('idle', hint);
+            return;
+        }
+
+        this.clearHintLayer('idle');
     }
 
     private resolveLayer(source: DiagramHintChange['source']): HintLayer | undefined {
