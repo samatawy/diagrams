@@ -238,7 +238,7 @@ describe('DiagramEditable', () => {
 
         editable.upsertNode(node);
         layer.nodes.push(node.id);
-        editable.select(node);
+        editable.select(node, 'isolated');
         host.addEventListener(DIAGRAM_DELETE_REQUEST_EVENT, event => {
             event.preventDefault();
         });
@@ -279,7 +279,7 @@ describe('DiagramEditable', () => {
 
         editable.upsertNode(node);
         layer.nodes.push(node.id);
-        editable.select(node);
+        editable.select(node, 'isolated');
 
         editable.triggerKeydown({
             key: 'Delete',
@@ -331,7 +331,7 @@ describe('DiagramEditable', () => {
         editview.upsertNode(first);
         editview.upsertNode(second);
         layer.nodes.push(first.id, second.id);
-        editview.select(first);
+        editview.select(first, 'isolated');
         editview.setHitNodesMock((x: number, y: number) => {
             const found: INode[] = [];
             if (nodeAt(first, x, y)) found.push(first);
@@ -410,7 +410,7 @@ describe('DiagramEditable', () => {
         editview.upsertNode(first);
         editview.upsertNode(second);
         layer.nodes.push(first.id, second.id);
-        editview.select(first);
+        editview.select(first, 'isolated');
         editview.setHitNodesMock((x: number, y: number) => {
             const found: INode[] = [];
             if (nodeAt(first, x, y)) found.push(first);
@@ -499,7 +499,7 @@ describe('DiagramEditable', () => {
 
         editview.upsertNode(node);
         layer.nodes.push(node.id);
-        editview.select(node);
+        editview.select(node, 'isolated');
         editview.setHitNodesMock((x: number, y: number) => nodeAt(node, x, y) ? [node] : []);
         editview.setHitHandleMock((x: number, y: number) => nodeAt(node, x, y) ? NodeHandle.MOVE : NodeHandle.NONE);
 
@@ -640,7 +640,7 @@ describe('DiagramEditable', () => {
         editview.upsertNode(polyline);
         layer.nodes.push(polyline.id);
         editview.render();
-        editview.select(polyline);
+        editview.select(polyline, 'isolated');
 
         editview.triggerPointerDown({
             button: 0,

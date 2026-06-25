@@ -1,5 +1,5 @@
-import type { IConnection, IConnectionAnchor, IDiagram, ILayer, INode } from "../interfaces";
-import type { ISerializer, ISerializedConnectionAnchor, ISerializedDiagram, ISerializedLayer, ISerializedNode } from '../io/serialized.types';
+import type { IConnection, IConnectionAnchor, IDiagram, IGroup, ILayer, INode } from "../interfaces";
+import type { ISerializer, ISerializedConnectionAnchor, ISerializedDiagram, ISerializedLayer, ISerializedNode, ISerializedGroup } from '../io/serialized.types';
 import { jsonSerializer } from '../io/json.serializer';
 import { downloadTextFile, exportTextBlob, isBrowserRuntime } from '../io/browser.support';
 import { isNodeRuntime, writeTextFile } from '../io/node.support';
@@ -21,6 +21,8 @@ export class Diagram implements IDiagram {
 
     public nodes: INode[];
 
+    public groups: IGroup[];
+
     public layers: ILayer[] = [];
 
     public background?: string;
@@ -36,6 +38,7 @@ export class Diagram implements IDiagram {
     constructor(id: string, initial?: Partial<Omit<IDiagram, 'id'>>) {
         this.id = id;
         this.nodes = [];
+        this.groups = initial?.groups ? initial.groups.map(group => this.createGroup(group.id, group.nodes)) : [];
         this.layers = initial?.layers ? initial.layers.map(layer => this.createLayer(layer.id, layer.name, layer.visible, layer.nodes)) : [];
         this.background = initial?.background;
         this.meta = initial?.meta ? { ...initial.meta } : undefined;
@@ -68,6 +71,15 @@ export class Diagram implements IDiagram {
     }
 
     /**
+     * Returns a group by its ID.
+     * @param id The ID of the group to return.
+     * @returns The group with the specified ID, or undefined if not found.
+     */
+    public group(id: string): IGroup | undefined {
+        return this.groups.find(group => group.id === id);
+    }
+
+    /**
      * Retrieves a layer by its ID.
      * @param id The ID of the layer to retrieve.
      * @returns The layer with the specified ID, or undefined if not found.
@@ -94,6 +106,26 @@ export class Diagram implements IDiagram {
     }
 
     /**
+     * Inserts a new group or updates an existing group in the diagram.
+     * @param group The group to upsert, or the ID of the group to create.
+     * @returns The upserted group.
+     */
+    public upsertGroup(group: string | IGroup): IGroup {
+        const _group = (typeof group === 'string')
+            ? this.createGroup(group)
+            : group;
+
+        const existingIndex = this.groups.findIndex(existing => existing.id === _group.id);
+
+        if (existingIndex >= 0) {
+            this.groups[existingIndex] = _group;
+        } else {
+            this.groups.push(_group);
+        }
+        return _group;
+    }
+
+    /**
      * Inserts a new layer or updates an existing layer in the diagram.
      * @param layer The layer to upsert, or the ID of the layer to create.
      * @returns The upserted layer.
@@ -111,6 +143,58 @@ export class Diagram implements IDiagram {
             this.layers.push(_layer);
         }
         return _layer;
+    }
+
+    /**
+     * Add or remove a node from a group. If the groupId is undefined, the node is removed from any group it belongs to.
+     * A node can only belong to one group at a time. If the node is already in a different group, it will be removed 
+     * from that group before being added to the new group.
+     * @param node The node or node ID to add to the group.
+     * @param groupId The ID of the group to add the node to, or undefined to remove the node from any group.
+     */
+    public setNodeGroup(node: string | INode, groupId: string | undefined): void {
+        const targetNode = this.resolveNode(node);
+        if (!targetNode) return;
+
+        let targetGroup = groupId ? this.group(groupId) : undefined;
+        if (groupId && !targetGroup) {
+            targetGroup = this.upsertGroup(groupId);
+        }
+
+        // Remove the node from any existing group
+        for (const group of this.groups) {
+            group.nodes = group.nodes.filter(id => id !== targetNode.id);
+        }
+        // Add the node to the target group
+        if (targetGroup) {
+            targetGroup.nodes.push(targetNode.id);
+        }
+    }
+
+    /**
+     * Add or remove a node from a layer. If the layerId is undefined, the node is removed from any layer it belongs to.
+     * A node can only belong to one layer at a time. If the node is already in a different layer, it will be removed
+     * from that layer before being added to the new layer.
+     * @param node The node or node ID to add to the layer.
+     * @param layerId The ID of the layer to add the node to, or undefined to remove the node from any layer.
+     */
+    public setNodeLayer(node: string | INode, layerId: string | undefined): void {
+        const targetNode = this.resolveNode(node);
+        if (!targetNode) return;
+
+        let targetLayer = layerId ? this.layer(layerId) : undefined;
+        if (layerId && !targetLayer) {
+            targetLayer = this.upsertLayer(layerId);
+        }
+
+        // Remove the node from any existing layer
+        for (const layer of this.layers) {
+            layer.nodes = layer.nodes.filter(id => id !== targetNode.id);
+        }
+        // Add the node to the target layer
+        if (targetLayer) {
+            targetLayer.nodes.push(targetNode.id);
+        }
     }
 
     /**
@@ -136,6 +220,14 @@ export class Diagram implements IDiagram {
             layer.visible,
             layer.nodes.filter(id => id !== nodeId),
         ));
+    }
+
+    /**
+     * Deletes a group from the diagram. Effectively ungrouping nodes.
+     * @param groupId The ID of the group to delete.
+     */
+    public deleteGroup(groupId: string): void {
+        this.groups = this.groups.filter(group => group.id !== groupId);
     }
 
     /**
@@ -358,6 +450,7 @@ export class Diagram implements IDiagram {
         this.id = json.id;
         this.asset_store.merge(json.image_assets);
         this.nodes = (json.nodes ?? []).map(node => this.hydrateNode(node));
+        this.groups = (json.groups ?? []).map(group => this.hydrateGroup(group));
         this.layers = (json.layers ?? []).map(layer => this.hydrateLayer(layer));
         this.background = json.background;
         this.meta = json.meta ? { ...json.meta } : undefined;
@@ -377,6 +470,8 @@ export class Diagram implements IDiagram {
      */
     public write(serializer: ISerializer): any {
         const serializedNodes = this.nodes.map(node => this.serializeNode(node));
+
+        const serializedGroups = this.groups?.length ? this.groups.map(group => this.serializeGroup(group)) : undefined;
 
         const serializedLayers = this.isImplicitSingleLayer()
             ? []
@@ -401,6 +496,7 @@ export class Diagram implements IDiagram {
         return serializer.write({
             id: this.id,
             nodes: serializedNodes,
+            groups: serializedGroups,
             layers: serializedLayers,
             image_assets: imageAssets,
             background: this.background,
@@ -535,6 +631,13 @@ export class Diagram implements IDiagram {
         return serialized;
     }
 
+    protected serializeGroup(group: IGroup): ISerializedGroup {
+        return {
+            id: group.id,
+            nodes: [...group.nodes],
+        };
+    }
+
     private hydrateNode(node: ISerializedNode): INode {
         return {
             ...node,
@@ -545,6 +648,13 @@ export class Diagram implements IDiagram {
         } as INode;
     }
 
+    private hydrateGroup(group: ISerializedGroup): IGroup {
+        return this.createGroup(
+            group.id,
+            [...new Set(group.nodes ?? [])],
+        );
+    }
+
     private hydrateLayer(layer: ISerializedLayer): ILayer {
         return this.createLayer(
             layer.id,
@@ -552,6 +662,13 @@ export class Diagram implements IDiagram {
             layer.visible,
             [...new Set(layer.nodes ?? [])],
         );
+    }
+
+    private createGroup(id: string, nodes: string[] = []): IGroup {
+        return {
+            id,
+            nodes: [...nodes],
+        };
     }
 
     /**
@@ -592,6 +709,14 @@ export class Diagram implements IDiagram {
         }
 
         return (typeof anchor.node === 'string' ? anchor.node : anchor.node.id) === nodeId;
+    }
+
+    private pruneMissingGroupNodes(): void {
+        const validIds = new Set(this.nodes.map(node => node.id));
+        this.groups = this.groups.map(group => this.createGroup(
+            group.id,
+            group.nodes.filter(nodeId => validIds.has(nodeId)),
+        ));
     }
 
     private pruneMissingLayerNodes(): void {

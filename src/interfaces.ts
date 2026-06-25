@@ -182,6 +182,31 @@ export interface IConnection {
 }
 
 /**
+ * The IContainer interface defines the properties of a container node in the diagram, which can own a group of nodes.
+ * It includes a reference to the group it owns, allowing for hierarchical relationships between nodes and groups in the diagram.
+ */
+export interface IContainer {
+    /**
+     * The unique identifier of the group that this container owns, which allows for grouping and organizing nodes within the diagram.
+     */
+    owns_group: string;
+}
+
+/**
+ * The IGroup interface defines the properties of a group in the diagram, including its ID and the nodes it contains.
+ */
+export interface IGroup {
+    /**
+     * The unique identifier of the group.
+     */
+    id: string;
+    /**
+     * An array of node IDs that belong to this group.
+     */
+    nodes: string[];
+}
+
+/**
  * The ILayer interface defines the properties of a layer in the diagram, including its ID, name, visibility, and the nodes it contains.
  */
 export interface ILayer {
@@ -250,6 +275,7 @@ export interface IGrid {
 export interface IDiagram extends Serializable {
     id: string;
     nodes: INode[];
+    groups?: IGroup[];
     layers: ILayer[];
     background?: string;
     meta?: Record<string, unknown>;
@@ -264,7 +290,7 @@ export interface IDiagram extends Serializable {
 export interface HasSelection {
     selection(): INode[];
     isSelected(node: INode): boolean;
-    select(node: INode): void;
-    deselect(node: INode): void;
+    select(node: INode, option: 'in_group' | 'isolated'): void;
+    deselect(node: INode, option: 'in_group' | 'isolated'): void;
     clearSelection(): void;
 }

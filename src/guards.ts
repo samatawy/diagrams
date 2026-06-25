@@ -1,5 +1,5 @@
 import { NodeRegistry } from "./factory";
-import type { IConnection, IDiagram, INode } from "./interfaces";
+import type { IConnection, IContainer, IDiagram, INode } from "./interfaces";
 import type { CoordinateSystem } from "./view/coordinate.system";
 import type { ViewCache } from "./view/view.cache";
 
@@ -37,6 +37,28 @@ export function isConnection(value: unknown): value is IConnection {
  */
 export function isConnectionNode(value: unknown): value is INode & IConnection {
     return isNode(value) && isConnection(value);
+}
+
+/**
+ * Type guard to check if a value is an IContainer.
+ * @param value The value to check.
+ * @returns True if the value is an IContainer, false otherwise.
+ */
+export function isContainer(value: unknown): value is IContainer {
+    const adapter = NodeRegistry.adapter((value as INode)?.type);
+    if (adapter?.is_container) {
+        return true;
+    }
+    return isNode(value) && 'owns_group' in value && typeof (value as any).owns_group === 'string';
+}
+
+/**
+ * Type guard to check if a value is both an INode and an IContainer, indicating that it is a container node.
+ * @param value The value to check.
+ * @returns True if the value is an INode and an IContainer, false otherwise.
+ */
+export function isContainerNode(value: unknown): value is INode & IContainer {
+    return isNode(value) && isContainer(value);
 }
 
 /**

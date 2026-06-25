@@ -24,9 +24,10 @@ import {
 import { DiagramConstants } from "../model/diagram.constants";
 import type { DiagramGuide } from "../layout";
 import { ContextMenu } from '../editor/menus/context.menu';
-import { isConnection } from "../guards";
+import { isConnection, isContainerNode } from "../guards";
 import { DiagramKeyboard } from "../keyboard/diagram.keyboard";
 import { DiagramViewKeyboard } from "./view.keyboard";
+import { GroupBasics } from "../nodes/group.basics";
 
 export type RenderMode = 'view' | 'editing';
 
@@ -307,23 +308,41 @@ export class DiagramView extends Diagram implements HasSelection {
     /**
      * Selects a node.
      * @param node The node to select.
+     * @param option Determines whether to select related nodes or isolate the selection.
      */
-    public select(node: INode): void {
+    public select(node: INode, option: 'in_group' | 'isolated'): void {
         if (this.isSelected(node)) {
             return;
         }
 
-        this.selected_nodes = this.selectionOptions.enable_multi
-            ? [...this.selected_nodes, node]
-            : [node];
+        switch (option) {
+            case 'in_group':
+                // TODO: Implement group selection logic
+                const related = GroupBasics.relatedNodes(node, this);
+                this.selected_nodes = this.selectionOptions.enable_multi
+                    ? Array.from(new Set([...this.selected_nodes, node, ...related]))
+                    : [node, ...related];
+                break;
+
+            case 'isolated':
+                this.selected_nodes = this.selectionOptions.enable_multi
+                    ? Array.from(new Set([...this.selected_nodes, node]))
+                    : [node];
+                break;
+        }
+
+        // this.selected_nodes = this.selectionOptions.enable_multi
+        //     ? [...this.selected_nodes, node]
+        //     : [node];
         this.emitSelectionChange();
     }
 
     /**
      * Deselects a node.
      * @param node The node to deselect.
+     * @param option Determines whether to deselect related nodes or isolate the deselection.
      */
-    public deselect(node: INode): void {
+    public deselect(node: INode, option: 'in_group' | 'isolated'): void {
         const next = this.selected_nodes.filter(selected => selected.id !== node.id);
         if (next.length === this.selected_nodes.length) {
             return;
@@ -355,7 +374,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
         this.clearSelection();
         for (let node of this.nodes) {
-            this.select(node);
+            this.select(node, 'isolated');
         }
         this.render('all');
         this.emitSelectionChange();
@@ -385,13 +404,13 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param node The node to toggle.
      * @returns void
      */
-    public toggleSelection(node: INode): void {
+    public toggleSelection(node: INode, option: 'in_group' | 'isolated'): void {
         if (this.isSelected(node)) {
-            this.deselect(node);
+            this.deselect(node, option);
             return;
         }
 
-        this.select(node);
+        this.select(node, 'isolated');
     }
 
     // ===============================================
@@ -606,7 +625,16 @@ export class DiagramView extends Diagram implements HasSelection {
             if (!layer.visible) continue;
 
             const nodes = this.layerNodes(layer);
+            const containers = nodes.filter(isContainerNode);
             const connections = nodes.filter(isConnection);
+
+            // Render containers first..
+            for (const container of containers) {
+                if (what === 'nodes' || what === 'all') {
+                    const handler = NodeRegistry.adapter(container.type);
+                    handler?.render(container, this.context);
+                }
+            }
 
             // Render connections first..
             for (const node of connections) {
@@ -620,7 +648,7 @@ export class DiagramView extends Diagram implements HasSelection {
             for (const node of nodes) {
                 const handler = NodeRegistry.adapter(node.type);
                 if (what === 'nodes' || what === 'all') {
-                    if (!isConnection(node)) {
+                    if (!isContainerNode(node) && !isConnection(node)) {
                         handler?.render(node, this.context);
                     }
                 }
@@ -1016,10 +1044,18 @@ export class DiagramView extends Diagram implements HasSelection {
         const toggleSelection = this.selectionOptions.enable_multi && (event.shiftKey || event.ctrlKey || event.metaKey);
 
         if (hit) {
+            // Handle groups
+            const select_option = this.selectionOptions.enable_multi ? 'in_group' : 'isolated';
+
             if (toggleSelection) {
-                this.toggleSelection(hit);
+                this.toggleSelection(hit, select_option);
             } else {
-                this.setSelection([hit]);
+                if (select_option === 'in_group') {
+                    const related = GroupBasics.relatedNodes(hit, this);
+                    this.setSelection([hit, ...related]);
+                } else {
+                    this.select(hit, select_option);
+                }
             }
             this.emitNodeClick(hit);
         } else {

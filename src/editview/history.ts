@@ -72,7 +72,7 @@ export class HistoryStack {
         this.diagram.clearSelection();
         state.selection.map(id => {
             let node = this.diagram.node(id);
-            if (node) this.diagram.select(node);
+            if (node) this.diagram.select(node, 'isolated');
         });
         return true;
     }
