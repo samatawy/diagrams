@@ -114,11 +114,11 @@ class TestDiagramEditView extends DiagramEditView {
     }
 
     public triggerKeydown(event: KeyboardEvent): void {
-        this.keydown(event);
+        this.keydown(withKeyboardCode(event));
     }
 
     public triggerKeyup(event: KeyboardEvent): void {
-        this.keyup(event);
+        this.keyup(withKeyboardCode(event));
     }
 
     public override hitNodes(x: number, y: number): INode[] {
@@ -136,6 +136,26 @@ class TestDiagramEditView extends DiagramEditView {
 
         return super.hitHandle(x, y, target);
     }
+}
+
+function withKeyboardCode(event: KeyboardEvent): KeyboardEvent {
+    const runtimeEvent = event as unknown as { key: string; code?: string; stopPropagation?: () => void };
+    const stopPropagation = runtimeEvent.stopPropagation || (() => { });
+    if (runtimeEvent.code && runtimeEvent.stopPropagation) {
+        return event;
+    }
+
+    const key = runtimeEvent.key;
+    let code = key;
+    if (key === ' ') {
+        code = 'Space';
+    } else if (/^[a-zA-Z]$/.test(key)) {
+        code = `Key${key.toUpperCase()}`;
+    } else if (/^[0-9]$/.test(key)) {
+        code = `Digit${key}`;
+    }
+
+    return { ...event, code, stopPropagation } as KeyboardEvent;
 }
 
 describe('DiagramEditable', () => {

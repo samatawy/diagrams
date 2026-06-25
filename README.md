@@ -6,7 +6,7 @@ It includes a reusable diagram model, node adapters, Canvas-based rendering prim
 
 ## Status
 
-This package is being published as a first public draft.
+This package is being published as an experimental tool for web developers.
 
 - Ready for evaluation, prototyping, and internal tooling.
 - Not yet recommended for production workloads.
@@ -99,6 +99,10 @@ You can tailor the editor for your own product:
 
 ## Version History
 
+- Since version `0.4.0`
+  - Status bar with dynamic hints and a minimap.
+  - Quality metrics and best-attempt layout fixer.
+  - Bug fixes and UX improvements.
 - Since version `0.3.0`
   - Improved Inspector layout with added features
   - Added text styling capabilities

@@ -46,6 +46,7 @@ describe('LineHandler', () => {
     it('syncs anchored endpoints and renders bezier lines with arrowheads', () => {
         const originalPath2D = globalThis.Path2D;
         globalThis.Path2D = FakePath2D as unknown as typeof Path2D;
+        new LineAdapter().register();
 
         const cache = new Map<INode, any>();
         const owner = {

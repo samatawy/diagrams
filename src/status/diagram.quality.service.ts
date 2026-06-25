@@ -1,7 +1,7 @@
-import { isConnection } from "../guards";
+import { isConnection, isConnectionNode } from "../guards";
 import type { INode } from "../interfaces";
 import type { Diagram } from "../model/diagram";
-import { isHollow, lineWidth, nodeId } from "../value.utils";
+import { isHollow, isInvisible, lineWidth, nodeId } from "../value.utils";
 
 export interface DiagramQualityMetrics {
     layer_count: number;
@@ -31,11 +31,15 @@ export type DiagramQualityTag = 'bland' | 'colorful' | 'simple' | 'incomplete' |
 export class DiagramQualityService {
 
     public static computeQualityMetrics(diagram: Diagram): DiagramQualityMetrics {
-        const nodes = diagram.nodes.filter(n => !isConnection(n));
-        const connections = diagram.nodes.filter(n => isConnection(n));
+        const visible = diagram.nodes.filter(node => !isInvisible(node));
+        const nodes = visible.filter(n => !isConnection(n));
+        const connections = visible.filter(n => isConnection(n));
 
-        const invisibleNodes = nodes.filter(node => node.invisible);
-        const invisibleConnections = connections.filter(conn => conn.invisible);
+        // const nodes = diagram.nodes.filter(n => !isConnection(n));
+        // const connections = diagram.nodes.filter(n => isConnection(n));
+
+        const invisibleNodes = diagram.nodes.filter(node => node.invisible && !isConnection(node));
+        const invisibleConnections = diagram.nodes.filter(conn => conn.invisible && isConnection(conn));
 
         const nodesSansText = nodes.filter(node => !node.text || node.text.trim() === '');
         const connectionsSansText = connections.filter(conn => !conn.text || conn.text.trim() === '');
