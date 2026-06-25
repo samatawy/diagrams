@@ -176,6 +176,18 @@ IconRegistry.registerSymbol('copy', 'copy',
 IconRegistry.registerSymbol('paste', 'paste',
     sym('paste', '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>'));
 
+// vertical swimlane: single top header with one inner item to suggest containment.
+IconRegistry.registerSymbol('vertical_swimlane', 'vertical_swimlane',
+    sym('vertical_swimlane', '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="8" x2="21" y2="8"/><rect x="9" y="12" width="6" height="4" rx="1"/>'));
+
+// group-nodes: three peer nodes in a triangular arrangement enclosed by a dashed boundary.
+IconRegistry.registerSymbol('group-nodes', 'group-nodes',
+    sym('group-nodes', '<rect x="2" y="2" width="20" height="20" rx="2" stroke-dasharray="3 2"/><rect x="5" y="6" width="4" height="4" rx="1"/><rect x="15" y="6" width="4" height="4" rx="1"/><rect x="10" y="14" width="4" height="4" rx="1"/>'));
+
+// ungroup-nodes: same node arrangement as group icon, without enclosing boundary.
+IconRegistry.registerSymbol('ungroup-nodes', 'ungroup-nodes',
+    sym('ungroup-nodes', '<rect x="5" y="6" width="4" height="4" rx="1"/><rect x="15" y="6" width="4" height="4" rx="1"/><rect x="10" y="14" width="4" height="4" rx="1"/>'));
+
 // hint: lightbulb cue for discoverability tips and contextual guidance.
 IconRegistry.registerSymbol('hint', 'hint',
     sym('hint', '<path d="M12 2a7 7 0 0 0-4.2 12.6c.6.45 1.2 1.3 1.2 2.08h6c0-.78.6-1.63 1.2-2.08A7 7 0 0 0 12 2Z"/><path d="M9 19h6v1.4A1.6 1.6 0 0 1 13.4 22h-2.8A1.6 1.6 0 0 1 9 20.4V19Z"/>'));

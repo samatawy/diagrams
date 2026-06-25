@@ -5,6 +5,7 @@ import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow } from "../../value.utils";
+import { DiagramConstants } from "../../model/diagram.constants";
 
 /**
  * VerticalSwimlaneAdapter is a node adapter responsible for rendering vertical swimlane nodes in the diagram. 
@@ -21,6 +22,7 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
         return {
             type: this.name,
             points: [{ x: 0, y: 0 }, { x: 104, y: 240 }],
+            geometry: { radius: DiagramConstants.HANDLE_HIT_EPSILON },
             owns_group: `group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         }
     }
@@ -91,6 +93,37 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
         radius = Math.min(max_radius, min_radius);
         radius = Math.min(radius, 20);
         return radius;
+    }
+
+    public renderSelection(node: INode, context: CanvasRenderingContext2D) {
+        super.renderSelection(node, context);
+
+        if (!context) return;
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return;
+        const coordinates = diagram.getCoordinates();
+
+        if (node.points.length > 1) {
+            const rect = coordinates.getBoundingRect(node);
+            const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
+
+            context.save();
+            RenderBasics.prepareHandles(node, context);
+
+            // line dash respecting the current zoom level
+            // [6 / zoom, 4 / zoom])
+            context.setLineDash([4 / coordinates.zoom, 2 / coordinates.zoom]);
+
+            const holder = new Path2D();
+            holder.rect(rect.left + epsilon, rect.top + epsilon, rect.width - 2 * epsilon, rect.height - 2 * epsilon);
+
+            // context.fill(holder);
+            context.stroke(holder);
+
+            this.renderAlterHandle(node, context, rect);
+
+            context.restore();
+        }
     }
 
 }

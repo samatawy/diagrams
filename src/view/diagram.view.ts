@@ -24,7 +24,7 @@ import {
 import { DiagramConstants } from "../model/diagram.constants";
 import type { DiagramGuide } from "../layout";
 import { ContextMenu } from '../editor/menus/context.menu';
-import { isConnection, isContainerNode } from "../guards";
+import { isConnection, isContainer, isContainerNode } from "../guards";
 import { DiagramKeyboard } from "../keyboard/diagram.keyboard";
 import { DiagramViewKeyboard } from "./view.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
@@ -942,26 +942,51 @@ export class DiagramView extends Diagram implements HasSelection {
 
     /**
      * Returns all nodes at the specified coordinates.
+     * Nodes are returned in order, so the topmost node is first in the array.
      * @param x The x-coordinate to test.
      * @param y The y-coordinate to test.
-     * @returns An array of nodes at the specified coordinates.
+     * @returns An ordered array of nodes at the specified coordinates.
      */
     protected hitNodes(x: number, y: number): INode[] {
         let found: INode[] = [];
 
+        // Layers in order of rendering
         for (let layer of this.layers) {
             if (!layer.visible) continue;
 
             const nodes = this.layerNodes(layer);
 
+            // Containers only
             for (let i = nodes.length - 1; i >= 0; i--) {
                 let node = nodes[i]!;
-                const handler = NodeRegistry.adapter(node.type);
-                const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
-                if (handle != NodeHandle.NONE) found.push(node);
+                if (isContainer(node)) {
+                    const handler = NodeRegistry.adapter(node.type);
+                    const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
+                    if (handle != NodeHandle.NONE) found.push(node);
+                }
+            }
+
+            // Nodes only
+            for (let i = nodes.length - 1; i >= 0; i--) {
+                let node = nodes[i]!;
+                if (!isContainer(node) && !isConnection(node)) {
+                    const handler = NodeRegistry.adapter(node.type);
+                    const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
+                    if (handle != NodeHandle.NONE) found.push(node);
+                }
+            }
+
+            // Connections only
+            for (let i = nodes.length - 1; i >= 0; i--) {
+                let node = nodes[i]!;
+                if (isConnection(node)) {
+                    const handler = NodeRegistry.adapter(node.type);
+                    const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
+                    if (handle != NodeHandle.NONE) found.push(node);
+                }
             }
         }
-        return found;
+        return found.reverse();
     }
 
     /**

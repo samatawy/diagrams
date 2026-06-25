@@ -46,6 +46,8 @@ export function registerBasicAdapters(): void {
     ManhattanAdapter.register();
     CurveAdapter.register();
 
+    VerticalSwimlaneAdapter.register();
+
     RhombusAdapter.register();
     ParallelogramAdapter.register();
     TrapezoidAdapter.register();
@@ -53,6 +55,4 @@ export function registerBasicAdapters(): void {
 
     PolygonAdapter.register();
     SvgAdapter.register();
-
-    VerticalSwimlaneAdapter.register();
 }

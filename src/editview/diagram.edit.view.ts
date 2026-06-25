@@ -38,7 +38,7 @@ interface DiagramClipboardEnvelope {
     nodes: ISerializedNode[];
     image_assets?: Record<string, string>;
 }
-import { isLocked, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
+import { isInvisible, isLocked, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
@@ -2545,11 +2545,16 @@ export class DiagramEditView extends DiagramView {
                     let movePos = { x: event.offsetX, y: event.offsetY }
 
                     this.moveSelected(movePos.x - this.downPos.x, movePos.y - this.downPos.y);
-                    // for (const node of this.selection()) {
-                    //     if (!isLocked(node)) {
-                    //         this.movedNodes.add(node);
-                    //     }
-                    // }
+
+                    const containers = this.hitNodes(event.offsetX, event.offsetY).filter(n => !isConnection(n));
+                    if (containers.length > 0) {
+                        for (const container of containers) {
+                            if (!isInvisible(container)) {
+                                this.renderSelection(container);
+                            }
+                        }
+                    }
+
                     this.downPos = movePos;
 
                     // this.render('all');
