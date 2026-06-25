@@ -1,11 +1,11 @@
 import { Diagram } from "../model/diagram";
-import type { IConnection, IConnectionAnchor, IGrid, ILayer, INode } from "../interfaces";
+import type { IConnection, IConnectionAnchor, IGrid, IGroup, ILayer, INode } from "../interfaces";
 import { DiagramView, type RenderMode, type RenderScope } from "../view/diagram.view";
 import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode, type ImageAlign, type ITextOrientation, type IFontWeight } from "../types";
 import { HistoryStack } from "./history";
 import { NORMAL_FONT_WEIGHT, type ShadowStyle, type TextStyle } from "../style.interfaces";
 
-import { isConnection, isNode } from "../guards";
+import { isConnection, isContainer, isNode } from "../guards";
 
 import { NodeBasics } from "../nodes/node.basics";
 import { ConnectionBasics } from "../nodes/connection.basics";
@@ -41,6 +41,7 @@ interface DiagramClipboardEnvelope {
 import { isLocked, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
+import { GroupBasics } from "../nodes/group.basics";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -1326,7 +1327,7 @@ export class DiagramEditView extends DiagramView {
                     layer.nodes.push(clone.id);
 
                     NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
-                    this.select(clone);
+                    this.select(clone, 'isolated');
                     pastedNodes.push(clone);
                 }
 
@@ -1465,7 +1466,7 @@ export class DiagramEditView extends DiagramView {
     public selectLayer(layer: ILayer): void {
         this.clearSelection();
         for (let id of layer.nodes) {
-            this.select(this.node(id)!);
+            this.select(this.node(id)!, 'isolated');
         }
         this.render('all');
     }
@@ -1669,6 +1670,7 @@ export class DiagramEditView extends DiagramView {
     /**
      * Clones the currently selected nodes in the diagram.
      * The cloned nodes are offset by 24 pixels in both x and y directions.
+     * // TODO: Support groups cloning
      */
     public async cloneSelected(): Promise<void> {
         this.addUndo();
@@ -1681,8 +1683,8 @@ export class DiagramEditView extends DiagramView {
             this.nodes.push(clone);
             layer.nodes.push(clone.id);
 
-            this.deselect(node);
-            this.select(clone);
+            this.deselect(node, 'isolated');
+            this.select(clone, 'isolated');
         }
         this.render('all');
         this.renderPreview();
@@ -1698,6 +1700,43 @@ export class DiagramEditView extends DiagramView {
             ...(node.geometry && { geometry: { ...node.geometry } }),
             ...(node.meta && { meta: { ...node.meta } }),
         } as INode;
+    }
+
+    /**
+     * Creates a new group from the currently selected nodes, assigning them a unique group ID.
+     */
+    public groupSelected(): void {
+        const selected = this.selection();
+        if (selected.length < 2) return;
+
+        this.addUndo();
+
+        const groupId = `group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        this.upsertGroup(groupId);
+
+        for (const node of selected) {
+            this.setNodeGroup(node, groupId);
+        }
+
+        this.render('all');
+        this.renderPreview();
+    }
+
+    /**
+     * Ungroups the currently selected nodes, removing them from any group they belong to.
+     */
+    public ungroupSelected(): void {
+        const selected = this.selection();
+        if (!selected.length) return;
+
+        this.addUndo();
+
+        for (const node of selected) {
+            this.setNodeGroup(node, undefined);
+        }
+
+        this.render('all');
+        this.renderPreview();
     }
 
     /**
@@ -1947,7 +1986,7 @@ export class DiagramEditView extends DiagramView {
         if (!this.canvas) return;
 
         if (this.dragCreateDraft && event.button === 0) {
-            // This cshould never happen!
+            // This could never happen!
             event.preventDefault();
             event.stopImmediatePropagation();
             return;
@@ -2272,11 +2311,11 @@ export class DiagramEditView extends DiagramView {
     // ========== Private Selection methods ==========
     // ==================================================
 
-    downPos?: IPoint;
-    downShape?: INode;
-    downHandle?: NodeHandle;
+    private downPos?: IPoint;
+    private downShape?: INode;
+    private downHandle?: NodeHandle;
 
-    downRect?: IRect;
+    private downRect?: IRect;
     private inSelectGesture = false;
 
     private selectDown(event: PointerEvent): void {
@@ -2306,7 +2345,6 @@ export class DiagramEditView extends DiagramView {
 
         if (rectSelectionGesture) {
             this.downShape = event.shiftKey && localNodes.length > 0
-                // ? nonConnections[0] ?? localNodes[0]
                 ? localNodes[0]
                 : undefined;
 
@@ -2329,7 +2367,6 @@ export class DiagramEditView extends DiagramView {
             if (localNodes.length == 0) {
                 this.downShape = undefined;
             } else {
-                // this.downShape = nonConnections[0] ?? localNodes[0];
                 this.downShape = localNodes[0];
 
                 // Use ctrl to iterate between overlaying shapes..
@@ -2340,7 +2377,6 @@ export class DiagramEditView extends DiagramView {
                         if (next == 'ready') next = one;
                         if (this.isSelected(one)) next = 'ready';
                     }
-                    // this.downShape = isNode(next) ? next : nonConnections[0] ?? localNodes[0];
                     this.downShape = isNode(next) ? next : localNodes[0];
                 }
             }
@@ -2440,9 +2476,9 @@ export class DiagramEditView extends DiagramView {
         if (toggleSelectionGesture && this.downShape) {
             // Toggle select of downShape..
             if (this.downShape && this.isSelected(this.downShape)) {
-                this.deselect(this.downShape);
+                this.deselect(this.downShape, 'isolated');
             } else if (this.downShape) {
-                this.select(this.downShape);
+                this.select(this.downShape, 'isolated');
             }
         }
         if (!toggleSelectionGesture && !rectSelectionGesture) {
@@ -2452,7 +2488,7 @@ export class DiagramEditView extends DiagramView {
 
         // select the local shape only..
         if (this.downShape && !toggleSelectionGesture && !rectSelectionGesture) {
-            this.select(this.downShape);
+            this.select(this.downShape, 'in_group');
         }
 
         if (this.downHandle != NodeHandle.NONE) {
@@ -2614,6 +2650,7 @@ export class DiagramEditView extends DiagramView {
 
                 case NodeHandle.NONE:
                     if (this.downRect) {
+                        // Dragging a selection rectangle..
                         let movePos = { x: event.offsetX, y: event.offsetY }
                         let moveRect = this.normalizeRect(this.downPos, movePos);
 
@@ -2665,6 +2702,7 @@ export class DiagramEditView extends DiagramView {
         this.inSelectGesture = false;
 
         if (this.downRect && this.downPos) {
+            // Dragging a selection rectangle.. finalizing
             const movePos = { x: event.offsetX, y: event.offsetY }
             const selectionRect = this.normalizeRect(this.downPos, movePos);
             const moveDistance = Math.hypot(movePos.x - this.downPos.x, movePos.y - this.downPos.y);
@@ -2674,9 +2712,9 @@ export class DiagramEditView extends DiagramView {
 
             if (event.shiftKey && this.downShape && isNearClick && stillOnDownShape) {
                 if (this.isSelected(this.downShape)) {
-                    this.deselect(this.downShape);
+                    this.deselect(this.downShape, 'in_group');
                 } else {
-                    this.select(this.downShape);
+                    this.select(this.downShape, 'in_group');
                 }
             } else {
                 this.applyRectSelection(selectionRect, event.shiftKey || event.ctrlKey || event.metaKey);
@@ -2709,6 +2747,21 @@ export class DiagramEditView extends DiagramView {
 
         this.guides = [];
         this.pendingGuideSnap = undefined;
+
+        // Handle groups (containers)
+        if (this.downHandle == NodeHandle.MOVE) {
+            const overlaying = this.hitNodes(event.offsetX, event.offsetY)
+                .filter(node => node.id !== this.downShape?.id);
+            for (const one of overlaying) {
+                if (isContainer(one)) {
+                    for (const shape of this.selection()) {
+                        this.setNodeGroup(shape, one.owns_group);
+                    }
+                    break;
+                }
+            }
+        }
+
         this.render('all');
 
         this.downHandle = NodeHandle.NONE;
@@ -2729,8 +2782,12 @@ export class DiagramEditView extends DiagramView {
     // ========== Private creation methods ==========
     // ==================================================
 
+    private createPos?: IPoint;
+
     private createDown(event: PointerEvent): void {
         if (!this.current.tool || this.current.tool === 'select' || event.button !== 0) return;
+
+        this.createPos = { x: event.offsetX, y: event.offsetY }
 
         const layer = this.ensureCurrentLayer();
 
@@ -2817,6 +2874,7 @@ export class DiagramEditView extends DiagramView {
     private createUp(event: PointerEvent): void {
         if (!this.current.draft) return;
 
+        // TODO: Why is the line here? Must understand.
         this.createMove(event);
 
         if (this.isConnectorType(this.current.draft.type)) {
@@ -2826,6 +2884,20 @@ export class DiagramEditView extends DiagramView {
 
         if (!this.isMultistepCreate(this.current.draft.type)) {
             this.current.draft.ready = true;
+        }
+
+        // Handle groups
+        if (this.current.draft.ready) {     //} && !isConnection(this.current.draft)) {
+            const overlaying_start = this.hitNodes(this.createPos?.x ?? 0, this.createPos?.y ?? 0);
+            const overlaying_end = this.hitNodes(event.offsetX, event.offsetY);
+            const overlaying = Array.from(new Set([...overlaying_start, ...overlaying_end]))
+                .filter(node => node.id !== this.current.draft!.id);
+            for (const one of overlaying) {
+                if (isContainer(one)) {
+                    this.setNodeGroup(this.current.draft, one.owns_group);
+                    break;
+                }
+            }
         }
 
         this.render('all');
@@ -2858,16 +2930,26 @@ export class DiagramEditView extends DiagramView {
         created.id = `${created.type}-drop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
         const layer = this.ensureCurrentLayer();
+
         this.addUndo();
+
         this.upsertNode(created);
         if (!layer.nodes.includes(created.id)) {
             layer.nodes.push(created.id);
         }
 
+        const overlaying = this.hitNodes(event.offsetX, event.offsetY).filter(node => node.id !== created.id);
+        for (const one of overlaying) {
+            if (isContainer(one)) {
+                this.setNodeGroup(created, one.owns_group);
+                break;
+            }
+        }
+
         NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid);
 
         this.clearSelection();
-        this.select(created);
+        this.select(created, 'isolated');
         this.clearDragCreateDraft();
         this.render('all');
         this.renderPreview();
@@ -3020,7 +3102,9 @@ export class DiagramEditView extends DiagramView {
         const hollow = (hollow_mode === 'always')
             || (hollow_mode === 'if_transparent' && fillStyle === 'transparent');
 
+        const template = NodeRegistry.adapter(tool)?.onCreateDraft?.(tool) || {};
         const draft: INode = {
+            ...template,
             id: `${tool}-draft-${Date.now()}`,
             type: tool,
             points,
@@ -3065,7 +3149,7 @@ export class DiagramEditView extends DiagramView {
         NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid);
 
         this.clearSelection();
-        this.select(created);
+        this.select(created, 'isolated');
         this.current.draft = undefined;
         this.render('all');
         this.renderPreview();
@@ -3718,11 +3802,33 @@ export class DiagramEditView extends DiagramView {
         const selected = SelectionBasics.nodesForRect(this.selectionAdapter(), rect, this.selectionOptions.rect_mode);
 
         if (additive) {
-            this.setSelection([...this.selection(), ...selected]);
-            return;
-        }
+            const distinct = new Set([...this.selection(), ...selected]);
+            // Handle groups
+            for (const node of selected) {
+                const group_nodes = GroupBasics.relatedNodes(node, this);
+                for (const related of group_nodes) {
+                    distinct.add(related);
+                }
+            }
+            this.setSelection([...distinct]);
 
-        this.setSelection(selected);
+            // Without considering groups, we can just do this:
+            // this.setSelection([...this.selection(), ...selected]);
+
+        } else {
+            const distinct = new Set(selected);
+            // Handle groups
+            for (const node of selected) {
+                const group_nodes = GroupBasics.relatedNodes(node, this);
+                for (const related of group_nodes) {
+                    distinct.add(related);
+                }
+            }
+            this.setSelection([...distinct]);
+
+            // Without considering groups, we can just do this:
+            // this.setSelection(selected);
+        }
     }
 
     private selectionAdapter() {

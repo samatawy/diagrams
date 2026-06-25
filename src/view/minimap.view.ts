@@ -1,6 +1,6 @@
 import { DIAGRAM_CHANGED_EVENT, DIAGRAM_VIEWPORT_EVENT, type DiagramChanged, type DiagramViewportChange } from "../events";
 import { NodeRegistry } from "../factory";
-import { isConnection } from "../guards";
+import { isConnection, isContainerNode } from "../guards";
 import type { IRect } from "../types";
 import type { DiagramView } from "./diagram.view";
 
@@ -242,7 +242,14 @@ export class MinimapView {
             if (!layer.visible) continue;
 
             const nodes = source.layerNodes(layer);
+            const containers = nodes.filter(isContainerNode);
             const connections = nodes.filter(isConnection);
+
+            // Render containers first..
+            for (const container of containers) {
+                const handler = NodeRegistry.adapter(container.type);
+                handler?.render(container, this.context);
+            }
 
             // Render connections first..
             for (const node of connections) {
@@ -253,10 +260,27 @@ export class MinimapView {
             // Then render non-connection nodes on top, so they appear above connecting lines.
             for (const node of nodes) {
                 const handler = NodeRegistry.adapter(node.type);
-                if (!isConnection(node)) {
+                if (!isContainerNode(node) && !isConnection(node)) {
                     handler?.render(node, this.context);
                 }
             }
+
+            // const nodes = source.layerNodes(layer);
+            // const connections = nodes.filter(isConnection);
+
+            // // Render connections first..
+            // for (const node of connections) {
+            //     const handler = NodeRegistry.adapter(node.type);
+            //     handler?.render(node, this.context);
+            // }
+
+            // // Then render non-connection nodes on top, so they appear above connecting lines.
+            // for (const node of nodes) {
+            //     const handler = NodeRegistry.adapter(node.type);
+            //     if (!isConnection(node)) {
+            //         handler?.render(node, this.context);
+            //     }
+            // }
         }
 
         this.context.restore();

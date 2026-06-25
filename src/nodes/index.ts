@@ -1,3 +1,4 @@
+import { VerticalSwimlaneAdapter } from './container/vertical.swimlane.adapter';
 import { CurveAdapter } from './polyline/curve.adapter';
 import { LineAdapter } from './polyline/line.adapter';
 import { ManhattanAdapter } from './polyline/manhattan.adapter';
@@ -52,4 +53,6 @@ export function registerBasicAdapters(): void {
 
     PolygonAdapter.register();
     SvgAdapter.register();
+
+    VerticalSwimlaneAdapter.register();
 }

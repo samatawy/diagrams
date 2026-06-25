@@ -102,6 +102,11 @@ export interface INodeAdapter {
     text_orientations: ITextOrientation[];
 
     /**
+     * Indicates whether the adapter supports owning a group of other nodes.
+     */
+    is_container?: boolean;
+
+    /**
      * Updates the draft node's points while the user is dragging during creation.
      * Called on every pointermove while a draft is active.
      * @param node The draft node being created.

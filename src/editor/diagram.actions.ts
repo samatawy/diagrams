@@ -15,7 +15,8 @@ export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
     'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' | 'copy-styles' | 'paste-styles' |
     'align-left' | 'align-center' | 'align-right' | 'align-top' | 'align-middle' | 'align-bottom' | 'distribute-h' | 'distribute-v' |
     'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom' |
-    'text-bold' | 'text-italic' | 'text-orientation-horizontal' | 'text-orientation-vertical' | 'text-orientation-path';
+    'text-bold' | 'text-italic' | 'text-orientation-horizontal' | 'text-orientation-vertical' | 'text-orientation-path' |
+    'group-nodes' | 'ungroup-nodes';
 
 export interface DiagramAction {
     /**
@@ -384,6 +385,24 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         execute: (d) => d.spreadSelected('column'),
         isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length >= 3,
     },
+
+    // Group actions
+    {
+        id: 'group-nodes',
+        label: 'Group Nodes',
+        tooltip: 'Group selected nodes',
+        execute: (d) => d.groupSelected(),
+        isEnabled: (d) => d.selection().length >= 2,
+        // isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length >= 2,
+    },
+    {
+        id: 'ungroup-nodes',
+        label: 'Ungroup Nodes',
+        tooltip: 'Ungroup selected nodes',
+        execute: (d) => d.ungroupSelected(),
+        isEnabled: (d) => d.selection().length >= 1,
+    },
+
 ];
 
 /**

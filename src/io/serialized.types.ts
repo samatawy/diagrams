@@ -35,6 +35,14 @@ export interface ISerializedNode extends Omit<INode, 'owner'> {
 }
 
 /**
+ * Serialized representation of a group, containing its identifier and the identifiers of the nodes it contains.
+ */
+export interface ISerializedGroup {
+    id: string;
+    nodes: string[];
+}
+
+/**
  * Serialized representation of a layer, containing its identifier, name, visibility status, and the identifiers of the nodes it contains.
  */
 export interface ISerializedLayer {
@@ -50,6 +58,7 @@ export interface ISerializedLayer {
 export interface ISerializedDiagram {
     id: string;
     nodes: ISerializedNode[];
+    groups?: ISerializedGroup[];
     layers: ISerializedLayer[];
     background?: string;
     meta?: Record<string, unknown>;
