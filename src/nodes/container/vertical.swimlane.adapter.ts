@@ -17,6 +17,7 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
     public static NAME = 'vertical_swimlane';
 
     public is_container = true;
+    public can_rotate = false;
 
     public onCreateDraft(tool: string): Partial<INode & IContainer> | undefined {
         return {
@@ -96,7 +97,7 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
     }
 
     public renderSelection(node: INode, context: CanvasRenderingContext2D) {
-        super.renderSelection(node, context);
+        // super.renderSelection(node, context);
 
         if (!context) return;
         const diagram = node.owner;
@@ -110,6 +111,35 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
             context.save();
             RenderBasics.prepareHandles(node, context);
 
+            const handles = new Path2D();
+
+            // NW
+            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
+
+            // SW
+            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height }, handles, context);
+
+            // NE
+            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top }, handles, context);
+
+            // SE
+            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height }, handles, context);
+
+            // N
+            RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top }, handles, context);
+
+            // S
+            RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top + rect.height }, handles, context);
+
+            // E
+            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
+
+            // W
+            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
+
+            context.fill(handles);
+            context.stroke(handles);
+
             // line dash respecting the current zoom level
             // [6 / zoom, 4 / zoom])
             context.setLineDash([4 / coordinates.zoom, 2 / coordinates.zoom]);
@@ -117,7 +147,6 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
             const holder = new Path2D();
             holder.rect(rect.left + epsilon, rect.top + epsilon, rect.width - 2 * epsilon, rect.height - 2 * epsilon);
 
-            // context.fill(holder);
             context.stroke(holder);
 
             this.renderAlterHandle(node, context, rect);

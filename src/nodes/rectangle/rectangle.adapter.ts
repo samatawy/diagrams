@@ -29,6 +29,7 @@ export class RectangleAdapter implements INodeAdapter {
     has_text = true;
     text_overflow: TextOverflowMode = 'hidden';
     text_orientations: ITextOrientation[] = ['horizontal'];
+    can_rotate = true;
 
     /**
      * Registers the RectangleAdapter with the NodeRegistry.
@@ -72,8 +73,10 @@ export class RectangleAdapter implements INodeAdapter {
             if (Math.abs(rect.left - x) <= epsilon && Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.W;
             if (Math.abs(rect.left + rect.width - x) <= epsilon && Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.E;
 
-            if (Math.abs(rect.left + rect.width + 8 + epsilon - x) <= epsilon &&
-                Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.ROTATE;
+            if (NodeRegistry.adapter(node.type)?.can_rotate) {
+                if (Math.abs(rect.left + rect.width + 8 + epsilon - x) <= epsilon &&
+                    Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.ROTATE;
+            }
 
             if (this.hitTestAlter(node, rect, { x, y })) {
                 return NodeHandle.ALTER;
@@ -134,17 +137,88 @@ export class RectangleAdapter implements INodeAdapter {
         node.points[1] = { ...point };
     }
 
-    public snapToGrid(node: INode, grid: IGrid): void {
+    public snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void {
+        if (!grid || !grid.forced) return;
+
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
 
-        if (grid && grid.forced) {
-            for (let i = 0; i < node.points.length; i++) {
-                let point = node.points[i]!;
-                node.points[i] = coordinates.getGridPoint(point!.x, point!.y, grid);
-            }
+        const topLeft = node.points[0]!;
+        const bottomRight = node.points[1]!;
+        let snapTopLeft: Partial<IPoint> = {};
+        let snapBottomRight: Partial<IPoint> = {};
+        let snapPoint: IPoint;
+
+        switch (handle) {
+            case NodeHandle.MOVE:
+                // Snap all points to the grid, preserving their relative positions
+
+                const original = node.points[0]!;
+                const snapped = coordinates.getGridPoint(original.x, original.y, grid);
+                const dx = snapped.x - original.x;
+                const dy = snapped.y - original.y;
+
+                for (let i = 0; i < node.points.length; i++) {
+                    let point = node.points[i]!;
+                    point.x += dx;
+                    point.y += dy;
+                    // node.points[i] = coordinates.getGridPoint(point!.x, point!.y, grid);
+                }
+                break;
+            case NodeHandle.N:
+                snapTopLeft = {
+                    y: coordinates.getGridPoint(topLeft.x, topLeft.y, grid).y
+                }
+                break;
+            case NodeHandle.S:
+                snapBottomRight = {
+                    y: coordinates.getGridPoint(bottomRight.x, bottomRight.y, grid).y
+                }
+                break;
+            case NodeHandle.E:
+                snapBottomRight = {
+                    x: coordinates.getGridPoint(bottomRight.x, bottomRight.y, grid).x
+                }
+                break;
+            case NodeHandle.W:
+                snapTopLeft = {
+                    x: coordinates.getGridPoint(topLeft.x, topLeft.y, grid).x
+                }
+                break;
+            case NodeHandle.NE:
+                snapTopLeft = {
+                    y: coordinates.getGridPoint(topLeft.x, topLeft.y, grid).y
+                };
+                snapBottomRight = {
+                    x: coordinates.getGridPoint(bottomRight.x, bottomRight.y, grid).x
+                };
+                break;
+            case NodeHandle.NW:
+                snapPoint = coordinates.getGridPoint(node.points[0]!.x, node.points[0]!.y, grid);
+                snapTopLeft = {
+                    x: snapPoint.x,
+                    y: snapPoint.y
+                };
+                break;
+            case NodeHandle.SE:
+                snapPoint = coordinates.getGridPoint(node.points[1]!.x, node.points[1]!.y, grid);
+                snapBottomRight = {
+                    x: snapPoint.x,
+                    y: snapPoint.y
+                };
+                break;
+            case NodeHandle.SW:
+                snapTopLeft = {
+                    x: coordinates.getGridPoint(topLeft.x, topLeft.y, grid).x
+                };
+                snapBottomRight = {
+                    y: coordinates.getGridPoint(bottomRight.x, bottomRight.y, grid).y
+                };
+                break;
         }
+        node.points[0] = { ...topLeft, ...snapTopLeft };
+        node.points[1] = { ...bottomRight, ...snapBottomRight };
     }
 
     public render(node: INode, context: CanvasRenderingContext2D): void {
@@ -220,10 +294,12 @@ export class RectangleAdapter implements INodeAdapter {
             // W
             RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
 
-            RenderBasics.renderRotateHandle(node, {
-                x: rect.left + rect.width + 8 + epsilon,
-                y: rect.top + rect.height / 2
-            }, handles, context);
+            if (NodeRegistry.adapter(node.type)?.can_rotate) {
+                RenderBasics.renderRotateHandle(node, {
+                    x: rect.left + rect.width + 8 + epsilon,
+                    y: rect.top + rect.height / 2
+                }, handles, context);
+            }
 
             context.fill(handles);
             context.stroke(handles);

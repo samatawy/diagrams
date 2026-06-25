@@ -102,12 +102,10 @@ export class CoordinateSystem {
         if (grid && grid.forced) {
 
             if (grid.width) {
-                let dx = pt.x % grid.width;
-                pt.x = (dx > grid.width / 2) ? pt.x - dx + grid.width : pt.x - dx;
+                pt.x = Math.round(pt.x / grid.width) * grid.width;
             }
             if (grid.height) {
-                let dy = pt.y % grid.height;
-                pt.y = (dy > grid.height / 2) ? pt.y - dy + grid.height : pt.y - dy;
+                pt.y = Math.round(pt.y / grid.height) * grid.height;
             }
         }
         return pt;

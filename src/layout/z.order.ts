@@ -1,15 +1,17 @@
 import type { ILayer, INode } from "../interfaces";
+import type { Diagram } from "../model/diagram";
+import type { DiagramView } from "../view";
 
 export type ZOrderAction = 'bringForward' | 'bringToFront' | 'sendBackward' | 'sendToBack';
 
-export interface ZOrderHost {
-    layers: ILayer[];
-    selection(): INode[];
-    layer(id: string): ILayer | undefined;
-    addUndo(): void;
-    render(what?: 'nodes' | 'selection' | 'all'): void;
-    renderPreview(layer?: ILayer): void;
-}
+// export interface ZOrderHost {
+//     layers: ILayer[];
+//     selection(): INode[];
+//     layer(id: string): ILayer | undefined;
+//     addUndo(): void;
+//     render(what?: 'nodes' | 'selection' | 'all'): void;
+//     renderPreview(layer?: ILayer): void;
+// }
 
 /**
  * Handles z-ordering of nodes and layers in the diagram. This class is used by DiagramEditView to implement the z-ordering methods.
@@ -19,14 +21,14 @@ export interface ZOrderHost {
  */
 export class ZOrder {
 
-    private host: ZOrderHost;
+    private host: DiagramView;
 
     /**
-        * Creates an instance of ZOrder and attaches it to a ZOrderHost (e.g., DiagramEditView).
+        * Creates an instance of ZOrder and attaches it to a DiagramView (e.g., DiagramEditView).
         * This allows the ZOrder instance to manipulate the layers and nodes of the host diagram when reordering.
-        * @param host The ZOrderHost instance to attach to, which provides access to the diagram's layers, selection, and rendering methods.
+        * @param host The DiagramView instance to attach to, which provides access to the diagram's layers, selection, and rendering methods.
         */
-    constructor(host: ZOrderHost) {
+    constructor(host: DiagramView) {
         this.host = host;
     }
 
@@ -46,7 +48,7 @@ export class ZOrder {
             const next = this.reorderSelected(layer.nodes, selected, action);
             if (this.hasChanged(layer.nodes, next)) {
                 if (!changed) {
-                    this.host.addUndo();
+                    (this.host as any).addUndo();
                 }
                 layer.nodes = next;
                 changed = true;
@@ -54,8 +56,8 @@ export class ZOrder {
         }
 
         if (changed) {
-            this.host.render('all');
-            this.host.renderPreview();
+            (this.host as any).render('all');
+            (this.host as any).renderPreview();
         }
     }
 
@@ -73,15 +75,23 @@ export class ZOrder {
 
         const current = this.host.layers.map(one => one.id);
         const next = this.reorderSelected(current, new Set([targetId]), action);
-        if (!this.hasChanged(current, next)) {
+        const changed = this.hasChanged(current, next);
+        if (changed) {
+            (this.host as any).addUndo();
+            this.host.layers = next.map(id => this.host.layer(id)!);
+            // .splice(0, this.host.layers.length, ...next.map(id => this.host.layer(id)!).filter((one): one is ILayer => !!one));
+            // this.layers = next.map(id => this.host.layer(id)!);
+        } else {
             return;
         }
 
-        const byId = new Map(this.host.layers.map(one => [one.id, one]));
-        this.host.addUndo();
-        this.host.layers.splice(0, this.host.layers.length, ...next.map(id => byId.get(id)!).filter((one): one is ILayer => !!one));
-        this.host.render('all');
-        this.host.renderPreview();
+        // const byId = new Map(this.host.layers.map(one => [one.id, one]));
+        // (this.host as any).addUndo();
+        // this.host.layers.splice(0, this.host.layers.length, ...next.map(id => byId.get(id)!).filter((one): one is ILayer => !!one));
+        if (changed) {
+            (this.host as any).render('all');
+            (this.host as any).renderPreview();
+        }
     }
 
     /**
@@ -99,15 +109,20 @@ export class ZOrder {
             }
 
             const next = this.reorderSelected(layer.nodes, new Set([targetId]), action);
-            if (!this.hasChanged(layer.nodes, next)) {
-                return;
+            const changed = this.hasChanged(layer.nodes, next);
+            if (changed) {
+                (this.host as any).addUndo();
+                layer.nodes = next;
+            } else {
+                continue;
             }
 
-            this.host.addUndo();
-            layer.nodes = next;
-            this.host.render('all');
-            this.host.renderPreview();
-            return;
+            // layer.nodes = next;
+            if (changed) {
+                (this.host as any).render('all');
+                (this.host as any).renderPreview();
+                return;
+            }
         }
     }
 

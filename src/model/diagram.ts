@@ -171,6 +171,18 @@ export class Diagram implements IDiagram {
         }
     }
 
+    public nodeGroup(node: string | INode): IGroup | undefined {
+        const targetNode = this.resolveNode(node);
+        if (!targetNode) return undefined;
+
+        return this.groups.find(group => group.nodes.includes(targetNode.id));
+    }
+
+    protected groupOwner(group: IGroup): INode | undefined {
+        return this.nodes.find(n => (n as any).owns_group === group.id);
+    }
+
+
     /**
      * Add or remove a node from a layer. If the layerId is undefined, the node is removed from any layer it belongs to.
      * A node can only belong to one layer at a time. If the node is already in a different layer, it will be removed

@@ -107,6 +107,12 @@ export interface INodeAdapter {
     is_container?: boolean;
 
     /**
+     * Indicates whether the adapter supports rotation of the node.
+     * If true, the diagram control may provide rotation handles and allow the user to rotate the node.
+     */
+    can_rotate?: boolean;
+
+    /**
      * Updates the draft node's points while the user is dragging during creation.
      * Called on every pointermove while a draft is active.
      * @param node The draft node being created.
@@ -159,8 +165,9 @@ export interface INodeAdapter {
      * Snaps the given node to the specified grid by modifying its points.
      * @param node The node to snap.
      * @param grid The grid to snap the node to.
+     * @param handle The handle being used to resize the node.
      */
-    snapToGrid(node: INode, grid: IGrid): void;
+    snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void;
 
     /**
      * Renders the given node on the specified canvas context.

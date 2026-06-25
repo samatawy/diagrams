@@ -925,19 +925,22 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param y The y-coordinate to test.
      */
     protected hitNode(x: number, y: number): INode | undefined {
-        for (let layer of this.layers) {
-            if (!layer.visible) continue;
+        const found = this.hitNodes(x, y);
+        return found.length ? found[0] : undefined;
 
-            const nodes = this.layerNodes(layer);
+        // for (let layer of this.layers) {
+        //     if (!layer.visible) continue;
 
-            for (let i = nodes.length - 1; i >= 0; i--) {
-                let node = nodes[i]!;
-                const handler = NodeRegistry.adapter(node.type);
-                const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
-                if (handle != NodeHandle.NONE) return node;
-            }
-        }
-        return undefined;
+        //     const nodes = this.layerNodes(layer);
+
+        //     for (let i = nodes.length - 1; i >= 0; i--) {
+        //         let node = nodes[i]!;
+        //         const handler = NodeRegistry.adapter(node.type);
+        //         const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
+        //         if (handle != NodeHandle.NONE) return node;
+        //     }
+        // }
+        // return undefined;
     }
 
     /**
@@ -957,8 +960,9 @@ export class DiagramView extends Diagram implements HasSelection {
             const nodes = this.layerNodes(layer);
 
             // Containers only
-            for (let i = nodes.length - 1; i >= 0; i--) {
-                let node = nodes[i]!;
+            for (const node of nodes) {
+                // for (let i = nodes.length - 1; i >= 0; i--) {
+                // let node = nodes[i]!;
                 if (isContainer(node)) {
                     const handler = NodeRegistry.adapter(node.type);
                     const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
@@ -967,8 +971,9 @@ export class DiagramView extends Diagram implements HasSelection {
             }
 
             // Nodes only
-            for (let i = nodes.length - 1; i >= 0; i--) {
-                let node = nodes[i]!;
+            for (const node of nodes) {
+                // for (let i = nodes.length - 1; i >= 0; i--) {
+                //     let node = nodes[i]!;
                 if (!isContainer(node) && !isConnection(node)) {
                     const handler = NodeRegistry.adapter(node.type);
                     const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
@@ -977,8 +982,9 @@ export class DiagramView extends Diagram implements HasSelection {
             }
 
             // Connections only
-            for (let i = nodes.length - 1; i >= 0; i--) {
-                let node = nodes[i]!;
+            for (const node of nodes) {
+                // for (let i = nodes.length - 1; i >= 0; i--) {
+                // let node = nodes[i]!;
                 if (isConnection(node)) {
                     const handler = NodeRegistry.adapter(node.type);
                     const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
@@ -997,20 +1003,32 @@ export class DiagramView extends Diagram implements HasSelection {
      * @returns The handle at the specified coordinates, or `NodeHandle.NONE` if none is found.
      */
     protected hitHandle(x: number, y: number, target?: INode): NodeHandle {
-        for (let layer of this.layers) {
-            if (!target && !layer.visible) continue;
+        const nodes = target ? [target] : this.hitNodes(x, y);
 
-            const nodes = this.layerNodes(layer);
-
-            for (let i = nodes.length - 1; i >= 0; i--) {
-                let node = nodes[i]!;
-                const handler = NodeRegistry.adapter(node.type);
-                const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
-                if (!target || node == target) {
-                    return handle;
-                }
+        for (let i = 0; i < nodes.length; i++) {
+            let node = nodes[i]!;
+            const handler = NodeRegistry.adapter(node.type);
+            const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
+            // if (!target || node == target) {
+            if (handle !== NodeHandle.NONE) {
+                console.log(`hitHandle: nodes=${nodes.map(n => n.type).join(', ')}, node=${node.type}, handle=${handle}`);
+                return handle;
             }
+            // }
         }
+
+        // for (let layer of this.layers) {
+        //     if (!target && !layer.visible) continue;
+
+        //     for (let i = nodes.length - 1; i >= 0; i--) {
+        //         let node = nodes[i]!;
+        //         const handler = NodeRegistry.adapter(node.type);
+        //         const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
+        //         if (!target || node == target) {
+        //             return handle;
+        //         }
+        //     }
+        // }
         return NodeHandle.NONE;
     }
 

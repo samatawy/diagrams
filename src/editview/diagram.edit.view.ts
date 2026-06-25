@@ -22,7 +22,7 @@ import type {
 } from "../io";
 
 import { NodeRegistry } from "../factory/node.registry";
-import { ZOrder, type ZOrderHost } from "../layout/z.order";
+import { ZOrder } from "../layout/z.order";
 import { Guides, type SnapGuideResult } from "../layout";
 import { ColorPalette } from "./color.palette";
 import {
@@ -42,6 +42,7 @@ import { isInvisible, isLocked, lineWidth, nodeAngle, nodeOpacity, nodeText, str
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
+import { RenderBasics } from "../nodes";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -67,14 +68,14 @@ export class DiagramEditView extends DiagramView {
 
     private color_palette: ColorPalette;
 
-    private zOrderHost: ZOrderHost = {
-        layers: this.layers,
-        selection: () => this.selection(),
-        layer: (id: string) => this.layer(id),
-        addUndo: () => this.addUndo(),
-        render: (what?: 'nodes' | 'selection' | 'all') => this.render(what ?? 'all'),
-        renderPreview: (layer?: ILayer) => this.renderPreview(layer),
-    };
+    // private zOrderHost: ZOrderHost = {
+    //     layers: this.layers,
+    //     selection: () => this.selection(),
+    //     layer: (id: string) => this.layer(id),
+    //     addUndo: () => this.addUndo(),
+    //     render: (what?: 'nodes' | 'selection' | 'all') => this.render(what ?? 'all'),
+    //     renderPreview: (layer?: ILayer) => this.renderPreview(layer),
+    // };
 
     private editKeyboard: DiagramEditViewKeyboard;
 
@@ -196,7 +197,7 @@ export class DiagramEditView extends DiagramView {
             },
         });
         this.history = new HistoryStack(this);
-        this.zOrder = new ZOrder(this.zOrderHost);
+        this.zOrder = new ZOrder(this);
         this.color_palette = new ColorPalette(this);
         this.editKeyboard = new DiagramEditViewKeyboard();
 
@@ -2357,6 +2358,7 @@ export class DiagramEditView extends DiagramView {
                 for (let shape of localNodes) {
                     if (this.isSelected(shape)) {
                         this.downShape = shape;
+                        break;
                     }
                 }
                 // this.downShape = this.downShape ?? nonConnections[0] ?? localNodes[0];
@@ -2576,6 +2578,7 @@ export class DiagramEditView extends DiagramView {
                     this.resizeSelected(this.downHandle,
                         movePos.x - this.downPos.x,
                         movePos.y - this.downPos.y,
+                        this.downShape!,
                         preserveAspect
                     );
                     for (const node of this.selection()) {
@@ -2669,6 +2672,7 @@ export class DiagramEditView extends DiagramView {
                         }
                         this.renderSelectionRect(moveRect);
                     } else if (!this.downShape) {
+                        // Panning the canvas..
                         let movePos = { x: event.offsetX, y: event.offsetY }
 
                         this.panBy(movePos.x - this.downPos.x, movePos.y - this.downPos.y);
@@ -2738,13 +2742,33 @@ export class DiagramEditView extends DiagramView {
         if (this.downHandle === NodeHandle.MOVE || this.downHandle === NodeHandle.N || this.downHandle === NodeHandle.S
             || this.downHandle === NodeHandle.E || this.downHandle === NodeHandle.W || this.downHandle === NodeHandle.NE
             || this.downHandle === NodeHandle.NW || this.downHandle === NodeHandle.SE || this.downHandle === NodeHandle.SW) {
-            this.applyPendingGuideSnap(this.downHandle, event.altKey);
+
+            const group = this.downShape ? this.nodeGroup(this.downShape) : undefined;
+            if (group && this.downShape) {
+                this.applyPendingGuideSnap([this.downShape], this.downHandle, event.altKey);
+                if (this.groupOwner(group) === this.downShape) {
+                    // When snapping the owner, we need to snap all members of the group with the same dx,dy.
+                    this.applyPendingGuideGroupSnap(group, this.downShape);
+                    // const dx = this.pendingGuideSnap?.dx ?? 0;
+                    // const dy = this.pendingGuideSnap?.dy ?? 0;
+                    // for (const member_id of group.nodes) {
+                    //     const member = (member_id !== this.downShape.id) ? this.node(member_id) : undefined;
+                    //     if (member) {
+                    //         NodeBasics.moveBy(member, dx, dy);
+                    //         this.movedNodes.add(member);
+                    //     }
+                    // }
+                }
+
+            } else {
+                this.applyPendingGuideSnap(this.selection(), this.downHandle, event.altKey);
+            }
         }
 
         if (this.grid && this.grid.forced && !event.ctrlKey) {
             if (this.downHandle != NodeHandle.ROTATE) {
                 for (let shape of this.selection()) {
-                    NodeRegistry.adapter(shape.type)?.snapToGrid(shape, this.grid);
+                    NodeRegistry.adapter(shape.type)?.snapToGrid(shape, this.grid, this.downHandle ?? NodeHandle.MOVE);
                 }
             }
             // this.render('all');
@@ -2951,7 +2975,7 @@ export class DiagramEditView extends DiagramView {
             }
         }
 
-        NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid);
+        NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid, NodeHandle.MOVE);
 
         this.clearSelection();
         this.select(created, 'isolated');
@@ -3151,7 +3175,7 @@ export class DiagramEditView extends DiagramView {
 
         const created = this.current.draft;
 
-        NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid);
+        NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid, NodeHandle.MOVE);
 
         this.clearSelection();
         this.select(created, 'isolated');
@@ -3898,7 +3922,7 @@ export class DiagramEditView extends DiagramView {
         this.emitPendingMutationEvents();
     }
 
-    private resizeSelected(handle: NodeHandle, byX: number, byY: number, preserveAspect?: boolean): void {
+    private resizeSelected(handle: NodeHandle, byX: number, byY: number, reference_node: INode, preserveAspect?: boolean): void {
         const nodes = this.selection();
         if (!nodes.length) {
             this.guides = [];
@@ -3906,8 +3930,35 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
+        // Handle groups
+
+        const group = this.nodeGroup(reference_node);
+        if (group) {
+            const owner = this.groupOwner(group);
+            if (owner !== reference_node) {
+                // Resizing a node inside a container only resizes that node, not the whole group.
+                // The group will resize when the container node is resized. 
+                NodeBasics.resizeHandle(reference_node, handle, byX, byY, preserveAspect);
+                NodeRegistry.adapter(reference_node.type)?.afterResize?.(reference_node, handle);
+                return;
+            }
+        }
+
+        // Resize nodes proportionally
+
+        const baseRect = this.coordinates.getBoundingRect(reference_node);
+
         for (const node of nodes) {
-            NodeBasics.resizeHandle(node, handle, byX, byY, preserveAspect);
+            let relX = byX;
+            let relY = byY;
+            if (node !== reference_node) {
+                // calculate relative resize amounts based on the reference node's bounding rect
+                const nodeRect = this.coordinates.getBoundingRect(node);
+                relX = byX * (nodeRect.width / baseRect.width);
+                relY = byY * (nodeRect.height / baseRect.height);
+            }
+
+            NodeBasics.resizeHandle(node, handle, relX, relY, preserveAspect);
             NodeRegistry.adapter(node.type)?.afterResize?.(node, handle);
         }
 
@@ -3931,7 +3982,7 @@ export class DiagramEditView extends DiagramView {
         }
     }
 
-    private applyPendingGuideSnap(handle: NodeHandle, preserveAspect?: boolean): void {
+    private applyPendingGuideSnap(nodes: INode[], handle: NodeHandle, preserveAspect?: boolean): void {
         if (!this.guideOptions.snap) {
             return;
         }
@@ -3939,9 +3990,21 @@ export class DiagramEditView extends DiagramView {
             diagram: this,
             snap: this.pendingGuideSnap,
             handle,
-            nodes: this.selection(),
+            nodes: nodes,   // this.selection(),
             preserveAspect,
         });
+    }
+
+    private applyPendingGuideGroupSnap(group: IGroup, owner: INode): void {
+        const dx = this.pendingGuideSnap?.dx ?? 0;
+        const dy = this.pendingGuideSnap?.dy ?? 0;
+        for (const member_id of group.nodes) {
+            const member = (member_id !== owner.id) ? this.node(member_id) : undefined;
+            if (member) {
+                NodeBasics.moveBy(member, dx, dy);
+                this.movedNodes.add(member);
+            }
+        }
     }
 
     private moveSelectedPoint(node: INode, x: number, y: number, byX: number, byY: number): void {
