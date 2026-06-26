@@ -73,7 +73,7 @@ export class RectangleAdapter implements INodeAdapter {
             if (Math.abs(rect.left - x) <= epsilon && Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.W;
             if (Math.abs(rect.left + rect.width - x) <= epsilon && Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.E;
 
-            if (NodeRegistry.adapter(node.type)?.can_rotate) {
+            if (NodeRegistry.canRotate(node.type)) {
                 if (Math.abs(rect.left + rect.width + 8 + epsilon - x) <= epsilon &&
                     Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.ROTATE;
             }
@@ -294,7 +294,7 @@ export class RectangleAdapter implements INodeAdapter {
             // W
             RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
 
-            if (NodeRegistry.adapter(node.type)?.can_rotate) {
+            if (NodeRegistry.canRotate(node.type)) {
                 RenderBasics.renderRotateHandle(node, {
                     x: rect.left + rect.width + 8 + epsilon,
                     y: rect.top + rect.height / 2

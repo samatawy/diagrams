@@ -45,8 +45,7 @@ export function isConnectionNode(value: unknown): value is INode & IConnection {
  * @returns True if the value is an IContainer, false otherwise.
  */
 export function isContainer(value: unknown): value is IContainer {
-    const adapter = NodeRegistry.adapter((value as INode)?.type);
-    if (adapter?.is_container) {
+    if (NodeRegistry.isContainer((value as INode)?.type)) {
         return true;
     }
     return isNode(value) && 'owns_group' in value && typeof (value as any).owns_group === 'string';

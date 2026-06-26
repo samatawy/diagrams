@@ -350,10 +350,10 @@ export class RenderBasics {
         const cached = cache.getNode(node) || {} as INodeCached;
 
         const adapter = NodeRegistry.adapter(node.type);
-        if (!adapter?.has_text) {
+        if (!NodeRegistry.hasText(node.type)) {
             return; // unsupported
         }
-        const placement = adapter.textPlacement(node);
+        const placement = adapter?.textPlacement(node);
         if (!placement?.rect && !placement?.segment) {
             return; // no valid text placement
         }

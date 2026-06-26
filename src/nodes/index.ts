@@ -1,3 +1,4 @@
+import { NodeRegistry } from '../factory';
 import { VerticalSwimlaneAdapter } from './container/vertical.swimlane.adapter';
 import { CurveAdapter } from './polyline/curve.adapter';
 import { LineAdapter } from './polyline/line.adapter';
@@ -55,4 +56,31 @@ export function registerBasicAdapters(): void {
 
     PolygonAdapter.register();
     SvgAdapter.register();
+
+    NodeRegistry.registerTransferables([
+        RectangleAdapter.name,
+        RoundRectangleAdapter.name,
+        EllipseAdapter.name,
+        TextAdapter.name,
+        RhombusAdapter.name,
+        ParallelogramAdapter.name,
+        TrapezoidAdapter.name,
+        DocumentAdapter.name,
+    ]);
+
+    NodeRegistry.registerTransferables([
+        LineAdapter.name,
+        PolylineAdapter.name,
+        ManhattanAdapter.name,
+        CurveAdapter.name,
+    ]);
+
+    NodeRegistry.registerTransferables([
+        VerticalSwimlaneAdapter.name,
+    ]);
+
+    NodeRegistry.registerTransferables([
+        PolygonAdapter.name,
+    ]);
+
 }

@@ -224,7 +224,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ align: 'left' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textAlign(n) === 'left'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-center',
@@ -233,7 +233,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ align: 'center' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textAlign(n) === 'center'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-right',
@@ -242,7 +242,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ align: 'right' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textAlign(n) === 'right'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-top',
@@ -251,7 +251,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ baseline: 'top' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'top'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-middle',
@@ -260,7 +260,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ baseline: 'middle' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'middle'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-bottom',
@@ -269,7 +269,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ baseline: 'bottom' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'bottom'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.adapter(n.type)?.has_text),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
     },
 
     // text formatting
@@ -283,7 +283,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             d.setTextStyle({ weight: isBold ? NORMAL_FONT_WEIGHT : BOLD_FONT_WEIGHT });
         },
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textBold(n)),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-italic',
@@ -295,7 +295,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             d.setTextStyle({ italic: !isItalic });
         },
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textItalic(n)),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.adapter(n.type)?.has_text),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-orientation-horizontal',

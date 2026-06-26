@@ -1011,7 +1011,7 @@ export class DiagramView extends Diagram implements HasSelection {
             const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
             // if (!target || node == target) {
             if (handle !== NodeHandle.NONE) {
-                console.log(`hitHandle: nodes=${nodes.map(n => n.type).join(', ')}, node=${node.type}, handle=${handle}`);
+                // console.log(`hitHandle: nodes=${nodes.map(n => n.type).join(', ')}, node=${node.type}, handle=${handle}`);
                 return handle;
             }
             // }

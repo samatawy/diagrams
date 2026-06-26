@@ -99,6 +99,9 @@ You can tailor the editor for your own product:
 
 ## Version History
 
+- Since version `0.5.0`
+  - Groups and Containers.
+  - Improved snapping to grids/guides.
 - Since version `0.4.0`
   - Status bar with dynamic hints and a minimap.
   - Quality metrics and best-attempt layout fixer.

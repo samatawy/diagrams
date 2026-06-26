@@ -3,6 +3,7 @@ import { NodeHandle, type IPoint, type IRect } from "../types";
 import { isDiagramViewLike, isNode } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import { isAspectLocked, isHollow, isLocked } from "../value.utils";
+import { DiagramConstants } from "../model/diagram.constants";
 
 /**
  * Provides basic operations for manipulating nodes, such as moving, resizing, rotating, and checking for overlaps or containment.
@@ -411,6 +412,53 @@ export class NodeBasics {
 
         // Vertical tie-breaker keeps normalization deterministic.
         return from.y > to.y;
+    }
+
+    public static nearestHandle(node: INode, point: IPoint, tolerance?: number): { handle: NodeHandle, point: IPoint } | undefined {
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return undefined;
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(node, true);
+
+        if (!rect) return undefined;
+        tolerance = tolerance ?? 24; // Default tolerance if not provided
+        if (Math.abs(point.x - rect.left) > tolerance &&
+            Math.abs(point.x - rect.left) < rect.width - tolerance &&
+            Math.abs(point.y - rect.top) > tolerance &&
+            Math.abs(point.y - rect.top) < rect.height - tolerance) {
+            return { handle: NodeHandle.MOVE, point: { ...point } };
+        }
+
+        const handlePoints: Record<string, IPoint> = {
+            [NodeHandle.N]: { x: rect.left + rect.width / 2, y: rect.top },
+            [NodeHandle.S]: { x: rect.left + rect.width / 2, y: rect.top + rect.height },
+            [NodeHandle.E]: { x: rect.left + rect.width, y: rect.top + rect.height / 2 },
+            [NodeHandle.W]: { x: rect.left, y: rect.top + rect.height / 2 },
+            [NodeHandle.NE]: { x: rect.left + rect.width, y: rect.top },
+            [NodeHandle.NW]: { x: rect.left, y: rect.top },
+            [NodeHandle.SE]: { x: rect.left + rect.width, y: rect.top + rect.height },
+            [NodeHandle.SW]: { x: rect.left, y: rect.top + rect.height },
+        };
+
+        let nearestHandle: NodeHandle = NodeHandle.NONE;
+        let nearestPoint: IPoint = { x: 0, y: 0 };
+        let minDistance = Infinity;
+
+        for (const [handle, handlePoint] of Object.entries(handlePoints)) {
+            const distance = Math.sqrt((point.x - handlePoint.x) ** 2 + (point.y - handlePoint.y) ** 2);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestHandle = handle as NodeHandle;
+                nearestPoint = { ...handlePoint };
+            }
+        }
+        // tolerance = tolerance ?? 24; // Default tolerance if not provided
+        // if (minDistance > tolerance) {
+        //     return { handle: NodeHandle.MOVE, point: point };
+        // } else {
+        //     return { handle: nearestHandle, point: nearestPoint };
+        // }
+        return { handle: nearestHandle, point: nearestPoint };
     }
 
 }

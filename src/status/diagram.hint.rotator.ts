@@ -75,7 +75,7 @@ export class DiagramHintRotator {
             if (!include) return false;
         }
         if (hint.requiresTextCapableSelection) {
-            const include = filter.selection && filter.selection.some(node => NodeRegistry.adapter(node.type)?.has_text);
+            const include = filter.selection && filter.selection.some(node => NodeRegistry.hasText(node.type));
             if (!include) return false;
         }
         return true;

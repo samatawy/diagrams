@@ -291,8 +291,7 @@ export class ToolPalette {
         button.setAttribute('aria-pressed', 'false');
         button.setAttribute('aria-label', label);
 
-        const adapter = NodeRegistry.adapter(tool);
-        if (adapter?.drag_create) {
+        if (NodeRegistry.canDragCreate(tool)) {
             this.attachDragCreateBehavior(button, tool);
         }
 

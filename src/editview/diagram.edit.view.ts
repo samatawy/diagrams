@@ -1,5 +1,5 @@
 import { Diagram } from "../model/diagram";
-import type { IConnection, IConnectionAnchor, IGrid, IGroup, ILayer, INode } from "../interfaces";
+import type { IConnection, IConnectionAnchor, IContainer, IGrid, IGroup, ILayer, INode } from "../interfaces";
 import { DiagramView, type RenderMode, type RenderScope } from "../view/diagram.view";
 import { NodeHandle, type IPoint, type IRect, type ITextAlign, type ITextBaseline, type ArrowDirection, type ImageMode, type ImageAlign, type ITextOrientation, type IFontWeight } from "../types";
 import { HistoryStack } from "./history";
@@ -38,7 +38,7 @@ interface DiagramClipboardEnvelope {
     nodes: ISerializedNode[];
     image_assets?: Record<string, string>;
 }
-import { isInvisible, isLocked, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
+import { humanize, isInvisible, isLocked, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
@@ -172,6 +172,8 @@ export class DiagramEditView extends DiagramView {
     };
 
     private dragCreateDraft?: INode;
+
+    private dragDraftConnector?: INode;
 
     protected readonly handleWindowPointerUp = (event: PointerEvent) => this.windowPointerUp(event);
 
@@ -697,6 +699,28 @@ export class DiagramEditView extends DiagramView {
         node.ready = false;
         this.dragCreateDraft = node;
         this.render('all');
+
+        // Prepare for potential autoconnecting
+        this.createDragDraftConnector(node);
+    }
+
+    private createDragDraftConnector(draft: Partial<INode>): void {
+        if (!draft || !draft.type || draft.type === 'select' || !NodeRegistry.adapter(draft.type)) {
+            return;
+        }
+
+        this.dragDraftConnector = {
+            owner: this,
+            id: 'drag-draft-connector',
+            type: 'line',
+            points: [],
+            strokeStyle: this.settings.strokeColor,
+            lineWidth: this.settings.lineWidth,
+            arrow: this.settings.arrow,
+            invisible: true,
+            ready: false,
+            to: { node: draft },
+        } as any as INode & IConnection;
     }
 
     /**
@@ -1319,11 +1343,33 @@ export class DiagramEditView extends DiagramView {
                     return newId ? { ...anchor, node: newId } : { ...anchor };
                 };
 
+                // Second pass: remap group memberships
+                // creating new cloned groups if there was a container node in the paste batch.
+                const groupMap: Map<string, IGroup> = new Map();
+                for (let node of envelope.nodes) {
+                    const group_id = (node as IContainer & INode)?.owns_group;
+                    if (group_id) {
+                        const group = this.group(group_id);
+                        if (group) {
+                            // create a clone group from selected nodes
+                            let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                            let new_members = group.nodes.filter(id => idMap.has(id));
+                            new_members = new_members.map(id => idMap.get(id)!);
+                            const new_group = { id: cloned_group_id, nodes: new_members };
+                            groupMap.set(group.id, new_group);
+
+                            this.upsertGroup(new_group);
+                        }
+                    }
+                }
+
+                // Finally, clone the nodes into the diagram.
                 for (let node of envelope.nodes) {
                     const clone = this.cloneNode(node, idMap.get(node.id));
                     const conn = clone as INode & IConnection;
                     conn.from = remapAnchor(conn.from);
                     conn.to = remapAnchor(conn.to);
+                    if ((node as any).owns_group) (node as any).owns_group = groupMap.get((node as any).owns_group)?.id;
                     this.upsertNode(clone);
                     layer.nodes.push(clone.id);
 
@@ -1943,6 +1989,10 @@ export class DiagramEditView extends DiagramView {
         this.context.save();
         this.coordinates.applyViewportTransform(this.context);
         this.context.globalAlpha = 0.65;
+
+        if (this.dragDraftConnector && this.dragDraftConnector.ready) {
+            NodeRegistry.adapter(this.dragDraftConnector.type)?.render(this.dragDraftConnector, this.context);
+        }
         NodeRegistry.adapter(this.dragCreateDraft.type)?.render(this.dragCreateDraft, this.context);
         this.context.restore();
     }
@@ -2029,7 +2079,7 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
-        if (!this.current.draft && this.hasCreateTool() && this.isConnectorType(this.current.tool!)) {
+        if (!this.current.draft && this.hasCreateTool() && NodeRegistry.isConnection(this.current.tool!)) {
             // just preview connector targets while creating a new connection
             this.previewConnectorTargets(event.offsetX, event.offsetY);
             return;
@@ -2063,7 +2113,7 @@ export class DiagramEditView extends DiagramView {
             }
 
             if (event.button === 0) {
-                this.dropDrop(event);
+                this.dragDrop(event);
             }
             return;
         }
@@ -2086,7 +2136,7 @@ export class DiagramEditView extends DiagramView {
             const hit = this.hitNode(event.offsetX, event.offsetY);
             if (this.double_click_listener) {
                 this.double_click_listener(hit ?? undefined, event as unknown as PointerEvent);
-            } else if (hit && this.hasTextInput(hit.type)) {
+            } else if (hit && NodeRegistry.hasText(hit.type)) {
                 this.editText(hit);
             }
         }
@@ -2106,7 +2156,7 @@ export class DiagramEditView extends DiagramView {
 
         if (this.activeTextEditor) {
             const editingNode = this.node(this.activeTextEditor.nodeId);
-            const singleLine = this.activeTextEditor.singleLine || (editingNode ? this.isConnectorType(editingNode.type) : false);
+            const singleLine = this.activeTextEditor.singleLine || (editingNode ? NodeRegistry.isConnection(editingNode.type) : false);
 
             if (key === 'enter' && (singleLine || (!event.ctrlKey && !event.metaKey && !event.shiftKey))) {
                 consumeEvent();
@@ -2140,7 +2190,7 @@ export class DiagramEditView extends DiagramView {
             consumeEvent();
 
             const selected = this.selection().length === 1 ? this.selection()[0] : undefined;
-            if (selected && this.current.tool === 'select' && this.hasTextInput(selected.type)) {
+            if (selected && this.current.tool === 'select' && NodeRegistry.hasText(selected.type)) {
                 this.editText(selected);
                 return;
             }
@@ -2149,7 +2199,7 @@ export class DiagramEditView extends DiagramView {
             if (this.exitDrawing()) {
                 const next = this.selection();
                 const afterExit = next.length == 1 ? next[0]! : undefined;
-                if (afterExit && this.current.tool === 'select' && this.hasTextInput(afterExit.type)) {
+                if (afterExit && this.current.tool === 'select' && NodeRegistry.hasText(afterExit.type)) {
                     this.editText(afterExit);
                 }
                 return;
@@ -2834,7 +2884,7 @@ export class DiagramEditView extends DiagramView {
             this.current.draft = draft;
             this.upsertNode(draft);
 
-            if (this.isConnectorType(draft.type)) {
+            if (NodeRegistry.isConnection(draft.type)) {
                 ConnectionBasics.reconnect(draft as INode & IConnection, event.offsetX, event.offsetY);
                 this.updateConnectorDraftReadiness(draft as INode & IConnection);
             }
@@ -2846,13 +2896,13 @@ export class DiagramEditView extends DiagramView {
             this.canvas.style.cursor = 'crosshair';
             this.render('all');
             this.setInteractionHint(`Drawing ${draft.type}`);
-            if (this.isConnectorType(draft.type)) {
+            if (NodeRegistry.isConnection(draft.type)) {
                 this.renderConnectorTargets(draft as INode & IConnection, event.offsetX, event.offsetY);
             }
             return;
         }
 
-        if (this.isConnectorType(this.current.draft.type)) {
+        if (NodeRegistry.isConnection(this.current.draft.type)) {
             const draft = this.current.draft as INode & IConnection;
             const movingIndex = draft.points.length - 1;
             draft.points[movingIndex] = { ...point };
@@ -2860,7 +2910,7 @@ export class DiagramEditView extends DiagramView {
             ConnectionBasics.reconnect(draft, event.offsetX, event.offsetY);
             this.updateConnectorDraftReadiness(draft);
 
-            if (!draft.ready && this.isMultistepCreate(draft.type)) {
+            if (!draft.ready && NodeRegistry.isMultistepCreate(draft.type)) {
                 draft.points.push({ ...point });
             } else if (!draft.ready) {
                 draft.ready = true;
@@ -2873,7 +2923,7 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
-        if (this.isMultistepCreate(this.current.draft.type)) {
+        if (NodeRegistry.isMultistepCreate(this.current.draft.type)) {
             const movingIndex = this.current.draft.points.length - 1;
             this.current.draft.points[movingIndex] = { ...point };
             this.current.draft.points.push({ ...point });
@@ -2893,7 +2943,7 @@ export class DiagramEditView extends DiagramView {
         this.render('all');
         this.setInteractionHint(`Drawing ${draft.type}`);
 
-        if (this.isConnectorType(draft.type)) {
+        if (NodeRegistry.isConnection(draft.type)) {
             this.renderConnectorTargets(draft as INode & IConnection, event.offsetX, event.offsetY);
         } else {
             this.finishDraftIfReady();
@@ -2904,19 +2954,19 @@ export class DiagramEditView extends DiagramView {
         if (!this.current.draft) return;
 
         // TODO: Why is the line here? Must understand.
-        this.createMove(event);
+        // this.createMove(event);
 
-        if (this.isConnectorType(this.current.draft.type)) {
+        if (NodeRegistry.isConnection(this.current.draft.type)) {
             this.renderConnectorTargets(this.current.draft as INode & IConnection, event.offsetX, event.offsetY);
             return;
         }
 
-        if (!this.isMultistepCreate(this.current.draft.type)) {
+        if (!NodeRegistry.isMultistepCreate(this.current.draft.type)) {
             this.current.draft.ready = true;
         }
 
         // Handle groups
-        if (this.current.draft.ready) {     //} && !isConnection(this.current.draft)) {
+        if (this.current.draft.ready) {
             const overlaying_start = this.hitNodes(this.createPos?.x ?? 0, this.createPos?.y ?? 0);
             const overlaying_end = this.hitNodes(event.offsetX, event.offsetY);
             const overlaying = Array.from(new Set([...overlaying_start, ...overlaying_end]))
@@ -2942,33 +2992,152 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
+        let overlaying = this.hitNode(event.offsetX, event.offsetY);
+
+        if (overlaying) {
+            // The dragged node is over another node.
+            // Position the created node relative to the connector's end point
+            // so we can find the nearest anchor
+            let from_handle = this.hitHandle(event.offsetX, event.offsetY);
+            let from_point = this.coordinates.getPointFromEvent(event, this.grid);
+            let to_handle = NodeHandle.MOVE;
+            let to_point = from_point;
+
+            // The dragged node is over another node.
+            // Position the dragged node relative to the connector's end point.
+            if (overlaying && from_handle === NodeHandle.MOVE) {
+                // Try to find a better anchor
+                const from_nearest = NodeBasics.nearestHandle(overlaying, from_point);
+                if (from_nearest) {
+                    from_handle = from_nearest.handle;
+                    from_point = from_nearest.point;
+                }
+            }
+            this.positionDraftConnectedTo(this.dragCreateDraft, from_point, from_handle);
+            const to_nearest = NodeBasics.nearestHandle(this.dragCreateDraft, from_point);
+            if (to_nearest) {
+                to_handle = to_nearest.handle;
+                to_point = to_nearest.point;
+            }
+
+            if (from_handle === NodeHandle.N || from_handle === NodeHandle.S ||
+                from_handle === NodeHandle.E || from_handle === NodeHandle.W ||
+                from_handle === NodeHandle.NE || from_handle === NodeHandle.NW ||
+                from_handle === NodeHandle.SE || from_handle === NodeHandle.SW) {
+
+                this.canvas.style.cursor = 'copy';  // indicate Adding to existing node
+
+                this.connectDragDraftTo(this.dragCreateDraft, from_point, from_handle, to_point);
+                this.render('all');
+
+                // Provide visual feedback indicating potential anchor points.
+                this.renderSelection(overlaying);
+
+                const target_label = overlaying?.text || 'existing ' + humanize(overlaying?.type || 'node');
+                this.setInteractionHint(`Drop to connect to ${target_label}`);
+
+                return;
+            } else {
+                // Should this be handled?
+                // console.warn('Drag over node with no anchor handle?', overlaying, from_handle);
+            }
+        }
+        // } else {
+        // The dragged node is not over another node.
+        this.canvas.style.cursor = 'default';
+
         const point = this.coordinates.getPointFromEvent(event, this.grid);
         this.centerNodeAt(this.dragCreateDraft, point);
         this.render('all');
+
+        if (this.dragDraftConnector) {
+            this.dragDraftConnector.invisible = true;
+            this.dragDraftConnector.ready = false;
+        }
+        // }
+        if (overlaying) {
+            this.renderSelection(overlaying);
+        }
     }
 
-    private dropDrop(event: PointerEvent): void {
+    private dragDrop(event: PointerEvent): void {
         if (!this.dragCreateDraft) {
             return;
         }
 
-        const created = this.dragCreateDraft;
+        this.addUndo();
+
+        const created = {
+            ...this.dragCreateDraft,
+            id: `${this.dragCreateDraft.type}-drop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+        };
         const point = this.coordinates.getPointFromEvent(event, this.grid);
-        this.centerNodeAt(created, point);
+        let connected_to: string | undefined = undefined;
+
+        if (this.dragDraftConnector?.ready) {
+            // The created node is over another node.
+            // Position the created node relative to the connector's end point
+            // so we can find the nearest anchor
+            const overlaying = this.hitNode(event.offsetX, event.offsetY);
+            let from_handle = this.hitHandle(event.offsetX, event.offsetY);
+            let from_point = this.coordinates.getPointFromEvent(event, this.grid);
+            let to_handle = NodeHandle.MOVE;
+            let to_point = from_point;
+
+            if (overlaying && from_handle === NodeHandle.MOVE) {
+                const from_nearest = NodeBasics.nearestHandle(overlaying, from_point);
+                if (from_nearest) {
+                    from_handle = from_nearest.handle;
+                    from_point = from_nearest.point;
+                }
+            }
+            this.positionDraftConnectedTo(created, from_point, from_handle);
+            const to_nearest = NodeBasics.nearestHandle(created, from_point);
+            if (to_nearest) {
+                to_handle = to_nearest.handle;
+                to_point = to_nearest.point;
+            }
+
+            // Insert the connector into the diagram
+            const connector = {
+                ...this.dragDraftConnector,
+                from: { node: overlaying?.id, handle: from_handle },
+                to: { node: created.id, handle: to_handle },
+                id: `auto-line-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+            } as INode & IConnection;
+
+            this.upsertNode(connector);
+            this.current.layer?.nodes.push(connector.id);
+
+            // and place it as expected
+            this.positionDraftConnectedTo(created, from_point, from_handle);
+            connected_to = overlaying?.id;
+
+        } else {
+            // The created node is not over another node.
+            this.centerNodeAt(created, point);
+        }
+
         created.ready = true;
-        created.id = `${created.type}-drop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
         const layer = this.ensureCurrentLayer();
 
-        this.addUndo();
+        // this.addUndo();
 
         this.upsertNode(created);
-        if (!layer.nodes.includes(created.id)) {
-            layer.nodes.push(created.id);
-        }
+        layer.nodes.push(created.id);
+        // if (!layer.nodes.includes(created.id)) {
+        //     layer.nodes.push(created.id);
+        // }
 
+        // Handle groups
         const overlaying = this.hitNodes(event.offsetX, event.offsetY).filter(node => node.id !== created.id);
         for (const one of overlaying) {
+            // Don't become a memebr of a container you connected to; that would be confusing.
+            if (one.id === connected_to) {
+                continue;
+            }
+
             if (isContainer(one)) {
                 this.setNodeGroup(created, one.owns_group);
                 break;
@@ -2993,8 +3162,81 @@ export class DiagramEditView extends DiagramView {
         NodeBasics.moveBy(node, deltaX, deltaY, 'ignore_scale');
     }
 
+    private positionDraftConnectedTo(draft: INode, point: IPoint, handle: NodeHandle): void {
+        if (!this.dragCreateDraft) return;
+
+        const rect = this.coordinates.getBoundingRect(draft);
+        let offsetX = 0, offsetY = 0, stub = 24 * 2, w = rect.width / 2, h = rect.height / 2;
+
+        switch (handle) {
+            case NodeHandle.N: offsetY = - stub - h; break;
+            case NodeHandle.S: offsetY = stub + h; break;
+            case NodeHandle.E: offsetX = stub + w; break;
+            case NodeHandle.W: offsetX = - stub - w; break;
+            case NodeHandle.NE: offsetX = stub + w; offsetY = - stub - h; break;
+            case NodeHandle.NW: offsetX = - stub - w; offsetY = - stub - h; break;
+            case NodeHandle.SE: offsetX = stub + w; offsetY = stub + h; break;
+            case NodeHandle.SW: offsetX = - stub - w; offsetY = stub + h; break;
+        }
+
+        this.centerNodeAt(draft, { x: point.x + offsetX, y: point.y + offsetY });
+    }
+
+    private connectDragDraftTo(draft: INode, from_point: IPoint, from_handle: NodeHandle, to_point: IPoint): void {
+        if (!this.dragCreateDraft) return;
+
+        // const rect = this.coordinates.getBoundingRect(draft);
+        // let to_point = { x: point.x, y: point.y };
+        // switch (to_handle) {
+        //     case NodeHandle.N: to_point = { x: rect.left + rect.width / 2, y: rect.top }; break;
+        //     case NodeHandle.S: to_point = { x: rect.left + rect.width / 2, y: rect.top + rect.height }; break;
+        //     case NodeHandle.E: to_point = { x: rect.left + rect.width, y: rect.top + rect.height / 2 }; break;
+        //     case NodeHandle.W: to_point = { x: rect.left, y: rect.top + rect.height / 2 }; break;
+        //     case NodeHandle.NE: to_point = { x: rect.left + rect.width, y: rect.top }; break;
+        //     case NodeHandle.NW: to_point = { x: rect.left, y: rect.top }; break;
+        //     case NodeHandle.SE: to_point = { x: rect.left + rect.width, y: rect.top + rect.height }; break;
+        //     case NodeHandle.SW: to_point = { x: rect.left, y: rect.top + rect.height }; break;
+        // }
+
+        this.positionDraftConnectedTo(draft, from_point, from_handle);
+        if (this.dragDraftConnector) {
+            this.dragDraftConnector.invisible = false;
+            this.dragDraftConnector.ready = true;
+            this.dragDraftConnector.points = [
+                { x: from_point.x, y: from_point.y },
+                { x: to_point.x, y: to_point.y }
+            ];
+        }
+
+        // const rect = this.coordinates.getBoundingRect(draft);
+        // let offsetX = 0, offsetY = 0, stub = 24 * 2, w = rect.width / 2, h = rect.height / 2;
+
+        // switch (handle) {
+        //     case NodeHandle.N: offsetY = - stub - h; break;
+        //     case NodeHandle.S: offsetY = stub + h; break;
+        //     case NodeHandle.E: offsetX = stub + w; break;
+        //     case NodeHandle.W: offsetX = - stub - w; break;
+        //     case NodeHandle.NE: offsetX = stub + w; offsetY = - stub - h; break;
+        //     case NodeHandle.NW: offsetX = - stub - w; offsetY = - stub - h; break;
+        //     case NodeHandle.SE: offsetX = stub + w; offsetY = stub + h; break;
+        //     case NodeHandle.SW: offsetX = - stub - w; offsetY = stub + h; break;
+        // }
+
+        // if (this.dragDraftConnector) {
+        //     this.dragDraftConnector.invisible = false;
+        //     this.dragDraftConnector.ready = true;
+        //     this.dragDraftConnector.points = [
+        //         { x: point.x, y: point.y },
+        //         { x: point.x + offsetX, y: point.y + offsetY }
+        //     ];
+        // }
+
+        // this.centerNodeAt(draft, { x: point.x + offsetX, y: point.y + offsetY });
+    }
+
     private clearDragCreateDraft(): void {
         this.dragCreateDraft = undefined;
+        this.dragDraftConnector = undefined;
     }
 
     private cancelDragCreateDraft(): void {
@@ -3033,17 +3275,17 @@ export class DiagramEditView extends DiagramView {
         return !!NodeRegistry.adapter(this.current.tool);
     }
 
-    private isMultistepCreate(type: string): boolean {
-        return NodeRegistry.isMultistepCreate(type);
-    }
+    // private isMultistepCreate(type: string): boolean {
+    //     return NodeRegistry.isMultistepCreate(type);
+    // }
 
-    private isConnectorType(type: string): boolean {
-        return !!NodeRegistry.adapter(type)?.is_connector;
-    }
+    // private isConnectorType(type: string): boolean {
+    //     return !!NodeRegistry.adapter(type)?.is_connector;
+    // }
 
-    private hasTextInput(type: string): boolean {
-        return !!NodeRegistry.adapter(type)?.has_text;
-    }
+    // private hasTextInput(type: string): boolean {
+    //     return !!NodeRegistry.adapter(type)?.has_text;
+    // }
 
     private updateConnectorDraftReadiness(draft: INode & IConnection): void {
         draft.ready = !!draft.from && !!draft.to;
@@ -3126,7 +3368,7 @@ export class DiagramEditView extends DiagramView {
         const points = (tool === 'polygon')
             ? [{ ...start }, { ...start }, { ...start }, { ...start }]
             : [{ ...start }, { ...start }];
-        const fillStyle = this.isConnectorType(tool) ? 'transparent' : this.fillColor;
+        const fillStyle = NodeRegistry.isConnection(tool) ? 'transparent' : this.fillColor;
         const hollow_mode = NodeRegistry.adapter(tool)?.hollow_mode || 'if_transparent';
         const hollow = (hollow_mode === 'always')
             || (hollow_mode === 'if_transparent' && fillStyle === 'transparent');
@@ -3148,7 +3390,7 @@ export class DiagramEditView extends DiagramView {
             owner: this,
         };
 
-        if (this.isConnectorType(tool)) {
+        if (NodeRegistry.isConnection(tool)) {
             draft.arrow = this.settings.arrow;
             draft.textStyle = {
                 ...(draft.textStyle || {}),
@@ -3184,7 +3426,7 @@ export class DiagramEditView extends DiagramView {
         this.renderPreview();
 
         this.emitNodeAdded(created);
-        if (this.isConnectorType(created.type) && (created as INode & IConnection).from || (created as INode & IConnection).to) {
+        if (NodeRegistry.isConnection(created.type) && (created as INode & IConnection).from || (created as INode & IConnection).to) {
             this.emitConnectionConnected(created as INode & IConnection);
         }
 
@@ -3315,7 +3557,7 @@ export class DiagramEditView extends DiagramView {
         if (!this.canvas || !node) {
             return;
         }
-        if (!this.hasTextInput(node.type)) {
+        if (!NodeRegistry.hasText(node.type)) {
             return;
         }
 
@@ -3327,7 +3569,7 @@ export class DiagramEditView extends DiagramView {
         const canvasRect = this.canvas.getBoundingClientRect();
         const zoom = this.coordinates.zoom;
         const pan = this.coordinates.pan;
-        const singleLine = this.isConnectorType(node.type);
+        const singleLine = NodeRegistry.isConnection(node.type);
 
         const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
         const baseline = textBaseline(node);

@@ -20,7 +20,10 @@ import { IconRegistry } from "./icon.registry";
  * }
  */
 export class NodeRegistry {
+
     private static _nodes: Map<string, INodeAdapter> = new Map();
+
+    private static _transferables: Map<string, string[]> = new Map();
 
     /**
      * Registers a node handler for a specific type.
@@ -51,6 +54,11 @@ export class NodeRegistry {
      */
     public static unregister(type: string): void {
         this._nodes.delete(type);
+
+        this._transferables.delete(type);
+        for (const [key, value] of this._transferables.entries()) {
+            this._transferables.set(key, value.filter(t => t !== type));
+        }
     }
 
     /**
@@ -61,6 +69,21 @@ export class NodeRegistry {
         return Array.from(this._nodes.keys());
     }
 
+    public static registerTransferables(transferables: string[]): void {
+        for (const type of transferables) {
+            this._transferables.set(type, transferables);
+        }
+    }
+
+    public static getTransferables(type: string): string[] {
+        return this._transferables.get(type) ?? [];
+    }
+
+    // public static canTransfer(fromType: string, toType: string): boolean {
+    //     const transferables = this._transferables.get(fromType);
+    //     return transferables ? transferables.includes(toType) : false;
+    // }
+
     /**
      * Checks if the node type represents a connection.
      * @param type The type of the node.
@@ -69,6 +92,16 @@ export class NodeRegistry {
     public static isConnection(type: string): boolean {
         const handler = this._nodes.get(type);
         return handler ? handler.is_connector : false;
+    }
+
+    /**
+     * Checks if the node type represents a container.
+     * @param type The type of the node.
+     * @returns True if the node type is a container, false otherwise.
+     */
+    public static isContainer(type: string): boolean {
+        const handler = this._nodes.get(type);
+        return handler ? handler.is_container === true : false;
     }
 
     /**
@@ -89,5 +122,25 @@ export class NodeRegistry {
     public static isMultistepCreate(type: string): boolean {
         const handler = this._nodes.get(type);
         return handler ? handler.multistep_create === true : false;
+    }
+
+    /**
+     * Checks if the node type supports drag creation.
+     * @param type The type of the node.
+     * @returns True if the node type supports drag creation, false otherwise.
+     */
+    public static canDragCreate(type: string): boolean {
+        const handler = this._nodes.get(type);
+        return handler ? handler.drag_create === true : false;
+    }
+
+    /**
+     * Checks if the node type can be rotated.
+     * @param type The type of the node.
+     * @returns True if the node type can be rotated, false otherwise.
+     */
+    public static canRotate(type: string): boolean {
+        const handler = this._nodes.get(type);
+        return handler ? handler.can_rotate === true : false;
     }
 }
