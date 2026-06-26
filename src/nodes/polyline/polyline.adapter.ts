@@ -17,13 +17,13 @@ import { NodeBasics } from "../node.basics";
  */
 export class PolylineAdapter implements INodeAdapter {
 
-    public static NAME = 'polyline';
+    public static TYPE = 'polyline';
 
     /**
      * Gets the registry name for this adapter.
      */
-    public get name(): string {
-        return (this.constructor as typeof PolylineAdapter).NAME;
+    public get type(): string {
+        return (this.constructor as typeof PolylineAdapter).TYPE;
     }
 
     // protected readonly hitStrokePadding = DiagramConstants.SELECTION_LINE_PADDING;
@@ -40,14 +40,14 @@ export class PolylineAdapter implements INodeAdapter {
      * Registers the PolylineAdapter with the NodeRegistry.
      */
     public static register() {
-        NodeRegistry.register(this.NAME, this);
+        NodeRegistry.register(this.TYPE, this);
     }
 
     /**
      * Registers the PolylineAdapter instance with the NodeRegistry.
      */
     public register() {
-        NodeRegistry.register(this.name, this);
+        NodeRegistry.register(this.type, this);
     }
 
     public hitTest(node: INode, point: IPoint): NodeHandle {
@@ -174,7 +174,7 @@ export class PolylineAdapter implements INodeAdapter {
     public write(node: INode, serializer: any): any {
         return serializer.write({
             ...node,
-            type: this.name,
+            type: this.type,
         });
     }
 

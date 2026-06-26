@@ -14,7 +14,7 @@ import { DiagramConstants } from "../../model/diagram.constants";
  */
 export class DocumentAdapter extends RectangleAdapter {
 
-    public static NAME = 'document';
+    public static TYPE = 'document';
 
     public override render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

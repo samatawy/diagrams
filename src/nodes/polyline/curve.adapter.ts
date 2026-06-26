@@ -17,7 +17,7 @@ import { RenderBasics } from "../render.basics";
  */
 export class CurveAdapter extends PolylineAdapter {
 
-    public static NAME = 'curve';
+    public static TYPE = 'curve';
 
     has_text = true;
     text_orientations: ITextOrientation[] = ['horizontal'];

@@ -13,7 +13,7 @@ import { isHollow } from "../../value.utils";
  */
 export class RhombusAdapter extends RectangleAdapter {
 
-    public static NAME = 'rhombus';
+    public static TYPE = 'rhombus';
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
@@ -63,7 +63,7 @@ export class RhombusAdapter extends RectangleAdapter {
 
     public onCreateDraft(tool: string): Partial<INode> | undefined {
         return {
-            type: this.name,
+            type: this.type,
             points: [{ x: 0, y: 0 }, { x: 64, y: 64 }],
         }
     }

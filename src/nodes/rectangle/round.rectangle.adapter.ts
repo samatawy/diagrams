@@ -14,7 +14,7 @@ import { DiagramConstants } from "../../model/diagram.constants";
  */
 export class RoundRectangleAdapter extends RectangleAdapter {
 
-    public static NAME = 'round_rectangle';
+    public static TYPE = 'round_rectangle';
 
     public override render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

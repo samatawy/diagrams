@@ -14,7 +14,7 @@ import type { HollowMode, TextOverflowMode } from "../../factory/node.adapter";
  */
 export class PolygonAdapter extends PolylineAdapter {
 
-    public static NAME = 'polygon';
+    public static TYPE = 'polygon';
 
     hollow_mode: HollowMode = 'if_transparent';
     has_text = true;

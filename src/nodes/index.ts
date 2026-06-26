@@ -58,29 +58,32 @@ export function registerBasicAdapters(): void {
     SvgAdapter.register();
 
     NodeRegistry.registerTransferables([
-        RectangleAdapter.name,
-        RoundRectangleAdapter.name,
-        EllipseAdapter.name,
-        TextAdapter.name,
-        RhombusAdapter.name,
-        ParallelogramAdapter.name,
-        TrapezoidAdapter.name,
-        DocumentAdapter.name,
+        RectangleAdapter.TYPE,
+        RoundRectangleAdapter.TYPE,
+        EllipseAdapter.TYPE,
+        TextAdapter.TYPE,
+        RhombusAdapter.TYPE,
+        ParallelogramAdapter.TYPE,
+        TrapezoidAdapter.TYPE,
+        DocumentAdapter.TYPE,
     ]);
 
     NodeRegistry.registerTransferables([
-        LineAdapter.name,
-        PolylineAdapter.name,
-        ManhattanAdapter.name,
-        CurveAdapter.name,
+        PolylineAdapter.TYPE,
+        ManhattanAdapter.TYPE,
+        CurveAdapter.TYPE,
     ]);
 
     NodeRegistry.registerTransferables([
-        VerticalSwimlaneAdapter.name,
+        LineAdapter.TYPE,
     ]);
 
     NodeRegistry.registerTransferables([
-        PolygonAdapter.name,
+        VerticalSwimlaneAdapter.TYPE,
+    ]);
+
+    NodeRegistry.registerTransferables([
+        PolygonAdapter.TYPE,
     ]);
 
 }

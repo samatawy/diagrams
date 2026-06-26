@@ -11,7 +11,7 @@ import type { HollowMode, TextOverflowMode } from "../../factory/node.adapter";
  */
 export class TextAdapter extends RectangleAdapter {
 
-    public static NAME = 'text';
+    public static TYPE = 'text';
 
     hollow_mode: HollowMode = 'always';
     text_overflow: TextOverflowMode = 'visible';
@@ -29,7 +29,7 @@ export class TextAdapter extends RectangleAdapter {
 
     public onCreateDraft(tool: string): Partial<INode> | undefined {
         return {
-            type: this.name,
+            type: this.type,
             points: [{ x: 0, y: 0 }, { x: 64, y: 64 }],
             text: 'Text',
         }

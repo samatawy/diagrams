@@ -14,14 +14,14 @@ import { DiagramConstants } from "../../model/diagram.constants";
  */
 export class VerticalSwimlaneAdapter extends RectangleAdapter {
 
-    public static NAME = 'vertical_swimlane';
+    public static TYPE = 'vertical_swimlane';
 
     public is_container = true;
     public can_rotate = false;
 
     public onCreateDraft(tool: string): Partial<INode & IContainer> | undefined {
         return {
-            type: this.name,
+            type: this.type,
             points: [{ x: 0, y: 0 }, { x: 104, y: 240 }],
             geometry: { radius: DiagramConstants.HANDLE_HIT_EPSILON },
             owns_group: `group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,

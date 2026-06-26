@@ -13,7 +13,7 @@ import type { HollowMode, TextOverflowMode } from "../../factory/node.adapter";
  */
 export class LineAdapter extends PolylineAdapter {
 
-    public static NAME = 'line';
+    public static TYPE = 'line';
 
     hollow_mode: HollowMode = 'always';
     multistep_create = false;
@@ -60,18 +60,22 @@ export class LineAdapter extends PolylineAdapter {
 
         path.moveTo(from.x, from.y);
 
-        if (node.points.length >= 4) {
-            const firstPoint = node.points[1]!;
-            const lastPoint = node.points[node.points.length - 2]!;
-            path.bezierCurveTo(firstPoint.x, firstPoint.y, lastPoint.x, lastPoint.y, to.x, to.y);
-            return;
-        }
+        // IMPORTANT: Keep for future reference.
+        //
+        // if (node.points.length >= 4) {
+        //     const firstPoint = node.points[1]!;
+        //     const lastPoint = node.points[node.points.length - 2]!;
+        //     path.bezierCurveTo(firstPoint.x, firstPoint.y, lastPoint.x, lastPoint.y, to.x, to.y);
+        //     return;
+        // }
 
-        if (node.points.length === 3) {
-            const control = node.points[1]!;
-            path.quadraticCurveTo(control.x, control.y, to.x, to.y);
-            return;
-        }
+        // IMPORTANT: Keep for future reference.
+        //
+        // if (node.points.length === 3) {
+        //     const control = node.points[1]!;
+        //     path.quadraticCurveTo(control.x, control.y, to.x, to.y);
+        //     return;
+        // }
 
         path.lineTo(to.x, to.y);
     }

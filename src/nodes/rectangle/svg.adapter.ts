@@ -14,7 +14,7 @@ import { imageMode } from "../../value.utils";
  */
 export class SvgAdapter extends RectangleAdapter {
 
-    public static NAME = 'svg';
+    public static TYPE = 'svg';
 
     hollow_mode: HollowMode = 'never';
 

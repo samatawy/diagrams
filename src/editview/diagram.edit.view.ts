@@ -712,11 +712,12 @@ export class DiagramEditView extends DiagramView {
         this.dragDraftConnector = {
             owner: this,
             id: 'drag-draft-connector',
-            type: 'line',
+            type: 'polyline',
             points: [],
             strokeStyle: this.settings.strokeColor,
             lineWidth: this.settings.lineWidth,
             arrow: this.settings.arrow,
+            hollow: true,
             invisible: true,
             ready: false,
             to: { node: draft },

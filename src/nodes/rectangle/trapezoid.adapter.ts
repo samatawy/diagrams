@@ -14,7 +14,7 @@ import { DiagramConstants } from "../../model/diagram.constants";
  */
 export class TrapezoidAdapter extends RectangleAdapter {
 
-    public static NAME = 'trapezoid';
+    public static TYPE = 'trapezoid';
 
     public override render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

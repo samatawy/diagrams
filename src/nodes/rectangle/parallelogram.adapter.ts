@@ -14,7 +14,7 @@ import { DiagramConstants } from "../../model/diagram.constants";
  */
 export class ParallelogramAdapter extends RectangleAdapter {
 
-    public static NAME = 'parallelogram';
+    public static TYPE = 'parallelogram';
 
     public override render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

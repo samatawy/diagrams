@@ -13,7 +13,7 @@ import { isHollow } from "../../value.utils";
  */
 export class EllipseAdapter extends RectangleAdapter {
 
-    public static NAME = 'ellipse';
+    public static TYPE = 'ellipse';
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;
@@ -64,7 +64,7 @@ export class EllipseAdapter extends RectangleAdapter {
 
     public onCreateDraft(tool: string): Partial<INode> | undefined {
         return {
-            type: this.name,
+            type: this.type,
             points: [{ x: 0, y: 0 }, { x: 104, y: 64 }],
         }
     }

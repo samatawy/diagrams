@@ -15,10 +15,10 @@ import { DiagramConstants } from "../../model/diagram.constants";
  */
 export class RectangleAdapter implements INodeAdapter {
 
-    public static NAME = 'rectangle';
+    public static TYPE = 'rectangle';
 
-    public get name(): string {
-        return (this.constructor as typeof RectangleAdapter).NAME;
+    public get type(): string {
+        return (this.constructor as typeof RectangleAdapter).TYPE;
     }
 
     hollow_mode: HollowMode = 'if_transparent';
@@ -35,14 +35,14 @@ export class RectangleAdapter implements INodeAdapter {
      * Registers the RectangleAdapter with the NodeRegistry.
      */
     public static register() {
-        NodeRegistry.register(this.NAME, this);
+        NodeRegistry.register(this.TYPE, this);
     }
 
     /**
      * Registers the RectangleAdapter instance with the NodeRegistry.
      */
     public register() {
-        NodeRegistry.register(this.name, this);
+        NodeRegistry.register(this.type, this);
     }
 
     public hitTest(node: INode, point: IPoint): NodeHandle {
@@ -125,7 +125,7 @@ export class RectangleAdapter implements INodeAdapter {
 
     public onCreateDraft(tool: string): Partial<INode> | undefined {
         return {
-            type: this.name,
+            type: this.type,
             points: [{ x: 0, y: 0 }, { x: 104, y: 40 }],
         }
     }
@@ -329,7 +329,7 @@ export class RectangleAdapter implements INodeAdapter {
     public write(node: INode, serializer: any): any {
         return serializer.write({
             ...node,
-            type: this.name,
+            type: this.type,
         });
     }
 

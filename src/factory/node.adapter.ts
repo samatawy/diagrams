@@ -26,10 +26,10 @@ export interface TextPlacement {
 export interface INodeAdapter {
 
     /**
-     * The unique name of the adapter, which is used to associate it with nodes of a specific type.
-     * This name is typically registered with the NodeRegistry to enable the diagram control to find the appropriate adapter for each node.
+     * The unique type name of the adapter, which is used to associate it with nodes of a specific type.
+     * This type is typically registered with the NodeRegistry to enable the diagram control to find the appropriate adapter for each node.
      */
-    name: string;
+    type: string;
 
     /**
      * Optional icon for this tool shown in the tool palette and any icon-aware UI.
@@ -50,7 +50,7 @@ export interface INodeAdapter {
      *   ```
      *
      * When omitted the palette falls back to the built-in `IconRegistry` entry
-     * matching this adapter's `name`, then to a text label.
+     * matching this adapter's `type`, then to a text label.
      */
     icon?: IconSource;
 

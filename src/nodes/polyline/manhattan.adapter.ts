@@ -21,7 +21,7 @@ type DirectedPoint = IPoint & { direction?: CardinalDirection };
  */
 export class ManhattanAdapter extends PolylineAdapter {
 
-    public static NAME = 'manhattan';
+    public static TYPE = 'manhattan';
 
     hollow_mode: HollowMode = 'if_transparent';
     has_text = true;
