@@ -678,7 +678,7 @@ export class DiagramView extends Diagram implements HasSelection {
         context.save();
         this.coordinates.resetTransform(context);
         context.strokeStyle = this.grid.color || DiagramConstants.GRID_LINE_COLOR;   // lightgray
-        context.lineWidth = 0.5;
+        context.lineWidth = 0.5 / zoom;
         context.globalAlpha = 0.6;
         context.beginPath();
 

@@ -326,15 +326,11 @@ export class NodeBasics {
 
                     let inpath: boolean = false;
                     if (cached.path && coordinates) {
-                        // this.owner.context.lineWidth = 25;
                         inpath = isHollow(node) ?
                             coordinates.isPointInStroke(cached.path, x, y) :
                             coordinates.isPointInPath(cached.path, x, y);
                     }
 
-                    // let inpath = (this.path && this.owner.context)? 
-                    //         this.owner.context.isPointInPath(this.path, check.x, check.y) 
-                    //         : false;
                     if (inpath) return true;
                 }
             }

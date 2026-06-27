@@ -38,7 +38,7 @@ interface DiagramClipboardEnvelope {
     nodes: ISerializedNode[];
     image_assets?: Record<string, string>;
 }
-import { humanize, isInvisible, isLocked, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
+import { humanize, isInvisible, isLocked, lineDash, lineWidth, nodeAngle, nodeOpacity, nodeText, strokeStyle, textAlign, textBaseline, textOrientation } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
@@ -96,6 +96,7 @@ export class DiagramEditView extends DiagramView {
     protected settings: {
         opacity: number;
         lineWidth: number;
+        lineDash: string | number[];
         arrow: ArrowDirection;
         strokeColor: string;
         fillColor: string;
@@ -118,6 +119,7 @@ export class DiagramEditView extends DiagramView {
         imagePadding?: number;
     } = {
             opacity: 100,
+            lineDash: [],
             lineWidth: DiagramConstants.DEFAULT_NODE_LINE_WIDTH,
             arrow: 'end',
             strokeColor: DiagramConstants.DEFAULT_STROKE_STYLE,
@@ -521,6 +523,21 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Gets the current default line dash pattern for borders and connections.
+     */
+    public get lineDash(): string | number[] {
+        return this.settings.lineDash;
+    }
+
+    /**
+     * Sets the default line dash and applies it to the current selection.
+     * @param value Line dash value.
+     */
+    public set lineDash(value: string | number[]) {
+        this.setLineDash(value);
+    }
+
+    /**
      * Gets the current arrow direction derived from the settings flags.
      */
     public get arrow(): ArrowDirection {
@@ -870,6 +887,25 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Sets the line dash pattern for the selected nodes and new nodes to be created.
+     * @param dash The line dash pattern to set, either as a string or an array of numbers.
+     */
+    public setLineDash(dash: string | number[]): void {
+        if (this.selection().length) {
+            this.addUndo();
+        }
+
+        this.settings.lineDash = dash;
+
+        for (let node of this.selection()) {
+            node.lineDash = dash;
+        }
+        this.render('all');
+        this.renderPreview();
+        this.eventDispatcher.styleChanged('set-line-dash');
+    }
+
+    /**
      * Sets the arrow direction for the selected nodes and new nodes to be created.
      * @param arrow The arrow direction to set.
      */
@@ -1192,7 +1228,8 @@ export class DiagramEditView extends DiagramView {
             fillStyle: style.fillStyle,
             textStyle: style.textStyle,
             // textColor: style.textColor,
-            // lineWidth: style.lineWidth,
+            lineWidth: style.lineWidth,
+            lineDash: style.lineDash,
             // fontFace: style.fontFace,
             // fontSize: style.fontSize,
             // textAlign: style.textAlign,
@@ -1227,6 +1264,7 @@ export class DiagramEditView extends DiagramView {
                     if (style.textStyle) node.textStyle = style.textStyle;
                     // if (style.textColor) node.textColor = style.textColor;
                     if (style.lineWidth) node.lineWidth = style.lineWidth;
+                    if (style.lineDash) node.lineDash = style.lineDash;
                     // if (style.fontFace) node.fontFace = style.fontFace;
                     // if (style.fontSize) node.fontSize = style.fontSize;
                     // if (style.textAlign) node.textAlign = style.textAlign;
@@ -1257,7 +1295,7 @@ export class DiagramEditView extends DiagramView {
                 const style = JSON.parse(json);
                 if (!style || typeof style !== 'object') return;
 
-                if (style.strokeStyle || style.fillStyle || style.textColor || style.lineWidth
+                if (style.strokeStyle || style.fillStyle || style.textColor || style.lineWidth || style.lineDash
                     || style.fontFace || style.fontSize || style.textAlign || style.textBaseline
                     || style.shadowStyle
                     || style.image_id || style.image_mode || style.image_align || style.image_padding) {
@@ -2793,34 +2831,12 @@ export class DiagramEditView extends DiagramView {
         if (this.downHandle === NodeHandle.MOVE || this.downHandle === NodeHandle.N || this.downHandle === NodeHandle.S
             || this.downHandle === NodeHandle.E || this.downHandle === NodeHandle.W || this.downHandle === NodeHandle.NE
             || this.downHandle === NodeHandle.NW || this.downHandle === NodeHandle.SE || this.downHandle === NodeHandle.SW) {
-
-            const group = this.downShape ? this.nodeGroup(this.downShape) : undefined;
-            if (group && this.downShape) {
-                this.applyPendingGuideSnap([this.downShape], this.downHandle, event.altKey);
-                if (this.groupOwner(group) === this.downShape) {
-                    // When snapping the owner, we need to snap all members of the group with the same dx,dy.
-                    this.applyPendingGuideGroupSnap(group, this.downShape);
-                    // const dx = this.pendingGuideSnap?.dx ?? 0;
-                    // const dy = this.pendingGuideSnap?.dy ?? 0;
-                    // for (const member_id of group.nodes) {
-                    //     const member = (member_id !== this.downShape.id) ? this.node(member_id) : undefined;
-                    //     if (member) {
-                    //         NodeBasics.moveBy(member, dx, dy);
-                    //         this.movedNodes.add(member);
-                    //     }
-                    // }
-                }
-
-            } else {
-                this.applyPendingGuideSnap(this.selection(), this.downHandle, event.altKey);
-            }
+            this.applyGuideSnapForSelection(this.downHandle, event.altKey);
         }
 
         if (this.grid && this.grid.forced && !event.ctrlKey) {
             if (this.downHandle != NodeHandle.ROTATE) {
-                for (let shape of this.selection()) {
-                    NodeRegistry.adapter(shape.type)?.snapToGrid(shape, this.grid, this.downHandle ?? NodeHandle.MOVE);
-                }
+                this.applyGridSnapForSelection(this.downHandle ?? NodeHandle.MOVE);
             }
             // this.render('all');
         }
@@ -2955,7 +2971,7 @@ export class DiagramEditView extends DiagramView {
         if (!this.current.draft) return;
 
         // TODO: Why is the line here? Must understand.
-        // this.createMove(event);
+        this.createMove(event);
 
         if (NodeRegistry.isConnection(this.current.draft.type)) {
             this.renderConnectorTargets(this.current.draft as INode & IConnection, event.offsetX, event.offsetY);
@@ -3066,6 +3082,9 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
+        // TODO: Is this necessary?
+        this.dragOver(event);
+
         this.addUndo();
 
         const created = {
@@ -3106,6 +3125,11 @@ export class DiagramEditView extends DiagramView {
                 to: { node: created.id, handle: to_handle },
                 id: `auto-line-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
             } as INode & IConnection;
+
+            const adapter = NodeRegistry.adapter(connector.type);
+            adapter?.afterConnect?.(connector, 'from', { node: overlaying!.id, handle: from_handle });
+            adapter?.afterConnect?.(connector, 'to', { node: created.id, handle: to_handle });
+            // ConnectionBasics.reconnect(connector, from_point.x, from_point.y);
 
             this.upsertNode(connector);
             this.current.layer?.nodes.push(connector.id);
@@ -3387,6 +3411,7 @@ export class DiagramEditView extends DiagramView {
             strokeStyle: this.strokeColor,
             fillStyle,
             lineWidth: this.lineWidth,
+            lineDash: this.lineDash,
             shadowStyle: { ...this.shadowStyle },
             owner: this,
         };
@@ -4250,6 +4275,123 @@ export class DiagramEditView extends DiagramView {
         }
     }
 
+    private applyGridGroupSnap(group: IGroup, owner: INode, dx: number, dy: number): void {
+        if (dx === 0 && dy === 0) return;
+
+        for (const member_id of group.nodes) {
+            const member = (member_id !== owner.id) ? this.node(member_id) : undefined;
+            if (member) {
+                NodeBasics.moveBy(member, dx, dy);
+                this.movedNodes.add(member);
+            }
+        }
+    }
+
+    private applyGuideSnapForSelection(handle: NodeHandle, preserveAspect?: boolean): void {
+        const group = this.downShape ? this.nodeGroup(this.downShape) : undefined;
+        if (!group || !this.downShape) {
+            this.applyPendingGuideSnap(this.selection(), handle, preserveAspect);
+            return;
+        }
+
+        const owner = this.groupOwner(group);
+        if (!owner) {
+            this.applyPendingGuideSnap(this.selection(), handle, preserveAspect);
+            return;
+        }
+
+        if (owner === this.downShape) {
+            this.applyPendingGuideSnap([owner], handle, preserveAspect);
+            // When snapping the owner while moving, move all members by the same dx,dy.
+            if (handle === NodeHandle.MOVE) {
+                this.applyPendingGuideGroupSnap(group, owner);
+            }
+            return;
+        }
+
+        if (handle === NodeHandle.MOVE) {
+            // Keep grouped nodes rigid: apply the same guide snap delta to the moved selection.
+            this.applyPendingGuideSnap(this.selection(), handle, preserveAspect);
+            return;
+        }
+
+        this.applyPendingGuideSnap([this.downShape], handle, preserveAspect);
+    }
+
+    private applyGridSnapForSelection(handle: NodeHandle): void {
+        if (!this.grid) {
+            return;
+        }
+
+        const snappedOwners = new Set<string>();
+        for (const shape of this.selection()) {
+            const adapter = NodeRegistry.adapter(shape.type);
+            if (!adapter?.snapToGrid) {
+                continue;
+            }
+
+            const container = isContainer(shape) ? shape : undefined;
+            if (container) {
+                // This node owns a group
+                // Snap the container to the grid, then move all group members by the same delta to keep them rigidly grouped.
+                const group = this.group((container as IContainer).owns_group);
+                if (group) {
+                    const before = this.coordinates.getBoundingRect(container);
+                    adapter.snapToGrid(container, this.grid, handle);
+                    const after = this.coordinates.getBoundingRect(container);
+                    const dx = after.left - before.left;
+                    const dy = after.top - before.top;
+                    this.applyGridGroupSnap(group, container, dx, dy);
+
+                    snappedOwners.add(container.id);
+                    continue;
+                }
+            }
+
+            const group = this.nodeGroup(shape);
+            if (!group) {
+                // This node is not part of a group, so just snap it to the grid.
+                adapter.snapToGrid(shape, this.grid, handle);
+                continue;
+            }
+
+            const owner = this.groupOwner(group);
+            if (!owner) {
+                // This node is not part of a group, so just snap it to the grid.
+                adapter.snapToGrid(shape, this.grid, handle);
+                continue;
+            }
+
+            if (owner !== shape) {
+                // Group members follow owner snapping to keep grouped movement coherent.
+                continue;
+            }
+
+            if (snappedOwners.has(owner.id)) {
+                // This node belongs to an already handled group, so skip it to avoid double-snapping.
+                continue;
+            }
+
+            // Now we have node that is in a group, and know its owner that hasn't been snapped yet. 
+            // Snap it, then move all group members by the same delta to keep them rigidly grouped.
+
+            if (handle !== NodeHandle.MOVE) {
+                // Resizing a group member only snaps that member, not the whole group. The group will resize when the owner is resized.
+                adapter.snapToGrid(owner, this.grid, handle);
+                snappedOwners.add(owner.id);
+                continue;
+            }
+
+            const before = this.coordinates.getBoundingRect(owner);
+            adapter.snapToGrid(owner, this.grid, handle);
+            const after = this.coordinates.getBoundingRect(owner);
+            const dx = after.left - before.left;
+            const dy = after.top - before.top;
+            this.applyGridGroupSnap(group, owner, dx, dy);
+            snappedOwners.add(owner.id);
+        }
+    }
+
     private moveSelectedPoint(node: INode, x: number, y: number, byX: number, byY: number): void {
         const rect = this.coordinates.getBoundingRect(node);
         const cached = this.getCache().getNode(node);
@@ -4388,6 +4530,7 @@ export class DiagramEditView extends DiagramView {
     private reflectStyles(shape: INode): void {
         if (shape) {
             this.settings.lineWidth = shape.lineWidth || 1;
+            this.settings.lineDash = shape.lineDash || [];
             this.settings.strokeColor = shape.strokeStyle;
             this.settings.fillColor = shape.fillStyle || 'transparent';
             this.settings.textColor = shape.textStyle?.color || shape.strokeStyle || '#111827';

@@ -30,7 +30,7 @@ export class ConnectionBasics {
     }
 
     /**
-     * Reconnects a connection node to a new target based on the specified coordinates.
+     * Reconnects a connection node to a new target based on the specified event coordinates.
      * @param node The connection node to reconnect.
      * @param x The x-coordinate of the new target.
      * @param y The y-coordinate of the new target.

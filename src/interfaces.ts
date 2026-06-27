@@ -106,6 +106,20 @@ export interface INode {
      */
     lineWidth?: number;
 
+    /**
+     * The line dash pattern of the node's border, which can be used to create dashed or dotted outlines.
+     * It can be specified as a string (e.g., 'dotted', 'dashed', '5,5') or an array of numbers (e.g., [5, 5]).
+     */
+    lineDash?: string | number[];
+
+    /**
+     * The arrow direction of the node, which can be used to indicate the direction of flow or connection for certain types of nodes (e.g., arrows, connectors).
+     * Possible values are:
+     * - 'start': An arrow is drawn at the start of the node's path.
+     * - 'end': An arrow is drawn at the end of the node's path.
+     * - 'both': Arrows are drawn at both the start and end of the node's path.
+     * - 'none': No arrows are drawn on the node's path.
+     */
     arrow?: ArrowDirection;
 
     /**

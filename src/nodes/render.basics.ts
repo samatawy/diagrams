@@ -3,7 +3,7 @@ import type { ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeStyle, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation } from "../value.utils";
+import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeStyle, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDash, lineDashArray } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
@@ -49,6 +49,7 @@ export class RenderBasics {
         context.lineJoin = 'round';
         context.globalAlpha = nodeOpacity(node);
         context.lineWidth = lineWidth(node);
+        context.setLineDash(lineDashArray(node));
         context.strokeStyle = strokeStyle(node);
         context.fillStyle = fillStyle(node);
         if (cached.img && imageMode(node) == 'pattern') {
@@ -67,6 +68,7 @@ export class RenderBasics {
                 context.fillStyle = 'transparent';
             } else if (diagram.render_mode == 'edit') {
                 context.lineWidth = 1;
+                // TODO: Think of a better way and include scaling.
                 context.setLineDash([4, 4]);
             }
         }

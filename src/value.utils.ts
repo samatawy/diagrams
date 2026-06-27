@@ -136,6 +136,32 @@ export function lineWidth(node: INode): number {
     return node.lineWidth ?? 1;
 }
 
+export function lineDash(node: INode): string | number[] {
+    if (typeof node.lineDash === 'string') {
+        return node.lineDash || 'solid';
+    } else if (Array.isArray(node.lineDash)) {
+        return node.lineDash.length > 0 ? node.lineDash : 'solid';
+    } else return 'solid';
+}
+
+export function lineDashArray(node: INode): number[] {
+    const scale = lineWidth(node);
+    if (Array.isArray(node.lineDash)) {
+        return node.lineDash.map(v => v * scale).filter(v => v > 0);
+    } else {
+        switch (node.lineDash) {
+            case 'solid':
+                return [];
+            case 'dashed':
+                return [4 * scale, 4 * scale];
+            case 'dotted':
+                return [1 * scale, 2 * scale];
+            default:
+                return [];
+        }
+    }
+}
+
 export function strokeStyle(node: INode): string {
     return node.strokeStyle || '#000000';
 }
