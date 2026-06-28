@@ -2523,6 +2523,7 @@ export class DiagramEditView extends DiagramView {
         if (event.buttons != 1 && event.buttons != 2) return;
         const localNodes = this.hitNodes(event.offsetX, event.offsetY);
 
+        const additiveSelectionGesture = event.shiftKey;
         const toggleSelectionGesture = event.ctrlKey || event.metaKey;
         const rectSelectionGesture = !this.keyboardFlags.isSpacePanning
             && !event.ctrlKey
@@ -2640,7 +2641,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         // Skip adding an Undo step while we are selecting with a rectangle.
-        if (this.downShape && this.isSelected(this.downShape) && !rectSelectionGesture && !toggleSelectionGesture) {
+        if (this.downShape && this.isSelected(this.downShape) && !rectSelectionGesture && !toggleSelectionGesture && !additiveSelectionGesture) {
             // If we are clicking on an already selected item, only get the handle..
             // the rest will be done by SelectMove..
             this.addUndo();
@@ -2680,7 +2681,7 @@ export class DiagramEditView extends DiagramView {
                 this.select(this.downShape, 'isolated');
             }
         }
-        if (!toggleSelectionGesture && !rectSelectionGesture) {
+        if (!toggleSelectionGesture && !additiveSelectionGesture && !rectSelectionGesture) {
             this.clearSelection();
             this.current.draft = undefined;
         }
@@ -2924,14 +2925,17 @@ export class DiagramEditView extends DiagramView {
             const stillOnDownShape = !!this.downShape
                 && this.hitNodes(event.offsetX, event.offsetY).some(node => node.id === this.downShape!.id);
 
-            if (event.shiftKey && this.downShape && isNearClick && stillOnDownShape) {
-                if (this.isSelected(this.downShape)) {
+            const additiveSelectionGesture = event.shiftKey;
+            const toggleSelectionGesture = event.ctrlKey || event.metaKey;
+
+            if ((additiveSelectionGesture || toggleSelectionGesture) && this.downShape && isNearClick && stillOnDownShape) {
+                if (toggleSelectionGesture && this.isSelected(this.downShape)) {
                     this.deselect(this.downShape, 'in_group');
                 } else {
                     this.select(this.downShape, 'in_group');
                 }
             } else {
-                this.applyRectSelection(selectionRect, event.shiftKey || event.ctrlKey || event.metaKey);
+                this.applyRectSelection(selectionRect, additiveSelectionGesture || toggleSelectionGesture);
             }
         }
 
