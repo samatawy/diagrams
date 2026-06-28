@@ -49,6 +49,8 @@ const DEFAULT_STYLES = `
     flex-direction: column;
     align-items: flex-start;
     gap: var(--diagram-ui-toolbar-gap, 6px);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .editor-tool-list button {

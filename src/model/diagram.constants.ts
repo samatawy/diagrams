@@ -110,6 +110,14 @@ export class DiagramConstants {
         NO_SHADOW: { name: 'No Shadow', color: 'transparent', blur: 0, offset: { x: 0, y: 0 } },
         DEFAULT_SHADOW: { name: 'Shadow', color: 'inherit', blur: 8, offset: { x: 4, y: 4 } },
 
+        LOW_SHADOW: { name: 'Low Shadow', color: 'rgba(0, 0, 0, 0.3)', blur: 4, offset: { x: 2, y: 2 } },
+        MEDIUM_SHADOW: { name: 'Medium Shadow', color: 'rgba(0, 0, 0, 0.35)', blur: 8, offset: { x: 4, y: 4 } },
+        HIGH_SHADOW: { name: 'High Shadow', color: 'rgba(0, 0, 0, 0.4)', blur: 16, offset: { x: 8, y: 8 } },
+
+        LOW_COLOR_SHADOW: { name: 'Low Shadow', color: 'inherit', blur: 4, offset: { x: 2, y: 2 } },
+        MEDIUM_COLOR_SHADOW: { name: 'Medium Shadow', color: 'inherit', blur: 8, offset: { x: 4, y: 4 } },
+        HIGH_COLOR_SHADOW: { name: 'High Shadow', color: 'inherit', blur: 16, offset: { x: 8, y: 8 } },
+
         // ========== Icons ==========
         ICON_SIZE: 18,
     };
@@ -270,8 +278,32 @@ export class DiagramConstants {
         return this.get('NO_SHADOW') as ShadowStyle;
     }
 
-    public static get DEFAULT_SHADOW(): ShadowStyle {
-        return this.get('DEFAULT_SHADOW') as ShadowStyle;
+    // public static get DEFAULT_SHADOW(): ShadowStyle {
+    //     return this.get('DEFAULT_SHADOW') as ShadowStyle;
+    // }
+
+    public static get LOW_SHADOW(): ShadowStyle {
+        return this.get('LOW_SHADOW') as ShadowStyle;
+    }
+
+    public static get MEDIUM_SHADOW(): ShadowStyle {
+        return this.get('MEDIUM_SHADOW') as ShadowStyle;
+    }
+
+    public static get HIGH_SHADOW(): ShadowStyle {
+        return this.get('HIGH_SHADOW') as ShadowStyle;
+    }
+
+    public static get LOW_COLOR_SHADOW(): ShadowStyle {
+        return this.get('LOW_COLOR_SHADOW') as ShadowStyle;
+    }
+
+    public static get MEDIUM_COLOR_SHADOW(): ShadowStyle {
+        return this.get('MEDIUM_COLOR_SHADOW') as ShadowStyle;
+    }
+
+    public static get HIGH_COLOR_SHADOW(): ShadowStyle {
+        return this.get('HIGH_COLOR_SHADOW') as ShadowStyle;
     }
 
     // ========== Icons ==========

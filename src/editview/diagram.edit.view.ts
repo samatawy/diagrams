@@ -1919,6 +1919,7 @@ export class DiagramEditView extends DiagramView {
             id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             points: node.points.map(p => ({ ...p })),
             ...(node.textStyle && { textStyle: { ...node.textStyle } }),
+            ...(node.strokeStyle && { strokeStyle: { ...node.strokeStyle } }),
             ...(node.shadowStyle && { shadowStyle: { ...node.shadowStyle } }),
             ...(node.geometry && { geometry: { ...node.geometry } }),
             ...(node.meta && { meta: { ...node.meta } }),

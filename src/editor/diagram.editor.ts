@@ -37,6 +37,8 @@ import type { InspectorConfig } from "./inspector/inspector";
 import { DiagramContextMenu } from "./menus/diagram.context.menu";
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramStatusBar } from "../status/diagram.status.bar";
+import { ShadowPresetSelect, SHADOW_PRESET_CHANGE_EVENT } from "./inputs/shadow.preset.select";
+import type { ShadowStyle } from "../style.interfaces";
 import { DiagramHintService } from "../status/diagram.hint.service";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
@@ -266,6 +268,8 @@ export class DiagramEditor {
     protected arrowSelect?: ArrowSelect;
 
     protected shadowToolbar?: HTMLElement;
+    protected shadowPresetSelectHost?: HTMLElement;
+    protected shadowPresetSelect?: ShadowPresetSelect;
     protected shadowEnableCheckbox?: HTMLInputElement;
     protected haloEnableCheckbox?: HTMLInputElement;
     protected shadowOffsetXHost?: HTMLElement;
@@ -338,6 +342,7 @@ export class DiagramEditor {
         this.strokeWidthSelect?.destroy();
         this.dashSelect?.destroy();
         this.arrowSelect?.destroy();
+        this.shadowPresetSelect?.destroy();
         this.shadowOffsetXSelect?.destroy();
         this.shadowOffsetYSelect?.destroy();
         this.shadowBlurSelect?.destroy();
@@ -676,18 +681,22 @@ export class DiagramEditor {
         */
 
         // Initialize shadow toolbar
-        this.shadowToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-shadow-toolbar');
+        // this.shadowToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-shadow-toolbar');
+        this.shadowToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-shadow-toolbar', 'Shadow');
+
+        this.shadowPresetSelectHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-preset');
+        this.shadowPresetSelect = new ShadowPresetSelect(this.shadowPresetSelectHost);
 
         // Shadow enable checkbox — must be the first element in the group
-        const shadowEnableLabel = document.createElement('label');
-        setClasses(shadowEnableLabel, 'diagram-editor-shadow-enable-label');
-        this.shadowEnableCheckbox = document.createElement('input');
-        this.shadowEnableCheckbox.type = 'checkbox';
-        const shadowEnableText = document.createElement('span');
-        shadowEnableText.textContent = 'Shadow';
-        shadowEnableLabel.appendChild(shadowEnableText);
-        shadowEnableLabel.appendChild(this.shadowEnableCheckbox);
-        this.shadowToolbar.appendChild(shadowEnableLabel);
+        // const shadowEnableLabel = document.createElement('label');
+        // setClasses(shadowEnableLabel, 'diagram-editor-shadow-enable-label');
+        // this.shadowEnableCheckbox = document.createElement('input');
+        // this.shadowEnableCheckbox.type = 'checkbox';
+        // const shadowEnableText = document.createElement('span');
+        // shadowEnableText.textContent = 'Shadow';
+        // shadowEnableLabel.appendChild(shadowEnableText);
+        // shadowEnableLabel.appendChild(this.shadowEnableCheckbox);
+        // this.shadowToolbar.appendChild(shadowEnableLabel);
 
         /* Halo enable checkbox is currently disabled in the toolbar.
         // Halo enable checkbox — alongside Shadow
@@ -848,6 +857,13 @@ export class DiagramEditor {
             });
         }
 
+        if (this.shadowPresetSelectHost) {
+            this.addManagedListener<ShadowStyle>(this.shadowPresetSelectHost, SHADOW_PRESET_CHANGE_EVENT, (style) => {
+                if (this.syncingControls) return;
+                this.diagram.setShadowStyle(style);
+            });
+        }
+
         if (this.haloEnableCheckbox) {
             this.addManagedEventListener(this.haloEnableCheckbox, 'change', () => {
                 if (this.syncingControls) return;
@@ -976,6 +992,10 @@ export class DiagramEditor {
 
             if (this.arrowSelect) {
                 this.arrowSelect.value = this.diagram.arrow;
+            }
+
+            if (this.shadowPresetSelect) {
+                this.shadowPresetSelect.value = this.diagram.shadowStyle;
             }
 
             if (this.shadowEnableCheckbox) {
@@ -1123,7 +1143,7 @@ export class DiagramEditor {
             const current = this.diagram.shadowStyle;
             const isBlank = current.color === 'transparent' || (current.blur === 0 && current.offset.x === 0 && current.offset.y === 0);
             if (isBlank) {
-                this.diagram.setShadowStyle(DiagramConstants.DEFAULT_SHADOW);
+                this.diagram.setShadowStyle(DiagramConstants.MEDIUM_SHADOW);
             }
         } else {
             this.diagram.setShadowStyle({ color: 'transparent' });
