@@ -8,27 +8,27 @@ mountView('decision-tree-demo', {
         const start = makeBox(view, 'start', 'round_rectangle', 80, 40, 180, 64, {
             text: 'New Lead',
             fillStyle: '#e0f2fe',
-            strokeStyle: '#075985',
+            strokeStyle: { color: '#075985' },
         });
         const qualify = makeBox(view, 'qualify', 'rhombus', 110, 150, 140, 100, {
             text: 'Qualified?',
             fillStyle: '#fef3c7',
-            strokeStyle: '#92400e',
+            strokeStyle: { color: '#92400e' },
         });
         const nurture = makeBox(view, 'nurture', 'rectangle', 360, 150, 200, 84, {
             text: 'Nurture Campaign',
             fillStyle: '#fae8ff',
-            strokeStyle: '#7e22ce',
+            strokeStyle: { color: '#7e22ce' },
         });
         const demo = makeBox(view, 'demo', 'rectangle', 40, 300, 200, 84, {
             text: 'Schedule Demo',
             fillStyle: '#dcfce7',
-            strokeStyle: '#166534',
+            strokeStyle: { color: '#166534' },
         });
         const close = makeBox(view, 'close', 'rectangle', 300, 300, 220, 84, {
             text: 'Prepare Proposal',
             fillStyle: '#fee2e2',
-            strokeStyle: '#b91c1c',
+            strokeStyle: { color: '#b91c1c' },
         });
 
         const edges = [

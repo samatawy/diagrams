@@ -40,7 +40,7 @@ export class ColorPalette {
         this.colors_used.clear();
         for (const node of this.diagram.nodes) {
             if (lineWidth(node) > 0 || node.text?.length) {
-                if (node.strokeStyle) this.addColor(node.strokeStyle);
+                if (node.strokeStyle?.color) this.addColor(node.strokeStyle.color);
             }
             if (node.fillStyle && !node.invisible && !isHollow(node)) {
                 if (node.fillStyle) this.addColor(node.fillStyle);

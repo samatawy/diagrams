@@ -123,7 +123,7 @@ export class CoordinateSystem {
             x: (x + this.origin.x) / this.zoom_factor,
             y: (y + this.origin.y) / this.zoom_factor
         }
-        if (grid == 'ignore_grid') {
+        if (grid === 'ignore_grid') {
             return pt;
         } else {
             return this.getGridPoint(pt.x, pt.y, grid);

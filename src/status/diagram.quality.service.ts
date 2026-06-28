@@ -232,9 +232,9 @@ export class DiagramQualityService {
     }
 
     private static addStrokeColor(node: INode, colorSet: Set<string>): void {
-        if (!node.strokeStyle || node.invisible || lineWidth(node) === 0) return;
+        if (!node.strokeStyle?.color || node.invisible || lineWidth(node) === 0) return;
 
-        this.addColor(node.strokeStyle, colorSet);
+        this.addColor(node.strokeStyle.color, colorSet);
     }
 
     private static addFillColor(node: INode, colorSet: Set<string>): void {

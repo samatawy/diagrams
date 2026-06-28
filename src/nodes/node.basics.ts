@@ -4,6 +4,7 @@ import { isDiagramViewLike, isNode } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import { isAspectLocked, isHollow, isLocked } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
+import { NodeRegistry } from "../factory";
 
 /**
  * Provides basic operations for manipulating nodes, such as moving, resizing, rotating, and checking for overlaps or containment.
@@ -257,7 +258,7 @@ export class NodeBasics {
         const cache = diagram.getCache();
         let cached = cache.getNode(node) || {} as INodeCached;
 
-        node.angle = (kind == 'degrees') ? degrees * Math.PI / 180 : degrees;
+        node.angle = (kind === 'degrees') ? degrees * Math.PI / 180 : degrees;
         // node.cos = Math.cos(node.angle);
         // node.sin = Math.sin(node.angle);
         cached.cos = Math.cos(node.angle);
@@ -410,19 +411,25 @@ export class NodeBasics {
         return from.y > to.y;
     }
 
-    public static nearestHandle(node: INode, point: IPoint, tolerance?: number): { handle: NodeHandle, point: IPoint } | undefined {
+
+    public static nearestHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): { handle: NodeHandle, point: IPoint } | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
         const coordinates = diagram.getCoordinates();
         const rect = coordinates.getBoundingRect(node, true);
 
         if (!rect) return undefined;
+
+        const fallbackHandle = is_inside ? NodeHandle.MOVE : NodeHandle.NONE;
         tolerance = tolerance ?? 24; // Default tolerance if not provided
-        if (Math.abs(point.x - rect.left) > tolerance &&
-            Math.abs(point.x - rect.left) < rect.width - tolerance &&
-            Math.abs(point.y - rect.top) > tolerance &&
-            Math.abs(point.y - rect.top) < rect.height - tolerance) {
-            return { handle: NodeHandle.MOVE, point: { ...point } };
+
+        // Return MOVE only when the point is genuinely inside the node rect
+        // AND far from every edge.
+        if (point.x > rect.left + tolerance &&
+            point.x < rect.left + rect.width - tolerance &&
+            point.y > rect.top + tolerance &&
+            point.y < rect.top + rect.height - tolerance) {
+            return { handle: fallbackHandle, point: { ...point } };
         }
 
         const handlePoints: Record<string, IPoint> = {
@@ -436,7 +443,7 @@ export class NodeBasics {
             [NodeHandle.SW]: { x: rect.left, y: rect.top + rect.height },
         };
 
-        let nearestHandle: NodeHandle = NodeHandle.NONE;
+        let nearestHandle: NodeHandle = fallbackHandle;
         let nearestPoint: IPoint = { x: 0, y: 0 };
         let minDistance = Infinity;
 
@@ -448,12 +455,67 @@ export class NodeBasics {
                 nearestPoint = { ...handlePoint };
             }
         }
-        // tolerance = tolerance ?? 24; // Default tolerance if not provided
-        // if (minDistance > tolerance) {
-        //     return { handle: NodeHandle.MOVE, point: point };
-        // } else {
-        //     return { handle: nearestHandle, point: nearestPoint };
-        // }
+
+        if (minDistance === Infinity) {
+            // No nearest handle found, return undefined
+            return undefined;
+        }
+        return { handle: nearestHandle, point: nearestPoint };
+    }
+
+    public static nearestConnectionHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): { handle: NodeHandle, point: IPoint } | undefined {
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return undefined;
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(node, true);
+
+        if (!rect) return undefined;
+
+        const allowed_handles = NodeRegistry.connectionHandles(node.type);
+        const fallbackHandle = (is_inside && allowed_handles.includes(NodeHandle.MOVE)) ? NodeHandle.MOVE : NodeHandle.NONE;
+        tolerance = tolerance ?? 24; // Default tolerance if not provided
+
+        // Return MOVE only when the point is genuinely inside the node rect
+        // AND far from every edge.
+        if (point.x > rect.left + tolerance &&
+            point.x < rect.left + rect.width - tolerance &&
+            point.y > rect.top + tolerance &&
+            point.y < rect.top + rect.height - tolerance) {
+            return { handle: fallbackHandle, point: { ...point } };
+        }
+
+        const inifintelyFar = { x: Infinity, y: Infinity };
+
+        const handlePoints: Record<string, IPoint | typeof inifintelyFar> = {
+            [NodeHandle.N]: (allowed_handles.includes(NodeHandle.N)) ? { x: rect.left + rect.width / 2, y: rect.top } : inifintelyFar,
+            [NodeHandle.S]: (allowed_handles.includes(NodeHandle.S)) ? { x: rect.left + rect.width / 2, y: rect.top + rect.height } : inifintelyFar,
+            [NodeHandle.E]: (allowed_handles.includes(NodeHandle.E)) ? { x: rect.left + rect.width, y: rect.top + rect.height / 2 } : inifintelyFar,
+            [NodeHandle.W]: (allowed_handles.includes(NodeHandle.W)) ? { x: rect.left, y: rect.top + rect.height / 2 } : inifintelyFar,
+            [NodeHandle.NE]: (allowed_handles.includes(NodeHandle.NE)) ? { x: rect.left + rect.width, y: rect.top } : inifintelyFar,
+            [NodeHandle.NW]: (allowed_handles.includes(NodeHandle.NW)) ? { x: rect.left, y: rect.top } : inifintelyFar,
+            [NodeHandle.SE]: (allowed_handles.includes(NodeHandle.SE)) ? { x: rect.left + rect.width, y: rect.top + rect.height } : inifintelyFar,
+            [NodeHandle.SW]: (allowed_handles.includes(NodeHandle.SW)) ? { x: rect.left, y: rect.top + rect.height } : inifintelyFar,
+        };
+
+        let nearestHandle: NodeHandle = fallbackHandle;
+        let nearestPoint: IPoint = { x: 0, y: 0 };
+        let minDistance = Infinity;
+
+        for (const [handle, handlePoint] of Object.entries(handlePoints)) {
+            if (handlePoint === inifintelyFar) continue; // Skip handles that are not allowed
+
+            const distance = Math.sqrt((point.x - handlePoint.x) ** 2 + (point.y - handlePoint.y) ** 2);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestHandle = handle as NodeHandle;
+                nearestPoint = { ...handlePoint };
+            }
+        }
+
+        if (minDistance === Infinity) {
+            // No nearest handle found, return undefined
+            return undefined;
+        }
         return { handle: nearestHandle, point: nearestPoint };
     }
 

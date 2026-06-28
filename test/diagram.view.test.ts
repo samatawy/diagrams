@@ -80,7 +80,7 @@ function createNode(id: string, owner: DiagramView, left: number, top: number, w
             { x: left, y: top },
             { x: left + width, y: top + height },
         ],
-        strokeStyle: '#000000',
+        strokeStyle: { color: '#000000' },
         owner,
     };
 }

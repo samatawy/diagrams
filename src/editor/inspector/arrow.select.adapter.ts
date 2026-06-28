@@ -26,13 +26,15 @@ export class ArrowSelectAdapter extends InspectorAdapter {
     }
 
     override showValue(editable: EditableRecord): void {
-        const explicitRaw = editable['arrow'];
-        if (explicitRaw === undefined || explicitRaw === null) {
+        const { key, value } = this.extractValueFrom(editable);
+        this.returnKey = key;
+        const hasValue = value !== undefined && value !== null;
+        if (!hasValue) {
             this.setUnset(true);
             return;
         }
 
-        const explicit = String(explicitRaw);
+        const explicit = String(value);
         if (explicit.length > 0) {
             this.setUnset(false);
             this.editor.value = explicit as any;
@@ -44,11 +46,7 @@ export class ArrowSelectAdapter extends InspectorAdapter {
     }
 
     override getValue(): EditableRecord {
-        return { arrow: this.editor.value };
-    }
-
-    override extractValueFrom(record: EditableRecord): { key: string; value: unknown } {
-        return { key: 'arrow', value: record['arrow'] ?? 'none' };
+        return { [this.returnKey ?? '']: this.editor.value };
     }
 
     override destroy(): void {

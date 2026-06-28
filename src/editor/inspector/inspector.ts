@@ -109,6 +109,7 @@ const DEFAULT_STYLES = `
 .inspector .inspector-section-body {
     display: grid;
     grid-template-rows: 1fr;
+    // overflow: hidden;
     transition: grid-template-rows 0.26s var(--inspector-caret-ease);
 }
 .inspector .inspector-section.is-collapsed .inspector-section-body {
@@ -129,7 +130,7 @@ const DEFAULT_STYLES = `
     border-radius: var(--inspector-heading-radius, 5px);
     background: var(--inspector-header-bg);
     margin-bottom: 0;
-    cursor: default;
+    cursor: pointer;
     user-select: none;
     transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease;
 }

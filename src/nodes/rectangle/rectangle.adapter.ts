@@ -29,6 +29,7 @@ export class RectangleAdapter implements INodeAdapter {
     has_text = true;
     text_overflow: TextOverflowMode = 'hidden';
     text_orientations: ITextOrientation[] = ['horizontal'];
+    connection_handles: NodeHandle[] = [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW];
     can_rotate = true;
 
     /**
@@ -255,7 +256,7 @@ export class RectangleAdapter implements INodeAdapter {
         }
     }
 
-    public renderSelection(node: INode, context: CanvasRenderingContext2D) {
+    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -264,6 +265,9 @@ export class RectangleAdapter implements INodeAdapter {
         if (node.points.length > 1) {
             const rect = coordinates.getBoundingRect(node);
             const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
+            const allowed = (show === 'connection_handles') ?
+                this.connection_handles :
+                [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE];
 
             context.save();
             RenderBasics.prepareHandles(node, context);
@@ -271,30 +275,46 @@ export class RectangleAdapter implements INodeAdapter {
             const handles = new Path2D();
 
             // NW
-            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
+            if (allowed.includes(NodeHandle.NW)) {
+                RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
+            }
 
             // SW
-            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height }, handles, context);
+            if (allowed.includes(NodeHandle.SW)) {
+                RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height }, handles, context);
+            }
 
             // NE
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top }, handles, context);
+            if (allowed.includes(NodeHandle.NE)) {
+                RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top }, handles, context);
+            }
 
             // SE
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height }, handles, context);
+            if (allowed.includes(NodeHandle.SE)) {
+                RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height }, handles, context);
+            }
 
             // N
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top }, handles, context);
+            if (allowed.includes(NodeHandle.N)) {
+                RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top }, handles, context);
+            }
 
             // S
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top + rect.height }, handles, context);
+            if (allowed.includes(NodeHandle.S)) {
+                RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top + rect.height }, handles, context);
+            }
 
             // E
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
+            if (allowed.includes(NodeHandle.E)) {
+                RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
+            }
 
             // W
-            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
+            if (allowed.includes(NodeHandle.W)) {
+                RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
+            }
 
-            if (NodeRegistry.canRotate(node.type)) {
+            if (NodeRegistry.canRotate(node.type) && allowed.includes(NodeHandle.ROTATE)) {
                 RenderBasics.renderRotateHandle(node, {
                     x: rect.left + rect.width + 8 + epsilon,
                     y: rect.top + rect.height / 2
@@ -304,7 +324,9 @@ export class RectangleAdapter implements INodeAdapter {
             context.fill(handles);
             context.stroke(handles);
 
-            this.renderAlterHandle(node, context, rect);
+            if (allowed.includes(NodeHandle.ALTER)) {
+                this.renderAlterHandle(node, context, rect);
+            }
 
             context.restore();
         }

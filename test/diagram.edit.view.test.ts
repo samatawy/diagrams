@@ -75,7 +75,7 @@ function makeNode(id: string, x1: number, y1: number, x2: number, y2: number, ow
         id,
         type: 'rectangle',
         points: [{ x: x1, y: y1 }, { x: x2, y: y2 }],
-        strokeStyle: '#000000',
+        strokeStyle: { color: '#000000' },
         owner,
     };
 }
@@ -343,9 +343,10 @@ describe('DiagramEditable', () => {
             text: 'One',
             image_mode: 'none',
             ready: false,
-            strokeStyle: '#000000',
+            strokeStyle: {
+                color: '#000000'
+            },
             fillStyle: '#ffffff',
-            lineWidth: 1,
             shadowStyle: undefined,
             angle: 0,
             owner: editview,
@@ -358,9 +359,10 @@ describe('DiagramEditable', () => {
             text: 'Two',
             image_mode: 'none',
             ready: false,
-            strokeStyle: '#000000',
+            strokeStyle: {
+                color: '#000000',
+            },
             fillStyle: '#ffffff',
-            lineWidth: 1,
             shadowStyle: undefined,
             angle: 0,
             owner: editview,
@@ -634,7 +636,7 @@ describe('DiagramEditable', () => {
             hollow: true,
             invisible: true,
             ready: true,
-            strokeStyle: '#000000',
+            strokeStyle: { color: '#000000' },
             owner: editview,
         };
 
@@ -696,7 +698,7 @@ describe('DiagramEditable', () => {
             hollow: true,
             invisible: true,
             ready: true,
-            strokeStyle: '#000000',
+            strokeStyle: { color: '#000000' },
             owner: editview,
         };
 
@@ -792,9 +794,8 @@ describe('DiagramEditable', () => {
             image_mode: 'none',
             ready: false,
             invisible: false,
-            strokeStyle: '#000000',
+            strokeStyle: { color: '#000000' },
             fillStyle: '#ffffff',
-            lineWidth: 1,
             shadowStyle: undefined,
             angle: 0,
             owner: editview,

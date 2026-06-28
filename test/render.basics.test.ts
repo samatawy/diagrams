@@ -35,6 +35,7 @@ describe('RenderBasics', () => {
             fillText(this: { fillStyle: string }, _text: string, _x: number, _y: number) {
                 fillStyles.push(String(this.fillStyle));
             },
+            strokeText() { },
         } as unknown as CanvasRenderingContext2D;
 
         const owner = Object.create(DiagramView.prototype) as DiagramView;
@@ -64,7 +65,7 @@ describe('RenderBasics', () => {
                 size: 16,
                 color: '#000000',
             },
-            strokeStyle: '#334155',
+            strokeStyle: { color: '#334155' },
             owner,
         };
 
@@ -146,7 +147,7 @@ describe('RenderBasics', () => {
             points: [{ x: 20, y: 30 }, { x: 180, y: 90 }],
             image_id: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>',
             image_mode: 'contain',
-            strokeStyle: '#334155',
+            strokeStyle: { color: '#334155' },
             owner,
         };
 

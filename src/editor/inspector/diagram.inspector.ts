@@ -10,11 +10,13 @@ import { Inspector, type InspectorConfig, type InspectorPropertyDefinition, type
 import type { ColorSelectConfig } from "../inputs/color.select";
 import type { WidthSelectConfig } from "../inputs/width.select";
 import type { ArrowSelectConfig } from "../inputs/arrow.select";
+import type { DashSelectConfig } from "../inputs/dash.select";
 import type { FontSelectConfig } from "../inputs/font.select";
 import type { SizeSelectConfig } from "../inputs/size.select";
 import { ColorSelectAdapter } from "./color.select.adapter";
 import { WidthSelectAdapter } from "./width.select.adapter";
 import { ArrowSelectAdapter } from "./arrow.select.adapter";
+import { DashSelectAdapter } from "./dash.select.adapter";
 import { FontSelectAdapter } from "./font.select.adapter";
 import { SizeSelectAdapter } from "./size.select.adapter";
 import { AngleAdapter } from "./angle.adapter";
@@ -32,6 +34,7 @@ export type DiagramInspectorConfig = InspectorConfig & {
     textColor?: ColorSelectConfig;
     shadowColor?: ColorSelectConfig;
     widthSelect?: WidthSelectConfig;
+    dashSelect?: DashSelectConfig;
     arrowSelect?: ArrowSelectConfig;
     fontSelect?: FontSelectConfig;
     sizeSelect?: SizeSelectConfig;
@@ -91,6 +94,7 @@ export class DiagramInspector extends Inspector {
         Inspector.registerAdapter('ColorSelect', ColorSelectAdapter);
         Inspector.registerAdapter('WidthSelect', WidthSelectAdapter);
         Inspector.registerAdapter('ArrowSelect', ArrowSelectAdapter);
+        Inspector.registerAdapter('DashSelect', DashSelectAdapter);
         Inspector.registerAdapter('FontSelect', FontSelectAdapter);
         Inspector.registerAdapter('SizeSelect', SizeSelectAdapter);
         Inspector.registerAdapter('Point', PointAdapter);
@@ -175,10 +179,29 @@ export class DiagramInspector extends Inspector {
         });
 
         const { grid: text } = this.buildSection('Text', 'collapsed');
-        this.addRow(text, { key: 'text', label: 'Content', type: 'string', editorOptions: { multiline: true }, readonly: readonly, isVisible: hasSelected });
-        this.addRow(text, { key: 'textStyle.fontFace', label: 'Font Face', type: 'string', editor: 'FontSelect', editorOptions: this.inspectorConfig.fontSelect || {}, readonly: readonly, isVisible: hasSelected });
-        this.addRow(text, { key: 'textStyle.size', label: 'Font Size', type: 'number', editor: 'SizeSelect', editorOptions: this.inspectorConfig.sizeSelect || {}, readonly: readonly, isVisible: hasSelected });
-        this.addRow(text, { key: 'textStyle.color', label: 'Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.textColor || {}) }, readonly: readonly, isVisible: hasSelected });
+        this.addRow(text, {
+            key: 'text', label: 'Content', type: 'string',
+            editorOptions: { multiline: true },
+            readonly: readonly, isVisible: hasSelected
+        });
+        this.addRow(text, {
+            key: 'textStyle.fontFace', label: 'Font Face',
+            type: 'string', editor: 'FontSelect',
+            editorOptions: this.inspectorConfig.fontSelect || {},
+            readonly: readonly, isVisible: hasSelected
+        });
+        this.addRow(text, {
+            key: 'textStyle.size', label: 'Font Size',
+            type: 'number', editor: 'SizeSelect',
+            editorOptions: this.inspectorConfig.sizeSelect || {},
+            readonly: readonly, isVisible: hasSelected
+        });
+        this.addRow(text, {
+            key: 'textStyle.color', label: 'Color',
+            type: 'string', editor: 'ColorSelect',
+            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.textColor || {}) },
+            readonly: readonly, isVisible: hasSelected
+        });
         this.addRow(text, {
             key: 'textStyle.weight', label: 'Weight', type: 'select', editor: 'EnumSelect',
             editorOptions: { options: [100, 200, 300, 400, 500, 600, 700, 800, 900].map((w) => ({ value: w, label: w })) },
@@ -216,13 +239,44 @@ export class DiagramInspector extends Inspector {
         });
 
         const { grid: line } = this.buildSection('Line', 'collapsed');
-        this.addRow(line, { key: 'strokeStyle', label: 'Line Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.strokeColor || {}) }, readonly: readonly, isVisible: hasSelected });
-        this.addRow(line, { key: 'lineWidth', label: 'Line width', type: 'number', editor: 'WidthSelect', editorOptions: this.inspectorConfig.widthSelect || {}, readonly: readonly, isVisible: hasSelected });
-        this.addRow(line, { key: 'arrow', label: 'Arrow', type: 'string', editor: 'ArrowSelect', editorOptions: this.inspectorConfig.arrowSelect || {}, readonly: readonly, isVisible: hasConnections });
+        this.addRow(line, {
+            key: 'strokeStyle.color', label: 'Line Color',
+            type: 'string', editor: 'ColorSelect',
+            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.strokeColor || {}) },
+            readonly: readonly, isVisible: hasSelected
+        });
+        this.addRow(line, {
+            key: 'strokeStyle.width', label: 'Line Width',
+            type: 'number', editor: 'WidthSelect',
+            editorOptions: this.inspectorConfig.widthSelect || {},
+            readonly: readonly, isVisible: hasSelected
+        });
+        this.addRow(line, {
+            key: 'strokeStyle.dash', label: 'Line Style',
+            type: 'number', editor: 'DashSelect',
+            editorOptions: this.inspectorConfig.dashSelect || {},
+            readonly: readonly, isVisible: hasSelected
+        });
+        this.addRow(line, {
+            key: 'strokeStyle.arrow', label: 'Arrow',
+            type: 'string', editor: 'ArrowSelect',
+            editorOptions: this.inspectorConfig.arrowSelect || {},
+            readonly: readonly, isVisible: hasConnections
+        });
 
         const { grid: fill } = this.buildSection('Fill', 'collapsed');
-        this.addRow(fill, { key: 'fillStyle', label: 'Fill Color', type: 'string', editor: 'ColorSelect', editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.fillColor || {}) }, readonly: readonly, isVisible: hasSelected });
-        this.addRow(fill, { key: 'image_id', label: 'Image', type: 'string', editor: 'ImageSelect', editorOptions: { diagram: this.diagram }, readonly: readonly, isVisible: hasNonConnections });
+        this.addRow(fill, {
+            key: 'fillStyle', label: 'Fill Color',
+            type: 'string', editor: 'ColorSelect',
+            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.fillColor || {}) },
+            readonly: readonly, isVisible: hasSelected
+        });
+        this.addRow(fill, {
+            key: 'image_id', label: 'Image',
+            type: 'string', editor: 'ImageSelect',
+            editorOptions: { diagram: this.diagram },
+            readonly: readonly, isVisible: hasNonConnections
+        });
         this.addRow(fill, {
             key: 'image_mode', label: 'Mode', type: 'select', editor: 'EnumSelect',
             editorOptions: { options: ['contain', 'cover', 'fit', 'pattern', 'none'] } as EnumSelectAdapterConfig,
@@ -249,9 +303,18 @@ export class DiagramInspector extends Inspector {
             readonly: readonly,
             isVisible: hasSelected
         });
-        this.addRow(shadow, { key: 'shadowStyle.blur', label: 'Blur', type: 'number', editorOptions: { min: 0 } as NumberInputAdapterConfig, readonly: readonly, isVisible: hasSelected });
-        this.addRow(shadow, { key: 'shadowStyle.offset.x', label: 'Offset X', type: 'number', readonly: readonly, isVisible: hasSelected });
-        this.addRow(shadow, { key: 'shadowStyle.offset.y', label: 'Offset Y', type: 'number', readonly: readonly, isVisible: hasSelected });
+        this.addRow(shadow, {
+            key: 'shadowStyle.blur', label: 'Blur', type: 'number',
+            editorOptions: { min: 0 } as NumberInputAdapterConfig, readonly: readonly, isVisible: hasSelected
+        });
+        this.addRow(shadow, {
+            key: 'shadowStyle.offset.x', label: 'Offset X', type: 'number',
+            readonly: readonly, isVisible: hasSelected
+        });
+        this.addRow(shadow, {
+            key: 'shadowStyle.offset.y', label: 'Offset Y', type: 'number',
+            readonly: readonly, isVisible: hasSelected
+        });
 
         const { grid: meta } = this.buildSection('Metadata', 'collapsed');
         this.metaGrid = meta;
@@ -620,7 +683,7 @@ export class DiagramInspector extends Inspector {
         const patch = adapter?.getValue();
 
         const selected = this.diagram.selection();
-        if (selected.length == 0) {
+        if (selected.length === 0) {
             // Route to diagram-level writes when nothing is selected.
             this.applyPatchToDiagram(patch, key);
             return;

@@ -1,5 +1,6 @@
 import type { INodeAdapter } from "./node.adapter";
 import { IconRegistry } from "./icon.registry";
+import type { NodeHandle } from "../types";
 
 /**
  * NodeRegistry is a central registry for managing different types of node handlers.
@@ -142,5 +143,15 @@ export class NodeRegistry {
     public static canRotate(type: string): boolean {
         const handler = this._nodes.get(type);
         return handler ? handler.can_rotate === true : false;
+    }
+
+    /**
+     * Gets the connection handles for the specified node type.
+     * @param type The type of the node.
+     * @returns An array of connection handles for the node type.
+     */
+    public static connectionHandles(type: string): NodeHandle[] {
+        const handler = this._nodes.get(type);
+        return handler ? handler.connection_handles : [];
     }
 }

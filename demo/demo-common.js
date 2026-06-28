@@ -76,6 +76,20 @@ export function registerAdapters() {
 }
 
 export function makeBox(owner, id, type, left, top, width, height, options = {}) {
+    const strokeStyle = (typeof options.strokeStyle === 'string')
+        ? {
+            color: options.strokeStyle,
+            ...(options.lineWidth !== undefined ? { width: options.lineWidth } : {}),
+            ...(options.lineDash !== undefined ? { dash: options.lineDash } : {}),
+            ...(options.arrow !== undefined ? { arrow: options.arrow } : {}),
+        }
+        : {
+            ...(options.strokeStyle || {}),
+            ...(options.lineWidth !== undefined ? { width: options.lineWidth } : {}),
+            ...(options.lineDash !== undefined ? { dash: options.lineDash } : {}),
+            ...(options.arrow !== undefined ? { arrow: options.arrow } : {}),
+        };
+
     return {
         id,
         type,
@@ -90,7 +104,7 @@ export function makeBox(owner, id, type, left, top, width, height, options = {})
             baseline: options.textBaseline ?? 'middle',
             fontFace: options.fontFace ?? 'Georgia',
             size: options.fontSize ?? 16,
-            color: options.textColor ?? (options.strokeStyle ?? '#1f2937'),
+            color: options.textColor ?? (strokeStyle.color ?? '#1f2937'),
             orientation: options.textOrientation,
             bold: options.textBold ?? false,
             italic: options.textItalic ?? false,
@@ -99,9 +113,8 @@ export function makeBox(owner, id, type, left, top, width, height, options = {})
         img_mode: 'none',
         ready: options.ready ?? true,
         transparent: options.transparent ?? false,
-        strokeStyle: options.strokeStyle ?? '#1f2937',
+        strokeStyle,
         fillStyle: options.fillStyle ?? '#ffffff',
-        lineWidth: options.lineWidth ?? 2,
         shadowStyle: options.shadowStyle,
         angle: options.angle ?? 0,
         owner,
@@ -109,13 +122,26 @@ export function makeBox(owner, id, type, left, top, width, height, options = {})
 }
 
 export function makeLine(owner, id, points, options = {}) {
+    const strokeStyle = (typeof options.strokeStyle === 'string')
+        ? {
+            color: options.strokeStyle,
+            ...(options.lineWidth !== undefined ? { width: options.lineWidth } : {}),
+            ...(options.lineDash !== undefined ? { dash: options.lineDash } : {}),
+            arrow: options.arrow ?? 'end',
+        }
+        : {
+            ...(options.strokeStyle || {}),
+            ...(options.lineWidth !== undefined ? { width: options.lineWidth } : {}),
+            ...(options.lineDash !== undefined ? { dash: options.lineDash } : {}),
+            arrow: options.arrow ?? options.strokeStyle?.arrow ?? 'end',
+        };
+
     return {
         id,
         type: 'line',
         points,
         from: options.from,
         to: options.to,
-        arrow: options.arrow ?? 'end',
         hollow: true,
         text: options.text ?? '',
         textStyle: {
@@ -123,15 +149,14 @@ export function makeLine(owner, id, points, options = {}) {
             baseline: 'middle',
             fontFace: options.fontFace ?? 'Georgia',
             size: options.fontSize ?? 16,
-            color: options.textColor ?? (options.strokeStyle ?? '#334155'),
+            color: options.textColor ?? (strokeStyle.color ?? '#334155'),
         },
         image_id: undefined,
         img_mode: 'none',
         ready: options.ready ?? true,
         transparent: false,
-        strokeStyle: options.strokeStyle ?? '#334155',
+        strokeStyle,
         fillStyle: 'transparent',
-        lineWidth: options.lineWidth ?? 2,
         shadowStyle: undefined,
         angle: 0,
         owner,

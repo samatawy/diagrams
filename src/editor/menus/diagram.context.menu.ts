@@ -195,7 +195,7 @@ export class DiagramContextMenu extends ContextMenu {
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                editView.changeType(node, type);
+                editView.changeNodeType(node, type);
                 this.close();
             });
 

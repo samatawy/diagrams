@@ -82,6 +82,17 @@ export type ImageAlign = 'center' | 'top' | 'bottom' | 'left' | 'right' | 'top-l
 export type ImageMode = 'contain' | 'cover' | 'pattern' | 'fit' | 'none';
 
 /**
+ * LineDash defines the possible styles for dashed lines in connections between nodes. The options are:
+ * - 'solid': A solid line with no dashes.
+ * - 'dashed': A line with a standard dash pattern.
+ * - 'dotted': A line with a dotted pattern.
+ * - 'dashdot': A line with a dash-dot pattern.
+ * - number[]: A custom dash pattern defined by an array of numbers, where each number represents the length of dashes and gaps in the pattern.
+ * This property allows for visual differentiation of connections between nodes, enabling users to convey different types of relationships or flows in the diagram through line styling.
+ */
+export type LineDash = 'solid' | 'dashed' | 'dotted' | 'dashdot' | number[];
+
+/**
  * ArrowDirection defines the possible directions for arrows on connections between nodes. The options are:
  * - 'start': An arrow is drawn at the starting point of the connection.
  * - 'end': An arrow is drawn at the ending point of the connection.

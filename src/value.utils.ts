@@ -1,6 +1,6 @@
 import type { INode } from "./interfaces";
 import { BOLD_FONT_WEIGHT, NORMAL_FONT_WEIGHT, type ShadowStyle, type TextStyle } from "./style.interfaces";
-import type { ImageMode, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
+import type { IFontWeight, ImageMode, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 import { DiagramConstants } from "./model/diagram.constants";
 import { NodeRegistry } from "./factory/node.registry";
 
@@ -47,7 +47,7 @@ export function textBold(node: INode): boolean {
     return weight >= BOLD_FONT_WEIGHT;
 }
 
-export function textWeight(node: INode): number {
+export function textWeight(node: INode): IFontWeight {
     return node.textStyle?.weight || NORMAL_FONT_WEIGHT;
 }
 
@@ -68,7 +68,7 @@ export function nodeText(node: INode): string {
 }
 
 export function textColor(node: INode): string {
-    return node.textStyle?.color || node.strokeStyle || DiagramConstants.DEFAULT_NODE_TEXT_COLOR;
+    return node.textStyle?.color || node.strokeStyle?.color || DiagramConstants.DEFAULT_NODE_TEXT_COLOR;
 }
 
 /**
@@ -78,15 +78,15 @@ export function textColor(node: INode): string {
  * diagram background → a fallback contrast color derived from the text color.
  * Any candidate that does not contrast sufficiently with the text color is skipped.
  */
-export function textHaloColor(node: INode): string | undefined {
+export function textHaloColor(node: INode): string {    //} | undefined {
     const raw = node.textStyle?.halo;
-    if (!raw || raw === 'transparent') return undefined;
+    if (!raw || raw === 'transparent') return 'transparent';
 
     const tc = textColor(node);
 
     if (raw !== 'inherit') {
         // Explicit color: only use it if it contrasts with the text color.
-        return colorContrastsWithText(raw, tc) ? raw : undefined;
+        return colorContrastsWithText(raw, tc) ? raw : 'transparent';
     }
 
     // 'inherit': walk the resolution chain, skipping any candidate that conflicts.
@@ -133,37 +133,41 @@ function hexLuminance(color: string): number {
 }
 
 export function lineWidth(node: INode): number {
-    return node.lineWidth ?? 1;
+    return node.strokeStyle?.width ?? 1;
 }
 
 export function lineDash(node: INode): string | number[] {
-    if (typeof node.lineDash === 'string') {
-        return node.lineDash || 'solid';
-    } else if (Array.isArray(node.lineDash)) {
-        return node.lineDash.length > 0 ? node.lineDash : 'solid';
+    if (typeof node.strokeStyle?.dash === 'string') {
+        return node.strokeStyle.dash || 'solid';
+    } else if (Array.isArray(node.strokeStyle?.dash)) {
+        return node.strokeStyle.dash.length > 0 ? node.strokeStyle.dash : 'solid';
     } else return 'solid';
 }
 
 export function lineDashArray(node: INode): number[] {
     const scale = lineWidth(node);
-    if (Array.isArray(node.lineDash)) {
-        return node.lineDash.map(v => v * scale).filter(v => v > 0);
+    if (Array.isArray(node.strokeStyle?.dash)) {
+        return node.strokeStyle.dash.map(v => v * scale).filter(v => v > 0);
     } else {
-        switch (node.lineDash) {
+        switch (node.strokeStyle?.dash) {
             case 'solid':
                 return [];
             case 'dashed':
                 return [4 * scale, 4 * scale];
             case 'dotted':
                 return [1 * scale, 2 * scale];
+            case 'dashdot':
+            case 'dash-dot':
+            case 'dash_dot':
+                return [4 * scale, 2 * scale, 1 * scale, 2 * scale];
             default:
                 return [];
         }
     }
 }
 
-export function strokeStyle(node: INode): string {
-    return node.strokeStyle || '#000000';
+export function strokeColor(node: INode): string {
+    return node.strokeStyle?.color || '#000000';
 }
 
 export function fillStyle(node: INode): string {
@@ -178,7 +182,7 @@ export function isHollow(node: INode): boolean {
     if (node.hollow !== undefined) {
         return node.hollow;
     } else {
-        return fillStyle(node) === undefined;
+        return (fillStyle(node) === undefined || fillStyle(node) === 'transparent') && imageId(node) === undefined;
     }
 }
 

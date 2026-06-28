@@ -26,6 +26,7 @@ import { DIAGRAM_CHANGED_EVENT, type DiagramHintChange } from "../events/diagram
 import { EventDispatcher } from "../events/event.dispatcher";
 import { WidthSelect, type WidthSelectConfig } from "./inputs/width.select";
 import { ArrowSelect, type ArrowSelectConfig } from "./inputs/arrow.select";
+import { DashSelect, type DashSelectConfig, type LineDashValue } from "./inputs/dash.select";
 import { ImageSelect, type ImageSelectConfig } from "./inputs/image.select";
 import { ImageModeSelect } from "./inputs/image.mode.select";
 import { ImageAlignSelect } from "./inputs/image.align.select";
@@ -64,6 +65,7 @@ export type DiagramEditorConfig = {
     textColor?: ColorSelectConfig;
     strokeColor?: ColorSelectConfig;
     strokeWidth?: WidthSelectConfig;
+    dashSelect?: DashSelectConfig;
     arrowSelect?: ArrowSelectConfig;
     shadowOffsetX?: IntegerRangeSelectConfig;
     shadowOffsetY?: IntegerRangeSelectConfig;
@@ -256,9 +258,11 @@ export class DiagramEditor {
     protected strokeToolbar?: HTMLElement;
     protected strokeColorSelectHost?: HTMLElement;
     protected strokeWidthSelectHost?: HTMLElement;
+    protected dashSelectHost?: HTMLElement;
     protected arrowSelectHost?: HTMLElement;
     protected strokeColorSelect?: ColorSelect;
     protected strokeWidthSelect?: WidthSelect;
+    protected dashSelect?: DashSelect;
     protected arrowSelect?: ArrowSelect;
 
     protected shadowToolbar?: HTMLElement;
@@ -332,6 +336,7 @@ export class DiagramEditor {
         this.textFormatToolbar?.destroy();
         this.strokeColorSelect?.destroy();
         this.strokeWidthSelect?.destroy();
+        this.dashSelect?.destroy();
         this.arrowSelect?.destroy();
         this.shadowOffsetXSelect?.destroy();
         this.shadowOffsetYSelect?.destroy();
@@ -484,6 +489,13 @@ export class DiagramEditor {
     }
 
     /**
+     * Returns the dash selector control when available.
+     */
+    public getDashSelect(): DashSelect | undefined {
+        return this.dashSelect;
+    }
+
+    /**
      * Returns the arrow selector control when available.
      */
     public getArrowSelect(): ArrowSelect | undefined {
@@ -620,10 +632,12 @@ export class DiagramEditor {
 
         this.strokeColorSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-color-select');
         this.strokeWidthSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-width-select');
+        this.dashSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-dash-select');
         this.arrowSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
 
         this.strokeColorSelect = new ColorSelect(this.strokeColorSelectHost, config.strokeColor || {});
         this.strokeWidthSelect = new WidthSelect(this.strokeWidthSelectHost, config.strokeWidth || {});
+        this.dashSelect = new DashSelect(this.dashSelectHost, config.dashSelect || {});
         this.arrowSelect = new ArrowSelect(this.arrowSelectHost, config.arrowSelect || {});
 
         // Initialize fill toolbar
@@ -809,6 +823,13 @@ export class DiagramEditor {
             });
         }
 
+        if (this.dashSelectHost) {
+            this.addManagedListener<LineDashValue>(this.dashSelectHost, 'dashchange', (dash) => {
+                if (this.syncingControls) return;
+                this.diagram.setLineDash(dash);
+            });
+        }
+
         if (this.arrowSelectHost) {
             this.addManagedListener<ArrowDirection>(this.arrowSelectHost, 'arrowchange', (arrow) => {
                 if (this.syncingControls) return;
@@ -947,6 +968,10 @@ export class DiagramEditor {
                 this.strokeWidthSelect.value = this.diagram.lineWidth;
             }
 
+            if (this.dashSelect) {
+                this.dashSelect.value = this.normalizeLineDashValue(this.diagram.lineDash);
+            }
+
             if (this.arrowSelect) {
                 this.arrowSelect.value = this.diagram.arrow;
             }
@@ -1024,6 +1049,18 @@ export class DiagramEditor {
         } finally {
             this.syncingControls = false;
         }
+    }
+
+    private normalizeLineDashValue(value: string | number[]): LineDashValue {
+        if (Array.isArray(value)) {
+            return value;
+        }
+
+        if (value === 'solid' || value === 'dashed' || value === 'dotted' || value === 'dashdot') {
+            return value;
+        }
+
+        return 'solid';
     }
 
     /**

@@ -1,5 +1,5 @@
 import type { INode, IContainer } from "../../interfaces";
-import type { IRect } from "../../types";
+import { NodeHandle, type IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
@@ -96,7 +96,7 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
         return radius;
     }
 
-    public renderSelection(node: INode, context: CanvasRenderingContext2D) {
+    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
         // super.renderSelection(node, context);
 
         if (!context) return;
@@ -108,12 +108,18 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
             const rect = coordinates.getBoundingRect(node);
             const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
 
+            // Not needed in this node type as all visible points are known to be connection-ready.
+            // EXCEPT ALTER for descendants?
+            const allowed = (show === 'connection_handles') ?
+                this.connection_handles :
+                [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE];
+
             context.save();
             RenderBasics.prepareHandles(node, context);
 
             const handles = new Path2D();
 
-            // NW
+            // NW            
             RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
 
             // SW
@@ -149,7 +155,9 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
 
             context.stroke(holder);
 
-            this.renderAlterHandle(node, context, rect);
+            if (allowed.includes(NodeHandle.ALTER)) {
+                this.renderAlterHandle(node, context, rect);
+            }
 
             context.restore();
         }

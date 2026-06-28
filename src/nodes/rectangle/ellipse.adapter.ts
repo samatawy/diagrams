@@ -5,6 +5,7 @@ import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow } from "../../value.utils";
+import { NodeHandle } from "../../types";
 
 /**
  * EllipseAdapter is a node adapter responsible for rendering ellipse nodes in the diagram. 
@@ -14,6 +15,8 @@ import { isHollow } from "../../value.utils";
 export class EllipseAdapter extends RectangleAdapter {
 
     public static TYPE = 'ellipse';
+
+    connection_handles: NodeHandle[] = [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W];
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

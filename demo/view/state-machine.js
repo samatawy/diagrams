@@ -8,22 +8,22 @@ mountView('state-machine-demo', {
         const idle = makeBox(view, 'idle', 'ellipse', 70, 90, 150, 84, {
             text: 'Idle',
             fillStyle: '#e0f2fe',
-            strokeStyle: '#0369a1',
+            strokeStyle: { color: '#0369a1' },
         });
         const running = makeBox(view, 'running', 'ellipse', 310, 90, 180, 84, {
             text: 'Running',
             fillStyle: '#dcfce7',
-            strokeStyle: '#15803d',
+            strokeStyle: { color: '#15803d' },
         });
         const waiting = makeBox(view, 'waiting', 'ellipse', 560, 90, 180, 84, {
             text: 'Waiting For Input',
             fillStyle: '#fef3c7',
-            strokeStyle: '#a16207',
+            strokeStyle: { color: '#a16207' },
         });
         const failed = makeBox(view, 'failed', 'ellipse', 310, 260, 180, 84, {
             text: 'Failed',
             fillStyle: '#fee2e2',
-            strokeStyle: '#b91c1c',
+            strokeStyle: { color: '#b91c1c' },
         });
 
         const edges = [

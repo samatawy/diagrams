@@ -1,6 +1,6 @@
 import type { Serializable } from "./io/serialized.types";
 import type { ArrowDirection, ImageAlign, ImageMode } from "./types";
-import type { ShadowStyle, TextStyle } from "./style.interfaces";
+import type { ShadowStyle, StrokeStyle, TextStyle } from "./style.interfaces";
 import type { IPoint, NodeHandle } from "./types";
 
 /**
@@ -91,36 +91,16 @@ export interface INode {
      */
     invisible?: boolean;
 
-    /**
-     * The stroke style of the node, which can be used to control the color and pattern of the node's border.
-     */
-    strokeStyle: string;
+    // /**
+    //  * The stroke style of the node, which can be used to control the color and pattern of the node's border.
+    //  */
+    strokeStyle?: StrokeStyle;
+    // strokeStyle: string;
 
     /**
      * The fill style of the node, which can be used to control the color and pattern of the node's interior.
      */
     fillStyle?: string;
-
-    /**
-     * The line width of the node's border, which can be used to control the thickness of the node's outline.
-     */
-    lineWidth?: number;
-
-    /**
-     * The line dash pattern of the node's border, which can be used to create dashed or dotted outlines.
-     * It can be specified as a string (e.g., 'dotted', 'dashed', '5,5') or an array of numbers (e.g., [5, 5]).
-     */
-    lineDash?: string | number[];
-
-    /**
-     * The arrow direction of the node, which can be used to indicate the direction of flow or connection for certain types of nodes (e.g., arrows, connectors).
-     * Possible values are:
-     * - 'start': An arrow is drawn at the start of the node's path.
-     * - 'end': An arrow is drawn at the end of the node's path.
-     * - 'both': Arrows are drawn at both the start and end of the node's path.
-     * - 'none': No arrows are drawn on the node's path.
-     */
-    arrow?: ArrowDirection;
 
     /**
      * The shadow style of the node, which can be used to apply a shadow effect to the node.

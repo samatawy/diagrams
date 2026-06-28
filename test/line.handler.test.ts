@@ -1,6 +1,8 @@
 import type { IConnection, INode } from '../src/interfaces';
 import { ConnectionBasics } from '../src/nodes/connection.basics';
 import { LineAdapter } from '../src/nodes/polyline/line.adapter';
+import type { StrokeStyle } from '../src/style.interfaces';
+import type { ArrowDirection } from '../src/types';
 import { NodeHandle } from '../src/types';
 
 class FakePath2D {
@@ -27,17 +29,26 @@ class FakePath2D {
     }
 }
 
-function createNode(owner: any, overrides: Partial<INode & IConnection> = {}): INode & IConnection {
+type NodeOverrides = Partial<INode & IConnection> & {
+    arrow?: ArrowDirection;
+    lineWidth?: number;
+};
+
+function createNode(owner: any, overrides: NodeOverrides = {}): INode & IConnection {
+    const strokeStyle = {
+        ...(overrides.strokeStyle || {}),
+        ...(overrides.lineWidth !== undefined ? { width: overrides.lineWidth } : {}),
+        ...(overrides.arrow ? { arrow: overrides.arrow } : {}),
+    } as StrokeStyle;
+
     return {
         id: overrides.id || 'node',
         type: overrides.type || 'line',
         points: overrides.points || [],
         from: overrides.from,
         to: overrides.to,
-        arrow: overrides.arrow,
         hollow: overrides.hollow,
-        strokeStyle: overrides.strokeStyle || '#111827',
-        lineWidth: overrides.lineWidth,
+        strokeStyle,
         owner,
     };
 }
@@ -101,6 +112,7 @@ describe('LineHandler', () => {
             points: [{ x: 0, y: 0 }, { x: 40, y: 10 }, { x: 80, y: 40 }, { x: 120, y: 80 }],
             from: { node: 'target', handle: NodeHandle.E, xOffset: 1, yOffset: 0.5 },
             arrow: 'end',
+            strokeStyle: { color: '#111827' },
         });
 
         owner.nodes.push(target, line);
@@ -148,8 +160,8 @@ describe('LineHandler', () => {
 
         const renderedPath = strokes[0] as FakePath2D;
         expect(renderedPath.commands).toContainEqual({
-            type: 'bezierCurveTo',
-            values: [40, 10, 80, 40, 120, 80],
+            type: 'lineTo',
+            values: [120, 80],
         });
         expect(fillCount).toBe(1);
     });

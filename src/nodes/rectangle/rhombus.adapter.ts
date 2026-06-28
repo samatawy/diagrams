@@ -5,6 +5,7 @@ import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow } from "../../value.utils";
+import { NodeHandle } from "../../types";
 
 /**
  * RhombusAdapter is a node adapter responsible for rendering rhombus nodes in the diagram. 
@@ -14,6 +15,8 @@ import { isHollow } from "../../value.utils";
 export class RhombusAdapter extends RectangleAdapter {
 
     public static TYPE = 'rhombus';
+
+    connection_handles: NodeHandle[] = [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W];
 
     render(node: INode, context: CanvasRenderingContext2D): void {
         if (!context) return;

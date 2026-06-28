@@ -1,4 +1,4 @@
-import type { IFontWeight, IPoint, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
+import type { ArrowDirection, IFontWeight, IPoint, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 
 /**
  * TextStyle defines the properties of text that can be rendered on nodes in the diagram, including font, size, alignment, and color.
@@ -63,6 +63,35 @@ export interface TextStyle {
 export const NORMAL_FONT_WEIGHT: IFontWeight = 400;
 
 export const BOLD_FONT_WEIGHT: IFontWeight = 700;
+
+/**
+ * StrokeStyle defines the properties of a stroke (outline) that can be applied to nodes in the diagram, including color, width, dash pattern, and arrow direction.
+ */
+export interface StrokeStyle {
+    /**
+     * The color of the stroke, which can be a CSS color string (e.g., '#000000' for black) or undefined for a default color.
+     * If the color is undefined, the rendering logic may choose a default stroke color based on the node's properties or theme.
+     */
+    color?: string;
+
+    /**
+     * The width of the stroke, which can be a number representing the width in pixels or undefined for a default width.
+     * If the width is undefined, the rendering logic may choose a default stroke width based on the node's properties or theme.
+     */
+    width?: number;
+
+    /**
+     * The dash pattern of the stroke, which can be a string representing a predefined pattern ('solid', 'dashed', 'dotted', 'dashdot') or an array of numbers for a custom pattern.
+     * If the dash pattern is undefined, the rendering logic may choose a default pattern based on the node's properties or theme.
+     */
+    dash?: string | number[];
+
+    /**
+     * The direction of the arrow on the stroke, which can be 'start', 'end', 'both', or 'none'.
+     * If the arrow direction is undefined, the rendering logic may choose a default direction based on the node's properties or theme.
+     */
+    arrow?: ArrowDirection;
+}
 
 /**
  * ShadowStyle defines the properties of a shadow effect that can be applied to nodes in the diagram.

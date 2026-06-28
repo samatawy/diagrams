@@ -62,8 +62,8 @@ export class CurveAdapter extends PolylineAdapter {
         }
     }
 
-    renderSelection(node: INode, context: CanvasRenderingContext2D): void {
-        super.renderSelection(node, context);
+    renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles'): void {
+        super.renderSelection(node, context, show);
 
         if (!context || node.points.length <= 2) return;
 

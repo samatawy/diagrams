@@ -19,6 +19,8 @@ export class PolylineAdapter implements INodeAdapter {
 
     public static TYPE = 'polyline';
 
+    connection_handles: NodeHandle[] = [];
+
     /**
      * Gets the registry name for this adapter.
      */
@@ -139,7 +141,7 @@ export class PolylineAdapter implements INodeAdapter {
         }
     }
 
-    public renderSelection(node: INode, context: CanvasRenderingContext2D): void {
+    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;

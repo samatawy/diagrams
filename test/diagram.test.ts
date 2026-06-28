@@ -10,7 +10,7 @@ function createNode(id: string, text: string, x: number, y: number): INode {
             { x: x + 120, y: y + 48 },
         ],
         text,
-        strokeStyle: '#000000',
+        strokeStyle: { color: '#000000' },
         owner: {} as Diagram,
     };
 }
@@ -59,9 +59,8 @@ describe('Diagram', () => {
                     image_mode: 'none',
                     ready: false,
                     invisible: false,
-                    strokeStyle: '#000000',
+                    strokeStyle: { color: '#000000' },
                     fillStyle: '#ffffff',
-                    lineWidth: 1,
                     angle: 0,
                 },
                 {
@@ -83,9 +82,8 @@ describe('Diagram', () => {
                     image_mode: 'none',
                     ready: false,
                     invisible: false,
-                    strokeStyle: '#000000',
+                    strokeStyle: { color: '#000000' },
                     fillStyle: '#ffffff',
-                    lineWidth: 1,
                     angle: 0,
                 },
                 {
@@ -107,13 +105,11 @@ describe('Diagram', () => {
                     image_mode: 'none',
                     ready: false,
                     invisible: true,
-                    strokeStyle: '#2563eb',
+                    strokeStyle: { color: '#2563eb', width: 2, arrow: 'end' },
                     fillStyle: 'transparent',
-                    lineWidth: 2,
                     angle: 0,
                     from: { node: 'source', handle: 8 },
                     to: { node: 'target', handle: 4 },
-                    endArrow: true,
                 },
             ],
             layers: [

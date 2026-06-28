@@ -545,7 +545,7 @@ export class ManhattanAdapter extends PolylineAdapter {
 // private inferSegment(from: IPoint, to: IPoint, from_direction: CardinalDirection): IPoint[] {
 //     const points: IPoint[] = [];
 
-//     if (from.x == to.x || from.y == to.y) {
+//     if (from.x === to.x || from.y === to.y) {
 //         return [];
 //     }
 

@@ -94,7 +94,7 @@ const editor = mountEditor('editor-components-demo', {
 
         const headline = makeBox(view, 'headline', 'text', 70, 40, 220, 48, {
             text: 'Edit me with Enter',
-            strokeStyle: '#111827',
+            strokeStyle: { color: '#111827' },
             fillStyle: 'transparent',
             hollow: true,
             font: '24px Georgia',
@@ -103,22 +103,22 @@ const editor = mountEditor('editor-components-demo', {
         const service = makeBox(view, 'service', 'round_rectangle', 60, 130, 200, 84, {
             text: 'API Service',
             fillStyle: '#dbeafe',
-            strokeStyle: '#1d4ed8',
+            strokeStyle: { color: '#1d4ed8' },
         });
         const queue = makeBox(view, 'queue', 'rectangle', 340, 130, 180, 84, {
             text: 'Work Queue',
             fillStyle: '#ede9fe',
-            strokeStyle: '#6d28d9',
+            strokeStyle: { color: '#6d28d9' },
         });
         const worker = makeBox(view, 'worker', 'ellipse', 620, 130, 180, 84, {
             text: 'Worker',
             fillStyle: '#dcfce7',
-            strokeStyle: '#15803d',
+            strokeStyle: { color: '#15803d' },
         });
         const note = makeBox(view, 'note', 'rectangle', 340, 290, 240, 92, {
             text: 'Try selection, marquee, space-pan,\\nAlt point editing, and text editing.',
             fillStyle: '#fff7ed',
-            strokeStyle: '#c2410c',
+            strokeStyle: { color: '#c2410c' },
             textBaseline: 'middle',
         });
 

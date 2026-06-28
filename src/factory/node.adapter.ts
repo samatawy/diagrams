@@ -102,6 +102,14 @@ export interface INodeAdapter {
     text_orientations: ITextOrientation[];
 
     /**
+     * Specifies the connection handles that this node type supports for connecting to other nodes.
+     * Each handle is represented by a NodeHandle value, which indicates the position or type of the handle on the node.
+     * This property is used to determine where connections can be made to this node and how the diagram control should render connection points.
+     * Adapters that support connections should override this to return the appropriate handles for their node type.
+     */
+    connection_handles: NodeHandle[];
+
+    /**
      * Indicates whether the adapter supports owning a group of other nodes.
      */
     is_container?: boolean;
@@ -180,8 +188,9 @@ export interface INodeAdapter {
      * Renders the selection state of the given node on the specified canvas context.
      * @param node The node whose selection state to render.
      * @param ctx The canvas rendering context to draw on.
+     * @param show Specifies whether to show all handles or connection handles.
      */
-    renderSelection(node: INode, ctx: CanvasRenderingContext2D): void;
+    renderSelection(node: INode, ctx: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles'): void;
 
     /**
      * Where to place the text for this node, if it has any. This is used for rendering and in-place editing.

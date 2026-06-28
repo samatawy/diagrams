@@ -7,7 +7,7 @@ import type { DiagramHintPoolItem } from "./hint.types";
 export const DIAGRAM_HINT_POOL: readonly DiagramHintPoolItem[] = [
     {
         id: 'interaction-select-rect',
-        fallbackMessage: 'Hold Shift and drag on the canvas to create a selection rectangle.',
+        fallbackMessage: 'Drag on empty canvas to create a selection rectangle, or hold R while dragging to force marquee over shapes.',
         category: 'interaction',
         access: ['canvas'],
     },
@@ -25,14 +25,14 @@ export const DIAGRAM_HINT_POOL: readonly DiagramHintPoolItem[] = [
     },
     {
         id: 'interaction-resize-aspect',
-        fallbackMessage: 'Hold Alt while resizing to preserve aspect ratio.',
+        fallbackMessage: 'Hold Shift while resizing to preserve aspect ratio.',
         category: 'interaction',
         access: ['canvas', 'shortcut'],
         minSelectionCount: 1,
     },
     {
         id: 'interaction-rotate-snap',
-        fallbackMessage: 'Hold Alt while rotating to snap angle in 15-degree increments.',
+        fallbackMessage: 'Hold Shift while rotating to snap angle in 15-degree increments.',
         category: 'interaction',
         access: ['canvas', 'shortcut'],
         minSelectionCount: 1,

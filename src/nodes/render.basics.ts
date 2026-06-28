@@ -3,7 +3,7 @@ import type { ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeStyle, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDash, lineDashArray } from "../value.utils";
+import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDash, lineDashArray } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
@@ -50,9 +50,9 @@ export class RenderBasics {
         context.globalAlpha = nodeOpacity(node);
         context.lineWidth = lineWidth(node);
         context.setLineDash(lineDashArray(node));
-        context.strokeStyle = strokeStyle(node);
+        context.strokeStyle = strokeColor(node);
         context.fillStyle = fillStyle(node);
-        if (cached.img && imageMode(node) == 'pattern') {
+        if (cached.img && imageMode(node) === 'pattern') {
             context.fillStyle = context.createPattern(cached.img, 'repeat') || '';
         }
         const shadow = shadowStyle(node);
@@ -63,10 +63,10 @@ export class RenderBasics {
 
         // Invisible shapes (hot spots) should not viewable in 'view' mode..
         if (node.invisible) {
-            if (diagram.render_mode == 'view') {
+            if (diagram.render_mode === 'view') {
                 context.strokeStyle = 'transparent';
                 context.fillStyle = 'transparent';
-            } else if (diagram.render_mode == 'edit') {
+            } else if (diagram.render_mode === 'edit') {
                 context.lineWidth = 1;
                 // TODO: Think of a better way and include scaling.
                 context.setLineDash([4, 4]);
@@ -102,7 +102,7 @@ export class RenderBasics {
             imageSource = imageId(node);
         }
 
-        if (!imageSource || imageMode(node) == 'none') {
+        if (!imageSource || imageMode(node) === 'none') {
             if (cached.img || cached.image_loading) {
                 cached.img = undefined;
                 cached.pattern = undefined;
@@ -392,13 +392,13 @@ export class RenderBasics {
             let rect = placement.rect ?? coordinates.getBoundingRect(node);
             let textPath: Path2D | undefined;
 
-            if (options.overflow == 'hidden' && options.path) {
+            if (options.overflow === 'hidden' && options.path) {
                 context.save();
                 context.clip(options.path);
                 textPath = this.renderLines(node, context, rect);
                 context.restore();
 
-            } else if (options.overflow == 'hidden') {
+            } else if (options.overflow === 'hidden') {
                 context.save();
                 context.beginPath();
                 context.rect(rect.left, rect.top, rect.width, rect.height);
@@ -406,7 +406,7 @@ export class RenderBasics {
                 textPath = this.renderLines(node, context, rect);
                 context.restore();
 
-            } else if (options.overflow == 'visible') {
+            } else if (options.overflow === 'visible') {
                 textPath = this.renderLines(node, context, rect);
             }
 
@@ -650,7 +650,7 @@ export class RenderBasics {
 
         // Text should remain legible against the node fill and should not inherit shape shadows.
         context.shadowColor = 'transparent';
-        context.fillStyle = node.invisible && diagram.render_mode == 'view'
+        context.fillStyle = node.invisible && diagram.render_mode === 'view'
             ? 'transparent'
             : textColor(node);
 
@@ -709,7 +709,7 @@ export class RenderBasics {
 
         // Text should remain legible against the node fill and should not inherit shape shadows.
         context.shadowColor = 'transparent';
-        context.fillStyle = node.invisible && diagram.render_mode == 'view'
+        context.fillStyle = node.invisible && diagram.render_mode === 'view'
             ? 'transparent'
             : textColor(node);
 
@@ -785,8 +785,8 @@ export class RenderBasics {
         }
         // 'inherit' or empty: derive from node visual colors.
         if (node.invisible) return 'transparent';
-        if (node.strokeStyle) return this.toAlphaColor(node.strokeStyle, 0.35);
-        if (node.fillStyle) return this.toAlphaColor(node.fillStyle, 0.35);
+        if (node.strokeStyle) return this.toAlphaColor(strokeColor(node), 0.35);
+        if (node.fillStyle) return this.toAlphaColor(fillStyle(node), 0.35);
         return 'rgba(0, 0, 0, 0.35)';
     }
 

@@ -33,6 +33,10 @@ export type RenderMode = 'view' | 'editing';
 
 export type RenderScope = 'all' | 'nodes' | 'selection' | 'grid' | 'guides';
 
+export type KeyboardFlags = {
+    isSpacePanning?: boolean
+}
+
 const defaultGrid: IGrid = {
     forced: false,
     visible: true,
@@ -104,7 +108,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected guides: DiagramGuide[] = [];
 
-    protected isSpacePanning: boolean = false;
+    protected keyboardFlags: KeyboardFlags = {};
 
     protected dragStartOnNode: boolean = false;
 
@@ -656,7 +660,7 @@ export class DiagramView extends Diagram implements HasSelection {
                 // and render selection anchors on top.
                 if (what === 'selection' || what === 'all') {
                     if (this.isSelected(node)) {
-                        handler?.renderSelection(node, this.context);
+                        handler?.renderSelection(node, this.context, 'all_handles');
                     }
                 }
             }
@@ -1009,12 +1013,9 @@ export class DiagramView extends Diagram implements HasSelection {
             let node = nodes[i]!;
             const handler = NodeRegistry.adapter(node.type);
             const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
-            // if (!target || node == target) {
             if (handle !== NodeHandle.NONE) {
-                // console.log(`hitHandle: nodes=${nodes.map(n => n.type).join(', ')}, node=${node.type}, handle=${handle}`);
                 return handle;
             }
-            // }
         }
 
         // for (let layer of this.layers) {
@@ -1024,11 +1025,37 @@ export class DiagramView extends Diagram implements HasSelection {
         //         let node = nodes[i]!;
         //         const handler = NodeRegistry.adapter(node.type);
         //         const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
-        //         if (!target || node == target) {
+        //         if (!target || node === target) {
         //             return handle;
         //         }
         //     }
         // }
+        return NodeHandle.NONE;
+    }
+
+    /**
+     * Returns the connection-enabled handle at the specified coordinates, if any.
+     * Each node type can define its own connection handles, which may differ from the standard resize/move handles.
+     * @param x The x-coordinate to test.
+     * @param y The y-coordinate to test.
+     * @param target The target node to test, if any.
+     * @returns The connection-enabled handle at the specified coordinates, or `NodeHandle.NONE` if none is found.
+     */
+    protected hitConnectionHandle(x: number, y: number, target?: INode): NodeHandle {
+        const nodes = target ? [target] : this.hitNodes(x, y);
+
+        for (let i = 0; i < nodes.length; i++) {
+            let node = nodes[i]!;
+            const handler = NodeRegistry.adapter(node.type);
+            const allowed = handler?.connection_handles || [];
+            if (allowed.length === 0) continue;
+            const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
+
+            if (handle !== NodeHandle.NONE && allowed.includes(handle)) {
+                return handle;
+            }
+        }
+
         return NodeHandle.NONE;
     }
 
@@ -1058,6 +1085,30 @@ export class DiagramView extends Diagram implements HasSelection {
         }
     }
 
+    protected setKeyboardFlag(event: KeyboardEvent, isDown: boolean): void {
+        const key = event.key.toLowerCase();
+        if (key === ' ' || key === 'space' || key === 'spacebar') {
+            this.keyboardFlags.isSpacePanning = isDown;
+            this.emitKeyboardModeHint(isDown, 'Pan mode active (hold Space)');
+
+            if (this.canvas.style.cursor === 'grabbing') {
+                this.canvas.style.cursor = 'default';
+            }
+        }
+    }
+
+    protected emitKeyboardModeHint(isDown: boolean, activeHint: string): void {
+        if (!isDown && Object.values(this.keyboardFlags).some(Boolean)) {
+            return;
+        }
+
+        this.eventDispatcher.hintChanged({
+            source: 'diagram-interaction',
+            hint: isDown ? activeHint : '',
+            active: isDown,
+        });
+    }
+
     /**
      * Respond to pointer down events on the canvas, handling selection and panning based on the event properties and current selection options.
      * @param event The pointer event.
@@ -1077,7 +1128,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
         const hit = this.hitNode(event.offsetX, event.offsetY);
         this.dragStartOnNode = !!hit;
-        this.dragPanningWithSpace = this.isSpacePanning;
+        this.dragPanningWithSpace = !!this.keyboardFlags.isSpacePanning;
 
         if (this.dragPanningWithSpace) {
             this.canvas.style.cursor = 'grabbing';
@@ -1207,10 +1258,11 @@ export class DiagramView extends Diagram implements HasSelection {
             return;
         }
 
-        const key = event.key.toLowerCase();
-        if (key === ' ' || key === 'space' || key === 'spacebar') {
-            this.isSpacePanning = true;
-        }
+        this.setKeyboardFlag(event, true);
+        // const key = event.key.toLowerCase();
+        // if (key === ' ' || key === 'space' || key === 'spacebar') {
+        //     this.isSpacePanning = true;
+        // }
 
         if (this.keyboard.invokeEvent(this, event)) {
             return;
@@ -1222,13 +1274,7 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param event The keyboard event.
      */
     protected keyup(event: KeyboardEvent): void {
-        const key = event.key.toLowerCase();
-        if (key === ' ' || key === 'space' || key === 'spacebar') {
-            this.isSpacePanning = false;
-            if (this.canvas.style.cursor === 'grabbing') {
-                this.canvas.style.cursor = 'default';
-            }
-        }
+        this.setKeyboardFlag(event, false);
     }
 
     protected shouldIgnoreGlobalKeydown(event: KeyboardEvent): boolean {

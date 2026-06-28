@@ -10,6 +10,7 @@ type InteractiveDiagram = INode['owner'] & {
     getCoordinates(): CoordinateSystem;
     hitNodes(x: number, y: number): INode[];
     hitHandle(x: number, y: number, target?: INode): NodeHandle;
+    hitConnectionHandle(x: number, y: number, target?: INode): NodeHandle;
 };
 
 /**
@@ -197,11 +198,11 @@ export class ConnectionBasics {
         points = points || node.points;
         if (points.length < 2) return;
 
-        if (node.arrow === 'start' || node.arrow === 'both') {
+        if (node.strokeStyle?.arrow === 'start' || node.strokeStyle?.arrow === 'both') {
             this.renderArrow(points[1]!, points[0]!, context);
         }
 
-        if (node.arrow === 'end' || node.arrow === 'both') {
+        if (node.strokeStyle?.arrow === 'end' || node.strokeStyle?.arrow === 'both') {
             this.renderArrow(points[points.length - 2]!, points[points.length - 1]!, context);
         }
     }
@@ -248,6 +249,93 @@ export class ConnectionBasics {
         return coordinates.getRenderPoint({ x: point.x, y: point.y }, rect, target.angle, cos, sin);
     }
 
+    /**
+     * Reassigns one endpoint anchor to the nearest handle supported by its current target node.
+     *
+     * Assumption: the endpoint already targets the intended node. This method does not perform hit testing.
+     * @param node The connection node containing the endpoint anchor.
+     * @param endpoint Which endpoint to normalize ('from' or 'to').
+     * @param tolerance Maximum distance used while selecting the nearest supported handle.
+     * @returns The updated anchor if one could be resolved, otherwise undefined.
+     */
+    public static reconnectToBestHandle(node: INode & IConnection, endpoint: 'from' | 'to', tolerance: number = DiagramConstants.HANDLE_HIT_EPSILON): IConnectionAnchor | undefined {
+        const anchor = endpoint === 'from' ? node.from : node.to;
+        if (!anchor) {
+            return undefined;
+        }
+
+        const target = this.resolveAnchorNode(node, anchor);
+        if (!target) {
+            return undefined;
+        }
+
+        // Use the OTHER end of the connection as the reference point so we pick
+        // the handle on the target that faces the far endpoint, not the old handle position.
+        const otherAnchor = endpoint === 'from' ? node.to : node.from;
+        const referencePoint = (otherAnchor ? this.getAnchorPoint(node, otherAnchor) : undefined)
+            ?? this.getConnectionEndpoint(node, endpoint === 'from' ? 'to' : 'from');
+
+        if (!referencePoint) {
+            return undefined;
+        }
+
+        const next = this.getNearestSupportedAnchor(target, referencePoint, tolerance);
+        if (!next) {
+            return undefined;
+        }
+
+        if (endpoint === 'from') {
+            node.from = next;
+        } else {
+            node.to = next;
+        }
+
+        return next;
+    }
+
+    private static getNearestSupportedAnchor(target: INode, nearPoint: IPoint, tolerance: number = DiagramConstants.HANDLE_HIT_EPSILON): IConnectionAnchor | undefined {
+        const diagram = target.owner;
+        if (!isDiagramViewLike(diagram)) {
+            return undefined;
+        }
+
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(target, false);
+        const nearest = NodeBasics.nearestConnectionHandle(target, nearPoint, true, tolerance);
+        if (!nearest || nearest.handle === NodeHandle.NONE) {
+            return undefined;
+        }
+
+        const next: IConnectionAnchor = {
+            node: target,
+            handle: nearest.handle,
+        };
+
+        const localPoint = coordinates.getHitPoint({ x: nearest.point.x, y: nearest.point.y }, rect, target.angle || 0);
+        if (nearest.handle === NodeHandle.POINT) {
+            next.point = this.getPointIndex(target, localPoint.x, localPoint.y);
+        }
+
+        if (nearest.handle === NodeHandle.MOVE) {
+            next.xOffset = rect.width ? (localPoint.x - rect.left) / rect.width : 0.5;
+            next.yOffset = rect.height ? (localPoint.y - rect.top) / rect.height : 0.5;
+        }
+
+        return next;
+    }
+
+    private static getConnectionEndpoint(node: INode & IConnection, endpoint: 'from' | 'to'): IPoint | undefined {
+        if (!node.points.length) {
+            return undefined;
+        }
+
+        if (endpoint === 'from') {
+            return node.points[0];
+        }
+
+        return node.points[node.points.length - 1];
+    }
+
     private static resolveAnchorNode(node: INode, anchor: IConnectionAnchor): INode | undefined {
         if (typeof anchor.node !== 'string') {
             return anchor.node;
@@ -263,7 +351,9 @@ export class ConnectionBasics {
     private static getInteractiveDiagram(node: INode): InteractiveDiagram | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
-        if (typeof (diagram as any).hitNodes !== 'function' || typeof (diagram as any).hitHandle !== 'function') {
+        if (typeof (diagram as any).hitNodes !== 'function' ||
+            typeof (diagram as any).hitHandle !== 'function' ||
+            typeof (diagram as any).hitConnectionHandle !== 'function') {
             return undefined;
         }
 
@@ -287,7 +377,7 @@ export class ConnectionBasics {
         for (const source of atPoint) {
             if (source.id === node.id) continue;
 
-            const handle = diagram.hitHandle(x, y, source);
+            const handle = diagram.hitConnectionHandle(x, y, source);
             if (handle === NodeHandle.ROTATE) continue;
 
             const anchor: IConnectionAnchor = {
