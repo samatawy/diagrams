@@ -21,11 +21,11 @@ import { FontSelectAdapter } from "./font.select.adapter";
 import { SizeSelectAdapter } from "./size.select.adapter";
 import { AngleAdapter } from "./angle.adapter";
 import { EnumSelectAdapter, type EnumSelectAdapterConfig } from "./enum.select.adapter";
+import { TypeTransferAdapter, type TypeTransferAdapterConfig } from "./type.transfer.adapter";
 import { PointAdapter } from "./point.adapter";
 import { ImageSelectAdapter } from "./image.select.adapter";
 import type { NumberInputAdapterConfig } from "./number.input.adapter";
 import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./meta.kv.adapters";
-import { humanize } from "../../value.utils";
 
 export type DiagramInspectorConfig = InspectorConfig & {
     colorSelect?: ColorSelectConfig;
@@ -100,6 +100,7 @@ export class DiagramInspector extends Inspector {
         Inspector.registerAdapter('Point', PointAdapter);
         Inspector.registerAdapter('AngleEditor', AngleAdapter);
         Inspector.registerAdapter('EnumSelect', EnumSelectAdapter);
+        Inspector.registerAdapter('TypeTransfer', TypeTransferAdapter);
         Inspector.registerAdapter('ImageSelect', ImageSelectAdapter);
         Inspector.registerAdapter('MetaValue', MetaValueAdapter);
         Inspector.registerAdapter('MetaAdd', MetaAddAdapter);
@@ -158,9 +159,23 @@ export class DiagramInspector extends Inspector {
         this.addRow(identity, {
             key: 'type',
             label: 'Type',
-            type: 'string',
-            readonly: true,
-            isVisible: hasSelected,
+            type: 'select',
+            editor: 'TypeTransfer',
+            editorOptions: {
+                options: () => {
+                    const items = selected();
+                    if (items.length !== 1) {
+                        return [];
+                    }
+
+                    const node = items[0]!;
+                    return NodeRegistry
+                        .getTransferables(node.type)
+                        .filter(type => type !== node.type && !!NodeRegistry.adapter(type));
+                },
+            } as TypeTransferAdapterConfig,
+            readonly: readonly,
+            isVisible: () => selected().length === 1,
         });
 
         const { grid: geometry } = this.buildSection('Geometry', 'collapsed');
@@ -416,17 +431,17 @@ export class DiagramInspector extends Inspector {
                 if (adapter instanceof EnumSelectAdapter) {
                     adapter.refreshOptions();
                 }
+                if (adapter instanceof TypeTransferAdapter) {
+                    adapter.refreshOptions();
+                }
 
                 if (valueSet.size > 1) {
                     adapter.setMixed?.(true);
                 } else {
                     const v = [...valueSet][0];
-                    const displayValue = key === 'type' && typeof v === 'string'
-                        ? humanize(v)
-                        : v;
                     cell.classList.remove(this.config.mixedClassName);
                     adapter.setMixed?.(false);
-                    adapter.showValue({ [key]: displayValue });
+                    adapter.showValue({ [key]: v });
                 }
                 if (adapter instanceof ColorSelectAdapter) {
                     (adapter as ColorSelectAdapter).setColors(colors);
@@ -654,6 +669,21 @@ export class DiagramInspector extends Inspector {
      * @param value The new value (unused; adapter value is read directly).
      */
     private applyInspectorChange(key: string, value: unknown): void {
+
+        if (key === 'type') {
+            const nextType = typeof value === 'string' ? value : undefined;
+            const edit = this.diagram as any;
+            const selected = this.diagram.selection();
+            const node = selected.length === 1 ? selected[0] : undefined;
+            if (!nextType || !node || this.readonly || typeof edit.changeNodeType !== 'function') {
+                return;
+            }
+
+            edit.changeNodeType(node, nextType);
+            this.syncDynamicRows(this.diagram.selection());
+            this.refresh();
+            return;
+        }
 
         // Special handling for meta objects
         if (this.isMetaAddChange(value)) {

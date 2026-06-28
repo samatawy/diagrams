@@ -15,6 +15,7 @@ export const DIAGRAM_VIEWPORT_EVENT = "viewport-change";
 export const DIAGRAM_DELETE_REQUEST_EVENT = "delete-request";
 export const DIAGRAM_NODE_ADDED_EVENT = "node-added";
 export const DIAGRAM_NODE_DELETED_EVENT = "node-deleted";
+export const DIAGRAM_NODE_TYPE_CHANGED_EVENT = "node-type-changed";
 export const DIAGRAM_NODE_MOVED_EVENT = "node-moved";
 export const DIAGRAM_NODE_RESIZED_EVENT = "node-resized";
 export const DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT = "node-geometry-altered";

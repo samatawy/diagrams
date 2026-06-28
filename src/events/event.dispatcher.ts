@@ -29,6 +29,7 @@ import {
     type DiagramSelectionChange,
     type DiagramToolChange,
     type DiagramViewportChange,
+    DIAGRAM_NODE_TYPE_CHANGED_EVENT,
 } from "./diagram.events";
 
 /**
@@ -102,6 +103,14 @@ export class EventDispatcher {
      */
     public nodeDeleted(detail: DiagramNodeChange): void {
         this.dispatchInternal(DIAGRAM_NODE_DELETED_EVENT, detail);
+    }
+
+    /**
+     * Emits the node-type-changed event.
+     * @param detail Node change payload.
+     */
+    public nodeTypeChanged(detail: DiagramNodeChange): void {
+        this.dispatchInternal(DIAGRAM_NODE_TYPE_CHANGED_EVENT, detail);
     }
 
     /**
@@ -219,6 +228,7 @@ export class EventDispatcher {
         switch (eventName) {
             case DIAGRAM_NODE_ADDED_EVENT:
             case DIAGRAM_NODE_DELETED_EVENT:
+            case DIAGRAM_NODE_TYPE_CHANGED_EVENT:
             case DIAGRAM_NODE_MOVED_EVENT:
             case DIAGRAM_NODE_RESIZED_EVENT:
             case DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT:

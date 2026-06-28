@@ -2014,6 +2014,8 @@ export class DiagramEditView extends DiagramView {
                 }
             }
 
+            this.emitNodeTypeChanged(_node);
+
             setTimeout(() => {
                 this.render('all');
                 this.renderPreview();
@@ -2520,7 +2522,6 @@ export class DiagramEditView extends DiagramView {
 
         if (event.buttons != 1 && event.buttons != 2) return;
         const localNodes = this.hitNodes(event.offsetX, event.offsetY);
-        // const nonConnections = localNodes.filter(node => !isConnection(node));
 
         const toggleSelectionGesture = event.ctrlKey || event.metaKey;
         const rectSelectionGesture = !this.keyboardFlags.isSpacePanning
@@ -4767,6 +4768,17 @@ export class DiagramEditView extends DiagramView {
      */
     private emitNodeDeleted(node: INode): void {
         this.eventDispatcher.nodeDeleted({
+            node,
+            nodeId: node.id,
+        });
+    }
+
+    /**
+     * Emits an event when a node's type is changed.
+     * @param node The target node.
+     */
+    private emitNodeTypeChanged(node: INode): void {
+        this.eventDispatcher.nodeTypeChanged({
             node,
             nodeId: node.id,
         });

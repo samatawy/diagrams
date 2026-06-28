@@ -13,7 +13,7 @@ import { ACTION_MAP, type DiagramActionId } from '../diagram.actions';
 import { IconRegistry } from '../../factory/icon.registry';
 import { NodeRegistry } from '../../factory/node.registry';
 import { ContextMenu, type ContextMenuConfig } from './context.menu';
-import { humanize } from '../../value.utils';
+import { TypeTransferPanel } from '../inputs/type.transfer.panel';
 
 /**
  * Layout shown when nothing is selected: grid/guides toggles, zoom/fit, and paste.
@@ -125,94 +125,17 @@ export class DiagramContextMenu extends ContextMenu {
 
         if (!transferables.length) return false;
 
-        const row = document.createElement('div');
-        row.className = 'context-menu-item';
-        row.style.cursor = 'pointer';
+        const host = document.createElement('div');
+        this.menuElement.appendChild(host);
 
-        const iconSlot = document.createElement('span');
-        iconSlot.className = 'context-menu-item-icon';
-        const icon = IconRegistry.createElement(node.type);
-        if (icon) {
-            iconSlot.appendChild(icon);
-        }
-        row.appendChild(iconSlot);
-
-        const label = document.createElement('span');
-        label.className = 'context-menu-item-label';
-        label.textContent = humanize(node.type);
-        // label.style.fontWeight = '600';
-        row.appendChild(label);
-
-        const caret = document.createElement('span');
-        caret.style.cssText = [
-            'display:block',
-            'align-self:center',
-            'box-sizing:border-box',
-            'flex:0 0 6px',
-            'width:6px',
-            'height:6px',
-            'border-right:2px solid currentColor',
-            'border-bottom:2px solid currentColor',
-            'margin-inline-end:0',
-            'margin-inline-start:8px',
-            'opacity:.7',
-            'transform:rotate(-45deg)',
-            'transform-origin:50% 50%',
-            'transition:transform 0.26s cubic-bezier(0.2, 0.75, 0.25, 1)',
-        ].join(';');
-        row.appendChild(caret);
-
-        const panel = document.createElement('div');
-        panel.style.cssText = 'display:none;padding:4px 8px 6px 32px';
-
-        const toolbar = document.createElement('div');
-        toolbar.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px';
-
-        for (const type of transferables) {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.title = humanize(type);
-            button.setAttribute('aria-label', `Change type to ${humanize(type)}`);
-            button.style.cssText = [
-                'display:inline-flex',
-                'align-items:center',
-                'justify-content:center',
-                'width:30px',
-                'height:30px',
-                'border-radius:7px',
-                'border:1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15))',
-                'background:var(--diagram-ui-surface-elevated, #fff)',
-                'cursor:pointer',
-            ].join(';');
-
-            const typeIcon = IconRegistry.createElement(type);
-            if (typeIcon) {
-                button.appendChild(typeIcon);
-            } else {
-                button.textContent = humanize(type).charAt(0);
-            }
-
-            button.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+        new TypeTransferPanel(host, {
+            currentType: node.type,
+            transferables,
+            onSelect: (type) => {
                 editView.changeNodeType(node, type);
                 this.close();
-            });
-
-            toolbar.appendChild(button);
-        }
-
-        panel.appendChild(toolbar);
-
-        row.addEventListener('click', (e) => {
-            e.preventDefault();
-            const expanded = panel.style.display !== 'none';
-            panel.style.display = expanded ? 'none' : 'block';
-            caret.style.transform = expanded ? 'rotate(-45deg)' : 'rotate(45deg)';
+            },
         });
-
-        this.menuElement.appendChild(row);
-        this.menuElement.appendChild(panel);
         return true;
     }
 
