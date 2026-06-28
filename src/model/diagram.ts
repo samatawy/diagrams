@@ -25,6 +25,8 @@ export class Diagram implements IDiagram {
 
     public layers: ILayer[] = [];
 
+    public sheet_id?: string;
+
     public background?: string;
 
     public meta?: Record<string, any>;

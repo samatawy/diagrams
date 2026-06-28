@@ -35,6 +35,11 @@ export interface INode {
     text?: string,
 
     /**
+     * The optional class name of the node, which can be used to apply specific styles or behaviors to the node based on its class.
+     */
+    class_name?: string;
+
+    /**
      * The text style properties of the node, which can be used to control the appearance of the node's text, 
      * including font, size, color, alignment, and baseline.
      */
@@ -271,6 +276,7 @@ export interface IDiagram extends Serializable {
     nodes: INode[];
     groups?: IGroup[];
     layers: ILayer[];
+    sheet_id?: string;
     background?: string;
     meta?: Record<string, unknown>;
     grid?: IGrid;

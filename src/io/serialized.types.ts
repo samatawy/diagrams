@@ -60,6 +60,7 @@ export interface ISerializedDiagram {
     nodes: ISerializedNode[];
     groups?: ISerializedGroup[];
     layers: ISerializedLayer[];
+    sheet_id?: string;
     background?: string;
     meta?: Record<string, unknown>;
     image_assets?: Record<string, string>;

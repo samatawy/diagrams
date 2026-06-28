@@ -37,6 +37,7 @@ import {
     type DiagramDeleteRequest,
     type DiagramClipboardOperation,
     type DiagramEditContextMenu,
+    type DiagramSheetLoaded,
 } from "../events/diagram.events";
 import type { ISerializedNode } from "../io";
 
@@ -53,6 +54,8 @@ import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
 import type { I } from "vitest/dist/chunks/reporters.d.BuRON0I0.js";
+import type { SheetRepository } from "../sheets/sheet.repository";
+import type { SpecSheet } from "../sheets/spec.sheet";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -81,6 +84,8 @@ export class DiagramEditView extends DiagramView {
 
     private color_palette: ColorPalette;
 
+    private sheet_repository?: SheetRepository;
+
     private editKeyboard: DiagramEditViewKeyboard;
 
     protected declare keyboardFlags: EditKeyboardFlags;
@@ -90,7 +95,8 @@ export class DiagramEditView extends DiagramView {
         tool?: string,
         toolOptions?: { url?: string },
         draft?: INode,
-        zoom_factor: number
+        zoom_factor: number,
+        sheet?: SpecSheet,
     } = {
             layer: undefined,
             toolOptions: undefined,
@@ -459,19 +465,6 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Emits diagram model changed.
-     * @param sourceEvent Source event name.
-     * @returns Nothing.
-     */
-    private emitDiagramModelChanged(sourceEvent: string): void {
-        const host = (this as any).host as HTMLElement | undefined;
-        host?.dispatchEvent(new CustomEvent<DiagramChanged>(DIAGRAM_CHANGED_EVENT, {
-            detail: { scope: 'model', sourceEvent },
-            bubbles: true,
-        }));
-    }
-
-    /**
      * Handles confirm replace if needed.
      * @param reason The reason value.
      * @returns The computed result.
@@ -511,6 +504,62 @@ export class DiagramEditView extends DiagramView {
         }
 
         return await this.prompts.onNoChangesSave();
+    }
+
+    // ==================================================
+    // ================ Sheet methods ================
+    // ==================================================
+
+    /**
+     * Gets the sheet respository used by this diagram, if any.
+     * @returns The sheet repository, or undefined if sheets are not enabled.
+     */
+    public get sheetRepository(): SheetRepository | undefined {
+        return this.sheet_repository;
+    }
+
+    /**
+     * Sets the sheet repository used by this diagram, or undefined to disable sheets.
+     * @param value The sheet repository to set, or undefined to disable sheets.
+     */
+    public set sheetRepository(value: SheetRepository | undefined) {
+        this.sheet_repository = value;
+        this.emitSheetLoaded();
+    }
+
+    /**
+     * Gets the currently active sheet, if any.
+     * @returns The current sheet, or undefined if no sheet is active.
+     */
+    public get currentSheet(): SpecSheet | undefined {
+        if (this.current.sheet?.id === this.sheet_id) {
+            return this.current.sheet;
+        } else if (this.sheet_id) {
+            this.current.sheet = this.sheet_repository?.sheet(this.sheet_id);
+        }
+        return this.current.sheet;
+    }
+
+    /**
+     * Sets the currently active sheet, applying its styles to the diagram and emitting a sheet-loaded event.
+     * @param value The sheet to set as current, or undefined to clear the current sheet.
+     */
+    public set currentSheet(value: SpecSheet | string | undefined) {
+        this.setCurrentSheet(value);
+    }
+
+    /**
+     * Sets the currently active sheet, applying its styles to the diagram and emitting a sheet-loaded event.
+     * @param value The sheet to set as current, or undefined to clear the current sheet.
+     */
+    public setCurrentSheet(value: SpecSheet | string | undefined) {
+        if (this.sheet_repository) {
+            const sheet = (typeof value === 'string') ? this.sheet_repository.sheet(value) : value;
+            this.sheet_id = sheet?.id;
+            this.current.sheet = sheet;
+            if (sheet) this.sheet_repository.applyToDiagram(this, sheet.id);
+            this.emitSheetLoaded();
+        }
     }
 
     // ==================================================
@@ -1183,6 +1232,10 @@ export class DiagramEditView extends DiagramView {
             }
             current[segments[segments.length - 1] as string] = value;
         }
+        if (patch['diagram.sheet_id']) {
+            this.setCurrentSheet(patch['diagram.sheet_id'] as string);
+            // this.sheet_repository?.applyToDiagram(this, this.sheet_id!);
+        }
 
         this.color_palette.refresh();
 
@@ -1210,6 +1263,11 @@ export class DiagramEditView extends DiagramView {
             if (segments[0] === 'shadowStyle') {
                 const cur = (target as any)['shadowStyle'];
                 (target as any)['shadowStyle'] = DiagramEditView.normalizeShadowStyle(cur);
+            }
+
+            if (segments[0] === 'class_name' && !!this.current.sheet) {
+                target.class_name = value;
+                this.sheet_repository?.applyToNode(target as any as INode, this.current.sheet.id);
             }
 
             let current: any = target;
@@ -4888,6 +4946,28 @@ export class DiagramEditView extends DiagramView {
             from: this.anchorSignature(node.from),
             to: this.anchorSignature(node.to),
         };
+    }
+
+    /**
+     * Emits diagram model changed.
+     * @param sourceEvent Source event name.
+     * @returns Nothing.
+     */
+    private emitDiagramModelChanged(sourceEvent: string): void {
+        const host = (this as any).host as HTMLElement | undefined;
+        host?.dispatchEvent(new CustomEvent<DiagramChanged>(DIAGRAM_CHANGED_EVENT, {
+            detail: { scope: 'model', sourceEvent },
+            bubbles: true,
+        }));
+    }
+
+    private emitSheetLoaded(): void {
+        const sheetId = this.current.sheet?.id || '';
+        const sheetNames = this.sheet_repository?.sheetNames || [];
+        this.eventDispatcher.sheetLoaded({
+            sheetId,
+            sheetNames,
+        });
     }
 
     /**

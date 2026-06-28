@@ -40,6 +40,7 @@ import { DiagramStatusBar } from "../status/diagram.status.bar";
 import { ShadowPresetSelect, SHADOW_PRESET_CHANGE_EVENT } from "./inputs/shadow.preset.select";
 import type { ShadowStyle } from "../style.interfaces";
 import { DiagramHintService } from "../status/diagram.hint.service";
+import { SheetRepository } from "../sheets/sheet.repository";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
@@ -232,6 +233,8 @@ export class DiagramEditor {
 
     protected diagram: DiagramEditView;
 
+    protected sheet_repository: SheetRepository;
+
     protected headerHost?: HTMLElement;
     protected stageHost?: HTMLElement;
     protected statusBarHost?: HTMLElement;
@@ -315,7 +318,9 @@ export class DiagramEditor {
 
         this.initialize(this.host, this.config, diagram);
         // Workaround to keep diagram required even if none was passed.
+        this.sheet_repository = this.getSheetRepository();
         this.diagram = this.getDiagramView();
+        this.diagram.sheetRepository = this.sheet_repository;
     }
 
     /**
@@ -439,9 +444,67 @@ export class DiagramEditor {
 
     /**
      * Returns the owned diagram editing view.
+     * @returns The current diagram in this editor.
      */
     public getDiagramView(): DiagramEditView {
+        // TODO: Should we create a new diagram if undefined (since this method is called in the constructor)?
+        // Currently its not a single-liner.
         return this.diagram;
+    }
+
+    /**
+     * Returns the current sheet repository, creating a default one if none exists.
+     * @returns The sheet repository used by this editor.
+     */
+    public getSheetRepository(): SheetRepository {
+        if (!this.sheet_repository) {
+            const repo = new SheetRepository();
+            repo.registerSheet({
+                id: 'default_sheet',
+                name: 'Default',
+                nodes: {},
+                classes: {
+                    'default': {
+                        id: 'default_node',
+                        strokeStyle: {
+                            color: 'red',
+                            width: 2
+                        },
+                        fillStyle: 'white',
+                        textStyle: {},
+                        shadowStyle: DiagramConstants.LOW_SHADOW,
+                    }
+                },
+                diagram: {
+                    background: 'transparent',
+                }
+            });
+            repo.registerSheet({
+                id: 'bw_sheet',
+                name: 'Black and White',
+                nodes: {},
+                classes: {
+                    'default': {
+                        id: 'default_node',
+                        strokeStyle: {
+                            color: 'black',
+                            width: 2
+                        },
+                        fillStyle: 'white',
+                        textStyle: {
+                            weight: 700,
+                        },
+                        shadowStyle: DiagramConstants.MEDIUM_SHADOW,
+                    }
+                },
+                diagram: {
+                    background: 'transparent',
+                }
+            });
+
+            this.sheet_repository = repo;
+        }
+        return this.sheet_repository;
     }
 
     /**

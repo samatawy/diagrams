@@ -13,6 +13,10 @@ export function nodeId(node: INode | string): string {
     return typeof node === 'string' ? node : node.id;
 }
 
+export function nodeClass(node: INode): string | undefined {
+    return node.class_name;
+}
+
 export function isLocked(node: INode): boolean {
     return !!node.locked;
 }

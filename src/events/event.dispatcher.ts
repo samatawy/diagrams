@@ -16,6 +16,7 @@ import {
     DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT,
     DIAGRAM_SELECTION_EVENT,
     DIAGRAM_TOOL_CHANGED_EVENT,
+    DIAGRAM_SHEET_LOADED_EVENT,
     DIAGRAM_VIEWPORT_EVENT,
     type DiagramBackgroundClick,
     type DiagramClipboardEventDetail,
@@ -30,6 +31,7 @@ import {
     type DiagramToolChange,
     type DiagramViewportChange,
     DIAGRAM_NODE_TYPE_CHANGED_EVENT,
+    type DiagramSheetLoaded,
 } from "./diagram.events";
 
 /**
@@ -177,6 +179,10 @@ export class EventDispatcher {
         this.dispatchInternal(DIAGRAM_TOOL_CHANGED_EVENT, detail);
     }
 
+    public sheetLoaded(detail: DiagramSheetLoaded): void {
+        this.dispatchInternal(DIAGRAM_SHEET_LOADED_EVENT, detail);
+    }
+
     /**
      * Emits a style-scope diagram change event.
      * @param sourceEvent The name of the triggering event. 
@@ -241,6 +247,7 @@ export class EventDispatcher {
             case DIAGRAM_CLIPBOARD_EVENT:
                 return "view";
             case DIAGRAM_TOOL_CHANGED_EVENT:
+            case DIAGRAM_SHEET_LOADED_EVENT:
                 return "style";
             case DIAGRAM_HINT_EVENT:
             default:

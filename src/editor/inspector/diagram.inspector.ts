@@ -2,7 +2,7 @@ import type { INode } from "../../interfaces";
 import type { ITextOrientation } from "../../types";
 import type { DiagramView } from "../../view";
 import { DiagramEditView } from "../../editview";
-import { DIAGRAM_CHANGED_EVENT, DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, DIAGRAM_NODE_POINTS_CHANGED_EVENT, DIAGRAM_SELECTION_EVENT } from "../../events";
+import { DIAGRAM_CHANGED_EVENT, DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, DIAGRAM_NODE_POINTS_CHANGED_EVENT, DIAGRAM_SELECTION_EVENT, DIAGRAM_SHEET_LOADED_EVENT } from "../../events";
 import { isConnection } from "../../guards";
 import { NodeRegistry } from "../../factory/node.registry";
 
@@ -127,6 +127,22 @@ export class DiagramInspector extends Inspector {
             isVisible: noSelection,
         });
         this.addRow(diagramGrid, {
+            key: 'diagram.sheet_id',
+            label: 'Sheet',
+            type: 'select',
+            editor: 'EnumSelect',
+            editorOptions: {
+                options: () => {
+                    const d = this.diagram as DiagramEditView;
+                    const repo = d?.sheetRepository;
+                    if (!repo) return [];
+                    return repo.sheetNames.map(({ id, name }) => ({ value: id, label: name }));
+                }
+            },
+            readonly: readonly,
+            isVisible: noSelection,
+        });
+        this.addRow(diagramGrid, {
             key: 'diagram.background',
             label: 'Background',
             type: 'string',
@@ -174,6 +190,22 @@ export class DiagramInspector extends Inspector {
                         .filter(type => type !== node.type && !!NodeRegistry.adapter(type));
                 },
             } as TypeTransferAdapterConfig,
+            readonly: readonly,
+            isVisible: () => selected().length === 1,
+        });
+        this.addRow(identity, {
+            key: 'class_name',
+            label: 'Class',
+            type: 'select',
+            editor: 'EnumSelect',
+            editorOptions: {
+                options: () => {
+                    const d = this.diagram as DiagramEditView;
+                    const sheet = d?.currentSheet;
+                    if (!sheet) return [];
+                    return d.sheetRepository?.sheetClasses(sheet.id) || [];
+                }
+            },
             readonly: readonly,
             isVisible: () => selected().length === 1,
         });
@@ -366,6 +398,7 @@ export class DiagramInspector extends Inspector {
         source?.addEventListener(DIAGRAM_SELECTION_EVENT, this.onDiagramSelectionChanged);
         source?.addEventListener(DIAGRAM_NODE_POINTS_CHANGED_EVENT, this.onDiagramSelectionChanged);
         source?.addEventListener(DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, this.onDiagramSelectionChanged);
+        source?.addEventListener(DIAGRAM_SHEET_LOADED_EVENT, this.onDiagramChanged);
     }
 
     /**
@@ -377,6 +410,7 @@ export class DiagramInspector extends Inspector {
         source?.removeEventListener(DIAGRAM_SELECTION_EVENT, this.onDiagramSelectionChanged);
         source?.removeEventListener(DIAGRAM_NODE_POINTS_CHANGED_EVENT, this.onDiagramSelectionChanged);
         source?.removeEventListener(DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, this.onDiagramSelectionChanged);
+        source?.removeEventListener(DIAGRAM_SHEET_LOADED_EVENT, this.onDiagramChanged);
     }
 
     /**

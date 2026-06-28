@@ -27,6 +27,8 @@ export const DIAGRAM_TOOL_CHANGED_EVENT = "tool-changed";
 export const DIAGRAM_CLIPBOARD_EVENT = "clipboard-change";
 export const DIAGRAM_HINT_EVENT = "diagram-hint";
 
+export const DIAGRAM_SHEET_LOADED_EVENT = "diagram-sheet-loaded";
+
 /**
  * Broad compatibility event.
  */
@@ -211,6 +213,25 @@ export interface DiagramToolChange {
      * This property represents the tool that was being used before the current tool was selected or activated.
      */
     previousTool: string;
+}
+
+/**
+ * Defines the structure of a diagram sheet loaded event, which includes information about the spec sheet that has been loaded into the diagram 
+ * and the names of all available spec sheets.
+ * This interface can be used to provide detailed information about sheet loading events in the diagram, allowing for more specific handling of such events, 
+ * such as updating the display or synchronizing with other components.
+ */
+export interface DiagramSheetLoaded {
+    /**
+     * The unique identifier of the spec sheet that has been loaded into the diagram.
+     * This property allows for tracking which spec sheet is currently applied to the diagram, enabling more specific handling of sheet-related events and updates.
+     */
+    sheetId: string;
+    /**
+     * The names of all spec sheets that are currently available in the diagram's context.
+     * This property provides a list of all spec sheets that can be applied to the diagram, allowing for more informed handling of sheet-related events and updates.
+     */
+    sheetNames: { id: string, name: string }[];
 }
 
 /**
