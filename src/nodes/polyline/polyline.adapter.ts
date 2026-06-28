@@ -113,6 +113,7 @@ export class PolylineAdapter implements INodeAdapter {
         if (node.points.length > 1) {
             context.save();
             RenderBasics.prepare(node, context);
+
             if (isConnectionNode(node)) {
                 ConnectionBasics.syncEndpoints(node);
             }
