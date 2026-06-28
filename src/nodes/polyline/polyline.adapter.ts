@@ -19,7 +19,7 @@ export class PolylineAdapter implements INodeAdapter {
 
     public static TYPE = 'polyline';
 
-    connection_handles: NodeHandle[] = [];
+    connection_handles: NodeHandle[] = [NodeHandle.POINT];
 
     /**
      * Gets the registry name for this adapter.
@@ -125,7 +125,7 @@ export class PolylineAdapter implements INodeAdapter {
 
             context.stroke(path);
             if (isConnectionNode(node)) {
-                ConnectionBasics.renderArrows(node, context);
+                RenderBasics.renderArrows(node, context);
             }
 
             if (node.text) {
@@ -151,8 +151,9 @@ export class PolylineAdapter implements INodeAdapter {
             RenderBasics.prepareHandles(node, context);
 
             const handles = new Path2D();
+            const allowed_points = (show === 'all_handles') ? node.points : node.points.slice(1, node.points.length - 1);
 
-            for (const point of node.points) {
+            for (const point of allowed_points) {
                 RenderBasics.renderHandle(node, point, handles, context);
             }
             context.fill(handles);

@@ -145,7 +145,7 @@ export class ManhattanAdapter extends PolylineAdapter {
             }
             context.stroke(path);
             if (isConnectionNode(node)) {
-                ConnectionBasics.renderArrows(node, context, pathPoints);
+                RenderBasics.renderArrows(node, context, pathPoints);
             }
 
             if (node.text) {

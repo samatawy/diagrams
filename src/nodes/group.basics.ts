@@ -1,4 +1,4 @@
-import { isContainer, isContainerNode } from "../guards";
+import { isContainer } from "../guards";
 import type { IContainer, INode } from "../interfaces";
 import type { Diagram } from "../model/diagram";
 

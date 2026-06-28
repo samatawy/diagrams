@@ -3,8 +3,8 @@ import { NodeHandle, type IPoint, type IRect } from "../types";
 import { isDiagramViewLike, isNode } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import { isAspectLocked, isHollow, isLocked } from "../value.utils";
-import { DiagramConstants } from "../model/diagram.constants";
 import { NodeRegistry } from "../factory";
+import { DiagramConstants } from "../model/diagram.constants";
 
 /**
  * Provides basic operations for manipulating nodes, such as moving, resizing, rotating, and checking for overlaps or containment.
@@ -87,6 +87,13 @@ export class NodeBasics {
         }
     }
 
+    /**
+     * Constrains resize deltas to preserve the current aspect ratio while enforcing minimum size.
+     * @param rect Current bounding rectangle.
+     * @param byX Requested width delta.
+     * @param byY Requested height delta.
+     * @returns Aspect-constrained deltas.
+     */
     private static constrainDeltasByAspectRatio(rect: IRect, byX: number, byY: number): { byX: number, byY: number } {
         const ratio = rect.width / rect.height;
         const minSmallest = 20;
@@ -142,7 +149,6 @@ export class NodeBasics {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();
-        // const cache = diagram.getCache();
 
         // To preserve ratio, we can rely on Shape resizing..
         let ratio = 1;
@@ -151,34 +157,15 @@ export class NodeBasics {
             let rect = coordinates.getBoundingRect(node);
             ratio = rect.width / rect.height;
             byY = (byX / ratio);
-            // if (Math.abs(byX) >= Math.abs(byY * ratio)) {
-            //     byY = byX / ratio;
-            // } else {
-            //     byX = byY * ratio;
-            // }
-            // byY = (byX / ratio);
-            // console.log('preserveAspect', preserveAspect, 'ratio', ratio, 'byX', byX, 'byY', byY);
-        } else {
-            // console.log('preserveAspect', preserveAspect, 'locked', isAspectLocked(node));
         }
 
         switch (handle) {
             case NodeHandle.NW: {  // Tested
-                // if (preserveAspect) {
-                //     let rect = shape.getRect();
-                //     let ratio = rect.width / rect.height;
-                //     byY = byX / ratio;
-                // }
                 this.resizeBy(node, -byX, -byY, preserveAspect);
                 this.moveBy(node, byX, byY);
                 break;
             }
             case NodeHandle.NE: {  // Tested
-                // if (preserveAspect) {
-                //     let rect = shape.getRect();
-                //     let ratio = rect.width / rect.height;
-                //     byY = -byX / ratio;
-                // }
 
                 // Here is the only place this matters !!!
                 if (preserveAspect) byY = -byY;
@@ -188,11 +175,6 @@ export class NodeBasics {
                 break;
             }
             case NodeHandle.SW: {
-                // if (preserveAspect) {
-                //     let rect = shape.getRect();
-                //     let ratio = rect.width / rect.height;
-                //     byY = -byX / ratio;
-                // }
                 if (preserveAspect) byY = -byY;
 
                 this.resizeBy(node, -byX, byY, preserveAspect);
@@ -200,11 +182,6 @@ export class NodeBasics {
                 break;
             }
             case NodeHandle.SE: {
-                // if (preserveAspect) {   // Tested
-                //     let rect = shape.getRect();
-                //     let ratio = rect.width / rect.height;
-                //     byY = byX / ratio;
-                // }     
                 this.resizeBy(node, byX, byY, preserveAspect);
                 break;
             }
@@ -214,7 +191,7 @@ export class NodeBasics {
                 } else {
                     this.resizeBy(node, 0, -byY, preserveAspect);
                 }
-                // shape.resizeBy(0, -byY, preserveAspect);
+
                 this.moveBy(node, 0, byY);
                 break;
             }
@@ -224,7 +201,6 @@ export class NodeBasics {
                 } else {
                     this.resizeBy(node, 0, byY, preserveAspect);
                 }
-                // shape.moveBy(0, byY);
                 break;
             }
             case NodeHandle.E: {
@@ -232,13 +208,10 @@ export class NodeBasics {
                 break;
             }
             case NodeHandle.W: {
-                // if (preserveAspect) byY = -byY;
-
                 this.resizeBy(node, -byX, 0, preserveAspect);
                 this.moveBy(node, byX, 0);
                 break;
             }
-            // }
 
         }
     }
@@ -259,8 +232,6 @@ export class NodeBasics {
         let cached = cache.getNode(node) || {} as INodeCached;
 
         node.angle = (kind === 'degrees') ? degrees * Math.PI / 180 : degrees;
-        // node.cos = Math.cos(node.angle);
-        // node.sin = Math.sin(node.angle);
         cached.cos = Math.cos(node.angle);
         cached.sin = Math.sin(node.angle);
         cache.setNode(node, cached);
@@ -291,23 +262,6 @@ export class NodeBasics {
 
 
         if (!node.angle) return true;   // No further calculation required..
-
-        // An alternative:
-        // if (!this.angle && !this.hollow) return true;   // No further calculation required..
-
-        // if (!this.angle && this.hollow) {
-        //     let inpath: boolean;
-        //     if (this.path) {
-        //         inpath = (this.hollow)? 
-        //                 this.owner.context.isPointInStroke(this.path, rect.left, rect.top) :
-        //                 this.owner.context.isPointInPath(this.path, rect.left, rect.top);
-
-        //         if (!inpath) inpath = (this.hollow)? 
-        //                 this.owner.context.isPointInStroke(this.path, rect.left + rect.width, rect.top + rect.height) :
-        //                 this.owner.context.isPointInPath(this.path, rect.left + rect.width, rect.top + rect.height);
-        //     }
-        //     if (inpath) return true;                
-        // }
 
         if (node.angle) {
             const grid_width = node.owner.grid?.width || 0;
@@ -367,6 +321,11 @@ export class NodeBasics {
         return false;
     }
 
+    /**
+     * Returns the longest segment from an ordered point list.
+     * @param points Ordered polyline points.
+     * @returns The longest segment endpoints, or undefined when fewer than two points are provided.
+     */
     public static longestSegment(points: IPoint[]): { from: IPoint, to: IPoint } | undefined {
         if (points.length < 2) {
             return undefined;
@@ -382,14 +341,32 @@ export class NodeBasics {
         return segments[0];
     }
 
+    /**
+     * Computes Euclidean distance between two points.
+     * @param from Start point.
+     * @param to End point.
+     * @returns Segment length.
+     */
     public static calculateLength(from: IPoint, to: IPoint): number {
         return Math.sqrt((to.x - from.x) ** 2 + (to.y - from.y) ** 2);
     }
 
+    /**
+     * Computes the line angle from one point to another.
+     * @param from Start point.
+     * @param to End point.
+     * @returns Angle in radians.
+     */
     public static calculateAngle(from: IPoint, to: IPoint): number {
         return Math.atan2(to.y - from.y, to.x - from.x);
     }
 
+    /**
+     * Normalizes line orientation to a deterministic direction.
+     * @param from First endpoint.
+     * @param to Second endpoint.
+     * @returns Endpoints in normalized order.
+     */
     public static normalizeLine(from: IPoint, to: IPoint): { from: IPoint, to: IPoint } {
         if (this.isInvertedLine(from, to)) {
             return { from: to, to: from };
@@ -398,6 +375,12 @@ export class NodeBasics {
         }
     }
 
+    /**
+     * Determines whether a line orientation is considered inverted.
+     * @param from First endpoint.
+     * @param to Second endpoint.
+     * @returns True when the line should be flipped by normalizeLine.
+     */
     public static isInvertedLine(from: IPoint, to: IPoint): boolean {
         const dx = to.x - from.x;
         if (dx < 0) {
@@ -412,6 +395,15 @@ export class NodeBasics {
     }
 
 
+    /**
+     * Finds the nearest generic node handle for a point.
+     * That handle may not be valid for connection purposes, but it is the closest handle to the point.
+     * @param node Target node.
+     * @param point Lookup point in world coordinates.
+     * @param is_inside Whether inside hits should resolve to MOVE fallback.
+     * @param tolerance Interior distance threshold.
+     * @returns Nearest handle and snapped point, or undefined when no candidate is found.
+     */
     public static nearestHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): { handle: NodeHandle, point: IPoint } | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
@@ -432,16 +424,22 @@ export class NodeBasics {
             return { handle: fallbackHandle, point: { ...point } };
         }
 
-        const handlePoints: Record<string, IPoint> = {
-            [NodeHandle.N]: { x: rect.left + rect.width / 2, y: rect.top },
-            [NodeHandle.S]: { x: rect.left + rect.width / 2, y: rect.top + rect.height },
-            [NodeHandle.E]: { x: rect.left + rect.width, y: rect.top + rect.height / 2 },
-            [NodeHandle.W]: { x: rect.left, y: rect.top + rect.height / 2 },
-            [NodeHandle.NE]: { x: rect.left + rect.width, y: rect.top },
-            [NodeHandle.NW]: { x: rect.left, y: rect.top },
-            [NodeHandle.SE]: { x: rect.left + rect.width, y: rect.top + rect.height },
-            [NodeHandle.SW]: { x: rect.left, y: rect.top + rect.height },
-        };
+        const supportsPointHandle = NodeRegistry
+            .connectionHandles(node.type)
+            .includes(NodeHandle.POINT);
+
+        const handlePoints: Record<string, IPoint> = !supportsPointHandle
+            ? {
+                [NodeHandle.N]: { x: rect.left + rect.width / 2, y: rect.top },
+                [NodeHandle.S]: { x: rect.left + rect.width / 2, y: rect.top + rect.height },
+                [NodeHandle.E]: { x: rect.left + rect.width, y: rect.top + rect.height / 2 },
+                [NodeHandle.W]: { x: rect.left, y: rect.top + rect.height / 2 },
+                [NodeHandle.NE]: { x: rect.left + rect.width, y: rect.top },
+                [NodeHandle.NW]: { x: rect.left, y: rect.top },
+                [NodeHandle.SE]: { x: rect.left + rect.width, y: rect.top + rect.height },
+                [NodeHandle.SW]: { x: rect.left, y: rect.top + rect.height },
+            }
+            : {};
 
         let nearestHandle: NodeHandle = fallbackHandle;
         let nearestPoint: IPoint = { x: 0, y: 0 };
@@ -456,6 +454,17 @@ export class NodeBasics {
             }
         }
 
+        if (supportsPointHandle) {
+            for (const handlePoint of node.points) {
+                const distance = Math.sqrt((point.x - handlePoint.x) ** 2 + (point.y - handlePoint.y) ** 2);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestHandle = NodeHandle.POINT;
+                    nearestPoint = { ...handlePoint };
+                }
+            }
+        }
+
         if (minDistance === Infinity) {
             // No nearest handle found, return undefined
             return undefined;
@@ -463,6 +472,15 @@ export class NodeBasics {
         return { handle: nearestHandle, point: nearestPoint };
     }
 
+    /**
+     * Finds the nearest allowed connection handle for a point.
+     * The returned handle is guaranteed to be valid for connection purposes, or MOVE if the point is inside the node and MOVE is allowed.
+     * @param node Target node.
+     * @param point Lookup point in world coordinates.
+     * @param is_inside Whether inside hits should resolve to MOVE fallback when supported.
+     * @param tolerance Interior distance threshold.
+     * @returns Nearest connection handle and snapped point, or undefined when no candidate is found.
+     */
     public static nearestConnectionHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): { handle: NodeHandle, point: IPoint } | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
@@ -484,31 +502,18 @@ export class NodeBasics {
             return { handle: fallbackHandle, point: { ...point } };
         }
 
-        const inifintelyFar = { x: Infinity, y: Infinity };
-
-        const handlePoints: Record<string, IPoint | typeof inifintelyFar> = {
-            [NodeHandle.N]: (allowed_handles.includes(NodeHandle.N)) ? { x: rect.left + rect.width / 2, y: rect.top } : inifintelyFar,
-            [NodeHandle.S]: (allowed_handles.includes(NodeHandle.S)) ? { x: rect.left + rect.width / 2, y: rect.top + rect.height } : inifintelyFar,
-            [NodeHandle.E]: (allowed_handles.includes(NodeHandle.E)) ? { x: rect.left + rect.width, y: rect.top + rect.height / 2 } : inifintelyFar,
-            [NodeHandle.W]: (allowed_handles.includes(NodeHandle.W)) ? { x: rect.left, y: rect.top + rect.height / 2 } : inifintelyFar,
-            [NodeHandle.NE]: (allowed_handles.includes(NodeHandle.NE)) ? { x: rect.left + rect.width, y: rect.top } : inifintelyFar,
-            [NodeHandle.NW]: (allowed_handles.includes(NodeHandle.NW)) ? { x: rect.left, y: rect.top } : inifintelyFar,
-            [NodeHandle.SE]: (allowed_handles.includes(NodeHandle.SE)) ? { x: rect.left + rect.width, y: rect.top + rect.height } : inifintelyFar,
-            [NodeHandle.SW]: (allowed_handles.includes(NodeHandle.SW)) ? { x: rect.left, y: rect.top + rect.height } : inifintelyFar,
-        };
+        const candidates = this.getConnectionHandleCandidates(node, rect, allowed_handles);
 
         let nearestHandle: NodeHandle = fallbackHandle;
         let nearestPoint: IPoint = { x: 0, y: 0 };
         let minDistance = Infinity;
 
-        for (const [handle, handlePoint] of Object.entries(handlePoints)) {
-            if (handlePoint === inifintelyFar) continue; // Skip handles that are not allowed
-
-            const distance = Math.sqrt((point.x - handlePoint.x) ** 2 + (point.y - handlePoint.y) ** 2);
+        for (const candidate of candidates) {
+            const distance = Math.sqrt((point.x - candidate.point.x) ** 2 + (point.y - candidate.point.y) ** 2);
             if (distance < minDistance) {
                 minDistance = distance;
-                nearestHandle = handle as NodeHandle;
-                nearestPoint = { ...handlePoint };
+                nearestHandle = candidate.handle;
+                nearestPoint = { ...candidate.point };
             }
         }
 
@@ -517,6 +522,80 @@ export class NodeBasics {
             return undefined;
         }
         return { handle: nearestHandle, point: nearestPoint };
+    }
+
+    /**
+     * Resolves the exact connection handle hit at a point within a tolerance.
+     * @param node Target node.
+     * @param point Lookup point in world coordinates.
+     * @param tolerance Maximum distance for a handle hit.
+     * @returns Matching handle and snapped point, or undefined when no candidate matches.
+     */
+    public static connectionHandleAtPoint(node: INode, point: IPoint, tolerance: number = DiagramConstants.HANDLE_HIT_EPSILON): { handle: NodeHandle, point: IPoint } | undefined {
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return undefined;
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(node, true);
+        if (!rect) return undefined;
+
+        const allowed_handles = NodeRegistry.connectionHandles(node.type);
+        const candidates = this.getConnectionHandleCandidates(node, rect, allowed_handles);
+
+        let exact: { handle: NodeHandle, point: IPoint } | undefined;
+        let minDistance = Infinity;
+
+        for (const candidate of candidates) {
+            const distance = Math.sqrt((point.x - candidate.point.x) ** 2 + (point.y - candidate.point.y) ** 2);
+            if (distance <= tolerance && distance < minDistance) {
+                minDistance = distance;
+                exact = { handle: candidate.handle, point: { ...candidate.point } };
+            }
+        }
+
+        if (exact) {
+            return exact;
+        }
+
+        if (allowed_handles.includes(NodeHandle.MOVE)
+            && point.x >= rect.left
+            && point.x <= rect.left + rect.width
+            && point.y >= rect.top
+            && point.y <= rect.top + rect.height) {
+            return { handle: NodeHandle.MOVE, point: { ...point } };
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Builds geometric candidates for connection-handle matching.
+     * @param node Target node.
+     * @param rect Node bounding rectangle.
+     * @param allowed_handles Handles allowed by the adapter.
+     * @returns Candidate handle positions in world coordinates.
+     */
+    private static getConnectionHandleCandidates(node: INode, rect: IRect, allowed_handles: NodeHandle[]): Array<{ handle: NodeHandle, point: IPoint }> {
+        const candidates: Array<{ handle: NodeHandle, point: IPoint }> = [];
+
+        if (allowed_handles.includes(NodeHandle.N)) candidates.push({ handle: NodeHandle.N, point: { x: rect.left + rect.width / 2, y: rect.top } });
+        if (allowed_handles.includes(NodeHandle.S)) candidates.push({ handle: NodeHandle.S, point: { x: rect.left + rect.width / 2, y: rect.top + rect.height } });
+        if (allowed_handles.includes(NodeHandle.E)) candidates.push({ handle: NodeHandle.E, point: { x: rect.left + rect.width, y: rect.top + rect.height / 2 } });
+        if (allowed_handles.includes(NodeHandle.W)) candidates.push({ handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height / 2 } });
+        if (allowed_handles.includes(NodeHandle.NE)) candidates.push({ handle: NodeHandle.NE, point: { x: rect.left + rect.width, y: rect.top } });
+        if (allowed_handles.includes(NodeHandle.NW)) candidates.push({ handle: NodeHandle.NW, point: { x: rect.left, y: rect.top } });
+        if (allowed_handles.includes(NodeHandle.SE)) candidates.push({ handle: NodeHandle.SE, point: { x: rect.left + rect.width, y: rect.top + rect.height } });
+        if (allowed_handles.includes(NodeHandle.SW)) candidates.push({ handle: NodeHandle.SW, point: { x: rect.left, y: rect.top + rect.height } });
+
+        // POINT is connection-specific: for polylines/curves use only inner points,
+        // never first/last endpoints, so drag-connect cannot snap to connection ends.
+        if (allowed_handles.includes(NodeHandle.POINT) && node.points.length > 2) {
+            for (let i = 1; i < node.points.length - 1; i++) {
+                const p = node.points[i];
+                if (p) candidates.push({ handle: NodeHandle.POINT, point: { ...p } });
+            }
+        }
+
+        return candidates;
     }
 
 }

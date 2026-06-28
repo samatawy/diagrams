@@ -38,7 +38,7 @@ export class LineAdapter extends PolylineAdapter {
             this.renderLine(node, path);
             context.stroke(path);
             if (isConnectionNode(node)) {
-                ConnectionBasics.renderArrows(node, context);
+                RenderBasics.renderArrows(node, context);
             }
 
             if (node.text) {

@@ -47,7 +47,7 @@ export class ConnectionBasics {
         if (node.points.length > 0) {
             const point = node.points[0]!;
             if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
-                const fromAnchor = this.getMouseAnchor(node, x, y);
+                const fromAnchor = this.getPointerConnectionAnchor(node, x, y);
                 const toTarget = node.to ? this.resolveAnchorNode(node, node.to) : undefined;
                 const fromTarget = fromAnchor ? this.resolveAnchorNode(node, fromAnchor) : undefined;
 
@@ -64,7 +64,7 @@ export class ConnectionBasics {
         if (node.points.length > 1) {
             const point = node.points[node.points.length - 1]!;
             if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
-                const toAnchor = this.getMouseAnchor(node, x, y);
+                const toAnchor = this.getPointerConnectionAnchor(node, x, y);
                 const fromTarget = node.from ? this.resolveAnchorNode(node, node.from) : undefined;
                 const toTarget = toAnchor ? this.resolveAnchorNode(node, toAnchor) : undefined;
 
@@ -88,7 +88,7 @@ export class ConnectionBasics {
     public static disconnect(node: INode & IConnection, x: number, y: number): void {
         if (!node.from && !node.to) return;
 
-        const anchor = this.getMouseAnchor(node, x, y);
+        const anchor = this.getPointerConnectionAnchor(node, x, y);
         const target = anchor ? this.resolveAnchorNode(node, anchor) : undefined;
         if (!target) return;
 
@@ -190,24 +190,6 @@ export class ConnectionBasics {
     }
 
     /**
-     * Renders the arrows for a connection node.
-     * @param node The connection node to render arrows for.
-     * @param context The canvas rendering context.
-     */
-    public static renderArrows(node: INode & IConnection, context: CanvasRenderingContext2D, points?: IPoint[]): void {
-        points = points || node.points;
-        if (points.length < 2) return;
-
-        if (node.strokeStyle?.arrow === 'start' || node.strokeStyle?.arrow === 'both') {
-            this.renderArrow(points[1]!, points[0]!, context);
-        }
-
-        if (node.strokeStyle?.arrow === 'end' || node.strokeStyle?.arrow === 'both') {
-            this.renderArrow(points[points.length - 2]!, points[points.length - 1]!, context);
-        }
-    }
-
-    /**
      * Gets the anchor point for a connection node.
      * @param node The connection node.
      * @param anchor The connection anchor.
@@ -293,6 +275,14 @@ export class ConnectionBasics {
         return next;
     }
 
+    /**
+     * Selects the nearest connection-enabled anchor handle on a target node.
+     * This method does not perform hit testing; it simply finds the nearest handle to a reference point that is valid for connection purposes.
+     * @param target Target node.
+     * @param nearPoint Reference point used for nearest-handle lookup.
+     * @param tolerance Maximum distance used while selecting a handle.
+     * @returns A normalized anchor for the target, or undefined when no supported handle is found.
+     */
     private static getNearestSupportedAnchor(target: INode, nearPoint: IPoint, tolerance: number = DiagramConstants.HANDLE_HIT_EPSILON): IConnectionAnchor | undefined {
         const diagram = target.owner;
         if (!isDiagramViewLike(diagram)) {
@@ -324,6 +314,12 @@ export class ConnectionBasics {
         return next;
     }
 
+    /**
+     * Gets one endpoint point from a connection polyline.
+     * @param node Connection node.
+     * @param endpoint Endpoint selector; either 'from' or 'to'.
+     * @returns The selected endpoint point, or undefined when no points exist.
+     */
     private static getConnectionEndpoint(node: INode & IConnection, endpoint: 'from' | 'to'): IPoint | undefined {
         if (!node.points.length) {
             return undefined;
@@ -336,6 +332,12 @@ export class ConnectionBasics {
         return node.points[node.points.length - 1];
     }
 
+    /**
+     * Resolves an anchor node reference to an in-memory node instance.
+     * @param node Connection owner node.
+     * @param anchor Anchor whose node may be an id string.
+     * @returns Resolved node instance, or undefined when resolution fails.
+     */
     private static resolveAnchorNode(node: INode, anchor: IConnectionAnchor): INode | undefined {
         if (typeof anchor.node !== 'string') {
             return anchor.node;
@@ -348,6 +350,12 @@ export class ConnectionBasics {
         return target;
     }
 
+    /**
+     * Validates and returns a diagram owner with interactive hit-test APIs.
+     * This exposes protected methods that are not part of the public diagram interface, but are required for connection handling.
+     * @param node Node whose owner should provide interaction methods.
+     * @returns A narrowed interactive diagram instance, or undefined when unavailable.
+     */
     private static getInteractiveDiagram(node: INode): InteractiveDiagram | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
@@ -360,7 +368,52 @@ export class ConnectionBasics {
         return diagram as unknown as InteractiveDiagram;
     }
 
-    private static getMouseAnchor(node: INode & IConnection, x: number, y: number): IConnectionAnchor | undefined {
+    /**
+     * Builds a connectable anchor from an already-hit handle and local (unrotated) point.
+     * This is a pure normalization step and does not perform hit testing.
+     * @param source Node that was hit.
+     * @param handle Handle that was hit.
+     * @param localPoint Local (unrotated) point that was hit.
+     * @param rect Bounding rectangle of the source node.
+     * @returns A normalized connection anchor, or undefined when the handle is not connectable.
+     */
+    public static buildConnectableAnchor(source: INode, handle: NodeHandle, localPoint: IPoint, rect: IRect): IConnectionAnchor | undefined {
+        if (handle === NodeHandle.NONE || handle === NodeHandle.ROTATE) {
+            return undefined;
+        }
+
+        const anchor: IConnectionAnchor = {
+            node: source,
+            handle,
+        };
+
+        if (handle === NodeHandle.POINT) {
+            const pointIndex = this.getPointIndex(source, localPoint.x, localPoint.y);
+            if (pointIndex < 1 || pointIndex >= source.points.length - 1) {
+                // Don't allow connecting to the first or last point of a connection.
+                return undefined;
+            }
+            anchor.point = pointIndex;
+            return anchor;
+        }
+
+        if (handle === NodeHandle.MOVE) {
+            anchor.xOffset = rect.width ? (localPoint.x - rect.left) / rect.width : 0.5;
+            anchor.yOffset = rect.height ? (localPoint.y - rect.top) / rect.height : 0.5;
+            return anchor;
+        }
+
+        return anchor;
+    }
+
+    /**
+     * Resolves the connectable anchor, if any, at the current pointer location.
+     * @param node Connection being re-targeted.
+     * @param x Pointer x coordinate in canvas space.
+     * @param y Pointer y coordinate in canvas space.
+     * @returns The best non-MOVE anchor at the pointer, or MOVE fallback when only body hit is available.
+     */
+    public static getPointerConnectionAnchor(node: INode & IConnection, x: number, y: number): IConnectionAnchor | undefined {
         const diagram = this.getInteractiveDiagram(node);
         if (!diagram) return undefined;
 
@@ -380,23 +433,17 @@ export class ConnectionBasics {
             const handle = diagram.hitConnectionHandle(x, y, source);
             if (handle === NodeHandle.ROTATE) continue;
 
-            const anchor: IConnectionAnchor = {
-                node: source,
-                handle,
-            };
-
             // Anchor capture must use node-local coordinates so rotation does not skew
             // point indices and normalized MOVE offsets.
             const rect = coordinates.getBoundingRect(source, false);
             const point = coordinates.getHitPoint({ x, y }, rect, source.angle || 0);
+            const anchor = this.buildConnectableAnchor(source, handle, point, rect);
 
-            if (handle === NodeHandle.POINT) {
-                anchor.point = this.getPointIndex(source, point.x, point.y);
+            if (!anchor) {
+                continue;
             }
 
-            if (handle === NodeHandle.MOVE) {
-                anchor.xOffset = rect.width ? (point.x - rect.left) / rect.width : 0.5;
-                anchor.yOffset = rect.height ? (point.y - rect.top) / rect.height : 0.5;
+            if (anchor.handle === NodeHandle.MOVE) {
                 moveFallback = moveFallback || anchor;
                 continue;
             }
@@ -407,6 +454,13 @@ export class ConnectionBasics {
         return moveFallback;
     }
 
+    /**
+     * Finds a point index matching local coordinates on a node.
+     * @param node Target node.
+     * @param x Local x coordinate.
+     * @param y Local y coordinate.
+     * @returns Matching point index, or -1 when no point is within hit epsilon.
+     */
     private static getPointIndex(node: INode, x: number, y: number): number {
         for (let i = 0; i < node.points.length; i++) {
             const point = node.points[i]!;
@@ -418,6 +472,12 @@ export class ConnectionBasics {
         return -1;
     }
 
+    /**
+     * Maps a handle to its point on the provided rectangle.
+     * @param rect Bounding rectangle.
+     * @param handle Handle to map.
+     * @returns Handle point in world coordinates, or undefined when the handle has no geometric point mapping.
+     */
     private static handlePoint(rect: IRect, handle: NodeHandle): IPoint | undefined {
         switch (handle) {
             case NodeHandle.NW:
@@ -441,28 +501,4 @@ export class ConnectionBasics {
         }
     }
 
-    private static renderArrow(from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
-        const headlen = 10;
-        const angle = NodeBasics.calculateAngle(from, to);  //to.y - from.y, to.x - from.x);
-
-        context.beginPath();
-        context.moveTo(to.x, to.y);
-        context.lineTo(
-            to.x - headlen * Math.cos(angle - Math.PI / 7),
-            to.y - headlen * Math.sin(angle - Math.PI / 7),
-        );
-        context.lineTo(
-            to.x - headlen * Math.cos(angle + Math.PI / 7),
-            to.y - headlen * Math.sin(angle + Math.PI / 7),
-        );
-        context.lineTo(to.x, to.y);
-        context.lineTo(
-            to.x - headlen * Math.cos(angle - Math.PI / 7),
-            to.y - headlen * Math.sin(angle - Math.PI / 7),
-        );
-
-        context.fillStyle = context.strokeStyle;
-        context.fill();
-        context.stroke();
-    }
 }

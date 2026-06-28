@@ -1,4 +1,4 @@
-import type { INode } from "../interfaces";
+import type { IConnection, INode } from "../interfaces";
 import type { ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
@@ -374,7 +374,6 @@ export class RenderBasics {
                 to = options.to;
             } else {
                 rect = placement.rect ?? coordinates.getBoundingRect(node);
-                // rect = coordinates.getBoundingRect(node);
                 from = { x: rect.left, y: rect.top };
                 to = { x: rect.left + rect.width, y: rect.top + rect.height };
             }
@@ -383,12 +382,10 @@ export class RenderBasics {
             if (typeof (cache as { setNode?: unknown }).setNode === 'function') {
                 cache.setNode(node, cached);
             }
-            // context.stroke(cached.text_path!);      // DEBUGGING
             return;
         }
 
         if (node.points.length > 1) {
-            // let rect = coordinates.getBoundingRect(node);
             let rect = placement.rect ?? coordinates.getBoundingRect(node);
             let textPath: Path2D | undefined;
 
@@ -721,21 +718,7 @@ export class RenderBasics {
         const fontSize = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
         let lineHeight = (fontSize * 1.25);
         let lines = this.getLines(node.text, width, context);
-        let startline = 0;
-
-        // const baseline = textBaseline(node);
-        // switch (baseline) {
-        //     case 'top':
-        //         startline = from.y + (fontSize / 2);
-        //         break;
-        //     case 'middle':
-        //         startline = from.y + (fontSize / 4) + ((to.y - from.y) / 2) - (lineHeight * (lines.length - 1) / 2);
-        //         break;
-        //     case 'bottom':
-        //         startline = to.y - (fontSize / 2);
-        //         break;
-        // }
-        startline = from.y + (fontSize / 4) + ((to.y - from.y) / 2) - (lineHeight * (lines.length - 1) / 2);
+        let startline = from.y + (fontSize / 4) + ((to.y - from.y) / 2) - (lineHeight * (lines.length - 1) / 2);
 
         return { lines, lineHeight, startline };
     }
@@ -823,4 +806,47 @@ export class RenderBasics {
         return 'rgba(0, 0, 0, 0.35)';
     }
 
+    /**
+     * Renders the arrows for a connection node.
+     * @param node The connection node to render arrows for.
+     * @param context The canvas rendering context.
+     */
+    public static renderArrows(node: INode & IConnection, context: CanvasRenderingContext2D, points?: IPoint[]): void {
+        points = points || node.points;
+        if (points.length < 2) return;
+
+        if (node.strokeStyle?.arrow === 'start' || node.strokeStyle?.arrow === 'both') {
+            this.renderArrow(points[1]!, points[0]!, context);
+        }
+
+        if (node.strokeStyle?.arrow === 'end' || node.strokeStyle?.arrow === 'both') {
+            this.renderArrow(points[points.length - 2]!, points[points.length - 1]!, context);
+        }
+    }
+
+    private static renderArrow(from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+        const headlen = 10;
+        const angle = NodeBasics.calculateAngle(from, to);  //to.y - from.y, to.x - from.x);
+
+        context.beginPath();
+        context.moveTo(to.x, to.y);
+        context.lineTo(
+            to.x - headlen * Math.cos(angle - Math.PI / 7),
+            to.y - headlen * Math.sin(angle - Math.PI / 7),
+        );
+        context.lineTo(
+            to.x - headlen * Math.cos(angle + Math.PI / 7),
+            to.y - headlen * Math.sin(angle + Math.PI / 7),
+        );
+        context.lineTo(to.x, to.y);
+        context.lineTo(
+            to.x - headlen * Math.cos(angle - Math.PI / 7),
+            to.y - headlen * Math.sin(angle - Math.PI / 7),
+        );
+
+        context.fillStyle = context.strokeStyle;
+        context.setLineDash([]);
+        context.fill();
+        context.stroke();
+    }
 }

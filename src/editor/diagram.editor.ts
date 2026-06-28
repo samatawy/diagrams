@@ -689,6 +689,7 @@ export class DiagramEditor {
         shadowEnableLabel.appendChild(this.shadowEnableCheckbox);
         this.shadowToolbar.appendChild(shadowEnableLabel);
 
+        /* Halo enable checkbox is currently disabled in the toolbar.
         // Halo enable checkbox — alongside Shadow
         const haloEnableLabel = document.createElement('label');
         setClasses(haloEnableLabel, 'diagram-editor-shadow-enable-label');
@@ -699,6 +700,7 @@ export class DiagramEditor {
         haloEnableLabel.appendChild(haloEnableText);
         haloEnableLabel.appendChild(this.haloEnableCheckbox);
         this.shadowToolbar.appendChild(haloEnableLabel);
+        */
 
         /* TODO: shadow sliders moved to inspector — re-enable if a compact toolbar control is designed
         this.shadowOffsetXHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-x', 'X');
@@ -1001,7 +1003,7 @@ export class DiagramEditor {
 
             if (this.haloEnableCheckbox) {
                 const halo = this.diagram.textStyle.halo;
-                this.haloEnableCheckbox.checked = !!halo && halo !== 'transparent';
+                this.haloEnableCheckbox.checked = halo !== 'transparent';
             }
 
             if (this.fillStyleSelect) {

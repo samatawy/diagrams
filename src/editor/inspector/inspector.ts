@@ -696,6 +696,11 @@ export class Inspector {
         setClasses(grid, DEFAULT_CONFIG.gridClassName, this.config.gridClassName);
         body.appendChild(grid);
 
+        // Keep initially-collapsed content clipped so hidden controls cannot intercept heading clicks.
+        if (state === 'collapsed') {
+            body.style.overflow = 'hidden';
+        }
+
         h.addEventListener('click', () => {
             const collapsing = !section.classList.contains('is-collapsed');
             if (collapsing) {

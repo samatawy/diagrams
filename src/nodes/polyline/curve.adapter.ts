@@ -40,7 +40,7 @@ export class CurveAdapter extends PolylineAdapter {
             this.renderCurve(node, path);
             context.stroke(path);
             if (isConnectionNode(node)) {
-                ConnectionBasics.renderArrows(node, context);
+                RenderBasics.renderArrows(node, context);
             }
 
             if (node.text) {

@@ -73,23 +73,24 @@ export function textColor(node: INode): string {
 
 /**
  * Resolves the halo color for text rendering on the given node.
- * Returns undefined when no halo should be drawn (transparent / missing).
- * When value is 'inherit', resolves: node fillStyle (if not transparent) →
+ * Returns transparent when no halo should be drawn (explicit transparent only).
+ * Missing halo is treated as 'inherit'.
+ * When value is 'inherit' (or missing), resolves: node fillStyle (if not transparent) →
  * diagram background → a fallback contrast color derived from the text color.
  * Any candidate that does not contrast sufficiently with the text color is skipped.
  */
 export function textHaloColor(node: INode): string {    //} | undefined {
     const raw = node.textStyle?.halo;
-    if (!raw || raw === 'transparent') return 'transparent';
+    if (raw === 'transparent') return 'transparent';
 
     const tc = textColor(node);
 
-    if (raw !== 'inherit') {
+    if (raw && raw !== 'inherit') {
         // Explicit color: only use it if it contrasts with the text color.
         return colorContrastsWithText(raw, tc) ? raw : 'transparent';
     }
 
-    // 'inherit': walk the resolution chain, skipping any candidate that conflicts.
+    // 'inherit' (or missing): walk the resolution chain, skipping conflicting candidates.
     const fill = node.fillStyle;
     if (fill && fill !== 'transparent' && colorContrastsWithText(fill, tc)) return fill;
 
