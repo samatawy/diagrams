@@ -11,8 +11,8 @@ export class SheetRepository {
         this.spec_sheets.push(sheet);
     }
 
-    public unregisterSheet(sheetId: string): void {
-        const index = this.spec_sheets.findIndex(sheet => sheet.id === sheetId);
+    public unregisterSheet(sheet_id: string): void {
+        const index = this.spec_sheets.findIndex(sheet => sheet.id === sheet_id);
         if (index >= 0) {
             this.spec_sheets.splice(index, 1);
         }
@@ -34,36 +34,36 @@ export class SheetRepository {
         return Array.from(distinct);
     }
 
-    public sheetClasses(id: string): string[] {
-        const sheet = this.sheet(id);
+    public sheetClasses(sheet_id: string): string[] {
+        const sheet = this.sheet(sheet_id);
         if (!sheet) {
-            throw new Error(`Spec sheet with id "${id}" not found.`);
+            throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
         }
 
         return Object.keys(sheet.classes);
     }
 
-    public sheet(id: string): SpecSheet | undefined {
-        return this.spec_sheets.find(sheet => sheet.id === id);
+    public sheet(sheet_id: string): SpecSheet | undefined {
+        return this.spec_sheets.find(sheet => sheet.id === sheet_id);
     }
 
-    public applyToDiagram(diagram: Diagram, sheetId: string): void {
-        const sheet = this.sheet(sheetId);
+    public applyToDiagram(diagram: Diagram, sheet_id: string): void {
+        const sheet = this.sheet(sheet_id);
         if (!sheet) {
-            throw new Error(`Spec sheet with id "${sheetId}" not found.`);
+            throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
         }
 
         diagram.background = sheet.diagram.background;
 
         for (const node of diagram.nodes) {
-            this.applyToNode(node, sheetId);
+            this.applyToNode(node, sheet_id);
         }
     }
 
-    public applyToNode(node: INode, sheetId: string): void {
-        const sheet = this.sheet(sheetId);
+    public applyToNode(node: INode, sheet_id: string): void {
+        const sheet = this.sheet(sheet_id);
         if (!sheet) {
-            throw new Error(`Spec sheet with id "${sheetId}" not found.`);
+            throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
         }
 
         const nodeType = node.type;
@@ -80,7 +80,7 @@ export class SheetRepository {
         this.applyStyleToNode(node, nodeTypeStyle);
     }
 
-    private applyStyleToNode(node: INode, style: NodeStyle): void {
+    public applyStyleToNode(node: INode, style: Partial<NodeStyle>): void {
         // node.opacity = style.opacity ?? node.opacity;
         // node.geometry = { ...node.geometry, ...style.geometry };
 
@@ -90,21 +90,32 @@ export class SheetRepository {
         if (style.shadowStyle) node.shadowStyle = { ...node.shadowStyle, ...style.shadowStyle };
     }
 
-    public upsertTypeStyle(type_name: string, style: NodeStyle, sheetId: string): void {
-        const sheet = this.sheet(sheetId);
+    public upsertTypeStyle(type_name: string, style: NodeStyle, sheet_id: string): void {
+        const sheet = this.sheet(sheet_id);
         if (!sheet) {
-            throw new Error(`Spec sheet with id "${sheetId}" not found.`);
+            throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
         }
 
         sheet.nodes[type_name] = { ...style };
     }
 
-    public upsertClassStyle(class_name: string, style: NodeStyle, sheetId: string): void {
-        const sheet = this.sheet(sheetId);
+    public upsertClassStyle(class_name: string, style: NodeStyle, sheet_id: string): void {
+        const sheet = this.sheet(sheet_id);
         if (!sheet) {
-            throw new Error(`Spec sheet with id "${sheetId}" not found.`);
+            throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
         }
 
         sheet.classes[class_name] = { ...style };
+    }
+
+    public renameClass(old_name: string, new_name: string, sheet_id: string): void {
+        const sheet = this.sheet(sheet_id);
+        if (!sheet) {
+            throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
+        }
+
+        if (old_name === new_name || !(old_name in sheet.classes)) return;
+        sheet.classes[new_name] = { ...sheet.classes[old_name]!, id: new_name };
+        delete sheet.classes[old_name];
     }
 }

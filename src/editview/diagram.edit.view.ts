@@ -55,7 +55,7 @@ import { DiagramEditViewKeyboard } from "./edit.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
 import type { I } from "vitest/dist/chunks/reporters.d.BuRON0I0.js";
 import type { SheetRepository } from "../sheets/sheet.repository";
-import type { SpecSheet } from "../sheets/spec.sheet";
+import type { NodeStyle, SpecSheet } from "../sheets/spec.sheet";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -562,6 +562,43 @@ export class DiagramEditView extends DiagramView {
         }
     }
 
+    private applyClassChange(sources: INode[], change: Partial<NodeStyle>): void {
+        if (!this.sheet_repository || !this.current.sheet) return;
+        if (sources.length === 0) return;
+
+        const class_names = new Set<string>(sources.map(node => node.class_name).filter(name => !!name) as string[]);
+        if (class_names.size === 0) return;
+
+        for (const name of class_names) {
+            const class_style = this.current.sheet.classes[name];
+            if (!class_style) continue;
+
+            const merged: NodeStyle = {
+                ...class_style,
+                fillStyle: change.fillStyle ?? class_style.fillStyle,
+                textStyle: { ...class_style.textStyle, ...change.textStyle },
+                strokeStyle: { ...class_style.strokeStyle, ...change.strokeStyle },
+                shadowStyle: {
+                    ...class_style.shadowStyle,
+                    ...change.shadowStyle,
+                    offset: {
+                        ...class_style.shadowStyle.offset,
+                        ...change.shadowStyle?.offset,
+                    },
+                },
+            };
+            this.sheet_repository.upsertClassStyle(name, merged, this.current.sheet.id);
+        }
+
+        const target_nodes = this.nodes.filter(node => class_names.has(node.class_name ?? ''))
+            .filter(node => !sources.includes(node));
+        if (target_nodes.length === 0) return;
+
+        for (const target of target_nodes) {
+            this.sheet_repository.applyStyleToNode(target, change);
+        }
+    }
+
     // ==================================================
     // ========== Getters and Setters ==========
     // ==================================================
@@ -862,16 +899,20 @@ export class DiagramEditView extends DiagramView {
      * @param color The stroke color to set.
      */
     public setStrokeColor(color: string): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
         this.settings.strokeColor = color;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
             node.strokeStyle.color = color;
         }
+        this.applyClassChange(selected, { strokeStyle: { color } });
+
+        // this.syncLinkedClassesFromPatch({ 'strokeStyle.color': color }, selected);
         this.color_palette.refresh();
 
         this.render('all');
@@ -884,18 +925,21 @@ export class DiagramEditView extends DiagramView {
      * @param color The fill color to set.
      */
     public setFillColor(color: string): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
         this.settings.fillColor = color;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.fillStyle = color;
             if (NodeRegistry.adapter(node.type)?.hollow_mode === 'if_transparent') {
                 node.hollow = color === 'transparent';
             }
         }
+        this.applyClassChange(selected, { fillStyle: color });
+
         this.color_palette.refresh();
 
         this.render('all');
@@ -994,16 +1038,19 @@ export class DiagramEditView extends DiagramView {
      * @param width The line width to set.
      */
     public setLineWidth(width: number): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
         this.settings.lineWidth = width;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
             node.strokeStyle.width = width;
         }
+        this.applyClassChange(selected, { strokeStyle: { width } });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-line-width');
@@ -1014,16 +1061,19 @@ export class DiagramEditView extends DiagramView {
      * @param dash The line dash pattern to set, either as a string or an array of numbers.
      */
     public setLineDash(dash: string | number[]): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
         this.settings.lineDash = dash;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
             node.strokeStyle.dash = dash;
         }
+        this.applyClassChange(selected, { strokeStyle: { dash } });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-line-dash');
@@ -1034,16 +1084,19 @@ export class DiagramEditView extends DiagramView {
      * @param arrow The arrow direction to set.
      */
     public setArrow(arrow: ArrowDirection): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
         this.settings.arrow = arrow;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
             node.strokeStyle.arrow = arrow;
         }
+        this.applyClassChange(selected, { strokeStyle: { arrow } });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-arrow');
@@ -1054,7 +1107,8 @@ export class DiagramEditView extends DiagramView {
      * @param style The stroke style to set.
      */
     public setStrokeStyle(style: Partial<StrokeStyle>): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
@@ -1070,9 +1124,16 @@ export class DiagramEditView extends DiagramView {
             arrow: this.settings.arrow,
         };
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.strokeStyle = merged;
         }
+        this.applyClassChange(selected, { strokeStyle: merged });
+        // this.syncLinkedClassesFromPatch({
+        //     'strokeStyle.color': merged.color,
+        //     'strokeStyle.width': merged.width,
+        //     'strokeStyle.dash': merged.dash,
+        //     'strokeStyle.arrow': merged.arrow,
+        // }, selected);
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-stroke-style');
@@ -1083,7 +1144,8 @@ export class DiagramEditView extends DiagramView {
      * @param style The shadow style to set.
      */
     public setShadowStyle(style: Partial<ShadowStyle>): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
@@ -1101,9 +1163,11 @@ export class DiagramEditView extends DiagramView {
             offset: { x: this.settings.shadowOffsetX, y: this.settings.shadowOffsetY },
         };
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.shadowStyle = merged;
         }
+        this.applyClassChange(selected, { shadowStyle: merged });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-shadow-style');
@@ -1114,7 +1178,8 @@ export class DiagramEditView extends DiagramView {
      * @param style The text style to set.
      */
     public setTextStyle(style: Partial<TextStyle>): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
@@ -1130,7 +1195,7 @@ export class DiagramEditView extends DiagramView {
         if (style.baseline !== undefined) this.settings.textBaseline = style.baseline;
         if (style.halo !== undefined) this.settings.textHalo = style.halo;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             const styleToApply = { ...style, color: colorIsInherit ? undefined : style.color };
             if (styleToApply.orientation !== undefined) {
                 const allowed = NodeRegistry.adapter(node.type)?.text_orientations;
@@ -1140,6 +1205,20 @@ export class DiagramEditView extends DiagramView {
             }
             node.textStyle = { ...node.textStyle, ...styleToApply };
         }
+        this.applyClassChange(selected, {
+            textStyle: {
+                fontFace: style.fontFace,
+                size: style.size,
+                color: colorIsInherit ? undefined : style.color,
+                halo: style.halo,
+                align: style.align,
+                baseline: style.baseline,
+                orientation: style.orientation,
+                weight: style.weight,
+                italic: style.italic,
+            },
+        });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-text-style');
@@ -1200,6 +1279,34 @@ export class DiagramEditView extends DiagramView {
         if (patch['shadowStyle.offset.y'] !== undefined) this.settings.shadowOffsetY = Number(patch['shadowStyle.offset.y']);
 
         this.color_palette.refresh();
+
+        const nodeStyle = { textStyle: {}, strokeStyle: {}, fillStyle: undefined, shadowStyle: {} } as Partial<NodeStyle>;
+        if (patch['textStyle.fontFace'] !== undefined) nodeStyle.textStyle!.fontFace = patch['textStyle.fontFace'] as string;
+        if (patch['textStyle.size'] !== undefined) nodeStyle.textStyle!.size = patch['textStyle.size'] as number;
+        if (patch['textStyle.color'] !== undefined) nodeStyle.textStyle!.color = patch['textStyle.color'] as string;
+        if (patch['textStyle.halo'] !== undefined) nodeStyle.textStyle!.halo = patch['textStyle.halo'] as string;
+        if (patch['textStyle.align'] !== undefined) nodeStyle.textStyle!.align = patch['textStyle.align'] as ITextAlign;
+        if (patch['textStyle.baseline'] !== undefined) nodeStyle.textStyle!.baseline = patch['textStyle.baseline'] as ITextBaseline;
+        if (patch['textStyle.orientation'] !== undefined) nodeStyle.textStyle!.orientation = patch['textStyle.orientation'] as ITextOrientation;
+        if (patch['textStyle.weight'] !== undefined) nodeStyle.textStyle!.weight = patch['textStyle.weight'] as IFontWeight;
+        if (patch['textStyle.italic'] !== undefined) nodeStyle.textStyle!.italic = patch['textStyle.italic'] as boolean;
+
+        if (patch['strokeStyle.color'] !== undefined) nodeStyle.strokeStyle!.color = patch['strokeStyle.color'] as string;
+        if (patch['strokeStyle.width'] !== undefined) nodeStyle.strokeStyle!.width = patch['strokeStyle.width'] as number;
+        if (patch['strokeStyle.dash'] !== undefined) nodeStyle.strokeStyle!.dash = patch['strokeStyle.dash'] as string | number[];
+        if (patch['strokeStyle.arrow'] !== undefined) nodeStyle.strokeStyle!.arrow = patch['strokeStyle.arrow'] as ArrowDirection;
+
+        if (patch['fillStyle'] !== undefined) nodeStyle.fillStyle = patch['fillStyle'] as string;
+
+        if (patch['shadowStyle.color'] !== undefined) nodeStyle.shadowStyle!.color = patch['shadowStyle.color'] as string;
+        if (patch['shadowStyle.blur'] !== undefined) nodeStyle.shadowStyle!.blur = patch['shadowStyle.blur'] as number;
+        if (patch['shadowStyle.offset.x'] !== undefined || patch['shadowStyle.offset.y'] !== undefined) {
+            nodeStyle.shadowStyle!.offset = {
+                x: patch['shadowStyle.offset.x'] !== undefined ? patch['shadowStyle.offset.x'] as number : 0,
+                y: patch['shadowStyle.offset.y'] !== undefined ? patch['shadowStyle.offset.y'] as number : 0,
+            };
+        }
+        this.applyClassChange(selected, nodeStyle);
 
         this.render('all');
         this.renderPreview();
@@ -1397,13 +1504,6 @@ export class DiagramEditView extends DiagramView {
             strokeStyle: style.strokeStyle,
             fillStyle: style.fillStyle,
             textStyle: style.textStyle,
-            // textColor: style.textColor,
-            // lineWidth: style.lineWidth,
-            // lineDash: style.lineDash,
-            // fontFace: style.fontFace,
-            // fontSize: style.fontSize,
-            // textAlign: style.textAlign,
-            // textBaseline: style.textBaseline,
             shadowStyle: style.shadowStyle,
             image_id: isNode(style) ? style.image_id : undefined,
             image_mode: isNode(style) ? style.image_mode : undefined,
@@ -1445,6 +1545,13 @@ export class DiagramEditView extends DiagramView {
 
                     node.hollow = undefined; node.hollow = isHollow(node);
                 }
+
+                this.applyClassChange(selected, {
+                    fillStyle: style.fillStyle,
+                    strokeStyle: style.strokeStyle,
+                    textStyle: style.textStyle,
+                    shadowStyle: style.shadowStyle,
+                });
 
                 this.render('all');
                 this.renderPreview();
@@ -2017,20 +2124,6 @@ export class DiagramEditView extends DiagramView {
             this.setNodeGroup(node, undefined);
         }
 
-        this.render('all');
-        this.renderPreview();
-    }
-
-    /**
-     * Sets the arrow type for the currently selected connection.
-     * @param where Specifies which end(s) of the connection should have arrows.
-     */
-    public pickArrow(where: 'start' | 'end' | 'both' | 'none'): void {
-        if (this.selection().length === 1) {
-            let node = this.selection()[0]!;
-            node.strokeStyle = node.strokeStyle || {};
-            node.strokeStyle.arrow = where;
-        }
         this.render('all');
         this.renderPreview();
     }

@@ -26,6 +26,7 @@ import { PointAdapter } from "./point.adapter";
 import { ImageSelectAdapter } from "./image.select.adapter";
 import type { NumberInputAdapterConfig } from "./number.input.adapter";
 import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./meta.kv.adapters";
+import { ClassActionsAdapter, type ClassActionsAdapterConfig } from "./class.actions.adapter";
 
 export type DiagramInspectorConfig = InspectorConfig & {
     colorSelect?: ColorSelectConfig;
@@ -104,6 +105,7 @@ export class DiagramInspector extends Inspector {
         Inspector.registerAdapter('ImageSelect', ImageSelectAdapter);
         Inspector.registerAdapter('MetaValue', MetaValueAdapter);
         Inspector.registerAdapter('MetaAdd', MetaAddAdapter);
+        Inspector.registerAdapter('ClassActions', ClassActionsAdapter);
     }
 
     /**
@@ -202,12 +204,27 @@ export class DiagramInspector extends Inspector {
                 options: () => {
                     const d = this.diagram as DiagramEditView;
                     const sheet = d?.currentSheet;
-                    if (!sheet) return [];
-                    return d.sheetRepository?.sheetClasses(sheet.id) || [];
-                }
+                    const none_option = { value: '', label: '(none)' };
+                    if (sheet) {
+                        const class_options = (d.sheetRepository?.sheetClasses(sheet.id) || []).map(c => ({ value: c, label: c }));
+                        return [none_option, ...class_options];
+                    } else {
+                        return [none_option];
+                    }
+                },
+                placeholder: '(none)',
             },
             readonly: readonly,
             isVisible: () => selected().length === 1,
+        });
+        this.addRow(identity, {
+            key: 'class_name.__actions',
+            label: '',
+            type: 'string',
+            editor: 'ClassActions',
+            editorOptions: { diagram: this.diagram } as ClassActionsAdapterConfig,
+            readonly: readonly,
+            isVisible: () => !readonly && selected().length >= 1 && !!(this.diagram as DiagramEditView).currentSheet,
         });
 
         const { grid: geometry } = this.buildSection('Geometry', 'collapsed');
@@ -703,7 +720,6 @@ export class DiagramInspector extends Inspector {
      * @param value The new value (unused; adapter value is read directly).
      */
     private applyInspectorChange(key: string, value: unknown): void {
-
         if (key === 'type') {
             const nextType = typeof value === 'string' ? value : undefined;
             const edit = this.diagram as any;
