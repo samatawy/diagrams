@@ -255,6 +255,10 @@ export class DiagramEditView extends DiagramView {
     // ========== File methods ==========
     // ===================================================
 
+    /**
+     * Indicates whether open-diagram operations are available.
+     * @returns True when file dialog integrations are configured.
+     */
     public get canOpenDiagram(): boolean {
         return !!this.fileDialogs;
     }
@@ -549,23 +553,39 @@ export class DiagramEditView extends DiagramView {
      * @param value The sheet to set as current, or undefined to clear the current sheet.
      */
     public setCurrentSheet(value: SpecSheet | string | undefined) {
-        // if (this.sheet_repository) {
         const sheet = (typeof value === 'string') ? this.sheetRepository.sheet(value) : value;
         this.sheet_id = sheet?.id;
         this.current.sheet = sheet;
         if (sheet) this.sheetRepository.applyToDiagram(this, sheet.id);
         this.emitSheetLoaded();
-        // }
     }
 
     /**
      * Forks the current sheet to a diagram-scoped custom id on first mutation.
-     * No-op when already on a custom sheet or when no sheet is active.
+     * When no sheet is active at all, creates a fresh empty custom sheet and emits sheet-loaded.
      */
     public ensureCustomSheet(): void {
-        if (!this.current.sheet || this.sheetRepository.isCustomSheetId(this.sheet_id)) return;
+        if (this.sheetRepository.isCustomSheetId(this.sheet_id)) return;
 
         const customId = this.sheetRepository.makeCustomSheetId(this.id);
+
+        if (!this.current.sheet) {
+            // No active sheet — bootstrap an empty custom one.
+            this.sheetRepository.upsertSheet({
+                id: customId,
+                name: 'Custom',
+                description: 'Custom sheet',
+                version: undefined,
+                diagram: {},
+                types: {},
+                classes: {},
+            });
+            this.sheet_id = customId;
+            this.current.sheet = this.sheetRepository.sheet(customId)!;
+            this.emitSheetLoaded();
+            return;
+        }
+
         const src = this.current.sheet;
         this.sheetRepository.upsertSheet({
             ...src,
@@ -578,6 +598,26 @@ export class DiagramEditView extends DiagramView {
         this.current.sheet = this.sheetRepository.sheet(customId)!;
     }
 
+    /**
+     * Publishes the current sheet under a new id/name so it can be reused by other diagrams.
+     * The current diagram is switched to the published sheet.
+     */
+    public publishCurrentSheetAs(sheet_id: string, name: string, description?: string): SpecSheet {
+        const current = this.current.sheet;
+        if (!current) {
+            throw new Error('Cannot publish sheet: no current sheet selected.');
+        }
+
+        const published = this.sheetRepository.publishSheetAs(current.id, sheet_id, name, description);
+        this.setCurrentSheet(published.id);
+        return published;
+    }
+
+    /**
+     * Propagates direct style edits into all nodes that share classes with the originating nodes.
+     * @param sources Selected nodes that originated the style change.
+     * @param change Style delta to merge into class definitions.
+     */
     private applyClassChange(sources: INode[], change: Partial<NodeStyle>): void {
         this.ensureCustomSheet();
 
@@ -5072,7 +5112,6 @@ export class DiagramEditView extends DiagramView {
     /**
      * Emits diagram model changed.
      * @param sourceEvent Source event name.
-     * @returns Nothing.
      */
     private emitDiagramModelChanged(sourceEvent: string): void {
         const host = (this as any).host as HTMLElement | undefined;
@@ -5082,6 +5121,9 @@ export class DiagramEditView extends DiagramView {
         }));
     }
 
+    /**
+     * Emits the sheet-loaded event payload for inspector and toolbar sync.
+     */
     private emitSheetLoaded(): void {
         const sheetId = this.current.sheet?.id || '';
         const sheetNames = this.sheetRepository.sheetNames || [];

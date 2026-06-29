@@ -62,6 +62,13 @@ export class EnumSelectAdapter extends InspectorAdapter {
         cell.addEventListener(ENUM_SELECT_CHANGE_EVENT, this.onEnumChange as EventListener);
     }
 
+    override setMixed(mixed: boolean): void {
+        super.setMixed(mixed);
+        if (mixed) {
+            this.select.value = undefined;
+        }
+    }
+
     override showValue(editable: EditableRecord): void {
         const { key, value } = this.extractValueFrom(editable);
         this.returnKey = key;

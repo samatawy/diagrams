@@ -284,6 +284,16 @@ export class ClassActionsAdapter extends InspectorAdapter {
 
     // ── InspectorAdapter contract ─────────────────────────────────────────
 
+    public override setMixed(mixed: boolean): void {
+        super.setMixed(mixed);
+        if (mixed) {
+            this.currentClassName = undefined;
+            if (this.mode === 'idle') {
+                this.renameBtn.disabled = true;
+            }
+        }
+    }
+
     public override showValue(_editable: EditableRecord): void {
         // Read class name directly from selection — passed value is always undefined
         // because 'class_name.__actions' is not a real node path.

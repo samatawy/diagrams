@@ -212,7 +212,7 @@ export class DiagramInspector extends Inspector {
                         return [none_option];
                     }
                 },
-                placeholder: '(none)',
+                placeholder: '',    //(none)',
             },
             readonly: readonly,
             isVisible: () => selected().length >= 1,
@@ -224,7 +224,7 @@ export class DiagramInspector extends Inspector {
             editor: 'ClassActions',
             editorOptions: { diagram: this.diagram } as ClassActionsAdapterConfig,
             readonly: readonly,
-            isVisible: () => !readonly && selected().length >= 1 && !!(this.diagram as DiagramEditView).currentSheet,
+            isVisible: () => !readonly && selected().length >= 1,
         });
 
         const { grid: geometry } = this.buildSection('Geometry', 'collapsed');
