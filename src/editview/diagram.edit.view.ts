@@ -53,7 +53,6 @@ import {
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
-import type { I } from "vitest/dist/chunks/reporters.d.BuRON0I0.js";
 import type { SheetRepository } from "../sheets/sheet.repository";
 import type { NodeStyle, SpecSheet } from "../sheets/spec.sheet";
 
@@ -83,8 +82,6 @@ export class DiagramEditView extends DiagramView {
     private zOrder: ZOrder;
 
     private color_palette: ColorPalette;
-
-    private sheet_repository?: SheetRepository;
 
     private editKeyboard: DiagramEditViewKeyboard;
 
@@ -511,19 +508,18 @@ export class DiagramEditView extends DiagramView {
     // ==================================================
 
     /**
-     * Gets the sheet respository used by this diagram, if any.
-     * @returns The sheet repository, or undefined if sheets are not enabled.
+     * Gets the sheet repository used by this diagram.
      */
-    public get sheetRepository(): SheetRepository | undefined {
-        return this.sheet_repository;
+    public get sheetRepository(): SheetRepository {
+        return super.sheetRepository;
     }
 
     /**
-     * Sets the sheet repository used by this diagram, or undefined to disable sheets.
-     * @param value The sheet repository to set, or undefined to disable sheets.
+     * Sets the sheet repository used by this diagram.
+     * @param value The sheet repository to set.
      */
-    public set sheetRepository(value: SheetRepository | undefined) {
-        this.sheet_repository = value;
+    public set sheetRepository(value: SheetRepository) {
+        super.sheetRepository = value;
         this.emitSheetLoaded();
     }
 
@@ -535,7 +531,7 @@ export class DiagramEditView extends DiagramView {
         if (this.current.sheet?.id === this.sheet_id) {
             return this.current.sheet;
         } else if (this.sheet_id) {
-            this.current.sheet = this.sheet_repository?.sheet(this.sheet_id);
+            this.current.sheet = this.sheetRepository.sheet(this.sheet_id);
         }
         return this.current.sheet;
     }
@@ -553,17 +549,39 @@ export class DiagramEditView extends DiagramView {
      * @param value The sheet to set as current, or undefined to clear the current sheet.
      */
     public setCurrentSheet(value: SpecSheet | string | undefined) {
-        if (this.sheet_repository) {
-            const sheet = (typeof value === 'string') ? this.sheet_repository.sheet(value) : value;
-            this.sheet_id = sheet?.id;
-            this.current.sheet = sheet;
-            if (sheet) this.sheet_repository.applyToDiagram(this, sheet.id);
-            this.emitSheetLoaded();
-        }
+        // if (this.sheet_repository) {
+        const sheet = (typeof value === 'string') ? this.sheetRepository.sheet(value) : value;
+        this.sheet_id = sheet?.id;
+        this.current.sheet = sheet;
+        if (sheet) this.sheetRepository.applyToDiagram(this, sheet.id);
+        this.emitSheetLoaded();
+        // }
+    }
+
+    /**
+     * Forks the current sheet to a diagram-scoped custom id on first mutation.
+     * No-op when already on a custom sheet or when no sheet is active.
+     */
+    public ensureCustomSheet(): void {
+        if (!this.current.sheet || this.sheetRepository.isCustomSheetId(this.sheet_id)) return;
+
+        const customId = this.sheetRepository.makeCustomSheetId(this.id);
+        const src = this.current.sheet;
+        this.sheetRepository.upsertSheet({
+            ...src,
+            id: customId,
+            name: 'Custom',
+            description: `Based on: ${src.name ?? this.sheet_id}`,
+            version: undefined,
+        });
+        this.sheet_id = customId;
+        this.current.sheet = this.sheetRepository.sheet(customId)!;
     }
 
     private applyClassChange(sources: INode[], change: Partial<NodeStyle>): void {
-        if (!this.sheet_repository || !this.current.sheet) return;
+        this.ensureCustomSheet();
+
+        if (!this.current.sheet) return;
         if (sources.length === 0) return;
 
         const class_names = new Set<string>(sources.map(node => node.class_name).filter(name => !!name) as string[]);
@@ -587,7 +605,7 @@ export class DiagramEditView extends DiagramView {
                     },
                 },
             };
-            this.sheet_repository.upsertClassStyle(name, merged, this.current.sheet.id);
+            this.sheetRepository.upsertClassStyle(name, merged, this.current.sheet.id);
         }
 
         const target_nodes = this.nodes.filter(node => class_names.has(node.class_name ?? ''))
@@ -595,7 +613,7 @@ export class DiagramEditView extends DiagramView {
         if (target_nodes.length === 0) return;
 
         for (const target of target_nodes) {
-            this.sheet_repository.applyStyleToNode(target, change);
+            this.sheetRepository.applyStyleToNode(target, change);
         }
     }
 
@@ -712,7 +730,7 @@ export class DiagramEditView extends DiagramView {
      */
     public get shadowStyle(): ShadowStyle {
         return {
-            name: 'Custom',
+            name: 'Custom shadow',
             color: this.settings.shadowColor,
             blur: this.settings.shadowBlur,
             offset: { x: this.settings.shadowOffsetX, y: this.settings.shadowOffsetY },
@@ -1157,7 +1175,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         const merged: ShadowStyle = {
-            name: style.name ?? 'Custom',
+            name: style.name ?? 'Custom shadow',
             color: this.settings.shadowColor,
             blur: this.settings.shadowBlur,
             offset: { x: this.settings.shadowOffsetX, y: this.settings.shadowOffsetY },
@@ -1280,33 +1298,43 @@ export class DiagramEditView extends DiagramView {
 
         this.color_palette.refresh();
 
-        const nodeStyle = { textStyle: {}, strokeStyle: {}, fillStyle: undefined, shadowStyle: {} } as Partial<NodeStyle>;
-        if (patch['textStyle.fontFace'] !== undefined) nodeStyle.textStyle!.fontFace = patch['textStyle.fontFace'] as string;
-        if (patch['textStyle.size'] !== undefined) nodeStyle.textStyle!.size = patch['textStyle.size'] as number;
-        if (patch['textStyle.color'] !== undefined) nodeStyle.textStyle!.color = patch['textStyle.color'] as string;
-        if (patch['textStyle.halo'] !== undefined) nodeStyle.textStyle!.halo = patch['textStyle.halo'] as string;
-        if (patch['textStyle.align'] !== undefined) nodeStyle.textStyle!.align = patch['textStyle.align'] as ITextAlign;
-        if (patch['textStyle.baseline'] !== undefined) nodeStyle.textStyle!.baseline = patch['textStyle.baseline'] as ITextBaseline;
-        if (patch['textStyle.orientation'] !== undefined) nodeStyle.textStyle!.orientation = patch['textStyle.orientation'] as ITextOrientation;
-        if (patch['textStyle.weight'] !== undefined) nodeStyle.textStyle!.weight = patch['textStyle.weight'] as IFontWeight;
-        if (patch['textStyle.italic'] !== undefined) nodeStyle.textStyle!.italic = patch['textStyle.italic'] as boolean;
-
-        if (patch['strokeStyle.color'] !== undefined) nodeStyle.strokeStyle!.color = patch['strokeStyle.color'] as string;
-        if (patch['strokeStyle.width'] !== undefined) nodeStyle.strokeStyle!.width = patch['strokeStyle.width'] as number;
-        if (patch['strokeStyle.dash'] !== undefined) nodeStyle.strokeStyle!.dash = patch['strokeStyle.dash'] as string | number[];
-        if (patch['strokeStyle.arrow'] !== undefined) nodeStyle.strokeStyle!.arrow = patch['strokeStyle.arrow'] as ArrowDirection;
-
-        if (patch['fillStyle'] !== undefined) nodeStyle.fillStyle = patch['fillStyle'] as string;
-
-        if (patch['shadowStyle.color'] !== undefined) nodeStyle.shadowStyle!.color = patch['shadowStyle.color'] as string;
-        if (patch['shadowStyle.blur'] !== undefined) nodeStyle.shadowStyle!.blur = patch['shadowStyle.blur'] as number;
-        if (patch['shadowStyle.offset.x'] !== undefined || patch['shadowStyle.offset.y'] !== undefined) {
-            nodeStyle.shadowStyle!.offset = {
-                x: patch['shadowStyle.offset.x'] !== undefined ? patch['shadowStyle.offset.x'] as number : 0,
-                y: patch['shadowStyle.offset.y'] !== undefined ? patch['shadowStyle.offset.y'] as number : 0,
-            };
+        let hasClassChanges = false;
+        for (const key of Object.keys(patch)) {
+            if (key.startsWith('textStyle.') || key.startsWith('strokeStyle.') || key.startsWith('shadowStyle.') || key === 'fillStyle') {
+                hasClassChanges = true;
+                break;
+            }
         }
-        this.applyClassChange(selected, nodeStyle);
+
+        if (hasClassChanges) {
+            const nodeStyle = { textStyle: {}, strokeStyle: {}, fillStyle: undefined, shadowStyle: {} } as Partial<NodeStyle>;
+            if (patch['textStyle.fontFace'] !== undefined) nodeStyle.textStyle!.fontFace = patch['textStyle.fontFace'] as string;
+            if (patch['textStyle.size'] !== undefined) nodeStyle.textStyle!.size = patch['textStyle.size'] as number;
+            if (patch['textStyle.color'] !== undefined) nodeStyle.textStyle!.color = patch['textStyle.color'] as string;
+            if (patch['textStyle.halo'] !== undefined) nodeStyle.textStyle!.halo = patch['textStyle.halo'] as string;
+            if (patch['textStyle.align'] !== undefined) nodeStyle.textStyle!.align = patch['textStyle.align'] as ITextAlign;
+            if (patch['textStyle.baseline'] !== undefined) nodeStyle.textStyle!.baseline = patch['textStyle.baseline'] as ITextBaseline;
+            if (patch['textStyle.orientation'] !== undefined) nodeStyle.textStyle!.orientation = patch['textStyle.orientation'] as ITextOrientation;
+            if (patch['textStyle.weight'] !== undefined) nodeStyle.textStyle!.weight = patch['textStyle.weight'] as IFontWeight;
+            if (patch['textStyle.italic'] !== undefined) nodeStyle.textStyle!.italic = patch['textStyle.italic'] as boolean;
+
+            if (patch['strokeStyle.color'] !== undefined) nodeStyle.strokeStyle!.color = patch['strokeStyle.color'] as string;
+            if (patch['strokeStyle.width'] !== undefined) nodeStyle.strokeStyle!.width = patch['strokeStyle.width'] as number;
+            if (patch['strokeStyle.dash'] !== undefined) nodeStyle.strokeStyle!.dash = patch['strokeStyle.dash'] as string | number[];
+            if (patch['strokeStyle.arrow'] !== undefined) nodeStyle.strokeStyle!.arrow = patch['strokeStyle.arrow'] as ArrowDirection;
+
+            if (patch['fillStyle'] !== undefined) nodeStyle.fillStyle = patch['fillStyle'] as string;
+
+            if (patch['shadowStyle.color'] !== undefined) nodeStyle.shadowStyle!.color = patch['shadowStyle.color'] as string;
+            if (patch['shadowStyle.blur'] !== undefined) nodeStyle.shadowStyle!.blur = patch['shadowStyle.blur'] as number;
+            if (patch['shadowStyle.offset.x'] !== undefined || patch['shadowStyle.offset.y'] !== undefined) {
+                nodeStyle.shadowStyle!.offset = {
+                    x: patch['shadowStyle.offset.x'] !== undefined ? patch['shadowStyle.offset.x'] as number : 0,
+                    y: patch['shadowStyle.offset.y'] !== undefined ? patch['shadowStyle.offset.y'] as number : 0,
+                };
+            }
+            this.applyClassChange(selected, nodeStyle);
+        };
 
         this.render('all');
         this.renderPreview();
@@ -1374,7 +1402,7 @@ export class DiagramEditView extends DiagramView {
 
             if (segments[0] === 'class_name' && !!this.current.sheet) {
                 target.class_name = value;
-                this.sheet_repository?.applyToNode(target as any as INode, this.current.sheet.id);
+                this.sheetRepository.applyToNode(target as any as INode, this.current.sheet.id);
             }
 
             let current: any = target;
@@ -5056,7 +5084,7 @@ export class DiagramEditView extends DiagramView {
 
     private emitSheetLoaded(): void {
         const sheetId = this.current.sheet?.id || '';
-        const sheetNames = this.sheet_repository?.sheetNames || [];
+        const sheetNames = this.sheetRepository.sheetNames || [];
         this.eventDispatcher.sheetLoaded({
             sheetId,
             sheetNames,

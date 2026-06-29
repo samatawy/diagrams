@@ -1,21 +1,77 @@
 import type { INode } from "../interfaces";
 import type { Diagram } from "../model/diagram";
 import { nodeClass } from "../value.utils";
-import type { NodeStyle, SpecSheet } from "./spec.sheet";
+import type { NodeStyle, EmbeddedSheet, SpecSheet } from "./spec.sheet";
 
 export class SheetRepository {
 
     protected readonly spec_sheets: SpecSheet[] = [];
 
-    public registerSheet(sheet: SpecSheet): void {
-        this.spec_sheets.push(sheet);
+    public upsertSheet(sheet: SpecSheet): void {
+        const cloned = this.cloneSpecSheet(sheet);
+        const index = this.spec_sheets.findIndex(s => s.id === sheet.id);
+        if (index >= 0) {
+            this.spec_sheets[index] = cloned;
+        } else {
+            this.spec_sheets.push(cloned);
+        }
     }
 
-    public unregisterSheet(sheet_id: string): void {
+    public deleteSheet(sheet_id: string): void {
         const index = this.spec_sheets.findIndex(sheet => sheet.id === sheet_id);
         if (index >= 0) {
             this.spec_sheets.splice(index, 1);
         }
+    }
+
+    public readEmbedded(json: any): EmbeddedSheet {
+        const sheet: EmbeddedSheet = {
+            id: json.id,
+            name: json.name,
+            version: json.version,
+            description: json.description,
+
+            diagram: json.diagram ?? {},
+            types: json.types ?? {},
+            classes: json.classes ?? {},
+        };
+        return sheet;
+    }
+
+    public writeEmbedded(sheet_id: string): EmbeddedSheet {
+        const sheet = this.sheet(sheet_id);
+        if (!sheet) {
+            throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
+        }
+
+        return {
+            id: sheet.id,
+            name: sheet.name,
+            version: sheet.version,
+            description: sheet.description,
+
+            diagram: sheet.diagram,
+            types: { ...sheet.types },
+            classes: { ...sheet.classes },
+        };
+    }
+
+    public makeCustomSheetId(owner_id: string): string {
+        return `Custom @ ${owner_id}`;
+    }
+
+    public isCustomSheetId(sheet_id?: string): boolean {
+        if (!sheet_id) return false;
+        return sheet_id.startsWith('Custom @ ');
+    }
+
+    public writeSheet(sheet_id: string): SpecSheet {
+        const sheet = this.sheet(sheet_id);
+        if (!sheet) {
+            throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
+        }
+
+        return sheet;
     }
 
     public clear(): void {
@@ -67,7 +123,7 @@ export class SheetRepository {
         }
 
         const nodeType = node.type;
-        let nodeTypeStyle = sheet.nodes[nodeType] ?? {} as NodeStyle;
+        let nodeTypeStyle = sheet.types[nodeType] ?? {} as NodeStyle;
 
         const _class = nodeClass(node);
         if (_class) {
@@ -96,7 +152,7 @@ export class SheetRepository {
             throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
         }
 
-        sheet.nodes[type_name] = { ...style };
+        sheet.types[type_name] = this.cloneNodeStyle(style);
     }
 
     public upsertClassStyle(class_name: string, style: NodeStyle, sheet_id: string): void {
@@ -105,7 +161,7 @@ export class SheetRepository {
             throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
         }
 
-        sheet.classes[class_name] = { ...style };
+        sheet.classes[class_name] = this.cloneNodeStyle(style);
     }
 
     public renameClass(old_name: string, new_name: string, sheet_id: string): void {
@@ -115,7 +171,38 @@ export class SheetRepository {
         }
 
         if (old_name === new_name || !(old_name in sheet.classes)) return;
-        sheet.classes[new_name] = { ...sheet.classes[old_name]!, id: new_name };
+        sheet.classes[new_name] = { ...sheet.classes[old_name]! };
         delete sheet.classes[old_name];
+    }
+
+    private cloneNodeStyle(style: NodeStyle): NodeStyle {
+        return {
+            fillStyle: style.fillStyle,
+            textStyle: { ...style.textStyle },
+            strokeStyle: { ...style.strokeStyle },
+            shadowStyle: {
+                ...style.shadowStyle,
+                offset: { ...style.shadowStyle.offset },
+            },
+        };
+    }
+
+    private cloneSpecSheet(sheet: SpecSheet): SpecSheet {
+        const types: Record<string, NodeStyle> = {};
+        for (const [key, style] of Object.entries(sheet.types ?? {})) {
+            types[key] = this.cloneNodeStyle(style);
+        }
+
+        const classes: Record<string, NodeStyle> = {};
+        for (const [key, style] of Object.entries(sheet.classes ?? {})) {
+            classes[key] = this.cloneNodeStyle(style);
+        }
+
+        return {
+            ...sheet,
+            diagram: { ...(sheet.diagram ?? {}) },
+            types,
+            classes,
+        };
     }
 }

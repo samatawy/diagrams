@@ -316,9 +316,16 @@ export class DiagramEditor {
         this.eventDispatcher = new EventDispatcher(host);
         this.config = config || {};
 
+        if (diagram && diagram.sheetRepository) {
+            this.sheet_repository = diagram.sheetRepository;
+        } else {
+            this.sheet_repository = this.getSheetRepository();
+            if (diagram) diagram.sheetRepository = this.sheet_repository;
+        }
+
         this.initialize(this.host, this.config, diagram);
+
         // Workaround to keep diagram required even if none was passed.
-        this.sheet_repository = this.getSheetRepository();
         this.diagram = this.getDiagramView();
         this.diagram.sheetRepository = this.sheet_repository;
     }
@@ -459,13 +466,13 @@ export class DiagramEditor {
     public getSheetRepository(): SheetRepository {
         if (!this.sheet_repository) {
             const repo = new SheetRepository();
-            repo.registerSheet({
+            repo.upsertSheet({
                 id: 'default_sheet',
                 name: 'Default',
-                nodes: {},
+                types: {},
                 classes: {
                     'default': {
-                        id: 'default_node',
+                        // id: 'default_node',
                         strokeStyle: {
                             color: 'red',
                             width: 2
@@ -479,13 +486,13 @@ export class DiagramEditor {
                     background: 'transparent',
                 }
             });
-            repo.registerSheet({
+            repo.upsertSheet({
                 id: 'bw_sheet',
                 name: 'Black and White',
-                nodes: {},
+                types: {},
                 classes: {
                     'default': {
-                        id: 'default_node',
+                        // id: 'default_node',
                         strokeStyle: {
                             color: 'black',
                             width: 2
@@ -633,6 +640,7 @@ export class DiagramEditor {
         // Create the local diagram edit view and load the provided diagram if any
         const id = diagram?.id || `diagram-${Date.now()}`;
         this.diagram = new DiagramEditView(id, canvasHost);
+        this.diagram.sheetRepository = this.sheet_repository;
         this.diagram.fileDialogs = this.createFileDialogs();
         this.diagram.prompts = this.createDiagramPrompts();
         this.diagram.contextMenu = new DiagramContextMenu(this.diagram);

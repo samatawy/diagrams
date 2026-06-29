@@ -26,6 +26,7 @@ export class HistoryStack {
             }
 
             const record = data as Record<string, unknown>;
+
             if (!Object.prototype.hasOwnProperty.call(record, 'image_assets') || record.image_assets === undefined) {
                 return jsonSerializer.write(data);
             }

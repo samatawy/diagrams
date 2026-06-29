@@ -204,13 +204,14 @@ export class ClassActionsAdapter extends InspectorAdapter {
     // ── Class operations ──────────────────────────────────────────────────
 
     private addClass(className: string): void {
+        this.diagram.ensureCustomSheet();
         const sheet = this.diagram.currentSheet;
         const repo = this.diagram.sheetRepository;
         if (!sheet || !repo) {
             return;
         }
 
-        const style = this.captureStyle(className);
+        const style = this.captureStyle();
         repo.upsertClassStyle(className, style, sheet.id);
 
         const edit = this.diagram as any;
@@ -221,6 +222,7 @@ export class ClassActionsAdapter extends InspectorAdapter {
     }
 
     private renameClass(oldName: string, newName: string): void {
+        this.diagram.ensureCustomSheet();
         const sheet = this.diagram.currentSheet;
         const repo = this.diagram.sheetRepository;
         if (!sheet || !repo) {
@@ -241,14 +243,13 @@ export class ClassActionsAdapter extends InspectorAdapter {
         this.emitChanged('class-rename');
     }
 
-    private captureStyle(id: string): NodeStyle {
+    private captureStyle(): NodeStyle {
         const sheet = this.diagram.currentSheet;
 
         // Prefer current class style as baseline when available.
         if (sheet && this.currentClassName && sheet.classes[this.currentClassName]) {
             const s = sheet.classes[this.currentClassName]!;
             return {
-                id,
                 textStyle: { ...(s.textStyle || {}) },
                 strokeStyle: { ...(s.strokeStyle || {}) },
                 fillStyle: s.fillStyle,
@@ -261,7 +262,6 @@ export class ClassActionsAdapter extends InspectorAdapter {
 
         const node = this.diagram.selection()[0];
         return {
-            id,
             textStyle: { ...(node?.textStyle || {}) },
             strokeStyle: { ...(node?.strokeStyle || {}) },
             fillStyle: node?.fillStyle ?? DiagramConstants.DEFAULT_FILL_STYLE,

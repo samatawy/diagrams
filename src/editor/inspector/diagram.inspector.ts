@@ -215,7 +215,7 @@ export class DiagramInspector extends Inspector {
                 placeholder: '(none)',
             },
             readonly: readonly,
-            isVisible: () => selected().length === 1,
+            isVisible: () => selected().length >= 1,
         });
         this.addRow(identity, {
             key: 'class_name.__actions',
