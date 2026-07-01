@@ -1,3 +1,4 @@
+import type { AnimationMode } from "../animation.types";
 import { DIAGRAM_CHANGED_EVENT, DIAGRAM_VIEWPORT_EVENT, type DiagramChanged, type DiagramViewportChange } from "../events";
 import { NodeRegistry } from "../factory";
 import { isConnection, isContainerNode } from "../guards";
@@ -140,7 +141,7 @@ export class MinimapView {
         this.isDragging = false;
     }
 
-    private panToPointer(event: PointerEvent, mode: 'animate' | 'instant'): void {
+    private panToPointer(event: PointerEvent, mode: AnimationMode): void {
         if (!this.canvas || !this.host) {
             return;
         }
@@ -173,7 +174,7 @@ export class MinimapView {
         const viewportHeight = Math.max(1, viewportHost?.clientHeight || 0);
 
         if (mode === 'animate') {
-            this.diagram.animateCoordinates({
+            this.diagram.animateViewport({
                 pan: {
                     x: worldX * zoom - viewportWidth / 2,
                     y: worldY * zoom - viewportHeight / 2,

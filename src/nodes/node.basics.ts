@@ -1,6 +1,6 @@
 import type { INode } from "../interfaces";
 import { NodeHandle, type IPoint, type IRect } from "../types";
-import { isDiagramViewLike, isNode } from "../guards";
+import { isConnectionNode, isDiagramViewLike, isNode } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import { isAspectLocked, isHollow, isLocked } from "../value.utils";
 import { NodeRegistry } from "../factory";
@@ -260,6 +260,9 @@ export class NodeBasics {
         if (target.left > rect.left + rect.width) return false;
         if (target.top > rect.top + rect.height) return false;
 
+        if (isConnectionNode(node)) {
+            // TODO: Add logic for checking overlap with polyline connections; bounding rect is too wide.
+        }
 
         if (!node.angle) return true;   // No further calculation required..
 

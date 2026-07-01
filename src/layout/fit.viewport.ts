@@ -22,12 +22,10 @@ export class FitViewport {
      * @param diagram the DiagramView instance to attach to
      * @param options optional configuration for minimum and maximum zoom levels
      */
-    constructor(
-        diagram: DiagramView,
-        options?: {
-            minZoom?: number,
-            maxZoom?: number,
-        }
+    constructor(diagram: DiagramView, options?: {
+        minZoom?: number,
+        maxZoom?: number,
+    }
     ) {
         this.diagram = diagram;
         if (options) {
@@ -104,7 +102,7 @@ export class FitViewport {
         const offsetX = this.getHorizontalOffset(viewportWidth, contentWidth, padding, horizontal);
         const offsetY = this.getVerticalOffset(viewportHeight, contentHeight, padding, vertical);
 
-        this.diagram.animateCoordinates({
+        this.diagram.animateViewport({
             zoom: zoom,
             pan: {
                 x: bounds.left * zoom - offsetX,

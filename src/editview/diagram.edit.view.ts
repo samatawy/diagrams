@@ -2547,7 +2547,7 @@ export class DiagramEditView extends DiagramView {
      */
     protected override pointerUp(event: PointerEvent): void {
         if (!this.canvas) return;
-        this.stopAnimation();
+        this.stopAnimations('linedash');
 
         if (this.dragCreateDraft) {
             /* DiagramView routes pointerleave with pressed buttons into pointerUp;
@@ -2967,7 +2967,7 @@ export class DiagramEditView extends DiagramView {
 
                     const containers = this.hitNodes(event.offsetX, event.offsetY).filter(n => !isConnection(n));
                     if (containers.length > 0) {
-                        this.startAnimation(() => {
+                        this.animateLineDash('containers', () => {
                             for (const container of containers) {
                                 if (!isInvisible(container)) {
                                     this.render('all');
@@ -2976,7 +2976,7 @@ export class DiagramEditView extends DiagramView {
                             }
                         });
                     } else {
-                        this.stopAnimation();
+                        this.stopAnimation('containers');
                     }
 
                     this.downPos = movePos;
@@ -3085,7 +3085,7 @@ export class DiagramEditView extends DiagramView {
 
                         const included = SelectionBasics.nodesForRect(this.selectionAdapter(), moveRect, this.selectionOptions.rect_mode);
 
-                        this.startAnimation(() => {
+                        this.animateLineDash('selection_rect', () => {
                             this.render('all');
 
                             /* const included = SelectionBasics.nodesForRect(this.selectionAdapter(), moveRect, this.selectionOptions.rect_mode); */
@@ -3417,7 +3417,7 @@ export class DiagramEditView extends DiagramView {
                 this.canvas.style.cursor = 'copy';  // indicate Adding to existing node
 
                 this.connectDragDraftTo(this.dragCreateDraft, from_point, from_handle, to_point);
-                this.startAnimation(() => {
+                this.animateLineDash('auto_connect', () => {
                     this.render('all');
 
                     /* Provide visual feedback indicating potential anchor points. */
@@ -3433,7 +3433,7 @@ export class DiagramEditView extends DiagramView {
                 // console.warn('Drag over node with no anchor handle?', overlaying, from_handle);
             }
         } else {
-            this.stopAnimation();
+            this.stopAnimation('auto_connect');
 
         }
 
@@ -4499,7 +4499,7 @@ export class DiagramEditView extends DiagramView {
         context.fillStyle = DiagramConstants.SELECTION_RECT_FILLSTYLE;
         context.lineWidth = 1 / coordinates.zoom;
         context.setLineDash([6, 6]);
-        context.lineDashOffset = this.animation?.animate ? this.animation?.dashOffset : 0;
+        context.lineDashOffset = this.animations.enabled ? this.animations.lineDashOffset : 0;
 
         let path = new Path2D();
         path.rect(rect.left, rect.top, rect.width, rect.height);

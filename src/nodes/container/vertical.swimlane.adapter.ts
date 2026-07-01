@@ -149,7 +149,7 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
             // line dash respecting the current zoom level
             // [6 / zoom, 4 / zoom])
             context.setLineDash([6 / coordinates.zoom, 6 / coordinates.zoom]);
-            context.lineDashOffset = diagram.animation?.animate ? diagram.animation?.dashOffset : 0;
+            context.lineDashOffset = diagram.animations.enabled ? diagram.animations.lineDashOffset : 0;
 
             const holder = new Path2D();
             holder.rect(rect.left + epsilon, rect.top + epsilon, rect.width - 2 * epsilon, rect.height - 2 * epsilon);
