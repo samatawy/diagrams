@@ -70,7 +70,7 @@ export class CurveAdapter extends PolylineAdapter {
         context.save();
         RenderBasics.prepareHandles(node, context);
         context.strokeStyle = 'rgba(0,0,0,.25)';
-        context.setLineDash([4, 2]);
+        context.setLineDash([4, 2, 4, 2]);
 
         const handles = new Path2D();
 

@@ -65,6 +65,10 @@ export function isContainerNode(value: unknown): value is INode & IContainer {
  */
 export interface DiagramViewLike extends IDiagram {
     render_mode: 'edit' | 'view';
+    animation?: {
+        animate: boolean;
+        dashOffset: number;
+    };
     getCache(): ViewCache;
     getCoordinates(): CoordinateSystem;
 }

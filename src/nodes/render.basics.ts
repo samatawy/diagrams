@@ -69,7 +69,7 @@ export class RenderBasics {
             } else if (diagram.render_mode === 'edit') {
                 context.lineWidth = 1;
                 // TODO: Think of a better way and include scaling.
-                context.setLineDash([4, 4]);
+                context.setLineDash([6, 6]);
             }
         }
 

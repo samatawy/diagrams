@@ -28,6 +28,7 @@ import { isConnection, isContainer, isContainerNode } from "../guards";
 import { DiagramKeyboard } from "../keyboard/diagram.keyboard";
 import { DiagramViewKeyboard } from "./view.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
+import type { AnimationConfig, AnimationMode } from "../animation.types";
 
 export type RenderMode = 'view' | 'editing';
 
@@ -114,6 +115,16 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected dragPanningWithSpace: boolean = false;
 
+    protected animation: AnimationConfig = {
+        enabled: true,
+        animate: false,
+        fps: 60,
+        dashOffset: 0,
+    };
+
+    private viewportAnimationFrame?: number;
+
+    private viewportAnimationToken: number = 0;
 
     protected hover_listener?: DiagramPointerListener;
 
@@ -426,6 +437,8 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param viewport The viewport changes to apply.
      */
     public setViewport(viewport: Partial<DiagramViewportChange>): void {
+        this.stopViewportAnimation();
+
         let panChanged = false;
         let zoomChanged = false;
 
@@ -467,8 +480,9 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param zoom The desired zoom level.
      * @param centerX The x coordinate (canvas space) to keep visually stable during zoom.
      * @param centerY The y coordinate (canvas space) to keep visually stable during zoom.
+     * @param mode The animation mode for the zoom operation.
      */
-    public zoomTo(zoom: number, centerX?: number, centerY?: number): void {
+    public zoomTo(zoom: number, centerX?: number, centerY?: number, mode: AnimationMode = 'instant'): void {
         if (!Number.isFinite(zoom) || zoom <= 0) {
             return;
         }
@@ -486,13 +500,24 @@ export class DiagramView extends Diagram implements HasSelection {
             return;
         }
 
-        this.coordinates.pan = {
-            x: ((centerX + this.coordinates.pan.x) / currentZoom) * nextZoom - centerX,
-            y: ((centerY + this.coordinates.pan.y) / currentZoom) * nextZoom - centerY,
-        };
-        this.coordinates.zoom = nextZoom;
-        this.emitViewportEvents(true, true);
-        this.render();
+        if (mode === 'animate') {
+            this.animateCoordinates({
+                zoom: nextZoom,
+                pan: {
+                    x: ((centerX + this.coordinates.pan.x) / currentZoom) * nextZoom - centerX,
+                    y: ((centerY + this.coordinates.pan.y) / currentZoom) * nextZoom - centerY,
+                }
+            });
+        } else {    /* 'instant' */
+            this.stopViewportAnimation();
+            this.coordinates.pan = {
+                x: ((centerX + this.coordinates.pan.x) / currentZoom) * nextZoom - centerX,
+                y: ((centerY + this.coordinates.pan.y) / currentZoom) * nextZoom - centerY,
+            };
+            this.coordinates.zoom = nextZoom;
+            this.emitViewportEvents(true, true);
+            this.render();
+        }
     }
 
     /**
@@ -500,26 +525,39 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param factor The zoom multiplier. Values greater than 1 zoom in and values between 0 and 1 zoom out.
      * @param centerX The x coordinate (canvas space) to keep visually stable during zoom.
      * @param centerY The y coordinate (canvas space) to keep visually stable during zoom.
+     * @param mode The animation mode for the zoom operation.
      */
-    public zoomBy(factor: number, centerX?: number, centerY?: number): void {
+    public zoomBy(factor: number, centerX?: number, centerY?: number, mode: AnimationMode = 'instant'): void {
         if (!Number.isFinite(factor) || factor <= 0) {
             return;
         }
 
-        this.zoomTo(this.coordinates.zoom * factor, centerX, centerY);
+        this.zoomTo(this.coordinates.zoom * factor, centerX, centerY, mode);
     }
 
     /**
      * Pan the diagram by the specified delta values.
      * @param deltaX The amount to pan in the x direction.
      * @param deltaY The amount to pan in the y direction.
+     * @param mode The animation mode for the pan operation.
      */
-    public panBy(deltaX: number, deltaY: number): void {
-        this.coordinates.pan = {
-            x: this.coordinates.pan.x - deltaX,
-            y: this.coordinates.pan.y - deltaY,
-        };
-        this.emitViewportEvents(true, false);
+    public panBy(deltaX: number, deltaY: number, mode: AnimationMode = 'instant'): void {
+        if (mode === 'animate') {
+            this.animateCoordinates({
+                pan: {
+                    x: this.coordinates.pan.x - deltaX,
+                    y: this.coordinates.pan.y - deltaY
+                }
+            });
+
+        } else {   /* 'instant' */
+            this.stopViewportAnimation();
+            this.coordinates.pan = {
+                x: this.coordinates.pan.x - deltaX,
+                y: this.coordinates.pan.y - deltaY,
+            };
+            this.emitViewportEvents(true, false);
+        }
     }
 
     // ============================================
@@ -886,6 +924,113 @@ export class DiagramView extends Diagram implements HasSelection {
         return bounds;
     }
 
+    // ================================================
+    // ============== Animation methods ==============
+    // ================================================
+
+    protected startAnimation(func?: () => void): void {
+        this.stopAnimation();
+
+        if (!this.animation.enabled) {
+            func?.();
+            return;
+        }
+
+        this.animation.animate = true;
+        this.animation.lastTimestamp = performance.now();
+        this.animation.lastFrame = requestAnimationFrame(() => this.renderAnimated(func));
+    }
+
+    protected stopAnimation(): void {
+        if (this.animation.lastFrame) {
+            cancelAnimationFrame(this.animation.lastFrame);
+            this.animation.lastFrame = undefined;
+            this.animation.lastTimestamp = undefined;
+        }
+        this.animation.animate = false;
+    }
+
+    private renderAnimated(func?: () => void): void {
+        if (!this.animation.animate || !this.animation.lastTimestamp) {
+            return;
+        }
+
+        const now = performance.now();
+        const delta = (now - this.animation.lastTimestamp);
+        const interval = 1000 / this.animation.fps;
+        const offset = (delta / interval) * 0.25;
+
+        this.animation.dashOffset -= offset;
+        // if (this.animation.dashOffset < -12) {
+        //     this.animation.dashOffset = 0;
+        // }
+        // console.log('renderAnimated', this.animation.dashOffset, 'delta', delta, 'interval', interval, 'offset', offset);
+        if (func) {
+            func();
+        } else {
+            this.render();
+        }
+
+        this.animation.lastTimestamp = now;
+        this.animation.lastFrame = requestAnimationFrame(() => this.renderAnimated(func));
+    }
+
+    public animateCoordinates(target: { zoom?: number, pan?: { x: number, y: number } }): void {
+        if (!this.animation.enabled) {
+            this.setViewport(target);   /* sets and emits events */
+            return;
+        }
+
+        this.stopViewportAnimation();
+        const token = ++this.viewportAnimationToken;
+
+        const animate = () => {
+            if (token !== this.viewportAnimationToken) {
+                return;
+            }
+
+            const currentZoom = this.coordinates.zoom;
+            const currentPan = { ...this.coordinates.pan };
+
+            const zoomDiff = (target.zoom ?? currentZoom) - currentZoom;
+            const panDiff = {
+                x: (target.pan?.x ?? currentPan.x) - currentPan.x,
+                y: (target.pan?.y ?? currentPan.y) - currentPan.y,
+            };
+
+            const attainedZoom = target.zoom === undefined || Math.abs(zoomDiff) < 0.01;
+            const attainedPan = target.pan === undefined || (Math.abs(panDiff.x) < 0.5 && Math.abs(panDiff.y) < 0.5);
+
+            if (attainedZoom && attainedPan) {
+                this.viewportAnimationFrame = undefined;
+                this.setViewport(target); // Finalize the viewport to the target values
+                return;
+            }
+
+            const step = 0.2; // Adjust this value for smoother or faster animation
+
+            const nextZoom = currentZoom + (zoomDiff * step);
+            const nextPan = {
+                x: currentPan.x + (panDiff.x * step),
+                y: currentPan.y + (panDiff.y * step),
+            };
+
+            this.coordinates.zoom = nextZoom;
+            this.coordinates.pan = nextPan;
+            this.render('all');
+
+            this.viewportAnimationFrame = requestAnimationFrame(animate);
+        };
+        animate();
+    }
+
+    private stopViewportAnimation(): void {
+        if (this.viewportAnimationFrame !== undefined) {
+            cancelAnimationFrame(this.viewportAnimationFrame);
+            this.viewportAnimationFrame = undefined;
+        }
+    }
+
     // =================================================
     // ========== Pointer listener events ==========
     // ================================================
@@ -1233,7 +1378,7 @@ export class DiagramView extends Diagram implements HasSelection {
             const zoomFactor = event.deltaY > 0 ? wheelZoomStep : 1 / wheelZoomStep;
             this.zoomBy(zoomFactor, event.offsetX, event.offsetY);
         } else {
-            this.panBy(event.deltaX, event.deltaY);
+            this.panBy(event.deltaX, event.deltaY, 'animate');
         }
 
         this.render();

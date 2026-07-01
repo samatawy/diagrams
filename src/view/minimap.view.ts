@@ -118,7 +118,7 @@ export class MinimapView {
         }
         this.isDragging = true;
         this.canvas.setPointerCapture(event.pointerId);
-        this.panToPointer(event);
+        this.panToPointer(event, 'instant');    // Make into 'animate' if needed - currently jerky on first following move.
         event.preventDefault();
     }
 
@@ -126,7 +126,7 @@ export class MinimapView {
         if (!this.isDragging) {
             return;
         }
-        this.panToPointer(event);
+        this.panToPointer(event, 'instant');
         event.preventDefault();
     }
 
@@ -140,7 +140,7 @@ export class MinimapView {
         this.isDragging = false;
     }
 
-    private panToPointer(event: PointerEvent): void {
+    private panToPointer(event: PointerEvent, mode: 'animate' | 'instant'): void {
         if (!this.canvas || !this.host) {
             return;
         }
@@ -172,12 +172,21 @@ export class MinimapView {
         const viewportWidth = Math.max(1, viewportHost?.clientWidth || 0);
         const viewportHeight = Math.max(1, viewportHost?.clientHeight || 0);
 
-        this.diagram.setViewport({
-            pan: {
-                x: worldX * zoom - viewportWidth / 2,
-                y: worldY * zoom - viewportHeight / 2,
-            },
-        });
+        if (mode === 'animate') {
+            this.diagram.animateCoordinates({
+                pan: {
+                    x: worldX * zoom - viewportWidth / 2,
+                    y: worldY * zoom - viewportHeight / 2,
+                },
+            });
+        } else {
+            this.diagram.setViewport({
+                pan: {
+                    x: worldX * zoom - viewportWidth / 2,
+                    y: worldY * zoom - viewportHeight / 2,
+                },
+            });
+        }
     }
 
     /**
@@ -264,23 +273,6 @@ export class MinimapView {
                     handler?.render(node, this.context);
                 }
             }
-
-            // const nodes = source.layerNodes(layer);
-            // const connections = nodes.filter(isConnection);
-
-            // // Render connections first..
-            // for (const node of connections) {
-            //     const handler = NodeRegistry.adapter(node.type);
-            //     handler?.render(node, this.context);
-            // }
-
-            // // Then render non-connection nodes on top, so they appear above connecting lines.
-            // for (const node of nodes) {
-            //     const handler = NodeRegistry.adapter(node.type);
-            //     if (!isConnection(node)) {
-            //         handler?.render(node, this.context);
-            //     }
-            // }
         }
 
         this.context.restore();
