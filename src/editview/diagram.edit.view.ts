@@ -73,7 +73,7 @@ export type DiagramEditViewPrompts = {
     onNoChangesSave?: () => boolean | Promise<boolean>;
 };
 
-type EditKeyboardFlags = KeyboardFlags & { forceRectSelection: boolean };
+export type EditKeyboardFlags = KeyboardFlags & { forceRectSelection: boolean };
 
 
 /**

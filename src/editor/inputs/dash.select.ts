@@ -52,7 +52,7 @@ export interface DashSelectConfig {
     openClassName?: string;
 }
 
-type DashOption = {
+export type DashOption = {
     key: string;
     value: LineDashValue;
     dash: number[];

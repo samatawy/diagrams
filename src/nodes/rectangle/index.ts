@@ -1,0 +1,10 @@
+export * from './rectangle.adapter';
+export * from './round.rectangle.adapter';
+export * from './parallelogram.adapter';
+export * from './ellipse.adapter';
+export * from './rhombus.adapter';
+export * from './text.adapter';
+export * from './svg.adapter';
+export * from './trapezoid.adapter';
+export * from './document.adapter';
+// export * from './cylinder.adapter';

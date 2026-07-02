@@ -2,7 +2,7 @@ import { jsonSerializer } from "../io/json.serializer";
 import type { HasSelection, IDiagram } from "../interfaces";
 import type { ISerializer } from "../io/serialized.types";
 
-export interface HistoryState {
+interface HistoryState {
     document: string,
     selection: string[],
 }
@@ -51,7 +51,7 @@ export class HistoryStack {
      * Retrieves the current state of the diagram, including its serialized document and selected nodes.
      * @returns the current history state or undefined if the diagram is not available.
      */
-    public getState(): HistoryState | undefined {
+    private getState(): HistoryState | undefined {
         if (!this.diagram) return undefined;
 
         return {
@@ -65,7 +65,7 @@ export class HistoryStack {
      * @param state The history state to restore.
      * @returns A promise that resolves to true if the state was successfully restored, false otherwise.
      */
-    public async restoreState(state: HistoryState): Promise<boolean> {
+    private async restoreState(state: HistoryState): Promise<boolean> {
         if (!this.diagram || !state)
             return new Promise<boolean>(resolve => resolve(false));
 

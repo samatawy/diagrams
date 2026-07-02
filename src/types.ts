@@ -6,12 +6,12 @@ export interface IPoint {
     y: number;
 }
 
-/**
- * A single point in 2D space that serves as an anchor for connections, defined by its ID and coordinates.
- */
-export interface AnchorPoint extends IPoint {
-    id: string;
-}
+// /**
+//  * A single point in 2D space that serves as an anchor for connections, defined by its ID and coordinates.
+//  */
+// export interface AnchorPoint extends IPoint {
+//     id: string;
+// }
 
 /**
  * A rectangle defined by its left and top coordinates, as well as its width and height. 
@@ -90,7 +90,7 @@ export type ImageMode = 'contain' | 'cover' | 'pattern' | 'fit' | 'none';
  * - number[]: A custom dash pattern defined by an array of numbers, where each number represents the length of dashes and gaps in the pattern.
  * This property allows for visual differentiation of connections between nodes, enabling users to convey different types of relationships or flows in the diagram through line styling.
  */
-export type LineDash = 'solid' | 'dashed' | 'dotted' | 'dashdot' | number[];
+type LineDash = 'solid' | 'dashed' | 'dotted' | 'dashdot' | number[];
 
 /**
  * ArrowDirection defines the possible directions for arrows on connections between nodes. The options are:

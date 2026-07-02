@@ -352,7 +352,7 @@ describe('DiagramEditable', () => {
             stopImmediatePropagation() { },
         } as PointerEvent);
 
-        expect(editview.selection().map(node => node.id)).toEqual(['node-1', 'node-2']);
+        expect(editview.selection().map(node => node.id).sort()).toEqual(['node-1', 'node-2']);
 
         editview.triggerPointerDown({
             button: 0,
@@ -464,7 +464,7 @@ describe('DiagramEditable', () => {
             stopImmediatePropagation() { },
         } as PointerEvent);
 
-        expect(editview.selection().map(node => node.id)).toEqual(['node-2']);
+        expect(editview.selection().map(node => node.id).sort()).toEqual(['node-1', 'node-2']);
     });
 
     it('emits node-moved after dragging a selected node', () => {

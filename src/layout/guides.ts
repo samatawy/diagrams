@@ -59,7 +59,7 @@ export type SnapPointKey = "left" | "centerX" | "right" | "top" | "middleY" | "b
 /**
  * Candidate target rectangle used for guide matching.
  */
-export interface SnapCandidate {
+interface SnapCandidate {
     /** 
      * Candidate node id. 
      */
@@ -129,7 +129,7 @@ export interface SnapOptions {
 /**
  * Axis deltas and top-ranked/all-ranked matches for a snap pass.
  */
-export interface SnapDeltaResult {
+interface SnapDeltaResult {
     /** 
      * Chosen X-axis snap delta.
      */
@@ -304,7 +304,7 @@ export class Guides {
     /**
      * Build SnapOptions from a grid and the current drag direction.
      */
-    public static buildSnapOptions(grid: Pick<IGrid, 'width' | 'height'>, byX: number, byY: number): SnapOptions {
+    private static buildSnapOptions(grid: Pick<IGrid, 'width' | 'height'>, byX: number, byY: number): SnapOptions {
         const xThreshold = Math.max(1, grid.width || 6);
         const yThreshold = Math.max(1, grid.height || 6);
 
@@ -323,7 +323,7 @@ export class Guides {
       * edge of that handle is eligible.  A match is only applied when its
       * distance falls within `snap_threshold`.
      */
-    public static snapDeltas(snap: SnapGuideResult, handle: NodeHandle, options?: SnapOptions): { dx: number; dy: number } {
+    private static snapDeltas(snap: SnapGuideResult, handle: NodeHandle, options?: SnapOptions): { dx: number; dy: number } {
         const effective = options ?? snap.options ?? {};
         const xThreshold = this.thresholdForAxis(effective, 'x', 'snap');
         const yThreshold = this.thresholdForAxis(effective, 'y', 'snap');
@@ -349,7 +349,7 @@ export class Guides {
      * @param options Snap behavior options.
      * @returns Ordered axis matches from best to worst.
      */
-    public static matchesByAxis(movingRect: IRect, candidates: SnapCandidate[], axis: SnapAxis, options: SnapOptions = {}): SnapMatch[] {
+    private static matchesByAxis(movingRect: IRect, candidates: SnapCandidate[], axis: SnapAxis, options: SnapOptions = {}): SnapMatch[] {
         const threshold = this.thresholdForAxis(options, axis, 'match');
         const preferredDirection = options.preferDeltaSign?.[axis] ?? 0;
         const sourcePoints = this.axisPoints(movingRect, axis);
@@ -425,7 +425,7 @@ export class Guides {
      * @param options Snap behavior options.
      * @returns Delta result and ordered axis match lists.
      */
-    public static snapDelta(movingRect: IRect, candidates: SnapCandidate[], options: SnapOptions = {}): SnapDeltaResult {
+    private static snapDelta(movingRect: IRect, candidates: SnapCandidate[], options: SnapOptions = {}): SnapDeltaResult {
         const xMatches = this.matchesByAxis(movingRect, candidates, "x", options);
         const yMatches = this.matchesByAxis(movingRect, candidates, "y", options);
         const xMatch = xMatches[0];

@@ -1,6 +1,6 @@
 import type { ILayer, INode } from "../interfaces";
 
-export type Cacheable = INode | ILayer;
+type Cacheable = INode | ILayer;
 
 /**
  * Cached properties for nodes and layers.

@@ -16,7 +16,7 @@ export interface ShadowPreset {
 /**
  * Built-in shadow presets drawn from DiagramConstants.
  */
-export const SHADOW_PRESETS: ShadowPreset[] = [
+const SHADOW_PRESETS: ShadowPreset[] = [
     { label: 'No Shadow', value: DiagramConstants.NO_SHADOW },
     { label: 'Low Shadow', value: DiagramConstants.LOW_SHADOW },
     { label: 'Medium Shadow', value: DiagramConstants.MEDIUM_SHADOW },
@@ -90,15 +90,15 @@ export class ShadowPresetSelect {
         this.host.addEventListener(ENUM_SELECT_CHANGE_EVENT, this.onEnumChange as EventListener);
     }
 
-    get value(): ShadowStyle {
+    public get value(): ShadowStyle {
         return this.control.value || SHADOW_PRESETS[0]!.value;
     }
 
-    set value(style: ShadowStyle) {
+    public set value(style: ShadowStyle) {
         this.control.value = style;
     }
 
-    destroy(): void {
+    public destroy(): void {
         this.host.removeEventListener(ENUM_SELECT_CHANGE_EVENT, this.onEnumChange as EventListener);
         this.control.destroy();
     }
