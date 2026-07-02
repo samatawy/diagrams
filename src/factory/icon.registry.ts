@@ -379,8 +379,39 @@ IconRegistry.registerSymbol('parallelogram', 'tool-parallelogram',
 IconRegistry.registerSymbol('ellipse', 'tool-ellipse',
     sym('tool-ellipse', '<ellipse cx="12" cy="12" rx="10" ry="7"/>'));
 
+IconRegistry.registerSymbol('circle', 'tool-circle',
+    sym('tool-circle', '<circle cx="12" cy="12" r="8"/>'));
+
+// BPMN start event: single thin ring.
+IconRegistry.registerSymbol('bpmn_start_event', 'tool-bpmn-start',
+    sym('tool-bpmn-start', '<circle cx="12" cy="12" r="8"/>'));
+
+// BPMN intermediate event: double ring.
+IconRegistry.registerSymbol('bpmn_intermediate_event', 'tool-bpmn-intermediate',
+    sym('tool-bpmn-intermediate', '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="5"/>'));
+
+// BPMN end event: bold outer ring.
+IconRegistry.registerSymbol('bpmn_end_event', 'tool-bpmn-end',
+    sym('tool-bpmn-end', '<circle cx="12" cy="12" r="8" stroke-width="4"/>'));
+
 IconRegistry.registerSymbol('rhombus', 'tool-rhombus',
     sym('tool-rhombus', '<polygon points="12 2 22 12 12 22 2 12"/>'));
+
+// BPMN parallel gateway: diamond with X marker.
+IconRegistry.registerSymbol('bpmn_parallel_gateway', 'tool-bpmn-parallel-gateway',
+    sym('tool-bpmn-parallel-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="9.25" y1="9.25" x2="14.75" y2="14.75"/><line x1="14.75" y1="9.25" x2="9.25" y2="14.75"/>'));
+
+// BPMN inclusive gateway: diamond with inner ring.
+IconRegistry.registerSymbol('bpmn_inclusive_gateway', 'tool-bpmn-inclusive-gateway',
+    sym('tool-bpmn-inclusive-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><circle cx="12" cy="12" r="3.5"/>'));
+
+// BPMN exclusive gateway: diamond with plus marker.
+IconRegistry.registerSymbol('bpmn_exclusive_gateway', 'tool-bpmn-exclusive-gateway',
+    sym('tool-bpmn-exclusive-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="12" y1="8.5" x2="12" y2="15.5"/><line x1="8.5" y1="12" x2="15.5" y2="12"/>'));
+
+// BPMN complex gateway: diamond with star/asterisk marker.
+IconRegistry.registerSymbol('bpmn_complex_gateway', 'tool-bpmn-complex-gateway',
+    sym('tool-bpmn-complex-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="12" y1="8.25" x2="12" y2="15.75"/><line x1="8.75" y1="10.125" x2="15.25" y2="13.875"/><line x1="15.25" y1="10.125" x2="8.75" y2="13.875"/>'));
 
 IconRegistry.registerSymbol('text', 'tool-text',
     sym('tool-text', '<line x1="4" y1="6" x2="20" y2="6"/><line x1="12" y1="6" x2="12" y2="20"/>'));

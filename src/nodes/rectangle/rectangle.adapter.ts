@@ -1,10 +1,10 @@
 import { NodeRegistry } from "../../factory/node.registry";
 import type { IGrid, INode } from "../../interfaces";
-import { NodeHandle, type IPoint, type IRect, type ITextOrientation } from "../../types";
+import { NodeHandle, type IPoint, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RenderBasics } from "../render.basics";
-import type { HollowMode, INodeAdapter, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
+import type { HollowMode, INodeAdapter, SpecificOptions, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
 import { isHollow, lineWidth, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 
@@ -27,8 +27,10 @@ export class RectangleAdapter implements INodeAdapter {
     multistep_create = false;
     drag_create = true;
     has_text = true;
+    single_line_text = false;
     text_overflow: TextOverflowMode = 'hidden';
     text_orientations: ITextOrientation[] = ['horizontal'];
+    text_baselines: ITextBaseline[] = ['top', 'middle', 'bottom'];
     connection_handles: NodeHandle[] = [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW];
     can_rotate = true;
 
@@ -348,6 +350,10 @@ export class RectangleAdapter implements INodeAdapter {
 
     public getVisualRect(_node: INode, rect: IRect): IRect {
         return rect;
+    }
+
+    public specificOptions(node: INode, path: string): SpecificOptions | undefined {
+        return undefined;
     }
 
     public write(node: INode, serializer: any): any {

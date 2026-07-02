@@ -1,8 +1,9 @@
 import type { INode } from "../../interfaces";
-import type { ITextOrientation } from "../../types";
+import type { ITextBaseline, ITextOrientation } from "../../types";
 import type { DiagramView } from "../../view";
 import { DiagramEditView } from "../../editview";
 import { DIAGRAM_CHANGED_EVENT, DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT, DIAGRAM_NODE_POINTS_CHANGED_EVENT, DIAGRAM_SELECTION_EVENT, DIAGRAM_SHEET_LOADED_EVENT } from "../../events";
+import type { SpecificOptions } from "../../factory/node.adapter";
 import { isConnection } from "../../guards";
 import { NodeRegistry } from "../../factory/node.registry";
 
@@ -52,6 +53,7 @@ export class DiagramInspector extends Inspector {
 
     protected inspectorConfig: DiagramInspectorConfig;
 
+    private identityGrid?: HTMLElement;
     private geometryGrid?: HTMLElement;
     private metaGrid?: HTMLElement;
     private diagramMetaGrid?: HTMLElement;
@@ -71,6 +73,8 @@ export class DiagramInspector extends Inspector {
 
         this.registerAdapters();
         this.initialize();
+        this.syncDynamicRows(this.diagram.selection());
+        this.refresh();
         this.bindDiagramEvents();
     }
 
@@ -167,6 +171,7 @@ export class DiagramInspector extends Inspector {
 
         // ---- Node sections (visible only when at least one node is selected) ----
         const { grid: identity } = this.buildSection('Identity', 'expanded');
+        this.identityGrid = identity;
         this.addRow(identity, {
             key: 'id',
             label: 'ID',
@@ -284,19 +289,37 @@ export class DiagramInspector extends Inspector {
         });
         this.addRow(text, {
             key: 'textStyle.baseline', label: 'Baseline', type: 'select', editor: 'EnumSelect',
-            editorOptions: { options: this.inspectorConfig.textBaselineOptions || ['top', 'middle', 'bottom'] } as EnumSelectAdapterConfig,
+            editorOptions: {
+                options: () => {
+                    const ALL: ITextBaseline[] = ['top', 'middle', 'bottom'];
+                    const configured = this.inspectorConfig.textBaselineOptions;
+                    const base = (typeof configured === 'function'
+                        ? configured()
+                        : configured) || ALL;
+                    const sel = this.diagram.selection();
+                    if (!sel.length) return base;
+                    const perNode = sel.map(n => NodeRegistry.adapter(n.type)?.text_baselines ?? ALL);
+                    const allowed = perNode.reduce((acc, cur) => acc.filter(o => cur.includes(o)));
+                    return base.filter(option => {
+                        const value = (typeof option === 'string' ? option : option.value) as ITextBaseline;
+                        return allowed.includes(value);
+                    });
+                },
+            } as EnumSelectAdapterConfig,
             readonly: readonly, isVisible: hasSelected,
         });
         this.addRow(text, {
             key: 'textStyle.orientation', label: 'Orientation', type: 'select', editor: 'EnumSelect',
             editorOptions: {
                 options: () => {
-                    const sel = this.diagram.selection();
-                    if (!sel.length) return ['horizontal', 'vertical', 'path'];
                     const ALL: ITextOrientation[] = ['horizontal', 'vertical', 'path'];
+                    const base: ITextOrientation[] = ALL;
+                    const sel = this.diagram.selection();
+                    if (!sel.length) return base;
                     const perNode = sel.map(n => NodeRegistry.adapter(n.type)?.text_orientations ?? ALL);
                     // Intersection: keep only orientations every selected node supports.
-                    return perNode.reduce((acc, cur) => acc.filter(o => cur.includes(o)));
+                    const allowed = perNode.reduce((acc, cur) => acc.filter(o => cur.includes(o)));
+                    return base.filter(option => allowed.includes(option));
                 },
             } as EnumSelectAdapterConfig,
             readonly: readonly, isVisible: hasSelected,
@@ -507,11 +530,11 @@ export class DiagramInspector extends Inspector {
     }
 
     /**
-     * Rebuilds volatile rows (points, geometry, meta) to match the current selection.
+     * Rebuilds volatile rows (specific, points, geometry, meta) to match the current selection.
      * @param selected Currently selected nodes.
      */
     private syncDynamicRows(selected: INode[]): void {
-        if (!this.geometryGrid || !this.metaGrid) {
+        if (!this.identityGrid || !this.geometryGrid || !this.metaGrid) {
             return;
         }
 
@@ -530,6 +553,11 @@ export class DiagramInspector extends Inspector {
                 this.ensureRowAtEnd(this.diagramMetaGrid, 'diagram.meta.__add');
             }
             return;
+        }
+
+        const specificDefs = this.buildSpecificRowDefinitions(selected);
+        for (const def of specificDefs) {
+            this.addRow(this.identityGrid, def);
         }
 
         const pointDefs = this.buildPointRowDefinitions(selected);
@@ -611,6 +639,169 @@ export class DiagramInspector extends Inspector {
     }
 
     /**
+     * Builds property definitions for flat editable keys in each node's specific container.
+     * Rows are shown only when every selected node supports the key through adapter-specific options.
+     * @param selected Currently selected nodes.
+     * @returns An array of volatile property definitions for specific rows.
+     */
+    private buildSpecificRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
+        const keys = this.collectFlatRecordKeys(selected, 'specific', false);
+        const defs: InspectorPropertyDefinition[] = [];
+
+        for (const key of keys) {
+            const def = this.buildSpecificRowDefinition(selected, key);
+            if (def) {
+                defs.push(def);
+            }
+        }
+
+        return defs;
+    }
+
+    /**
+     * Builds one property definition for a specific.* path after aggregating schema hints across the selection.
+     * Returns undefined when any selected node does not support the key or exposes conflicting editor types.
+     */
+    private buildSpecificRowDefinition(selected: INode[], key: string): InspectorPropertyDefinition | undefined {
+        const path = `specific.${key}`;
+        let rowLabel: string | undefined;
+        let hasLabelMismatch = false;
+        let datatype: 'string' | 'number' | 'boolean' | 'enum' | undefined;
+        let isReadonly = this.readonly;
+        const optionMaps: Array<Record<string, { label: string; value: unknown }>> = [];
+
+        for (const node of selected) {
+            const adapter = NodeRegistry.adapter(node.type);
+            const config = adapter?.specificOptions(node, path);
+            if (!config) {
+                return undefined;
+            }
+
+            isReadonly = isReadonly || config.readonly === true;
+
+            if (rowLabel === undefined) {
+                rowLabel = config.label;
+            } else if (rowLabel !== config.label) {
+                hasLabelMismatch = true;
+            }
+
+            const nextDatatype = this.resolveSpecificDatatype(config);
+            if (!datatype) {
+                datatype = nextDatatype;
+            } else if (datatype !== nextDatatype) {
+                return undefined;
+            }
+
+            if (nextDatatype !== 'enum') {
+                continue;
+            }
+
+            const resolvedOptions = this.resolveSpecificOptionMap(config, node);
+            if (!resolvedOptions) {
+                return undefined;
+            }
+            optionMaps.push(resolvedOptions);
+        }
+
+        const resolvedLabel = hasLabelMismatch ? 'Multiple' : (rowLabel ?? key);
+        const resolvedDatatype = datatype ?? 'string';
+        const def: InspectorPropertyDefinition = {
+            key: path,
+            label: resolvedLabel,
+            type: resolvedDatatype === 'enum' ? 'select' : resolvedDatatype,
+            readonly: isReadonly,
+            volatile: true,
+        };
+
+        if (resolvedDatatype !== 'enum') {
+            return def;
+        }
+
+        const options = this.intersectSpecificOptionMaps(optionMaps);
+        if (!options.length) {
+            return undefined;
+        }
+
+        def.editor = 'EnumSelect';
+        def.editorOptions = { options } as EnumSelectAdapterConfig;
+        return def;
+    }
+
+    /**
+     * Resolves the effective editor datatype for one specific field definition.
+     */
+    private resolveSpecificDatatype(config: SpecificOptions): 'string' | 'number' | 'boolean' | 'enum' {
+        if (config.options) {
+            return 'enum';
+        }
+        return config.datatype ?? 'string';
+    }
+
+    /**
+     * Resolves a specific field's option record for a concrete node.
+     */
+    private resolveSpecificOptionMap(
+        config: SpecificOptions,
+        node: INode,
+    ): Record<string, { label: string; value: unknown }> | undefined {
+        if (!config.options) {
+            return undefined;
+        }
+
+        return typeof config.options === 'function'
+            ? config.options(node)
+            : config.options;
+    }
+
+    /**
+     * Intersects enum options across the current selection using option values as the compatibility key.
+     */
+    private intersectSpecificOptionMaps(
+        optionMaps: Array<Record<string, { label: string; value: unknown }>>,
+    ): Array<{ label: string; value: unknown }> {
+        if (!optionMaps.length) {
+            return [];
+        }
+
+        const tokenMaps = optionMaps.map((options) => this.mapSpecificOptionsByToken(options));
+        const firstEntries = Object.values(optionMaps[0] ?? {});
+        const result: Array<{ label: string; value: unknown }> = [];
+
+        for (const option of firstEntries) {
+            const token = this.valueToken(option.value);
+            let include = true;
+
+            for (let index = 1; index < tokenMaps.length; index++) {
+                if (!tokenMaps[index]?.has(token)) {
+                    include = false;
+                    break;
+                }
+            }
+
+            if (include) {
+                result.push({ label: option.label, value: option.value });
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Indexes a specific option record by stable value token.
+     */
+    private mapSpecificOptionsByToken(
+        options: Record<string, { label: string; value: unknown }>,
+    ): Map<string, { label: string; value: unknown }> {
+        const map = new Map<string, { label: string; value: unknown }>();
+
+        for (const option of Object.values(options)) {
+            map.set(this.valueToken(option.value), option);
+        }
+
+        return map;
+    }
+
+    /**
      * Builds property definitions for flat editable keys in each node's meta container.
      * @param selected Currently selected nodes.
      * @returns An array of volatile property definitions for meta rows.
@@ -650,11 +841,11 @@ export class DiagramInspector extends Inspector {
     /**
      * Collects the union of all flat string/number/boolean keys from the given container across every selected node.
      * @param selected Currently selected nodes.
-     * @param container Either 'geometry' or 'meta'.
+     * @param container Either 'geometry', 'meta', or 'specific'.
      * @param sort Whether to sort keys alphabetically. Defaults to true.
      * @returns Sorted array of unique key names.
      */
-    private collectFlatRecordKeys(selected: INode[], container: 'geometry' | 'meta', sort: boolean = true): string[] {
+    private collectFlatRecordKeys(selected: INode[], container: 'geometry' | 'meta' | 'specific', sort: boolean = true): string[] {
         const keySet = new Set<string>();
         for (const node of selected) {
             const record = (node as any)[container];
@@ -679,11 +870,11 @@ export class DiagramInspector extends Inspector {
     /**
      * Determines the TypeScript primitive type for a flat container key across the selection.
      * @param selected Currently selected nodes.
-    * @param container Either 'geometry' or 'meta'.
+     * @param container Either 'geometry', 'meta', or 'specific'.
      * @param key The flat key to inspect.
      * @returns 'number', 'boolean', or 'string'.
      */
-    private resolveFlatValueType(selected: INode[], container: 'geometry' | 'meta', key: string): 'string' | 'number' | 'boolean' {
+    private resolveFlatValueType(selected: INode[], container: 'geometry' | 'meta' | 'specific', key: string): 'string' | 'number' | 'boolean' {
         for (const node of selected) {
             const record = (node as any)[container] as Record<string, unknown> | undefined;
             const value = record?.[key];

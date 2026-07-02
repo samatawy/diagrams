@@ -267,7 +267,9 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ baseline: 'top' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'top'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
+        isEnabled: (d) => d.selection().length > 0
+            && d.selection().some((n) => (NodeRegistry.adapter(n.type)?.text_baselines.includes('top') ?? true)),
+        // isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-middle',
@@ -276,7 +278,9 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ baseline: 'middle' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'middle'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
+        isEnabled: (d) => d.selection().length > 0
+            && d.selection().some((n) => (NodeRegistry.adapter(n.type)?.text_baselines.includes('middle') ?? true)),
+        // isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-bottom',
@@ -285,7 +289,9 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ baseline: 'bottom' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'bottom'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
+        isEnabled: (d) => d.selection().length > 0
+            && d.selection().some((n) => (NodeRegistry.adapter(n.type)?.text_baselines.includes('bottom') ?? true)),
+        // isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
     },
 
     // text formatting

@@ -951,7 +951,7 @@ export class DiagramEditView extends DiagramView {
             orientation: this.settings.textOrientation,
             weight: this.settings.textWeight,
             italic: this.settings.textItalic,
-            halo: this.settings.textHalo || undefined,
+            halo: this.settings.textHalo || 'inherit',
         };
     }
 
@@ -1385,11 +1385,17 @@ export class DiagramEditView extends DiagramView {
         if (style.weight !== undefined) this.settings.textWeight = style.weight;
         if (style.italic !== undefined) this.settings.textItalic = style.italic;
         if (style.align !== undefined) this.settings.textAlign = style.align;
-        if (style.baseline !== undefined) this.settings.textBaseline = style.baseline;
+        // if (style.baseline !== undefined) this.settings.textBaseline = style.baseline;
         if (style.halo !== undefined) this.settings.textHalo = style.halo;
 
         for (let node of selected) {
             const styleToApply = { ...style, color: colorIsInherit ? undefined : style.color };
+            if (styleToApply.baseline !== undefined) {
+                const allowed = NodeRegistry.adapter(node.type)?.text_baselines;
+                if (allowed && !allowed.includes(styleToApply.baseline)) {
+                    delete styleToApply.baseline;
+                }
+            }
             if (styleToApply.orientation !== undefined) {
                 const allowed = NodeRegistry.adapter(node.type)?.text_orientations;
                 if (allowed && !allowed.includes(styleToApply.orientation)) {
@@ -2287,6 +2293,7 @@ export class DiagramEditView extends DiagramView {
             ...(node.textStyle && { textStyle: { ...node.textStyle } }),
             ...(node.strokeStyle && { strokeStyle: { ...node.strokeStyle } }),
             ...(node.shadowStyle && { shadowStyle: { ...node.shadowStyle } }),
+            ...(node.specific && { specific: { ...node.specific } }),
             ...(node.geometry && { geometry: { ...node.geometry } }),
             ...(node.meta && { meta: { ...node.meta } }),
         } as INode;
@@ -2335,6 +2342,8 @@ export class DiagramEditView extends DiagramView {
      * @param type The new type to assign to the node.
      */
     public changeNodeType(node: string | INode, type: string): void {
+        // TODO: Check that specific keys are compatible with the new type,
+        // for now this is the responsibility of whoever creates Transferables.
 
         const _node = (typeof node === 'string') ? this.node(node) : node;
         if (_node) {
@@ -2754,7 +2763,7 @@ export class DiagramEditView extends DiagramView {
 
         if (this.activeTextEditor) {
             const editingNode = this.node(this.activeTextEditor.nodeId);
-            const singleLine = this.activeTextEditor.singleLine || (editingNode ? NodeRegistry.isConnection(editingNode.type) : false);
+            const singleLine = this.activeTextEditor.singleLine || (editingNode ? NodeRegistry.isSingleLineText(editingNode.type) : false);
 
             if (key === 'enter' && (singleLine || (!event.ctrlKey && !event.metaKey && !event.shiftKey))) {
                 consumeEvent();
@@ -4209,7 +4218,7 @@ export class DiagramEditView extends DiagramView {
         const canvasRect = this.canvas.getBoundingClientRect();
         const zoom = this.coordinates.zoom;
         const pan = this.coordinates.pan;
-        const singleLine = NodeRegistry.isConnection(node.type);
+        const singleLine = NodeRegistry.isSingleLineText(node.type);
 
         const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
         const baseline = textBaseline(node);
@@ -4225,7 +4234,7 @@ export class DiagramEditView extends DiagramView {
         const scaledLineHeight = Math.max(scaledFontSize * 1.25, 1);
 
         let rect = this.coordinates.getBoundingRect(node);
-        const screenRect: IRect = {
+        let screenRect: IRect = {
             left: canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x,
             top: canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y,
             width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
@@ -4245,6 +4254,12 @@ export class DiagramEditView extends DiagramView {
             /* Lines in a bounded rect */
 
             rect = placement.rect;
+            screenRect = {
+                left: canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x,
+                top: canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y,
+                width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
+                height: Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom),
+            };
             left = screenRect.left;
             editorWidth = Math.max(24, screenRect.width);
 

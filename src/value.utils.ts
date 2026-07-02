@@ -34,7 +34,12 @@ export function textAlign(node: INode): ITextAlign {
 }
 
 export function textBaseline(node: INode): ITextBaseline {
-    return node.textStyle?.baseline || DiagramConstants.DEFAULT_NODE_TEXT_BASELINE;
+    const stored = node.textStyle?.baseline || DiagramConstants.DEFAULT_NODE_TEXT_BASELINE;
+    const allowed = NodeRegistry.adapter(node.type)?.text_baselines;
+    if (allowed && !allowed.includes(stored)) {
+        return allowed[0]!;
+    }
+    return stored;
 }
 
 export function textOrientation(node: INode): ITextOrientation {

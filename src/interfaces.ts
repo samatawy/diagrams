@@ -129,6 +129,8 @@ export interface INode {
 
     geometry?: Record<string, number | string | boolean>;
 
+    specific?: Record<string, unknown>;
+
     meta?: Record<string, unknown>;
 }
 

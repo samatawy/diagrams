@@ -27,6 +27,7 @@ export const DEFAULT_TOOL_LAYOUT: ToolPaletteLayoutItem[] = [
     'rectangle',
     'round_rectangle',
     'ellipse',
+    'circle',
     'text',
     'line',
     'polyline',

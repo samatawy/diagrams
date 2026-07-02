@@ -1,5 +1,5 @@
 import type { IConnectionAnchor, IGrid, INode } from "../interfaces";
-import type { ITextOrientation, IPoint, IRect, NodeHandle } from "../types";
+import type { ITextOrientation, IPoint, IRect, NodeHandle, ITextBaseline } from "../types";
 import type { IconSource } from "./icon.registry";
 
 export type { IconSource };
@@ -17,6 +17,17 @@ export interface TextPlacement {
      * World-space segment for line-following text (polylines, connectors).
      */
     segment?: { from: IPoint; to: IPoint };
+}
+
+export interface SpecificOptions {
+    label: string;
+    readonly?: boolean;
+    datatype?: 'string' | 'number' | 'boolean' | 'enum';
+    options?: Record<string, {
+        label: string; value: unknown
+    }> | ((node: INode) => Record<string, {
+        label: string; value: unknown
+    }>);
 }
 
 /**
@@ -85,6 +96,13 @@ export interface INodeAdapter {
     has_text: boolean;
 
     /**
+     * Indicates whether the adapter supports single-line text rendering within the node. 
+     * If true, the text will be rendered on a single line, and any overflow will be handled according 
+     * to the text_overflow property. If false or undefined, multi-line text rendering may be supported.
+     */
+    single_line_text?: boolean;
+
+    /**
      * The text overflow mode determines how text that exceeds the node's bounding box is handled.
      * - 'visible': Text is allowed to overflow the node's bounding box and will be fully visible.
      * - 'hidden': Text that exceeds the node's bounding box is clipped and not visible.
@@ -100,6 +118,16 @@ export interface INodeAdapter {
      * Adapters that render text differently (e.g. curved text) should override this to return a restricted subset.
      */
     text_orientations: ITextOrientation[];
+
+    /**
+     * Returns the text baseline values this node type supports.
+     * Only relevant for nodes that support text (`has_text === true`).
+     * When not defined, all baselines are assumed to be supported.
+     * Adapters that render text differently (e.g. curved text) should override this to return a restricted subset.
+     * The baseline determines how the text is aligned vertically relative to its bounding box or path.
+     * For example, 'top' aligns the top of the text with the top of the bounding box, 'middle' centers the text vertically, and 'bottom' aligns the bottom of the text with the bottom of the bounding box.
+     */
+    text_baselines: ITextBaseline[];
 
     /**
      * Specifies the connection handles that this node type supports for connecting to other nodes.
@@ -213,6 +241,8 @@ export interface INodeAdapter {
      * @returns The visual bounding rect.
      */
     getVisualRect(node: INode, rect: IRect): IRect;
+
+    specificOptions(node: INode, path: string): SpecificOptions | undefined;
 
     /**
      * Writes the given node to a JSON-serializable format using the provided serializer.

@@ -116,6 +116,16 @@ export class NodeRegistry {
     }
 
     /**
+     * Checks if the node type supports single-line text rendering.
+     * @param type The type of the node.
+     * @returns True if the node type supports single-line text rendering, false otherwise.
+     */
+    public static isSingleLineText(type: string): boolean {
+        const handler = this._nodes.get(type);
+        return handler ? handler.single_line_text === true : false;
+    }
+
+    /**
      * Checks if the node type requires a multistep creation process.
      * @param type The type of the node.
      * @returns True if the node type requires multistep creation, false otherwise.

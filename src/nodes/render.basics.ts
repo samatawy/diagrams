@@ -435,7 +435,8 @@ export class RenderBasics {
         const align = textAlign(node);
         const baseline = textBaseline(node);
 
-        const haloColor = textHaloColor(node);
+        const preferBackgroundHalo = this.isTextPlacedOutsideNode(node, textRect);
+        const haloColor = this.resolveTextHaloColor(node, preferBackgroundHalo);
         const fontSize = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
         const haloWidth = Math.max(2, fontSize * 0.12);
 
@@ -508,6 +509,45 @@ export class RenderBasics {
 
         // Finally return the text hit path
         return path;
+    }
+
+    /**
+     * Returns true when text placement is clearly outside the node's visual bounds.
+     */
+    private static isTextPlacedOutsideNode(node: INode, textRect: IRect): boolean {
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return false;
+
+        const coordinates = diagram.getCoordinates();
+        const nodeRect = coordinates.getBoundingRect(node);
+        const nodeRight = nodeRect.left + nodeRect.width;
+        const nodeBottom = nodeRect.top + nodeRect.height;
+        const textRight = textRect.left + textRect.width;
+        const textBottom = textRect.top + textRect.height;
+
+        return (
+            textRect.left >= nodeRight
+            || textRight <= nodeRect.left
+            || textRect.top >= nodeBottom
+            || textBottom <= nodeRect.top
+        );
+    }
+
+    /**
+     * Resolves halo color with an optional preference for diagram background when text is outside the node.
+     */
+    private static resolveTextHaloColor(node: INode, preferBackground: boolean): string {
+        if (node.textStyle?.halo !== 'inherit' || !preferBackground) {
+            return textHaloColor(node);
+        }
+
+        // Keep text halo "inherit" behavior but avoid invisible halo by preferring background first when text is outside.
+        const bgPreferred = textHaloColor({ ...node, fillStyle: 'transparent' } as INode);
+        if (bgPreferred && bgPreferred !== 'transparent') {
+            return bgPreferred;
+        }
+
+        return textHaloColor(node);
     }
 
     /**
