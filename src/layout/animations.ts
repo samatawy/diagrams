@@ -1,4 +1,7 @@
-import type { AnimationConfig, AnimationChannel, AnimationLineDash, AnimationChannelType, AnimationViewport } from "../animation.types";
+import type { AnimationConfig, AnimationChannel, AnimationLineDash, AnimationChannelType, AnimationViewport, AnimationNodeCenter } from "../animation.types";
+import type { INode } from "../interfaces";
+import { NodeBasics } from "../nodes";
+import type { IPoint, IRect } from "../types";
 import type { DiagramView } from "../view";
 
 export class DiagramAnimations {
@@ -59,13 +62,12 @@ export class DiagramAnimations {
         switch (type) {
             case 'linedash':
                 throw new Error('Line dash animation should be started using animateLineDash() method.');
-            // this.doAnimateLineDash(channel as AnimationLineDash, func ?? (() => this.doAnimateLineDash(channel as AnimationLineDash, func)));
-            // break;
+
+            case 'node':
+                throw new Error('Node animation should be started using animateNode() method.');
 
             case 'viewport':
                 throw new Error('Viewport animation should be started using animateViewport() method.');
-            //     this.animateCoordinates(channel as AnimationViewport, (channel as AnimationViewport).target, func);
-            //     break;
 
             default:
                 this.doAnimate(func);
@@ -103,6 +105,16 @@ export class DiagramAnimations {
         channel.lastTimestamp = performance.now();
 
         this.doAnimateLineDash(channel, func ?? (() => this.doAnimateLineDash(channel, func)));
+    }
+
+    public animateNodeCenter(node: INode, target: IPoint, func: () => void): void {
+        let channel = this.map.get(node.id) as AnimationNodeCenter | undefined;
+        if (!channel) {
+            channel = this.newAnimation('node', node.id) as AnimationNodeCenter;
+        }
+        channel.target = target;
+
+        this.doAnimateNodeCenter(channel, node, target, func);
     }
 
     public animateViewport(target: { zoom?: number, pan?: { x: number, y: number } }, func?: () => void): void {
@@ -203,6 +215,44 @@ export class DiagramAnimations {
 
         channel.lastTimestamp = now;
         channel.lastFrame = requestAnimationFrame(() => this.doAnimateLineDash(channel, func));
+    }
+
+    private doAnimateNodeCenter(channel: AnimationNodeCenter, node: INode, target: IPoint, func: () => void): void {
+        if (!this.config.enabled) {
+            node.points[0] = { ...target };
+            func();
+            return;
+        }
+
+        this.stopAnimation(node.id);
+
+        const animate = () => {
+            const currentRect = this.diagram.getCoordinates().getBoundingRect(node);
+            const currentCenter = {
+                x: currentRect.left + currentRect.width / 2,
+                y: currentRect.top + currentRect.height / 2
+            };
+            const dx = target.x - currentCenter.x;
+            const dy = target.y - currentCenter.y;
+
+            const attainedX = Math.abs(dx) < 0.5;
+            const attainedY = Math.abs(dy) < 0.5;
+
+            if (attainedX && attainedY) {
+                channel.lastFrame = undefined;
+                NodeBasics.moveBy(node, dx, dy); /* Move the node to the target position */
+                func();
+                return;
+            }
+
+            const step = 0.2; /* Adjust this value for smoother or faster animation */
+
+            NodeBasics.moveBy(node, dx * step, dy * step);
+            func();
+
+            channel.lastFrame = requestAnimationFrame(animate);
+        };
+        animate();
     }
 
     private doAnimateCoordinates(channel: AnimationViewport, target: { zoom?: number, pan?: { x: number, y: number } }, func?: () => void): void {

@@ -3434,14 +3434,14 @@ export class DiagramEditView extends DiagramView {
             }
         } else {
             this.stopAnimation('auto_connect');
-
         }
 
         /* The dragged node is not over another node. */
         this.canvas.style.cursor = 'default';
 
         const point = this.coordinates.getPointFromEvent(event, this.grid);
-        this.centerNodeAt(this.dragCreateDraft, point);
+        this.animations.animateNodeCenter(this.dragCreateDraft, point, () => { });
+        // this.centerNodeAt(this.dragCreateDraft, point);
         this.render('all');
 
         if (this.dragDraftConnector) {
@@ -3527,7 +3527,8 @@ export class DiagramEditView extends DiagramView {
 
         } else {
             /* The created node is not over another node. */
-            this.centerNodeAt(created, point);
+            this.animations.animateNodeCenter(created, point, () => { });
+            // this.centerNodeAt(created, point);
         }
 
         created.ready = true;
@@ -3597,7 +3598,8 @@ export class DiagramEditView extends DiagramView {
             case NodeHandle.SW: offsetX = - stub - w; offsetY = stub + h; break;
         }
 
-        this.centerNodeAt(draft, { x: point.x + offsetX, y: point.y + offsetY });
+        this.animations.animateNodeCenter(draft, { x: point.x + offsetX, y: point.y + offsetY }, () => { });
+        // this.centerNodeAt(draft, { x: point.x + offsetX, y: point.y + offsetY });
     }
 
     /**

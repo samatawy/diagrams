@@ -182,7 +182,7 @@ export interface INodeAdapter {
      * @param node The node to render.
      * @param ctx The canvas rendering context to draw on.
      */
-    render(node: INode, ctx: CanvasRenderingContext2D): void;
+    render(node: INode, ctx: CanvasRenderingContext2D, show?: 'all' | 'quick'): void;
 
     /**
      * Renders the selection state of the given node on the specified canvas context.

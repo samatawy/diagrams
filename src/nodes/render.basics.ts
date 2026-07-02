@@ -35,7 +35,7 @@ export class RenderBasics {
      * @param node The node to prepare for rendering.
      * @param context The canvas rendering context.
      */
-    public static prepare(node: INode, context: CanvasRenderingContext2D): void {
+    public static prepare(node: INode, context: CanvasRenderingContext2D, show: 'all' | 'quick' = 'all'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -55,11 +55,14 @@ export class RenderBasics {
         if (cached.img && imageMode(node) === 'pattern') {
             context.fillStyle = context.createPattern(cached.img, 'repeat') || '';
         }
-        const shadow = shadowStyle(node);
-        context.shadowColor = this.resolveShadowColor(node);
-        context.shadowOffsetX = shadow.offset.x;
-        context.shadowOffsetY = shadow.offset.y;
-        context.shadowBlur = shadow.blur;
+
+        if (show !== 'quick') {
+            const shadow = shadowStyle(node);
+            context.shadowColor = this.resolveShadowColor(node);
+            context.shadowOffsetX = shadow.offset.x;
+            context.shadowOffsetY = shadow.offset.y;
+            context.shadowBlur = shadow.blur;
+        }
 
         // Invisible shapes (hot spots) should not viewable in 'view' mode..
         if (node.invisible) {

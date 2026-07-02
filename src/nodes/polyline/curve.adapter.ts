@@ -64,7 +64,7 @@ export class CurveAdapter extends PolylineAdapter {
         return NodeHandle.NONE;
     }
 
-    render(node: INode, context: CanvasRenderingContext2D): void {
+    render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -73,7 +73,7 @@ export class CurveAdapter extends PolylineAdapter {
 
         if (node.points.length > 1) {
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
             if (isConnectionNode(node)) {
                 ConnectionBasics.syncEndpoints(node);
             }
@@ -85,7 +85,7 @@ export class CurveAdapter extends PolylineAdapter {
                 RenderBasics.renderArrows(node, context);
             }
 
-            if (node.text) {
+            if (node.text && show !== 'quick') {
                 const placement = this.textPlacement(node);
                 const segment = placement?.segment;
                 if (segment) {

@@ -103,7 +103,7 @@ export class PolylineAdapter implements INodeAdapter {
         }
     }
 
-    public render(node: INode, context: CanvasRenderingContext2D): void {
+    public render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -112,7 +112,7 @@ export class PolylineAdapter implements INodeAdapter {
 
         if (node.points.length > 1) {
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
 
             if (isConnectionNode(node)) {
                 ConnectionBasics.syncEndpoints(node);
@@ -129,7 +129,7 @@ export class PolylineAdapter implements INodeAdapter {
                 RenderBasics.renderArrows(node, context);
             }
 
-            if (node.text) {
+            if (node.text && show !== 'quick') {
                 // RenderBasics.renderText(node, context, { overflow: this.text_overflow });
                 const { from, to } = NodeBasics.longestSegment(node.points) || { from: node.points[0]!, to: node.points[1]! };
                 RenderBasics.renderText(node, context, { overflow: this.text_overflow, from, to });

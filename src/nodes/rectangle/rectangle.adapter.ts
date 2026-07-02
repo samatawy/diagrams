@@ -222,7 +222,7 @@ export class RectangleAdapter implements INodeAdapter {
         node.points[1] = { ...bottomRight, ...snapBottomRight };
     }
 
-    public render(node: INode, context: CanvasRenderingContext2D): void {
+    public render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -235,7 +235,7 @@ export class RectangleAdapter implements INodeAdapter {
             let rect = coordinates.getBoundingRect(node);
 
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
 
             const path = new Path2D();
             path.rect(rect.left, rect.top, rect.width, rect.height);
@@ -247,7 +247,9 @@ export class RectangleAdapter implements INodeAdapter {
             }
             context.stroke(path);
 
-            RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
+            if (node.text && show !== 'quick') {
+                RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
+            }
 
             cached.path = path;
             cache.setNode(node, cached);

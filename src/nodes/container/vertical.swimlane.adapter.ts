@@ -28,7 +28,7 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
         }
     }
 
-    public override render(node: INode, context: CanvasRenderingContext2D): void {
+    public override render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -50,7 +50,7 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
             const radius = this.getCornerRadius(node, rect);
 
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
 
             const path = new Path2D();
             path.moveTo(rect.left, rect.top + radius);
@@ -74,8 +74,9 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
             }
             context.stroke(path);
 
-            RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
-
+            if (node.text && show !== 'quick') {
+                RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
+            }
             cached.path = path;
             cache.setNode(node, cached);
 

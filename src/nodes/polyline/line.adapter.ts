@@ -20,7 +20,7 @@ export class LineAdapter extends PolylineAdapter {
     has_text = true;
     text_overflow = 'visible' as TextOverflowMode;
 
-    render(node: INode, context: CanvasRenderingContext2D): void {
+    render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -29,7 +29,7 @@ export class LineAdapter extends PolylineAdapter {
 
         if (node.points.length > 1) {
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
             if (isConnectionNode(node)) {
                 ConnectionBasics.syncEndpoints(node);
             }
@@ -41,7 +41,7 @@ export class LineAdapter extends PolylineAdapter {
                 RenderBasics.renderArrows(node, context);
             }
 
-            if (node.text) {
+            if (node.text && show !== 'quick') {
                 const from = node.points[0]!;
                 const to = node.points[1]!;
                 RenderBasics.renderText(node, context, { overflow: this.text_overflow, from, to });

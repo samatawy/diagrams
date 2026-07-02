@@ -119,7 +119,7 @@ export class MinimapView {
         }
         this.isDragging = true;
         this.canvas.setPointerCapture(event.pointerId);
-        this.panToPointer(event, 'instant');    // Make into 'animate' if needed - currently jerky on first following move.
+        this.panToPointer(event, 'animate');    // Make into 'animate' if needed - currently jerky on first following move.
         event.preventDefault();
     }
 
@@ -127,7 +127,7 @@ export class MinimapView {
         if (!this.isDragging) {
             return;
         }
-        this.panToPointer(event, 'instant');
+        this.panToPointer(event, 'animate');
         event.preventDefault();
     }
 
@@ -179,6 +179,10 @@ export class MinimapView {
                     x: worldX * zoom - viewportWidth / 2,
                     y: worldY * zoom - viewportHeight / 2,
                 },
+            }, () => {
+                this.diagram.render('all');
+                this.render();
+                // this.onViewportChanged(new CustomEvent(DIAGRAM_VIEWPORT_EVENT, { detail: { pan: coordinates.pan, zoom } }));
             });
         } else {
             this.diagram.setViewport({
@@ -188,6 +192,7 @@ export class MinimapView {
                 },
             });
         }
+        // this.onViewportChanged(new CustomEvent(DIAGRAM_VIEWPORT_EVENT, { detail: { pan: coordinates.pan, zoom } }));
     }
 
     /**
@@ -217,6 +222,14 @@ export class MinimapView {
 
     private onViewportChanged(_event: CustomEvent<DiagramViewportChange>): void {
         // Handle viewport changes and update the minimap view accordingly.
+        // const source = this.diagram;
+        // const bounds = source.getNodeBounds();
+
+        // if (!bounds || bounds.width <= 0 || bounds.height <= 0) {
+        //     return;
+        // }
+        // const fit = this.getFitTransform(bounds);
+        // this.renderViewport(bounds, fit);
         this.render();
     }
 
@@ -258,20 +271,20 @@ export class MinimapView {
             // Render containers first..
             for (const container of containers) {
                 const handler = NodeRegistry.adapter(container.type);
-                handler?.render(container, this.context);
+                handler?.render(container, this.context, 'quick');
             }
 
             // Render connections first..
             for (const node of connections) {
                 const handler = NodeRegistry.adapter(node.type);
-                handler?.render(node, this.context);
+                handler?.render(node, this.context, 'quick');
             }
 
             // Then render non-connection nodes on top, so they appear above connecting lines.
             for (const node of nodes) {
                 const handler = NodeRegistry.adapter(node.type);
                 if (!isContainerNode(node) && !isConnection(node)) {
-                    handler?.render(node, this.context);
+                    handler?.render(node, this.context, 'quick');
                 }
             }
         }

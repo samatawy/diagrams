@@ -697,7 +697,6 @@ export class Guides {
 
     /**
      * Collects snap candidates from visible layers while excluding selected and linked nodes.
-     * Falls back to all nodes when no candidate is found from layer membership.
      * @param excludedNodeIds Node ids excluded from snapping.
      * @param movingBounds Current bounds of moving nodes.
      * @param diagram Diagram access point.
@@ -745,11 +744,11 @@ export class Guides {
         }
 
         // Defensive fallback: if layer membership is stale, compute candidates from all nodes.
-        if (!candidates.length) {
-            for (const node of diagram.nodes) {
-                tryAddNode(node);
-            }
-        }
+        // if (!candidates.length) {
+        //     for (const node of diagram.nodes) {
+        //         tryAddNode(node);
+        //     }
+        // }
 
         return candidates;
     }

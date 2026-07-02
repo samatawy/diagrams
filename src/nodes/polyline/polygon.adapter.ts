@@ -20,7 +20,7 @@ export class PolygonAdapter extends PolylineAdapter {
     has_text = true;
     text_overflow: TextOverflowMode = 'hidden';
 
-    render(node: INode, context: CanvasRenderingContext2D): void {
+    render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -30,7 +30,7 @@ export class PolygonAdapter extends PolylineAdapter {
 
         if (node.points.length > 1) {
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
 
             const path = new Path2D();
             path.moveTo(node.points[0]!.x, node.points[0]!.y);
