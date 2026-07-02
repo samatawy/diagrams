@@ -8,6 +8,11 @@ import {
     type DiagramSaveOptions,
     type DiagramSaveHandler,
     type ISerializedDiagram,
+    type DiagramOpenStylesheetHandler,
+    type DiagramSaveStylesheetHandler,
+    type StylesheetOpenOptions,
+    type StylesheetOpenSource,
+    type StylesheetSaveOptions,
 } from "../io";
 import { Diagram } from "../model/diagram";
 import { ColorSelect, type ColorSelectConfig } from "./inputs/color.select";
@@ -55,6 +60,8 @@ export type DiagramEditorFileDialogsConfig = {
     onOpenDiagram?: DiagramOpenHandler;
     onSaveDiagram?: DiagramSaveHandler;
     onExportDiagram?: DiagramExportHandler;
+    onOpenStylesheet?: DiagramOpenStylesheetHandler;
+    onSaveStylesheet?: DiagramSaveStylesheetHandler;
 };
 
 export type DiagramEditorConfig = {
@@ -408,6 +415,33 @@ export class DiagramEditor {
     }
 
     /**
+     * Loads a stylesheet from a provided source object/string and applies it.
+     * @param source Stylesheet source payload.
+     * @param options Optional load behavior.
+     * @returns True when loading succeeded; otherwise false.
+     */
+    public async loadStylesheet(source: StylesheetOpenSource, options?: Pick<StylesheetOpenOptions, 'applyAfterLoad' | 'preferId'>): Promise<boolean> {
+        const loaded = await this.diagram.loadStylesheet(source, options);
+        if (loaded) {
+            this.reflectStyles();
+        }
+        return loaded;
+    }
+
+    /**
+     * Opens a stylesheet using dialog integrations and applies it.
+     * @param options Optional open/load behavior.
+     * @returns True when loading succeeded; otherwise false.
+     */
+    public async openStylesheet(options?: StylesheetOpenOptions): Promise<boolean> {
+        const opened = await this.diagram.openStylesheet(options);
+        if (opened) {
+            this.reflectStyles();
+        }
+        return opened;
+    }
+
+    /**
      * Saves the current diagram using the underlying {@link DiagramEditView}.
      * A prompt will be shown if the diagram has no changes to save.
      * @param options Optional serialization settings.
@@ -415,6 +449,15 @@ export class DiagramEditor {
      */
     public async saveDiagram(options?: DiagramSaveOptions): Promise<string | undefined> {
         return await this.diagram.saveDiagram(options);
+    }
+
+    /**
+     * Saves the currently active stylesheet through the underlying {@link DiagramEditView}.
+     * @param options Optional save behavior.
+     * @returns The resolved filename, or undefined when saving was canceled.
+     */
+    public async saveStylesheet(options?: StylesheetSaveOptions): Promise<string | undefined> {
+        return await this.diagram.saveStylesheet(options);
     }
 
     /**
@@ -1301,6 +1344,12 @@ export class DiagramEditor {
         }
         if (configured?.onExportDiagram) {
             dialogs.onExportDiagram = configured.onExportDiagram;
+        }
+        if (configured?.onOpenStylesheet) {
+            dialogs.onOpenStylesheet = configured.onOpenStylesheet;
+        }
+        if (configured?.onSaveStylesheet) {
+            dialogs.onSaveStylesheet = configured.onSaveStylesheet;
         }
 
         return dialogs;

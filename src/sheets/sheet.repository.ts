@@ -88,6 +88,59 @@ export class SheetRepository {
     }
 
     /**
+     * Resolves a stylesheet source payload into a normalized spec sheet.
+     * Accepts JSON text, embedded/spec-sheet objects, or envelope objects with a nested `sheet` field.
+     * @param source Stylesheet source payload.
+     * @param preferId Optional id used when source omits an id.
+     * @returns Normalized spec sheet.
+     */
+    public resolveSheetSource(source: string | EmbeddedSheet | SpecSheet | { sheet?: EmbeddedSheet | SpecSheet }, preferId?: string): SpecSheet {
+        let payload: any = source;
+
+        if (typeof source === 'string') {
+            try {
+                payload = JSON.parse(source);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : String(error);
+                throw new Error(`Invalid stylesheet JSON string provided, ${message}`);
+            }
+        }
+
+        if (payload && typeof payload === 'object' && payload.sheet && typeof payload.sheet === 'object') {
+            payload = payload.sheet;
+        }
+
+        const embedded = this.readEmbedded(payload ?? {});
+        const fallbackId = `sheet-${Date.now()}`;
+        const rawId = `${payload?.id ?? preferId ?? fallbackId}`.trim();
+        const id = rawId || fallbackId;
+        const rawName = `${payload?.name ?? id}`.trim();
+        const name = rawName || id;
+
+        return {
+            id,
+            name,
+            version: payload?.version,
+            description: payload?.description,
+            diagram: embedded.diagram ?? {},
+            types: embedded.types ?? {},
+            classes: embedded.classes ?? {},
+        };
+    }
+
+    /**
+     * Resolves a stylesheet source payload and upserts it into the repository.
+     * @param source Stylesheet source payload.
+     * @param preferId Optional id used when source omits an id.
+     * @returns The stored spec sheet.
+     */
+    public upsertSheetFromSource(source: string | EmbeddedSheet | SpecSheet | { sheet?: EmbeddedSheet | SpecSheet }, preferId?: string): SpecSheet {
+        const sheet = this.resolveSheetSource(source, preferId);
+        this.upsertSheet(sheet);
+        return this.writeSheet(sheet.id);
+    }
+
+    /**
      * Writes a repository sheet to an embedded-serialization payload.
      * @param sheet_id Sheet identifier to serialize.
      * @returns Embedded sheet payload.

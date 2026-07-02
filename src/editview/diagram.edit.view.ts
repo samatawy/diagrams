@@ -25,6 +25,10 @@ import type {
     DiagramOpenSource,
     DiagramSaveOptions,
     DiagramSaveResult,
+    StylesheetOpenOptions,
+    StylesheetOpenSource,
+    StylesheetSaveOptions,
+    StylesheetSaveResult,
 } from "../io";
 
 import { NodeRegistry } from "../factory/node.registry";
@@ -265,6 +269,23 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Indicates whether open-stylesheet operations are available.
+     * @returns True when file dialog integrations are configured.
+     */
+    public get canOpenStylesheet(): boolean {
+        return !!this.fileDialogs;
+    }
+
+    /**
+     * Indicates whether there is an active stylesheet that can be saved.
+     * @returns True when a current sheet can be resolved from the repository.
+     */
+    public get canSaveStylesheet(): boolean {
+        const current = this.currentSheet;
+        return !!(current && this.sheetRepository.sheet(current.id));
+    }
+
+    /**
      * Clears the current diagram after resolving any unsaved-change prompt.
      * A prompt will be shown if the diagram has unsaved changes.
      * @returns True when a new empty diagram was created; otherwise false.
@@ -392,6 +413,105 @@ export class DiagramEditView extends DiagramView {
         });
     }
 
+    /**
+     * Loads a stylesheet payload into the repository and optionally applies it.
+     * @param source Stylesheet source as JSON string or sheet object.
+     * @param options Optional load behavior.
+     * @returns True when loading succeeded; otherwise false.
+     */
+    public async loadStylesheet(source: StylesheetOpenSource, options: Pick<StylesheetOpenOptions, 'applyAfterLoad' | 'preferId'> = {}): Promise<boolean> {
+        try {
+            const sheet = this.sheetRepository.upsertSheetFromSource(source, options.preferId);
+
+            if (options.applyAfterLoad ?? true) {
+                this.setCurrentSheet(sheet.id);
+            } else {
+                this.emitSheetLoaded();
+            }
+
+            this.render('all');
+            this.renderPreview();
+            return true;
+        } catch (error) {
+            console.warn('[DiagramEditView] Failed to load stylesheet:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Opens a stylesheet using configured dialog behavior and delegates to {@link loadStylesheet}.
+     * @param options Optional open/load options.
+     * @returns True when loading succeeded; otherwise false.
+     */
+    public async openStylesheet(options: StylesheetOpenOptions = {}): Promise<boolean> {
+        if (options.source) {
+            return await this.loadStylesheet(options.source, options);
+        }
+
+        const resolved = await this.fileDialogs?.openStylesheet(options);
+        if (!resolved) {
+            return false;
+        }
+
+        return await this.loadStylesheet(resolved.source, options);
+    }
+
+    /**
+     * Saves the current stylesheet (or a targeted sheet id) as JSON.
+     * @param options Optional save behavior.
+     * @returns The resolved filename, or undefined when canceled.
+     */
+    public async saveStylesheet(options: StylesheetSaveOptions = {}): Promise<string | undefined> {
+        const current = this.currentSheet;
+        const sheetId = options.sheetId ?? current?.id ?? this.sheet_id;
+        if (!sheetId) {
+            return undefined;
+        }
+
+        const sheet = this.sheetRepository.sheet(sheetId);
+        if (!sheet) {
+            return undefined;
+        }
+
+        const defaultFileName = options.fileName
+            ?? `${this.sanitizeStylesheetFileStem(sheet.name || sheet.id || 'stylesheet')}.json`;
+
+        const resolved: StylesheetSaveResult | undefined = this.fileDialogs
+            ? await this.fileDialogs.saveStylesheet({
+                ...options,
+                fileName: defaultFileName,
+                mimeType: options.mimeType ?? 'application/json',
+            })
+            : {
+                ...options,
+                fileName: defaultFileName,
+                mimeType: options.mimeType ?? 'application/json',
+            };
+        if (!resolved) {
+            return undefined;
+        }
+
+        const serializer = resolved.serializer ?? jsonSerializer;
+        const serialized = serializer.write(this.sheetRepository.writeEmbedded(sheet.id));
+        let content = serialized;
+        if (resolved.pretty ?? true) {
+            try {
+                content = JSON.stringify(JSON.parse(serialized), null, 2);
+            } catch {
+                content = serialized;
+            }
+        }
+
+        const mimeType = resolved.mimeType ?? 'application/json';
+        if (resolved.handle) {
+            return await writeTextToFileHandle(resolved.handle, content, mimeType);
+        }
+
+        const fileName = resolved.fileName ?? defaultFileName;
+        const blob = exportTextBlob(content, mimeType);
+        return downloadBlob(blob, fileName);
+    }
+
     // public async exportDiagram(options: DiagramExportOptions = {}): Promise<string | Uint8Array | Blob | undefined> {
     //     const resolved: DiagramExportResult | undefined = this.fileDialogs
     //         ? await this.fileDialogs.exportDiagram(options)
@@ -464,6 +584,18 @@ export class DiagramEditView extends DiagramView {
         this.render('all');
         this.renderPreview();
         this.emitDiagramModelChanged('load');
+    }
+
+    /**
+     * Produces a safe filesystem stem from a stylesheet name/id.
+     */
+    private sanitizeStylesheetFileStem(value: string): string {
+        const stem = value
+            .replace(/[<>:"/\\|?*\u0000-\u001F]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        return stem || 'stylesheet';
     }
 
     /**

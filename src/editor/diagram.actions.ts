@@ -8,6 +8,7 @@ import { NORMAL_FONT_WEIGHT, BOLD_FONT_WEIGHT } from '../style.interfaces';
  * Available built-in diagram actions. These can be used in the toolbar layout, context menu, etc.
  */
 export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
+    'load-stylesheet' | 'save-stylesheet' |
     'show-grid' | 'snap-grid' | 'show-guides' | 'snap-guides' |
     'zoom-in' | 'zoom-out' | 'fit-width' | 'fit-all' |
     'undo' | 'redo' |
@@ -82,6 +83,21 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Export the diagram as an image or file',
         execute: async (d) => { await d.saveImageDiagram(); },
     },
+    {
+        id: 'load-stylesheet',
+        label: 'Load Stylesheet',
+        tooltip: 'Load a stylesheet for the diagram',
+        execute: async (d) => { await d.openStylesheet(); },
+        isEnabled: (d) => d.canOpenStylesheet,
+    },
+    {
+        id: 'save-stylesheet',
+        label: 'Save Stylesheet',
+        tooltip: 'Save the current stylesheet',
+        execute: async (d) => { await d.saveStylesheet(); },
+        isEnabled: (d) => d.canSaveStylesheet,
+    },
+
     {
         id: 'undo',
         label: 'Undo',
