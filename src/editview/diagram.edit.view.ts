@@ -2876,6 +2876,7 @@ export class DiagramEditView extends DiagramView {
                         byX: 0,
                         byY: 0,
                         downShapeId: this.downShape?.id,
+                        handle: this.downHandle,
                     });
 
                     if (guideResult) {
@@ -2934,6 +2935,7 @@ export class DiagramEditView extends DiagramView {
                     byX: 0,
                     byY: 0,
                     downShapeId: this.downShape?.id,
+                    handle: this.downHandle,
                 });
 
                 if (guideResult) {
@@ -4590,6 +4592,7 @@ export class DiagramEditView extends DiagramView {
                 byX,
                 byY,
                 downShapeId: this.downShape?.id,
+                handle: NodeHandle.MOVE,
             });
 
             if (guideResult) {
@@ -4684,6 +4687,7 @@ export class DiagramEditView extends DiagramView {
                 byX,
                 byY,
                 downShapeId: this.downShape?.id,
+                handle,
             });
 
             if (guideResult) {

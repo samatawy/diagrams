@@ -186,6 +186,11 @@ export interface GuidesComputeInput {
      * Optional down-shape id to explicitly exclude from candidate matching. 
      */
     downShapeId?: string;
+    /**
+     * Active interaction handle. When provided, guides are restricted to the
+     * edges that are actually moving, matching the snap behavior of pointer-up.
+     */
+    handle?: NodeHandle;
 }
 
 /**
@@ -263,7 +268,7 @@ export class Guides {
 
         const options = this.buildSnapOptions(input.diagram.grid, input.byX, input.byY);
 
-        return this.snapWithGuides(bounds, candidates, options);
+        return this.snapWithGuides(bounds, candidates, options, input.handle);
     }
 
     /**
@@ -441,12 +446,25 @@ export class Guides {
      * @param options Snap behavior options.
      * @returns Snap result augmented with renderable guides.
      */
-    private static snapWithGuides(movingRect: IRect, candidates: SnapCandidate[], options: SnapOptions = {}): SnapGuideResult {
+    private static snapWithGuides(movingRect: IRect, candidates: SnapCandidate[], options: SnapOptions = {}, handle?: NodeHandle): SnapGuideResult {
         const result = this.snapDelta(movingRect, candidates, options);
         const xGuideThreshold = this.thresholdForAxis(options, 'x', 'render');
         const yGuideThreshold = this.thresholdForAxis(options, 'y', 'render');
-        const xGuideMatches = result.xMatches.filter(match => match.distance <= xGuideThreshold);
-        const yGuideMatches = result.yMatches.filter(match => match.distance <= yGuideThreshold);
+        const isMove = !handle || handle === NodeHandle.MOVE;
+        const xSourceKey = isMove ? undefined : this.handleSourceKey(handle, 'x');
+        const ySourceKey = isMove ? undefined : this.handleSourceKey(handle, 'y');
+
+        const xFiltered = result.xMatches.filter(
+            m => m.distance <= xGuideThreshold && (xSourceKey === undefined || m.sourcePoint === xSourceKey)
+        );
+        const xBest = xFiltered[0]?.distance ?? Infinity;
+        const xGuideMatches = xFiltered.filter(m => m.distance === xBest);
+
+        const yFiltered = result.yMatches.filter(
+            m => m.distance <= yGuideThreshold && (ySourceKey === undefined || m.sourcePoint === ySourceKey)
+        );
+        const yBest = yFiltered[0]?.distance ?? Infinity;
+        const yGuideMatches = yFiltered.filter(m => m.distance === yBest);
 
         return {
             ...result,
