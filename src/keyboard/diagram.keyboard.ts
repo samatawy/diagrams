@@ -1,4 +1,3 @@
-import type { DiagramView } from "../view";
 import type { KeyboardShortcut } from "./keyboard.shortcut";
 
 export class DiagramKeyboard<T> {

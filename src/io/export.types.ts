@@ -1,5 +1,10 @@
 import type { Diagram } from "../model/diagram";
+import type { EmbeddedSheet, SpecSheet } from "../sheets/spec.sheet";
 import type { ISerializedDiagram, ISerializer } from "./serialized.types";
+
+// ==================================================
+// ================ Diagram open/save ===============
+// ==================================================
 
 export type DiagramExportFormat = 'json' | 'bytes' | 'blob';
 
@@ -45,6 +50,10 @@ export interface DiagramSaveResult extends DiagramSaveOptions {
     handle?: FileSystemFileHandle;
 }
 
+// ==================================================
+// ================== Image export ==================
+// ==================================================
+
 export interface DiagramExportOptions {
     format?: DiagramExportFormat;
     pretty?: boolean;
@@ -54,5 +63,34 @@ export interface DiagramExportOptions {
 }
 
 export interface DiagramExportResult extends DiagramExportOptions {
+    handle?: FileSystemFileHandle;
+}
+
+// ==================================================
+// =============== Stylesheet open/save =============
+// ==================================================
+
+export type StylesheetOpenSource = string | EmbeddedSheet | SpecSheet;
+
+export interface StylesheetOpenOptions {
+    source?: StylesheetOpenSource;
+    applyAfterLoad?: boolean;
+    preferId?: string;
+}
+
+export interface StylesheetOpenResult {
+    source: StylesheetOpenSource;
+    handle?: FileSystemFileHandle;
+}
+
+export interface StylesheetSaveOptions {
+    sheetId?: string;
+    fileName?: string;
+    serializer?: ISerializer;
+    pretty?: boolean;
+    mimeType?: string;
+}
+
+export interface StylesheetSaveResult extends StylesheetSaveOptions {
     handle?: FileSystemFileHandle;
 }

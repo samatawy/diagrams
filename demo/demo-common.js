@@ -76,19 +76,15 @@ export function registerAdapters() {
 }
 
 export function makeBox(owner, id, type, left, top, width, height, options = {}) {
-    const strokeStyle = (typeof options.strokeStyle === 'string')
-        ? {
-            color: options.strokeStyle,
-            ...(options.lineWidth !== undefined ? { width: options.lineWidth } : {}),
-            ...(options.lineDash !== undefined ? { dash: options.lineDash } : {}),
-            ...(options.arrow !== undefined ? { arrow: options.arrow } : {}),
-        }
-        : {
-            ...(options.strokeStyle || {}),
-            ...(options.lineWidth !== undefined ? { width: options.lineWidth } : {}),
-            ...(options.lineDash !== undefined ? { dash: options.lineDash } : {}),
-            ...(options.arrow !== undefined ? { arrow: options.arrow } : {}),
-        };
+    const strokeStyle = options.strokeStyle ? { ...options.strokeStyle } : undefined;
+    const textStyle = {
+        align: 'center',
+        baseline: 'middle',
+        fontFace: 'Georgia',
+        size: 16,
+        color: strokeStyle?.color ?? '#1f2937',
+        ...(options.textStyle || {}),
+    };
 
     return {
         id,
@@ -99,20 +95,10 @@ export function makeBox(owner, id, type, left, top, width, height, options = {})
         ],
         hollow: options.hollow ?? false,
         text: options.text ?? '',
-        textStyle: {
-            align: options.textAlign ?? 'center',
-            baseline: options.textBaseline ?? 'middle',
-            fontFace: options.fontFace ?? 'Georgia',
-            size: options.fontSize ?? 16,
-            color: options.textColor ?? (strokeStyle.color ?? '#1f2937'),
-            orientation: options.textOrientation,
-            bold: options.textBold ?? false,
-            italic: options.textItalic ?? false,
-        },
+        textStyle,
         image_id: undefined,
-        img_mode: 'none',
+        image_mode: 'none',
         ready: options.ready ?? true,
-        transparent: options.transparent ?? false,
         strokeStyle,
         fillStyle: options.fillStyle ?? '#ffffff',
         shadowStyle: options.shadowStyle,
@@ -122,19 +108,19 @@ export function makeBox(owner, id, type, left, top, width, height, options = {})
 }
 
 export function makeLine(owner, id, points, options = {}) {
-    const strokeStyle = (typeof options.strokeStyle === 'string')
-        ? {
-            color: options.strokeStyle,
-            ...(options.lineWidth !== undefined ? { width: options.lineWidth } : {}),
-            ...(options.lineDash !== undefined ? { dash: options.lineDash } : {}),
-            arrow: options.arrow ?? 'end',
-        }
-        : {
-            ...(options.strokeStyle || {}),
-            ...(options.lineWidth !== undefined ? { width: options.lineWidth } : {}),
-            ...(options.lineDash !== undefined ? { dash: options.lineDash } : {}),
-            arrow: options.arrow ?? options.strokeStyle?.arrow ?? 'end',
-        };
+    const strokeStyle = {
+        arrow: 'end',
+        ...(options.strokeStyle || {}),
+    };
+
+    const textStyle = {
+        align: 'center',
+        baseline: 'middle',
+        fontFace: 'Georgia',
+        size: 16,
+        color: strokeStyle.color ?? '#334155',
+        ...(options.textStyle || {}),
+    };
 
     return {
         id,
@@ -144,20 +130,13 @@ export function makeLine(owner, id, points, options = {}) {
         to: options.to,
         hollow: true,
         text: options.text ?? '',
-        textStyle: {
-            align: 'center',
-            baseline: 'middle',
-            fontFace: options.fontFace ?? 'Georgia',
-            size: options.fontSize ?? 16,
-            color: options.textColor ?? (strokeStyle.color ?? '#334155'),
-        },
+        textStyle,
         image_id: undefined,
-        img_mode: 'none',
+        image_mode: 'none',
         ready: options.ready ?? true,
-        transparent: false,
         strokeStyle,
         fillStyle: 'transparent',
-        shadowStyle: undefined,
+        shadowStyle: options.shadowStyle,
         angle: 0,
         owner,
     };

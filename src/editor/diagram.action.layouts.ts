@@ -7,6 +7,11 @@ export const DIAGRAM_FILE_ACTION_LAYOUT: DiagramActionId[] = [
     'export',
 ];
 
+export const DIAGRAM_STYLESHEET_ACTION_LAYOUT: DiagramActionId[] = [
+    'load-stylesheet',
+    'save-stylesheet',
+];
+
 export const DIAGRAM_VIEW_ACTION_LAYOUT: DiagramActionId[] = [
     'show-grid',
     'snap-grid',

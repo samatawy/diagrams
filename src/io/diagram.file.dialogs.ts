@@ -1,11 +1,27 @@
 import { isBrowserRuntime } from "./browser.support";
-import type { DiagramExportFormat, DiagramExportOptions, DiagramExportResult, DiagramOpenOptions, DiagramOpenResult, DiagramSaveOptions, DiagramSaveResult } from "./export.types";
+import type {
+    DiagramExportFormat,
+    DiagramExportOptions,
+    DiagramExportResult,
+    DiagramOpenOptions,
+    DiagramOpenResult,
+    DiagramSaveOptions,
+    DiagramSaveResult,
+    StylesheetOpenOptions,
+    StylesheetOpenResult,
+    StylesheetSaveOptions,
+    StylesheetSaveResult,
+} from "./export.types";
 
 export type DiagramOpenHandler = (options?: DiagramOpenOptions) => Promise<DiagramOpenResult | undefined> | DiagramOpenResult | undefined;
 
 export type DiagramSaveHandler = (options?: DiagramSaveOptions) => Promise<DiagramSaveResult | undefined> | DiagramSaveResult | undefined;
 
 export type DiagramExportHandler = (options?: DiagramExportOptions) => Promise<DiagramExportResult | undefined> | DiagramExportResult | undefined;
+
+export type DiagramOpenStylesheetHandler = (options?: StylesheetOpenOptions) => Promise<StylesheetOpenResult | undefined> | StylesheetOpenResult | undefined;
+
+export type DiagramSaveStylesheetHandler = (options?: StylesheetSaveOptions) => Promise<StylesheetSaveResult | undefined> | StylesheetSaveResult | undefined;
 
 export class DiagramFileDialogs {
 
@@ -14,6 +30,10 @@ export class DiagramFileDialogs {
     public onSaveDiagram?: DiagramSaveHandler;
 
     public onExportDiagram?: DiagramExportHandler;
+
+    public onOpenStylesheet?: DiagramOpenStylesheetHandler;
+
+    public onSaveStylesheet?: DiagramSaveStylesheetHandler;
 
     public async openDiagram(options?: DiagramOpenOptions): Promise<DiagramOpenResult | undefined> {
         if (options?.source) {
@@ -43,8 +63,32 @@ export class DiagramFileDialogs {
         return await this.exportDiagramDefault(options);
     }
 
+    public async openStylesheet(options?: StylesheetOpenOptions): Promise<StylesheetOpenResult | undefined> {
+        if (options?.source) {
+            return { source: options.source };
+        }
+
+        if (this.onOpenStylesheet) {
+            return await this.onOpenStylesheet(options);
+        }
+
+        return await this.openStylesheetDefault();
+    }
+
+    public async saveStylesheet(options: StylesheetSaveOptions = {}): Promise<StylesheetSaveResult | undefined> {
+        if (this.onSaveStylesheet) {
+            return await this.onSaveStylesheet(options);
+        }
+
+        return await this.saveStylesheetDefault(options);
+    }
+
     public async openDiagramDefault(): Promise<DiagramOpenResult | undefined> {
-        return await this.openFromBrowserDialog();
+        return await this.openFromBrowserDialog<DiagramOpenResult>('Diagram JSON');
+    }
+
+    public async openStylesheetDefault(): Promise<StylesheetOpenResult | undefined> {
+        return await this.openFromBrowserDialog<StylesheetOpenResult>('Stylesheet JSON');
     }
 
     public async saveDiagramDefault(options: DiagramSaveOptions = {}): Promise<DiagramSaveResult | undefined> {
@@ -66,7 +110,15 @@ export class DiagramFileDialogs {
         });
     }
 
-    private async openFromBrowserDialog(): Promise<DiagramOpenResult | undefined> {
+    public async saveStylesheetDefault(options: StylesheetSaveOptions = {}): Promise<StylesheetSaveResult | undefined> {
+        return await this.resolveSaveTarget({
+            ...options,
+            fileName: options.fileName ?? 'stylesheet.json',
+            mimeType: options.mimeType ?? 'application/json',
+        });
+    }
+
+    private async openFromBrowserDialog<T extends { source: unknown; handle?: FileSystemFileHandle }>(description: string): Promise<T | undefined> {
         if (!isBrowserRuntime()) {
             return undefined;
         }
@@ -76,7 +128,7 @@ export class DiagramFileDialogs {
             const [handle] = await picker({
                 multiple: false,
                 types: [{
-                    description: 'Diagram JSON',
+                    description,
                     accept: { 'application/json': ['.json'] },
                 }],
             });
@@ -89,10 +141,10 @@ export class DiagramFileDialogs {
             return {
                 source: await file.text(),
                 handle,
-            };
+            } as T;
         }
 
-        return await new Promise<DiagramOpenResult | undefined>((resolve) => {
+        return await new Promise<T | undefined>((resolve) => {
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = '.json,application/json';
@@ -111,7 +163,7 @@ export class DiagramFileDialogs {
                 }
 
                 try {
-                    resolve({ source: await file.text() });
+                    resolve({ source: await file.text() } as T);
                 } finally {
                     cleanup();
                 }

@@ -141,10 +141,27 @@ IconRegistry.registerSymbol('save', 'save', sym('save', `<path d="M19 21H5a2 2 0
   <polyline points="17 21 17 13 7 13 7 21"/>
   <polyline points="7 3 7 8 15 8"/>`));
 
-// Export (Arrow pointing out of a tray/box)
-IconRegistry.registerSymbol('export', 'export', sym('export', `<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
-  <polyline points="16 6 12 2 8 6"/>
-  <line x1="12" y1="2" x2="12" y2="15"/>`));
+// Export image — floppy disk with an empty overlay box in the top-right.
+IconRegistry.registerSymbol('export', 'export', sym('export', `<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+    <polyline points="17 21 17 13 7 13 7 21"/>
+    <polyline points="7 3 7 8 15 8"/>
+    <path d="M11 1h7l5 5v8a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z" fill="white"/>
+    <path d="M11 1h7l5 5v8a2 2 0 0 1-2 2H11a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/>
+    <polyline points="18 1 18 6 23 6"/>`));
+
+// Load stylesheet — folder base with marker overlay slightly protruding from the top-right.
+IconRegistry.registerSymbol('load-stylesheet', 'load-stylesheet', sym('load-stylesheet', `<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>
+    <path d="m2.748 24a2.755 2.755 0 0 1 -2.719-3.151c.259-1.806 1.133-5.134 2.373-6.374a5.037 5.037 0 0 1 7.123 7.125c-1.239 1.239-4.567 2.113-6.374 2.372a2.741 2.741 0 0 1 -.403.028zm20.352-23.1a3.139 3.139 0 0 0 -4.33 0l-10.5 10.5a6.976 6.976 0 0 1 4.33 4.338l10.5-10.508a3.068 3.068 0 0 0 0-4.33z"
+        transform="translate(7.9 1.8) scale(0.7)"
+        fill="currentColor" stroke="none"/>`));
+
+// Save stylesheet — classic floppy base with marker overlay slightly protruding from the top-right.
+IconRegistry.registerSymbol('save-stylesheet', 'save-stylesheet', sym('save-stylesheet', `<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+    <polyline points="17 21 17 13 7 13 7 21"/>
+    <polyline points="7 3 7 8 15 8"/>
+    <path d="m2.748 24a2.755 2.755 0 0 1 -2.719-3.151c.259-1.806 1.133-5.134 2.373-6.374a5.037 5.037 0 0 1 7.123 7.125c-1.239 1.239-4.567 2.113-6.374 2.372a2.741 2.741 0 0 1 -.403.028zm20.352-23.1a3.139 3.139 0 0 0 -4.33 0l-10.5 10.5a6.976 6.976 0 0 1 4.33 4.338l10.5-10.508a3.068 3.068 0 0 0 0-4.33z"
+        transform="translate(8.3 1.8) scale(0.7)"
+        fill="currentColor" stroke="none"/>`));
 
 // 
 IconRegistry.registerSymbol('undo', 'undo',
@@ -196,24 +213,21 @@ IconRegistry.registerSymbol('hint', 'hint',
 IconRegistry.registerSymbol('info', 'info',
     sym('info', '<circle cx="12" cy="12" r="9" stroke-opacity="0.55"/><line x1="12" y1="10" x2="12" y2="17"/><circle cx="12" cy="7" r="1" fill="currentColor" stroke="none"/>'));
 
-// copy-styles: copy icon (two overlapping pages) — sun dot + mountain ridge drawn
-// directly inside the front page rect (no inner frame).
+// copy-styles: copy base icon with marker overlay to represent style transfer.
 IconRegistry.registerSymbol('copy-styles', 'copy-styles',
     sym('copy-styles', `<rect x="9" y="9" width="13" height="13" rx="2"/>
   <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-  <circle cx="12.5" cy="13" r="2" fill="currentColor" stroke="none"/>
-  <polyline points="9 22 13.5 16 17 20 22 14"/>`));
+    <path d="m2.748 24a2.755 2.755 0 0 1 -2.719-3.151c.259-1.806 1.133-5.134 2.373-6.374a5.037 5.037 0 0 1 7.123 7.125c-1.239 1.239-4.567 2.113-6.374 2.372a2.741 2.741 0 0 1 -.403.028zm20.352-23.1a3.139 3.139 0 0 0 -4.33 0l-10.5 10.5a6.976 6.976 0 0 1 4.33 4.338l10.5-10.508a3.068 3.068 0 0 0 0-4.33z"
+        transform="translate(8.1 1.8) scale(0.65)"
+        fill="currentColor" stroke="none"/>`));
 
-// paste-styles: paste clipboard — sun dot + mountain ridge drawn directly inside the
-// clipboard body (no inner frame) + three dots on the right to signal "apply to all".
+// paste-styles: paste base icon with marker overlay to represent style application.
 IconRegistry.registerSymbol('paste-styles', 'paste-styles',
     sym('paste-styles', `<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
   <rect x="8" y="2" width="8" height="4" rx="1"/>
-  <circle cx="8" cy="12" r="2" fill="currentColor" stroke="none"/>
-  <polyline points="4 21 9 14 13 17.5 19 11"/>
-  <circle cx="21" cy="12" r="1.2" fill="currentColor" stroke="none"/>
-  <circle cx="21" cy="16" r="1.2" fill="currentColor" stroke="none"/>
-  <circle cx="21" cy="20" r="1.2" fill="currentColor" stroke="none"/>`));
+    <path d="m2.748 24a2.755 2.755 0 0 1 -2.719-3.151c.259-1.806 1.133-5.134 2.373-6.374a5.037 5.037 0 0 1 7.123 7.125c-1.239 1.239-4.567 2.113-6.374 2.372a2.741 2.741 0 0 1 -.403.028zm20.352-23.1a3.139 3.139 0 0 0 -4.33 0l-10.5 10.5a6.976 6.976 0 0 1 4.33 4.338l10.5-10.508a3.068 3.068 0 0 0 0-4.33z"
+        transform="translate(8.2 1.6) scale(0.66)"
+        fill="currentColor" stroke="none"/>`));
 
 // align-text
 
@@ -365,8 +379,39 @@ IconRegistry.registerSymbol('parallelogram', 'tool-parallelogram',
 IconRegistry.registerSymbol('ellipse', 'tool-ellipse',
     sym('tool-ellipse', '<ellipse cx="12" cy="12" rx="10" ry="7"/>'));
 
+IconRegistry.registerSymbol('circle', 'tool-circle',
+    sym('tool-circle', '<circle cx="12" cy="12" r="8"/>'));
+
+// BPMN start event: single thin ring.
+IconRegistry.registerSymbol('bpmn_start_event', 'tool-bpmn-start',
+    sym('tool-bpmn-start', '<circle cx="12" cy="12" r="8"/>'));
+
+// BPMN intermediate event: double ring.
+IconRegistry.registerSymbol('bpmn_intermediate_event', 'tool-bpmn-intermediate',
+    sym('tool-bpmn-intermediate', '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="5"/>'));
+
+// BPMN end event: bold outer ring.
+IconRegistry.registerSymbol('bpmn_end_event', 'tool-bpmn-end',
+    sym('tool-bpmn-end', '<circle cx="12" cy="12" r="8" stroke-width="4"/>'));
+
 IconRegistry.registerSymbol('rhombus', 'tool-rhombus',
     sym('tool-rhombus', '<polygon points="12 2 22 12 12 22 2 12"/>'));
+
+// BPMN parallel gateway: diamond with X marker.
+IconRegistry.registerSymbol('bpmn_parallel_gateway', 'tool-bpmn-parallel-gateway',
+    sym('tool-bpmn-parallel-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="9.25" y1="9.25" x2="14.75" y2="14.75"/><line x1="14.75" y1="9.25" x2="9.25" y2="14.75"/>'));
+
+// BPMN inclusive gateway: diamond with inner ring.
+IconRegistry.registerSymbol('bpmn_inclusive_gateway', 'tool-bpmn-inclusive-gateway',
+    sym('tool-bpmn-inclusive-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><circle cx="12" cy="12" r="3.5"/>'));
+
+// BPMN exclusive gateway: diamond with plus marker.
+IconRegistry.registerSymbol('bpmn_exclusive_gateway', 'tool-bpmn-exclusive-gateway',
+    sym('tool-bpmn-exclusive-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="12" y1="8.5" x2="12" y2="15.5"/><line x1="8.5" y1="12" x2="15.5" y2="12"/>'));
+
+// BPMN complex gateway: diamond with star/asterisk marker.
+IconRegistry.registerSymbol('bpmn_complex_gateway', 'tool-bpmn-complex-gateway',
+    sym('tool-bpmn-complex-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="12" y1="8.25" x2="12" y2="15.75"/><line x1="8.75" y1="10.125" x2="15.25" y2="13.875"/><line x1="15.25" y1="10.125" x2="8.75" y2="13.875"/>'));
 
 IconRegistry.registerSymbol('text', 'tool-text',
     sym('tool-text', '<line x1="4" y1="6" x2="20" y2="6"/><line x1="12" y1="6" x2="12" y2="20"/>'));

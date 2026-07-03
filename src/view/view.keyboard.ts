@@ -20,38 +20,38 @@ export class DiagramViewKeyboard<T extends DiagramView = DiagramView> extends Di
         }, 'Fit to width');
 
         kb.setShortcut(['Ctrl+0', 'Cmd+0'], (d: T) => {
-            d.zoomTo(1);
+            d.zoomTo(1, undefined, undefined, 'animate');
         }, 'Reset zoom');
 
         kb.setShortcut(['Ctrl+Plus', 'Ctrl+=', 'Cmd+Plus', 'Cmd+='], (d: T) => {
-            d.zoomBy(1.01);
+            d.zoomBy(1.01, undefined, undefined, 'animate');
         }, 'Zoom in');
 
         kb.setShortcut(['Ctrl+Minus', 'Cmd+Minus'], (d: T) => {
-            d.zoomBy(0.99);
+            d.zoomBy(0.99, undefined, undefined, 'animate');
         }, 'Zoom out');
 
         kb.setShortcut(['ArrowUp'], (d: T) => {
             const dy = (d.grid.forced) ? d.grid.width : 4;
-            d.panBy(0, -dy);
+            d.panBy(0, -dy, 'animate');
             d.render();
         }, 'Pan up');
 
         kb.setShortcut(['ArrowDown'], (d: T) => {
             const dy = (d.grid.forced) ? d.grid.width : 4;
-            d.panBy(0, dy);
+            d.panBy(0, dy, 'animate');
             d.render();
         }, 'Pan down');
 
         kb.setShortcut(['ArrowLeft'], (d: T) => {
             const dx = (d.grid.forced) ? d.grid.width : 4;
-            d.panBy(-dx, 0);
+            d.panBy(-dx, 0, 'animate');
             d.render();
         }, 'Pan left');
 
         kb.setShortcut(['ArrowRight'], (d: T) => {
             const dx = (d.grid.forced) ? d.grid.width : 4;
-            d.panBy(dx, 0);
+            d.panBy(dx, 0, 'animate');
             d.render();
         }, 'Pan right');
     }

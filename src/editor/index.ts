@@ -1,14 +1,7 @@
 // Unbound components
-export * from './inputs/color.select';
-export * from './inputs/width.select';
-export * from './inputs/font.select';
-export * from './inputs/size.select';
-export * from './inputs/integer.range.select';
-export * from './inputs/arrow.select';
-export * from './inputs/image.select';
-export * from './inputs/image.mode.select';
-export * from './inputs/image.align.select';
+export * from './inputs/index';
 export * from './prompt.dialog';
+export * from './editor.utils';
 
 // Theming
 export * from './theme.registry';
@@ -18,19 +11,13 @@ export * from './diagram.actions';
 export * from './diagram.action.layouts';
 
 // Button components
-export * from './buttons/tool.palette';
-export * from './buttons/toolbar';
-export * from './buttons/diagram.toolbar';
+export * from './buttons/index';
 
 // Menu components
-export * from './menus/context.menu';
-export * from './menus/diagram.context.menu';
+export * from './menus/index';
 
 // Inspector
-export * from './inspector/inspector';
-export * from './inspector/diagram.inspector';
-export * from './inspector/enum.select.adapter';
-export * from './inspector/text.input.adapter';
+export * from './inspector/index';
 
 // Editor component
 export * from './diagram.editor';

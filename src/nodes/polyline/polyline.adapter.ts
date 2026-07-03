@@ -1,11 +1,11 @@
 import { NodeRegistry } from "../../factory/node.registry";
 import { type IGrid, type INode } from "../../interfaces";
-import { NodeHandle, type IPoint, type IRect, type ITextOrientation } from "../../types";
+import { NodeHandle, type IPoint, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { ConnectionBasics } from "../connection.basics";
 import { RenderBasics } from "../render.basics";
-import type { HollowMode, INodeAdapter, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
+import type { HollowMode, INodeAdapter, SpecificOptions, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
 import { isHollow, lineWidth, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 import { NodeBasics } from "../node.basics";
@@ -35,8 +35,10 @@ export class PolylineAdapter implements INodeAdapter {
     is_connector = true;
     multistep_create = true;
     has_text = true;
+    single_line_text = true;
     text_overflow: TextOverflowMode = 'visible';
     text_orientations: ITextOrientation[] = ['horizontal', 'path'];
+    text_baselines: ITextBaseline[] = ['middle'];
 
     /**
      * Registers the PolylineAdapter with the NodeRegistry.
@@ -103,7 +105,7 @@ export class PolylineAdapter implements INodeAdapter {
         }
     }
 
-    public render(node: INode, context: CanvasRenderingContext2D): void {
+    public render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -112,7 +114,8 @@ export class PolylineAdapter implements INodeAdapter {
 
         if (node.points.length > 1) {
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
+
             if (isConnectionNode(node)) {
                 ConnectionBasics.syncEndpoints(node);
             }
@@ -128,7 +131,7 @@ export class PolylineAdapter implements INodeAdapter {
                 RenderBasics.renderArrows(node, context);
             }
 
-            if (node.text) {
+            if (node.text && show !== 'quick') {
                 // RenderBasics.renderText(node, context, { overflow: this.text_overflow });
                 const { from, to } = NodeBasics.longestSegment(node.points) || { from: node.points[0]!, to: node.points[1]! };
                 RenderBasics.renderText(node, context, { overflow: this.text_overflow, from, to });
@@ -172,6 +175,10 @@ export class PolylineAdapter implements INodeAdapter {
 
     public getVisualRect(_node: INode, rect: IRect): IRect {
         return rect;
+    }
+
+    public specificOptions(node: INode, path: string): SpecificOptions | undefined {
+        return undefined;
     }
 
     public write(node: INode, serializer: any): any {

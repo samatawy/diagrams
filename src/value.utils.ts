@@ -13,6 +13,10 @@ export function nodeId(node: INode | string): string {
     return typeof node === 'string' ? node : node.id;
 }
 
+export function nodeClass(node: INode): string | undefined {
+    return node.class_name;
+}
+
 export function isLocked(node: INode): boolean {
     return !!node.locked;
 }
@@ -30,7 +34,12 @@ export function textAlign(node: INode): ITextAlign {
 }
 
 export function textBaseline(node: INode): ITextBaseline {
-    return node.textStyle?.baseline || DiagramConstants.DEFAULT_NODE_TEXT_BASELINE;
+    const stored = node.textStyle?.baseline || DiagramConstants.DEFAULT_NODE_TEXT_BASELINE;
+    const allowed = NodeRegistry.adapter(node.type)?.text_baselines;
+    if (allowed && !allowed.includes(stored)) {
+        return allowed[0]!;
+    }
+    return stored;
 }
 
 export function textOrientation(node: INode): ITextOrientation {

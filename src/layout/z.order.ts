@@ -1,17 +1,7 @@
 import type { ILayer, INode } from "../interfaces";
-import type { Diagram } from "../model/diagram";
 import type { DiagramView } from "../view";
 
 export type ZOrderAction = 'bringForward' | 'bringToFront' | 'sendBackward' | 'sendToBack';
-
-// export interface ZOrderHost {
-//     layers: ILayer[];
-//     selection(): INode[];
-//     layer(id: string): ILayer | undefined;
-//     addUndo(): void;
-//     render(what?: 'nodes' | 'selection' | 'all'): void;
-//     renderPreview(layer?: ILayer): void;
-// }
 
 /**
  * Handles z-ordering of nodes and layers in the diagram. This class is used by DiagramEditView to implement the z-ordering methods.

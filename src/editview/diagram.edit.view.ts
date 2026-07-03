@@ -25,6 +25,10 @@ import type {
     DiagramOpenSource,
     DiagramSaveOptions,
     DiagramSaveResult,
+    StylesheetOpenOptions,
+    StylesheetOpenSource,
+    StylesheetSaveOptions,
+    StylesheetSaveResult,
 } from "../io";
 
 import { NodeRegistry } from "../factory/node.registry";
@@ -37,6 +41,7 @@ import {
     type DiagramDeleteRequest,
     type DiagramClipboardOperation,
     type DiagramEditContextMenu,
+    type DiagramSheetLoaded,
 } from "../events/diagram.events";
 import type { ISerializedNode } from "../io";
 
@@ -52,7 +57,9 @@ import {
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
-import type { I } from "vitest/dist/chunks/reporters.d.BuRON0I0.js";
+import type { SheetRepository } from "../sheets/sheet.repository";
+import type { NodeStyle, SpecSheet } from "../sheets/spec.sheet";
+import type { AnimationMode } from "../animation.types";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -66,7 +73,7 @@ export type DiagramEditViewPrompts = {
     onNoChangesSave?: () => boolean | Promise<boolean>;
 };
 
-type EditKeyboardFlags = KeyboardFlags & { forceRectSelection: boolean };
+export type EditKeyboardFlags = KeyboardFlags & { forceRectSelection: boolean };
 
 
 /**
@@ -90,7 +97,8 @@ export class DiagramEditView extends DiagramView {
         tool?: string,
         toolOptions?: { url?: string },
         draft?: INode,
-        zoom_factor: number
+        zoom_factor: number,
+        sheet?: SpecSheet,
     } = {
             layer: undefined,
             toolOptions: undefined,
@@ -252,8 +260,29 @@ export class DiagramEditView extends DiagramView {
     // ========== File methods ==========
     // ===================================================
 
+    /**
+     * Indicates whether open-diagram operations are available.
+     * @returns True when file dialog integrations are configured.
+     */
     public get canOpenDiagram(): boolean {
         return !!this.fileDialogs;
+    }
+
+    /**
+     * Indicates whether open-stylesheet operations are available.
+     * @returns True when file dialog integrations are configured.
+     */
+    public get canOpenStylesheet(): boolean {
+        return !!this.fileDialogs;
+    }
+
+    /**
+     * Indicates whether there is an active stylesheet that can be saved.
+     * @returns True when a current sheet can be resolved from the repository.
+     */
+    public get canSaveStylesheet(): boolean {
+        const current = this.currentSheet;
+        return !!(current && this.sheetRepository.sheet(current.id));
     }
 
     /**
@@ -384,6 +413,105 @@ export class DiagramEditView extends DiagramView {
         });
     }
 
+    /**
+     * Loads a stylesheet payload into the repository and optionally applies it.
+     * @param source Stylesheet source as JSON string or sheet object.
+     * @param options Optional load behavior.
+     * @returns True when loading succeeded; otherwise false.
+     */
+    public async loadStylesheet(source: StylesheetOpenSource, options: Pick<StylesheetOpenOptions, 'applyAfterLoad' | 'preferId'> = {}): Promise<boolean> {
+        try {
+            const sheet = this.sheetRepository.upsertSheetFromSource(source, options.preferId);
+
+            if (options.applyAfterLoad ?? true) {
+                this.setCurrentSheet(sheet.id);
+            } else {
+                this.emitSheetLoaded();
+            }
+
+            this.render('all');
+            this.renderPreview();
+            return true;
+        } catch (error) {
+            console.warn('[DiagramEditView] Failed to load stylesheet:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Opens a stylesheet using configured dialog behavior and delegates to {@link loadStylesheet}.
+     * @param options Optional open/load options.
+     * @returns True when loading succeeded; otherwise false.
+     */
+    public async openStylesheet(options: StylesheetOpenOptions = {}): Promise<boolean> {
+        if (options.source) {
+            return await this.loadStylesheet(options.source, options);
+        }
+
+        const resolved = await this.fileDialogs?.openStylesheet(options);
+        if (!resolved) {
+            return false;
+        }
+
+        return await this.loadStylesheet(resolved.source, options);
+    }
+
+    /**
+     * Saves the current stylesheet (or a targeted sheet id) as JSON.
+     * @param options Optional save behavior.
+     * @returns The resolved filename, or undefined when canceled.
+     */
+    public async saveStylesheet(options: StylesheetSaveOptions = {}): Promise<string | undefined> {
+        const current = this.currentSheet;
+        const sheetId = options.sheetId ?? current?.id ?? this.sheet_id;
+        if (!sheetId) {
+            return undefined;
+        }
+
+        const sheet = this.sheetRepository.sheet(sheetId);
+        if (!sheet) {
+            return undefined;
+        }
+
+        const defaultFileName = options.fileName
+            ?? `${this.sanitizeStylesheetFileStem(sheet.name || sheet.id || 'stylesheet')}.json`;
+
+        const resolved: StylesheetSaveResult | undefined = this.fileDialogs
+            ? await this.fileDialogs.saveStylesheet({
+                ...options,
+                fileName: defaultFileName,
+                mimeType: options.mimeType ?? 'application/json',
+            })
+            : {
+                ...options,
+                fileName: defaultFileName,
+                mimeType: options.mimeType ?? 'application/json',
+            };
+        if (!resolved) {
+            return undefined;
+        }
+
+        const serializer = resolved.serializer ?? jsonSerializer;
+        const serialized = serializer.write(this.sheetRepository.writeEmbedded(sheet.id));
+        let content = serialized;
+        if (resolved.pretty ?? true) {
+            try {
+                content = JSON.stringify(JSON.parse(serialized), null, 2);
+            } catch {
+                content = serialized;
+            }
+        }
+
+        const mimeType = resolved.mimeType ?? 'application/json';
+        if (resolved.handle) {
+            return await writeTextToFileHandle(resolved.handle, content, mimeType);
+        }
+
+        const fileName = resolved.fileName ?? defaultFileName;
+        const blob = exportTextBlob(content, mimeType);
+        return downloadBlob(blob, fileName);
+    }
+
     // public async exportDiagram(options: DiagramExportOptions = {}): Promise<string | Uint8Array | Blob | undefined> {
     //     const resolved: DiagramExportResult | undefined = this.fileDialogs
     //         ? await this.fileDialogs.exportDiagram(options)
@@ -459,16 +587,15 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Emits diagram model changed.
-     * @param sourceEvent Source event name.
-     * @returns Nothing.
+     * Produces a safe filesystem stem from a stylesheet name/id.
      */
-    private emitDiagramModelChanged(sourceEvent: string): void {
-        const host = (this as any).host as HTMLElement | undefined;
-        host?.dispatchEvent(new CustomEvent<DiagramChanged>(DIAGRAM_CHANGED_EVENT, {
-            detail: { scope: 'model', sourceEvent },
-            bubbles: true,
-        }));
+    private sanitizeStylesheetFileStem(value: string): string {
+        const stem = value
+            .replace(/[<>:"/\\|?*\u0000-\u001F]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        return stem || 'stylesheet';
     }
 
     /**
@@ -511,6 +638,156 @@ export class DiagramEditView extends DiagramView {
         }
 
         return await this.prompts.onNoChangesSave();
+    }
+
+    // ==================================================
+    // ================ Sheet methods ================
+    // ==================================================
+
+    /**
+     * Gets the sheet repository used by this diagram.
+     */
+    public get sheetRepository(): SheetRepository {
+        return super.sheetRepository;
+    }
+
+    /**
+     * Sets the sheet repository used by this diagram.
+     * @param value The sheet repository to set.
+     */
+    public set sheetRepository(value: SheetRepository) {
+        super.sheetRepository = value;
+        this.emitSheetLoaded();
+    }
+
+    /**
+     * Gets the currently active sheet, if any.
+     * @returns The current sheet, or undefined if no sheet is active.
+     */
+    public get currentSheet(): SpecSheet | undefined {
+        if (this.current.sheet?.id === this.sheet_id) {
+            return this.current.sheet;
+        } else if (this.sheet_id) {
+            this.current.sheet = this.sheetRepository.sheet(this.sheet_id);
+        }
+        return this.current.sheet;
+    }
+
+    /**
+     * Sets the currently active sheet, applying its styles to the diagram and emitting a sheet-loaded event.
+     * @param value The sheet to set as current, or undefined to clear the current sheet.
+     */
+    public set currentSheet(value: SpecSheet | string | undefined) {
+        this.setCurrentSheet(value);
+    }
+
+    /**
+     * Sets the currently active sheet, applying its styles to the diagram and emitting a sheet-loaded event.
+     * @param value The sheet to set as current, or undefined to clear the current sheet.
+     */
+    public setCurrentSheet(value: SpecSheet | string | undefined) {
+        const sheet = (typeof value === 'string') ? this.sheetRepository.sheet(value) : value;
+        this.sheet_id = sheet?.id;
+        this.current.sheet = sheet;
+        if (sheet) this.sheetRepository.applyToDiagram(this, sheet.id);
+        this.emitSheetLoaded();
+    }
+
+    /**
+     * Forks the current sheet to a diagram-scoped custom id on first mutation.
+     * When no sheet is active at all, creates a fresh empty custom sheet and emits sheet-loaded.
+     */
+    public ensureCustomSheet(): void {
+        if (this.sheetRepository.isCustomSheetId(this.sheet_id)) return;
+
+        const customId = this.sheetRepository.makeCustomSheetId(this.id);
+
+        if (!this.current.sheet) {
+            /* No active sheet — bootstrap an empty custom one. */
+            this.sheetRepository.upsertSheet({
+                id: customId,
+                name: 'Custom',
+                description: 'Custom sheet',
+                version: undefined,
+                diagram: {},
+                types: {},
+                classes: {},
+            });
+            this.sheet_id = customId;
+            this.current.sheet = this.sheetRepository.sheet(customId)!;
+            this.emitSheetLoaded();
+            return;
+        }
+
+        const src = this.current.sheet;
+        this.sheetRepository.upsertSheet({
+            ...src,
+            id: customId,
+            name: 'Custom',
+            description: `Based on: ${src.name ?? this.sheet_id}`,
+            version: undefined,
+        });
+        this.sheet_id = customId;
+        this.current.sheet = this.sheetRepository.sheet(customId)!;
+    }
+
+    /**
+     * Publishes the current sheet under a new id/name so it can be reused by other diagrams.
+     * The current diagram is switched to the published sheet.
+     */
+    public publishCurrentSheetAs(sheet_id: string, name: string, description?: string): SpecSheet {
+        const current = this.current.sheet;
+        if (!current) {
+            throw new Error('Cannot publish sheet: no current sheet selected.');
+        }
+
+        const published = this.sheetRepository.publishSheetAs(current.id, sheet_id, name, description);
+        this.setCurrentSheet(published.id);
+        return published;
+    }
+
+    /**
+     * Propagates direct style edits into all nodes that share classes with the originating nodes.
+     * @param sources Selected nodes that originated the style change.
+     * @param change Style delta to merge into class definitions.
+     */
+    private applyClassChange(sources: INode[], change: Partial<NodeStyle>): void {
+        this.ensureCustomSheet();
+
+        if (!this.current.sheet) return;
+        if (sources.length === 0) return;
+
+        const class_names = new Set<string>(sources.map(node => node.class_name).filter(name => !!name) as string[]);
+        if (class_names.size === 0) return;
+
+        for (const name of class_names) {
+            const class_style = this.current.sheet.classes[name];
+            if (!class_style) continue;
+
+            const merged: NodeStyle = {
+                ...class_style,
+                fillStyle: change.fillStyle ?? class_style.fillStyle,
+                textStyle: { ...class_style.textStyle, ...change.textStyle },
+                strokeStyle: { ...class_style.strokeStyle, ...change.strokeStyle },
+                shadowStyle: {
+                    ...class_style.shadowStyle,
+                    ...change.shadowStyle,
+                    offset: {
+                        ...class_style.shadowStyle.offset,
+                        ...change.shadowStyle?.offset,
+                    },
+                },
+            };
+            this.sheetRepository.upsertClassStyle(name, merged, this.current.sheet.id);
+        }
+
+        const target_nodes = this.nodes.filter(node => class_names.has(node.class_name ?? ''))
+            .filter(node => !sources.includes(node));
+        if (target_nodes.length === 0) return;
+
+        for (const target of target_nodes) {
+            this.sheetRepository.applyStyleToNode(target, change);
+        }
     }
 
     // ==================================================
@@ -626,7 +903,7 @@ export class DiagramEditView extends DiagramView {
      */
     public get shadowStyle(): ShadowStyle {
         return {
-            name: 'Custom',
+            name: 'Custom shadow',
             color: this.settings.shadowColor,
             blur: this.settings.shadowBlur,
             offset: { x: this.settings.shadowOffsetX, y: this.settings.shadowOffsetY },
@@ -674,7 +951,7 @@ export class DiagramEditView extends DiagramView {
             orientation: this.settings.textOrientation,
             weight: this.settings.textWeight,
             italic: this.settings.textItalic,
-            halo: this.settings.textHalo || undefined,
+            halo: this.settings.textHalo || 'inherit',
         };
     }
 
@@ -764,7 +1041,7 @@ export class DiagramEditView extends DiagramView {
         const center = this.coordinates.getPoint(this.canvas.width / 2, this.canvas.height / 2, this.grid);
         const node = this.createDraftFromCurrent(draft.type, this.current.toolOptions, center);
 
-        // Let adapters define drag-draft geometry and optional draft properties.
+        /* Let adapters define drag-draft geometry and optional draft properties. */
         const { owner: _owner, id: _id, ready: _ready, points, ...rest } = draft;
         Object.assign(node, rest);
         if (Array.isArray(points) && points.length > 0) {
@@ -776,7 +1053,7 @@ export class DiagramEditView extends DiagramView {
         this.dragCreateDraft = node;
         this.render('all');
 
-        // Prepare for potential autoconnecting
+        /* Prepare for potential autoconnecting */
         this.createDragDraftConnector(node);
     }
 
@@ -813,16 +1090,20 @@ export class DiagramEditView extends DiagramView {
      * @param color The stroke color to set.
      */
     public setStrokeColor(color: string): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
         this.settings.strokeColor = color;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
             node.strokeStyle.color = color;
         }
+        this.applyClassChange(selected, { strokeStyle: { color } });
+
+        /* this.syncLinkedClassesFromPatch({ 'strokeStyle.color': color }, selected); */
         this.color_palette.refresh();
 
         this.render('all');
@@ -835,18 +1116,21 @@ export class DiagramEditView extends DiagramView {
      * @param color The fill color to set.
      */
     public setFillColor(color: string): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
         this.settings.fillColor = color;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.fillStyle = color;
             if (NodeRegistry.adapter(node.type)?.hollow_mode === 'if_transparent') {
                 node.hollow = color === 'transparent';
             }
         }
+        this.applyClassChange(selected, { fillStyle: color });
+
         this.color_palette.refresh();
 
         this.render('all');
@@ -866,7 +1150,9 @@ export class DiagramEditView extends DiagramView {
         return nodes.every(n => (n.image_id ?? '') === first) ? first : '';
     }
 
-    /** Returns the shared image_mode of the selection, or '' when mixed. */
+    /** 
+     * Returns the shared image_mode of the selection, or '' when mixed. 
+     */
     public get imageMode(): string {
         const nodes = this.selection().filter(n => isNode(n));
         if (!nodes.length) return '';
@@ -874,7 +1160,9 @@ export class DiagramEditView extends DiagramView {
         return nodes.every(n => (n.image_mode ?? 'contain') === first) ? first : '';
     }
 
-    /** Returns the shared image_align of the selection, or '' when mixed. */
+    /** 
+     * Returns the shared image_align of the selection, or '' when mixed. 
+     */
     public get imageAlign(): string {
         const nodes = this.selection().filter(n => isNode(n));
         if (!nodes.length) return '';
@@ -882,7 +1170,9 @@ export class DiagramEditView extends DiagramView {
         return nodes.every(n => (n.image_align ?? 'center') === first) ? first : '';
     }
 
-    /** Returns the shared image_padding of the selection, or -1 when mixed. */
+    /** 
+     * Returns the shared image_padding of the selection, or -1 when mixed. 
+     */
     public get imagePadding(): number {
         const nodes = this.selection().filter(n => isNode(n));
         if (!nodes.length) return 0;
@@ -945,16 +1235,19 @@ export class DiagramEditView extends DiagramView {
      * @param width The line width to set.
      */
     public setLineWidth(width: number): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
         this.settings.lineWidth = width;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
             node.strokeStyle.width = width;
         }
+        this.applyClassChange(selected, { strokeStyle: { width } });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-line-width');
@@ -965,16 +1258,19 @@ export class DiagramEditView extends DiagramView {
      * @param dash The line dash pattern to set, either as a string or an array of numbers.
      */
     public setLineDash(dash: string | number[]): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
         this.settings.lineDash = dash;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
             node.strokeStyle.dash = dash;
         }
+        this.applyClassChange(selected, { strokeStyle: { dash } });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-line-dash');
@@ -985,16 +1281,19 @@ export class DiagramEditView extends DiagramView {
      * @param arrow The arrow direction to set.
      */
     public setArrow(arrow: ArrowDirection): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
         this.settings.arrow = arrow;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
             node.strokeStyle.arrow = arrow;
         }
+        this.applyClassChange(selected, { strokeStyle: { arrow } });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-arrow');
@@ -1005,7 +1304,8 @@ export class DiagramEditView extends DiagramView {
      * @param style The stroke style to set.
      */
     public setStrokeStyle(style: Partial<StrokeStyle>): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
@@ -1021,9 +1321,11 @@ export class DiagramEditView extends DiagramView {
             arrow: this.settings.arrow,
         };
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.strokeStyle = merged;
         }
+        this.applyClassChange(selected, { strokeStyle: merged });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-stroke-style');
@@ -1034,7 +1336,8 @@ export class DiagramEditView extends DiagramView {
      * @param style The shadow style to set.
      */
     public setShadowStyle(style: Partial<ShadowStyle>): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
@@ -1046,15 +1349,17 @@ export class DiagramEditView extends DiagramView {
         }
 
         const merged: ShadowStyle = {
-            name: style.name ?? 'Custom',
+            name: style.name ?? 'Custom shadow',
             color: this.settings.shadowColor,
             blur: this.settings.shadowBlur,
             offset: { x: this.settings.shadowOffsetX, y: this.settings.shadowOffsetY },
         };
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             node.shadowStyle = merged;
         }
+        this.applyClassChange(selected, { shadowStyle: merged });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-shadow-style');
@@ -1065,12 +1370,14 @@ export class DiagramEditView extends DiagramView {
      * @param style The text style to set.
      */
     public setTextStyle(style: Partial<TextStyle>): void {
-        if (this.selection().length) {
+        const selected = this.selection();
+        if (selected.length) {
             this.addUndo();
         }
 
-        // 'inherit' resets the node's text color to follow the stroke color (see textColor() in value.utils).
-        // It is a per-node signal and intentionally does not update the editor default (settings.textColor).
+        /* 'inherit' resets the node's text color to follow the stroke color (see textColor() in value.utils).
+            It is a per-node signal and intentionally does not update the editor default (settings.textColor). 
+        */
         const colorIsInherit = style.color === 'inherit';
         if (style.color !== undefined && !colorIsInherit) this.settings.textColor = style.color;
         if (style.fontFace !== undefined) this.settings.fontFace = style.fontFace;
@@ -1078,11 +1385,17 @@ export class DiagramEditView extends DiagramView {
         if (style.weight !== undefined) this.settings.textWeight = style.weight;
         if (style.italic !== undefined) this.settings.textItalic = style.italic;
         if (style.align !== undefined) this.settings.textAlign = style.align;
-        if (style.baseline !== undefined) this.settings.textBaseline = style.baseline;
+        // if (style.baseline !== undefined) this.settings.textBaseline = style.baseline;
         if (style.halo !== undefined) this.settings.textHalo = style.halo;
 
-        for (let node of this.selection()) {
+        for (let node of selected) {
             const styleToApply = { ...style, color: colorIsInherit ? undefined : style.color };
+            if (styleToApply.baseline !== undefined) {
+                const allowed = NodeRegistry.adapter(node.type)?.text_baselines;
+                if (allowed && !allowed.includes(styleToApply.baseline)) {
+                    delete styleToApply.baseline;
+                }
+            }
             if (styleToApply.orientation !== undefined) {
                 const allowed = NodeRegistry.adapter(node.type)?.text_orientations;
                 if (allowed && !allowed.includes(styleToApply.orientation)) {
@@ -1091,6 +1404,20 @@ export class DiagramEditView extends DiagramView {
             }
             node.textStyle = { ...node.textStyle, ...styleToApply };
         }
+        this.applyClassChange(selected, {
+            textStyle: {
+                fontFace: style.fontFace,
+                size: style.size,
+                color: colorIsInherit ? undefined : style.color,
+                halo: style.halo,
+                align: style.align,
+                baseline: style.baseline,
+                orientation: style.orientation,
+                weight: style.weight,
+                italic: style.italic,
+            },
+        });
+
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-text-style');
@@ -1124,7 +1451,7 @@ export class DiagramEditView extends DiagramView {
             this.applyPatchToNode(node as unknown as Record<string, unknown>, patch);
         }
 
-        // Mirror into diagram defaults so new nodes inherit changes.
+        /* Mirror into diagram defaults so new nodes inherit changes. */
         if (patch['opacity'] !== undefined) this.settings.opacity = Math.min(100, Math.max(0, Number(patch['opacity'])));
 
         if (patch['text'] !== undefined) this.settings.nodeText = String(patch['text']);
@@ -1142,7 +1469,6 @@ export class DiagramEditView extends DiagramView {
         if (patch['strokeStyle.width'] !== undefined) this.settings.lineWidth = Number(patch['strokeStyle.width']);
         if (patch['strokeStyle.dash'] !== undefined) this.settings.lineDash = patch['strokeStyle.dash'] as string | number[];
         if (patch['strokeStyle.arrow'] !== undefined) this.settings.arrow = patch['strokeStyle.arrow'] as ArrowDirection;
-        // if (patch['labelOrientation'] !== undefined) this.settings.labelOrientation = patch['labelOrientation'] as IConnectionLabelOrientation;
 
         if (patch['fillStyle'] !== undefined) this.settings.fillColor = String(patch['fillStyle']);
         if (patch['shadowStyle.color'] !== undefined) this.settings.shadowColor = String(patch['shadowStyle.color']);
@@ -1151,6 +1477,44 @@ export class DiagramEditView extends DiagramView {
         if (patch['shadowStyle.offset.y'] !== undefined) this.settings.shadowOffsetY = Number(patch['shadowStyle.offset.y']);
 
         this.color_palette.refresh();
+
+        let hasClassChanges = false;
+        for (const key of Object.keys(patch)) {
+            if (key.startsWith('textStyle.') || key.startsWith('strokeStyle.') || key.startsWith('shadowStyle.') || key === 'fillStyle') {
+                hasClassChanges = true;
+                break;
+            }
+        }
+
+        if (hasClassChanges) {
+            const nodeStyle = { textStyle: {}, strokeStyle: {}, fillStyle: undefined, shadowStyle: {} } as Partial<NodeStyle>;
+            if (patch['textStyle.fontFace'] !== undefined) nodeStyle.textStyle!.fontFace = patch['textStyle.fontFace'] as string;
+            if (patch['textStyle.size'] !== undefined) nodeStyle.textStyle!.size = patch['textStyle.size'] as number;
+            if (patch['textStyle.color'] !== undefined) nodeStyle.textStyle!.color = patch['textStyle.color'] as string;
+            if (patch['textStyle.halo'] !== undefined) nodeStyle.textStyle!.halo = patch['textStyle.halo'] as string;
+            if (patch['textStyle.align'] !== undefined) nodeStyle.textStyle!.align = patch['textStyle.align'] as ITextAlign;
+            if (patch['textStyle.baseline'] !== undefined) nodeStyle.textStyle!.baseline = patch['textStyle.baseline'] as ITextBaseline;
+            if (patch['textStyle.orientation'] !== undefined) nodeStyle.textStyle!.orientation = patch['textStyle.orientation'] as ITextOrientation;
+            if (patch['textStyle.weight'] !== undefined) nodeStyle.textStyle!.weight = patch['textStyle.weight'] as IFontWeight;
+            if (patch['textStyle.italic'] !== undefined) nodeStyle.textStyle!.italic = patch['textStyle.italic'] as boolean;
+
+            if (patch['strokeStyle.color'] !== undefined) nodeStyle.strokeStyle!.color = patch['strokeStyle.color'] as string;
+            if (patch['strokeStyle.width'] !== undefined) nodeStyle.strokeStyle!.width = patch['strokeStyle.width'] as number;
+            if (patch['strokeStyle.dash'] !== undefined) nodeStyle.strokeStyle!.dash = patch['strokeStyle.dash'] as string | number[];
+            if (patch['strokeStyle.arrow'] !== undefined) nodeStyle.strokeStyle!.arrow = patch['strokeStyle.arrow'] as ArrowDirection;
+
+            if (patch['fillStyle'] !== undefined) nodeStyle.fillStyle = patch['fillStyle'] as string;
+
+            if (patch['shadowStyle.color'] !== undefined) nodeStyle.shadowStyle!.color = patch['shadowStyle.color'] as string;
+            if (patch['shadowStyle.blur'] !== undefined) nodeStyle.shadowStyle!.blur = patch['shadowStyle.blur'] as number;
+            if (patch['shadowStyle.offset.x'] !== undefined || patch['shadowStyle.offset.y'] !== undefined) {
+                nodeStyle.shadowStyle!.offset = {
+                    x: patch['shadowStyle.offset.x'] !== undefined ? patch['shadowStyle.offset.x'] as number : 0,
+                    y: patch['shadowStyle.offset.y'] !== undefined ? patch['shadowStyle.offset.y'] as number : 0,
+                };
+            }
+            this.applyClassChange(selected, nodeStyle);
+        };
 
         this.render('all');
         this.renderPreview();
@@ -1183,6 +1547,9 @@ export class DiagramEditView extends DiagramView {
             }
             current[segments[segments.length - 1] as string] = value;
         }
+        if (patch['diagram.sheet_id']) {
+            this.setCurrentSheet(patch['diagram.sheet_id'] as string);
+        }
 
         this.color_palette.refresh();
 
@@ -1201,7 +1568,7 @@ export class DiagramEditView extends DiagramView {
             const segments = path.split('.').filter(s => s.length > 0);
             if (!segments.length) continue;
 
-            // Guard: silently skip orientation values not supported by this node's adapter.
+            /* Guard: silently skip orientation values not supported by this node's adapter. */
             if (path === 'textStyle.orientation') {
                 const allowed = NodeRegistry.adapter((target as any).type as string)?.text_orientations;
                 if (allowed && !allowed.includes(value as ITextOrientation)) continue;
@@ -1210,6 +1577,11 @@ export class DiagramEditView extends DiagramView {
             if (segments[0] === 'shadowStyle') {
                 const cur = (target as any)['shadowStyle'];
                 (target as any)['shadowStyle'] = DiagramEditView.normalizeShadowStyle(cur);
+            }
+
+            if (segments[0] === 'class_name' && !!this.current.sheet) {
+                target.class_name = value;
+                this.sheetRepository.applyToNode(target as any as INode, this.current.sheet.id);
             }
 
             let current: any = target;
@@ -1339,13 +1711,6 @@ export class DiagramEditView extends DiagramView {
             strokeStyle: style.strokeStyle,
             fillStyle: style.fillStyle,
             textStyle: style.textStyle,
-            // textColor: style.textColor,
-            // lineWidth: style.lineWidth,
-            // lineDash: style.lineDash,
-            // fontFace: style.fontFace,
-            // fontSize: style.fontSize,
-            // textAlign: style.textAlign,
-            // textBaseline: style.textBaseline,
             shadowStyle: style.shadowStyle,
             image_id: isNode(style) ? style.image_id : undefined,
             image_mode: isNode(style) ? style.image_mode : undefined,
@@ -1387,6 +1752,13 @@ export class DiagramEditView extends DiagramView {
 
                     node.hollow = undefined; node.hollow = isHollow(node);
                 }
+
+                this.applyClassChange(selected, {
+                    fillStyle: style.fillStyle,
+                    strokeStyle: style.strokeStyle,
+                    textStyle: style.textStyle,
+                    shadowStyle: style.shadowStyle,
+                });
 
                 this.render('all');
                 this.renderPreview();
@@ -1436,7 +1808,7 @@ export class DiagramEditView extends DiagramView {
 
         const serialized = nodes.map(node => this.serializeNode(node));
 
-        // Collect only the assets referenced by the copied nodes.
+        /* Collect only the assets referenced by the copied nodes. */
         const allAssets = this.assetStore.snapshot();
         let image_assets: Record<string, string> | undefined;
         if (allAssets) {
@@ -1469,7 +1841,7 @@ export class DiagramEditView extends DiagramView {
                     return;
                 }
 
-                // Merge referenced assets into this diagram's store before hydrating.
+                /* Merge referenced assets into this diagram's store before hydrating. */
                 if (envelope.image_assets) {
                     this.assetStore.merge(envelope.image_assets);
                 }
@@ -1478,8 +1850,9 @@ export class DiagramEditView extends DiagramView {
                 const pastedNodes: INode[] = [];
                 const layer = this.ensureCurrentLayer();
 
-                // First pass: assign new IDs so connection anchors within this
-                // paste batch can be remapped before any node is inserted.
+                /* First pass: assign new IDs so connection anchors within this
+                    paste batch can be remapped before any node is inserted. 
+                */
                 const idMap = new Map<string, string>();
                 for (const node of envelope.nodes) {
                     const newId = `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -1493,15 +1866,16 @@ export class DiagramEditView extends DiagramView {
                     return newId ? { ...anchor, node: newId } : { ...anchor };
                 };
 
-                // Second pass: remap group memberships
-                // creating new cloned groups if there was a container node in the paste batch.
+                /* Second pass: remap group memberships
+                    creating new cloned groups if there was a container node in the paste batch.
+                */
                 const groupMap: Map<string, IGroup> = new Map();
                 for (let node of envelope.nodes) {
                     const group_id = (node as IContainer & INode)?.owns_group;
                     if (group_id) {
                         const group = this.group(group_id);
                         if (group) {
-                            // create a clone group from selected nodes
+                            /* create a clone group from selected nodes */
                             let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
                             let new_members = group.nodes.filter(id => idMap.has(id));
                             new_members = new_members.map(id => idMap.get(id)!);
@@ -1513,7 +1887,7 @@ export class DiagramEditView extends DiagramView {
                     }
                 }
 
-                // Finally, clone the nodes into the diagram.
+                /* Finally, clone the nodes into the diagram. */
                 for (let node of envelope.nodes) {
                     const clone = this.cloneNode(node, idMap.get(node.id));
                     const conn = clone as INode & IConnection;
@@ -1615,16 +1989,14 @@ export class DiagramEditView extends DiagramView {
         if (!json?.length) return undefined;
         try {
             const payload = JSON.parse(json);
-            // New envelope format: { nodes: [...], image_assets?: {...} }
             if (payload && typeof payload === 'object' && !Array.isArray(payload) && Array.isArray(payload.nodes)) {
                 return payload as DiagramClipboardEnvelope;
             }
-            // Legacy format: bare ISerializedNode[]
             if (Array.isArray(payload)) {
                 return { nodes: payload as ISerializedNode[] };
             }
         } catch {
-            // ignore
+            /* ignore parse errors */
         }
         return undefined;
     }
@@ -1668,7 +2040,7 @@ export class DiagramEditView extends DiagramView {
             }
             this.current.layer = newLayer;
 
-            // render after initialization..
+            /* render after initialization.. */
             setTimeout(() => {
                 this.render('all');
                 this.renderPreview();
@@ -1734,7 +2106,7 @@ export class DiagramEditView extends DiagramView {
                 this.current.layer = this.layers[index];
             }
         }
-        // Just for sanity..
+        /* Just for sanity.. */
         if (!this.layers.length) {
             this.addLayer(this.generateLayerId());
         }
@@ -1921,6 +2293,7 @@ export class DiagramEditView extends DiagramView {
             ...(node.textStyle && { textStyle: { ...node.textStyle } }),
             ...(node.strokeStyle && { strokeStyle: { ...node.strokeStyle } }),
             ...(node.shadowStyle && { shadowStyle: { ...node.shadowStyle } }),
+            ...(node.specific && { specific: { ...node.specific } }),
             ...(node.geometry && { geometry: { ...node.geometry } }),
             ...(node.meta && { meta: { ...node.meta } }),
         } as INode;
@@ -1964,25 +2337,13 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Sets the arrow type for the currently selected connection.
-     * @param where Specifies which end(s) of the connection should have arrows.
-     */
-    public pickArrow(where: 'start' | 'end' | 'both' | 'none'): void {
-        if (this.selection().length === 1) {
-            let node = this.selection()[0]!;
-            node.strokeStyle = node.strokeStyle || {};
-            node.strokeStyle.arrow = where;
-        }
-        this.render('all');
-        this.renderPreview();
-    }
-
-    /**
      * Changes the type of the specified node.
      * @param node The node or node ID to change the type of.
      * @param type The new type to assign to the node.
      */
     public changeNodeType(node: string | INode, type: string): void {
+        // TODO: Check that specific keys are compatible with the new type,
+        // for now this is the responsibility of whoever creates Transferables.
 
         const _node = (typeof node === 'string') ? this.node(node) : node;
         if (_node) {
@@ -1990,15 +2351,16 @@ export class DiagramEditView extends DiagramView {
 
             _node.type = type;
 
-            // Normalize text orientation if the new type does not support the current orientation.
+            /* Normalize text orientation if the new type does not support the current orientation. */
             if (_node.textStyle?.orientation !== undefined) {
                 const allowed = NodeRegistry.adapter(_node.type)?.text_orientations;
                 if (allowed && !allowed.includes(_node.textStyle.orientation)) {
                     _node.textStyle.orientation = allowed[0] ?? 'horizontal';
                 }
             }
-            // Normalize connection anchors if the new type does not support the current anchor handle.
-            // Anchors whose handle is still valid for the new type are left untouched.
+            /* Normalize connection anchors if the new type does not support the current anchor handle.
+               Anchors whose handle is still valid for the new type are left untouched. 
+            */
             const allowedHandles = NodeRegistry.connectionHandles(type);
             const connections: (INode & IConnection)[] = this.nodes.filter(n => isConnection(n)) as (INode & IConnection)[];
             for (let conn of connections) {
@@ -2033,7 +2395,7 @@ export class DiagramEditView extends DiagramView {
 
         this.addUndo();
 
-        // Compute the union bounding rect across all selected nodes.
+        /* Compute the union bounding rect across all selected nodes. */
         const rects = nodes.map(n => this.coordinates.getBoundingRect(n, true));
         const unionLeft = Math.min(...rects.map(r => r.left));
         const unionTop = Math.min(...rects.map(r => r.top));
@@ -2191,7 +2553,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (what === 'selection' || what === 'grid' || what === 'guides') {
-            // Already handled by parent.
+            /* Already handled by parent. */
             return;
         }
 
@@ -2219,10 +2581,10 @@ export class DiagramEditView extends DiagramView {
         coordinates.applyViewportTransform(this.context);
 
         if (node) {
-            // render just this node
+            /* render just this node */
             NodeRegistry.adapter(node.type)?.renderSelection(node, this.context, 'all_handles');
         } else {
-            // render all selections..
+            /* render all selections.. */
             for (const node of this.selection()) {
                 NodeRegistry.adapter(node.type)?.renderSelection(node, this.context, 'all_handles');
             }
@@ -2246,7 +2608,7 @@ export class DiagramEditView extends DiagramView {
         this.context.save();
         coordinates.applyViewportTransform(this.context);
 
-        // render just this node
+        /* render just this node */
         NodeRegistry.adapter(node.type)?.renderSelection(node, this.context, 'connection_handles');
 
         this.context.restore();
@@ -2264,7 +2626,7 @@ export class DiagramEditView extends DiagramView {
         if (!this.canvas) return;
 
         if (this.dragCreateDraft && event.button === 0) {
-            // This could never happen!
+            /* This should never happen! */
             event.preventDefault();
             event.stopImmediatePropagation();
             return;
@@ -2296,7 +2658,7 @@ export class DiagramEditView extends DiagramView {
         if (!this.canvas) return;
 
         if (this.dragCreateDraft) {
-            // Creating by dragging from the palette; just update the draft position.
+            /* Creating by dragging from the palette; just update the draft position. */
             this.dragOver(event);
             return;
         }
@@ -2307,7 +2669,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (!this.current.draft && this.hasCreateTool() && NodeRegistry.isConnection(this.current.tool!)) {
-            // just preview connector targets while creating a new connection
+            /* Just preview connector targets while creating a new connection */
             this.previewConnectorTargets(event.offsetX, event.offsetY);
             return;
         }
@@ -2326,10 +2688,11 @@ export class DiagramEditView extends DiagramView {
      */
     protected override pointerUp(event: PointerEvent): void {
         if (!this.canvas) return;
+        this.stopAnimations('linedash');
 
         if (this.dragCreateDraft) {
-            // DiagramView routes pointerleave with pressed buttons into pointerUp;
-            // do not treat leaving canvas as release/cancel.
+            /* DiagramView routes pointerleave with pressed buttons into pointerUp;
+               do not treat leaving canvas as release/cancel. */
             if (event.type === 'pointerleave') {
                 return;
             }
@@ -2400,7 +2763,7 @@ export class DiagramEditView extends DiagramView {
 
         if (this.activeTextEditor) {
             const editingNode = this.node(this.activeTextEditor.nodeId);
-            const singleLine = this.activeTextEditor.singleLine || (editingNode ? NodeRegistry.isConnection(editingNode.type) : false);
+            const singleLine = this.activeTextEditor.singleLine || (editingNode ? NodeRegistry.isSingleLineText(editingNode.type) : false);
 
             if (key === 'enter' && (singleLine || (!event.ctrlKey && !event.metaKey && !event.shiftKey))) {
                 consumeEvent();
@@ -2419,9 +2782,6 @@ export class DiagramEditView extends DiagramView {
         if (this.shouldIgnoreGlobalKeydown(event)) {
             return;
         }
-
-        // included in super()
-        // this.setKeyboardFlag(event, true);
 
         if (this.editKeyboard.invokeEvent(this, event)) {
             this.exitDrawing();
@@ -2442,7 +2802,7 @@ export class DiagramEditView extends DiagramView {
                 return;
             }
 
-            // In draw/create states finish the gesture first, then open editor.
+            /* In draw/create states finish the gesture first, then open editor. */
             if (this.exitDrawing()) {
                 const next = this.selection();
                 const afterExit = next.length === 1 ? next[0]! : undefined;
@@ -2466,10 +2826,6 @@ export class DiagramEditView extends DiagramView {
      * @param event The keyboard event.
      */
     protected override keyup(event: KeyboardEvent): void {
-        // const key = event.key.toLowerCase();
-        // if (key === 'r') {
-        //     this.forceRectSelection = false;
-        // }
         super.keyup(event);
     }
 
@@ -2530,7 +2886,7 @@ export class DiagramEditView extends DiagramView {
             && !event.metaKey
             && (this.keyboardFlags.forceRectSelection || localNodes.length === 0);
 
-        // Record this point since we may want to move or resize?
+        /* Record this point since we may want to move or resize? */
         this.inSelectGesture = true;
         this.downPos = { x: event.offsetX, y: event.offsetY }
 
@@ -2546,7 +2902,7 @@ export class DiagramEditView extends DiagramView {
             this.downShape = undefined;
 
         } else if (!toggleSelectionGesture) {
-            // Don't alter selection of a shape is already selected..
+            /* Don't alter selection of a shape is already selected.. */
             if (localNodes.length === 0) {
                 this.downShape = undefined;
             } else {
@@ -2557,7 +2913,6 @@ export class DiagramEditView extends DiagramView {
                         break;
                     }
                 }
-                // this.downShape = this.downShape ?? nonConnections[0] ?? localNodes[0];
                 this.downShape = this.downShape ?? localNodes[0];
             }
 
@@ -2567,10 +2922,10 @@ export class DiagramEditView extends DiagramView {
             } else {
                 this.downShape = localNodes[0];
 
-                // Use ctrl to iterate between overlaying shapes..
+                /* Use ctrl to iterate between overlaying shapes.. */
                 if (event.ctrlKey || event.metaKey) {
                     let next: INode | 'ready' | undefined;
-                    // find the first unselected shape after a selected shape..
+                    /* Find the first unselected shape after a selected shape.. */
                     for (let one of localNodes) {
                         if (next === 'ready') next = one;
                         if (this.isSelected(one)) next = 'ready';
@@ -2584,11 +2939,12 @@ export class DiagramEditView extends DiagramView {
             this.reflectStyles(this.downShape);
         }
 
-        // We need the handle for move operations.. (maybe select as well)
+        /* We need the handle for move operations.. (maybe select as well) */
         this.downHandle = this.hitHandle(event.offsetX, event.offsetY, this.downShape);
 
-        // Alt+MOVE = insert new point on the segment (then it can be dragged).
-        // Alt+POINT = remove that inner point immediately (no drag).
+        /* Alt+MOVE = insert new point on the segment (then it can be dragged).
+           Alt+POINT = remove that inner point immediately (no drag). 
+        */
         const insertPointGesture = !!this.downShape
             && this.downHandle === NodeHandle.MOVE
             && event.altKey
@@ -2604,18 +2960,18 @@ export class DiagramEditView extends DiagramView {
         if (rectSelectionGesture) this.downHandle = NodeHandle.NONE;
 
         if (this.selectionOptions.enable_rect && rectSelectionGesture) {
-            // begin selection rect..
+            /* Begin selection rect.. */
             let canvasPos = this.getCoordinates().getPoint(this.downPos.x, this.downPos.y, 'ignore_grid');
             this.downRect = { left: canvasPos.x, top: canvasPos.y, width: 1, height: 1 }
             this.setInteractionHint('Dragging selection rectangle');
         } else {
-            // don't use selection rect..
+            /* Don't use selection rect.. */
             this.downRect = undefined;
         }
 
         if (isConnection(this.downShape) && this.downHandle === NodeHandle.POINT) {
             this.connectionBeforeEdit = this.captureConnectionState(this.downShape);
-            // Prepare to move the anchor point..
+            /* Prepare to move the anchor point.. */
             ConnectionBasics.disconnect(this.downShape, event.offsetX, event.offsetY);
             this.emitConnectionChanges(this.downShape, this.connectionBeforeEdit);
         }
@@ -2628,7 +2984,7 @@ export class DiagramEditView extends DiagramView {
             removedPoint = this.downShape.points.length < beforeCount;
             if (removedPoint) {
                 this.pointChangedNodes.add(this.downShape);
-                // Suppress any drag gesture after removal.
+                /* Suppress any drag gesture after removal. */
                 this.downHandle = NodeHandle.NONE;
             }
         }
@@ -2636,14 +2992,14 @@ export class DiagramEditView extends DiagramView {
         if (insertPointGesture && this.downShape && (!removePointGesture || !removedPoint)) {
             ConnectionBasics.insertPoint(this.downShape, event.offsetX, event.offsetY);
             this.pointChangedNodes.add(this.downShape);
-            // After insertion the new point is at the cursor; treat it as a POINT drag.
+            /* After insertion the new point is at the cursor; treat it as a POINT drag. */
             this.downHandle = NodeHandle.POINT;
         }
 
-        // Skip adding an Undo step while we are selecting with a rectangle.
+        /* Skip adding an Undo step while we are selecting with a rectangle. */
         if (this.downShape && this.isSelected(this.downShape) && !rectSelectionGesture && !toggleSelectionGesture && !additiveSelectionGesture) {
-            // If we are clicking on an already selected item, only get the handle..
-            // the rest will be done by SelectMove..
+            /* If we are clicking on an already selected item, only get the handle..
+               the rest will be done by SelectMove.. */
             this.addUndo();
 
             this.guides = [];
@@ -2661,6 +3017,7 @@ export class DiagramEditView extends DiagramView {
                         byX: 0,
                         byY: 0,
                         downShapeId: this.downShape?.id,
+                        handle: this.downHandle,
                     });
 
                     if (guideResult) {
@@ -2674,7 +3031,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (toggleSelectionGesture && this.downShape) {
-            // Toggle select of downShape..
+            /* Toggle select of downShape.. */
             if (this.downShape && this.isSelected(this.downShape)) {
                 this.deselect(this.downShape, 'isolated');
             } else if (this.downShape) {
@@ -2686,7 +3043,7 @@ export class DiagramEditView extends DiagramView {
             this.current.draft = undefined;
         }
 
-        // select the local shape only..
+        /* Select the local shape only.. */
         if (this.downShape && !toggleSelectionGesture && !rectSelectionGesture) {
             this.select(this.downShape, 'in_group');
         }
@@ -2696,7 +3053,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (this.downHandle === NodeHandle.MOVE) {
-            // Special cursor..
+            /* Special cursor.. */
             this.canvas.style.cursor = 'grabbing';
         } else if (!this.downShape && !this.downRect) {
             this.canvas.style.cursor = 'grabbing';
@@ -2719,6 +3076,7 @@ export class DiagramEditView extends DiagramView {
                     byX: 0,
                     byY: 0,
                     downShapeId: this.downShape?.id,
+                    handle: this.downHandle,
                 });
 
                 if (guideResult) {
@@ -2730,7 +3088,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
 
-        // Don't overwrite the rect-gesture hint that was already set above.
+        /* Don't overwrite the rect-gesture hint that was already set above. */
         if (!this.downRect) {
             this.updateInteractionHintForHandle(this.downHandle);
         }
@@ -2752,16 +3110,20 @@ export class DiagramEditView extends DiagramView {
 
                     const containers = this.hitNodes(event.offsetX, event.offsetY).filter(n => !isConnection(n));
                     if (containers.length > 0) {
-                        for (const container of containers) {
-                            if (!isInvisible(container)) {
-                                this.renderSelection(container);
+                        this.animateLineDash('containers', () => {
+                            for (const container of containers) {
+                                if (!isInvisible(container)) {
+                                    this.render('all');
+                                    this.renderSelection(container);
+                                }
                             }
-                        }
+                        });
+                    } else {
+                        this.stopAnimation('containers');
                     }
 
                     this.downPos = movePos;
 
-                    // this.render('all');
                     this.setInteractionHint('Dragging selection');
                     break;
                 }
@@ -2860,21 +3222,27 @@ export class DiagramEditView extends DiagramView {
 
                 case NodeHandle.NONE:
                     if (this.downRect) {
-                        // Dragging a selection rectangle..
+                        /* Dragging a selection rectangle.. */
                         let movePos = { x: event.offsetX, y: event.offsetY }
                         let moveRect = this.normalizeRect(this.downPos, movePos);
 
-                        this.render('all');
-
                         const included = SelectionBasics.nodesForRect(this.selectionAdapter(), moveRect, this.selectionOptions.rect_mode);
-                        for (const node of included) {
-                            if (!this.isSelected(node)) {
-                                this.renderSelection(node);
+
+                        this.animateLineDash('selection_rect', () => {
+                            this.render('all');
+
+                            /* const included = SelectionBasics.nodesForRect(this.selectionAdapter(), moveRect, this.selectionOptions.rect_mode); */
+                            for (const node of included) {
+                                if (!this.isSelected(node)) {
+                                    this.renderSelection(node);
+                                }
                             }
-                        }
-                        this.renderSelectionRect(moveRect);
+
+                            this.renderSelectionRect(moveRect);
+                        });
+
                     } else if (!this.downShape) {
-                        // Panning the canvas..
+                        /* Panning the canvas.. */
                         let movePos = { x: event.offsetX, y: event.offsetY }
 
                         this.panBy(movePos.x - this.downPos.x, movePos.y - this.downPos.y);
@@ -2886,16 +3254,16 @@ export class DiagramEditView extends DiagramView {
             }
         } else {
 
-            // Simply moving, the cursor can change with possible actions..
+            /* Simply moving, the cursor can change with possible actions.. */
             const handle = this.hitHandle(event.offsetX, event.offsetY, this.downShape);
 
             if (event.altKey) {
                 const hoverNode = this.hitNode(event.offsetX, event.offsetY);
                 if (hoverNode && ConnectionBasics.supportsMutablePoints(hoverNode)) {
                     if (handle === NodeHandle.POINT) {
-                        this.canvas.style.cursor = 'not-allowed'; // indicate remove
+                        this.canvas.style.cursor = 'not-allowed'; /* indicate remove */
                     } else if (handle === NodeHandle.MOVE) {
-                        this.canvas.style.cursor = 'copy';  // indicate add
+                        this.canvas.style.cursor = 'copy';  /* indicate add */
                     } else {
                         this.canvas.style.cursor = this.getCursor(handle) || 'default';
                     }
@@ -2917,7 +3285,7 @@ export class DiagramEditView extends DiagramView {
         this.inSelectGesture = false;
 
         if (this.downRect && this.downPos) {
-            // Dragging a selection rectangle.. finalizing
+
             const movePos = { x: event.offsetX, y: event.offsetY }
             const selectionRect = this.normalizeRect(this.downPos, movePos);
             const moveDistance = Math.hypot(movePos.x - this.downPos.x, movePos.y - this.downPos.y);
@@ -2946,7 +3314,7 @@ export class DiagramEditView extends DiagramView {
             }
         }
 
-        // removePoint is handled on pointerDown; nothing to do here for points.
+        /* removePoint is handled on pointerDown; nothing to do here for points. */
 
         if (this.downHandle === NodeHandle.MOVE || this.downHandle === NodeHandle.N || this.downHandle === NodeHandle.S
             || this.downHandle === NodeHandle.E || this.downHandle === NodeHandle.W || this.downHandle === NodeHandle.NE
@@ -2958,13 +3326,12 @@ export class DiagramEditView extends DiagramView {
             if (this.downHandle !== NodeHandle.ROTATE) {
                 this.applyGridSnapForSelection(this.downHandle ?? NodeHandle.MOVE);
             }
-            // this.render('all');
         }
 
         this.guides = [];
         this.pendingGuideSnap = undefined;
 
-        // Handle groups (containers)
+        /* Handle groups (containers) */
         if (this.downHandle === NodeHandle.MOVE) {
             const overlaying = this.hitNodes(event.offsetX, event.offsetY)
                 .filter(node => node.id !== this.downShape?.id);
@@ -2991,7 +3358,7 @@ export class DiagramEditView extends DiagramView {
         this.renderPreview();
         this.setInteractionHint(undefined);
 
-        // Double-click is handled in dblClick() override.
+        /* Double-click is handled in dblClick() override. */
     }
 
     // ==================================================
@@ -3114,7 +3481,7 @@ export class DiagramEditView extends DiagramView {
             this.current.draft.ready = true;
         }
 
-        // Handle groups
+        /* Handle groups */
         if (this.current.draft.ready) {
             const overlaying_start = this.hitNodes(this.createPos?.x ?? 0, this.createPos?.y ?? 0);
             const overlaying_end = this.hitNodes(event.offsetX, event.offsetY);
@@ -3151,36 +3518,25 @@ export class DiagramEditView extends DiagramView {
             ? this.getPointerConnectionAnchorAndPoint(this.dragDraftConnector as INode & IConnection, event.offsetX, event.offsetY)
             : undefined;
         const pointerAnchor = pointerHit?.anchor;
-        // Previous implementation (kept for comparison):
-        // const pointerAnchor = this.dragDraftConnector
-        //     ? ConnectionBasics.getPointerConnectionAnchor(this.dragDraftConnector as INode & IConnection, event.offsetX, event.offsetY)
-        //     : undefined;
         if (pointerAnchor && typeof pointerAnchor.node !== 'string') {
             overlaying = pointerAnchor.node;
         }
 
         if (overlaying) {
-            // The dragged node is over another node.
-            // Position the created node relative to the connector's end point
-            // so we can find the nearest anchor
+            /* The dragged node is over another node.
+             * Position the created node relative to the connector's end point
+             * so we can find the nearest anchor
+             */
             let from_handle = pointerAnchor?.handle ?? NodeHandle.NONE;
             let from_point = pointerHit?.point ?? this.coordinates.getPointFromEvent(event, this.grid);
             let to_handle = NodeHandle.MOVE;
             let to_point = from_point;
-            // Previous implementation (kept for comparison):
-            // let from_handle = pointerAnchor?.handle ?? this.hitConnectionHandle(event.offsetX, event.offsetY);
-            // let from_point = this.coordinates.getPointFromEvent(event, this.grid);
-            // if (pointerAnchor) {
-            //     const resolved = ConnectionBasics.getAnchorPoint(this.dragDraftConnector as INode & IConnection, pointerAnchor);
-            //     if (resolved) {
-            //         from_point = resolved;
-            //     }
-            // }
 
-            // The dragged node is over another node.
-            // Position the dragged node relative to the connector's end point.
+            /* The dragged node is over another node.
+             * Position the dragged node relative to the connector's end point.
+             */
             if (overlaying && (from_handle === NodeHandle.MOVE || from_handle === NodeHandle.NONE)) {
-                // Try to find a better anchor
+                /* Try to find a better anchor */
                 const is_inside = from_handle === NodeHandle.MOVE;
                 const from_nearest = NodeBasics.nearestConnectionHandle(overlaying, from_point, is_inside);
                 if (from_nearest) {
@@ -3204,10 +3560,12 @@ export class DiagramEditView extends DiagramView {
                 this.canvas.style.cursor = 'copy';  // indicate Adding to existing node
 
                 this.connectDragDraftTo(this.dragCreateDraft, from_point, from_handle, to_point);
-                this.render('all');
+                this.animateLineDash('auto_connect', () => {
+                    this.render('all');
 
-                // Provide visual feedback indicating potential anchor points.
-                this.renderConnectionHandles(overlaying);
+                    /* Provide visual feedback indicating potential anchor points. */
+                    this.renderConnectionHandles(overlaying);
+                });
 
                 const target_label = overlaying?.text || 'existing ' + humanize(overlaying?.type || 'node');
                 this.setInteractionHint(`Drop to connect to ${target_label}`);
@@ -3217,20 +3575,23 @@ export class DiagramEditView extends DiagramView {
                 // Should this be handled?
                 // console.warn('Drag over node with no anchor handle?', overlaying, from_handle);
             }
+        } else {
+            this.stopAnimation('auto_connect');
         }
-        // } else {
-        // The dragged node is not over another node.
+
+        /* The dragged node is not over another node. */
         this.canvas.style.cursor = 'default';
 
         const point = this.coordinates.getPointFromEvent(event, this.grid);
-        this.centerNodeAt(this.dragCreateDraft, point);
+        this.animations.animateNodeCenter(this.dragCreateDraft, point, () => { });
+        // this.centerNodeAt(this.dragCreateDraft, point);
         this.render('all');
 
         if (this.dragDraftConnector) {
             this.dragDraftConnector.invisible = true;
             this.dragDraftConnector.ready = false;
         }
-        // }
+
         if (overlaying) {
             this.renderConnectionHandles(overlaying);
         }
@@ -3258,14 +3619,13 @@ export class DiagramEditView extends DiagramView {
         let connected_to: string | undefined = undefined;
 
         if (this.dragDraftConnector?.ready) {
-            // The created node is over another node.
-            // Position the created node relative to the connector's end point
-            // so we can find the nearest anchor
+            /* The created node is over another node.
+             * Position the created node relative to the connector's end point
+             * so we can find the nearest anchor
+             */
             let overlaying = this.hitNode(event.offsetX, event.offsetY);
             const pointerHit = this.getPointerConnectionAnchorAndPoint(this.dragDraftConnector as INode & IConnection, event.offsetX, event.offsetY);
             const pointerAnchor = pointerHit?.anchor;
-            // Previous implementation (kept for comparison):
-            // const pointerAnchor = ConnectionBasics.getPointerConnectionAnchor(this.dragDraftConnector as INode & IConnection, event.offsetX, event.offsetY);
             if (pointerAnchor && typeof pointerAnchor.node !== 'string') {
                 overlaying = pointerAnchor.node;
             }
@@ -3273,15 +3633,6 @@ export class DiagramEditView extends DiagramView {
             let from_point = pointerHit?.point ?? this.coordinates.getPointFromEvent(event, this.grid);
             let to_handle = NodeHandle.MOVE;
             let to_point = from_point;
-            // Previous implementation (kept for comparison):
-            // let from_handle = pointerAnchor?.handle ?? this.hitConnectionHandle(event.offsetX, event.offsetY);
-            // let from_point = this.coordinates.getPointFromEvent(event, this.grid);
-            // if (pointerAnchor) {
-            //     const resolved = ConnectionBasics.getAnchorPoint(this.dragDraftConnector as INode & IConnection, pointerAnchor);
-            //     if (resolved) {
-            //         from_point = resolved;
-            //     }
-            // }
 
             if (overlaying && (from_handle === NodeHandle.MOVE || from_handle === NodeHandle.NONE)) {
                 const is_inside = from_handle === NodeHandle.MOVE;
@@ -3298,7 +3649,7 @@ export class DiagramEditView extends DiagramView {
                 to_point = to_nearest.point;
             }
 
-            // Insert the connector into the diagram
+            /* Insert the connector into the diagram */
             const connector = {
                 ...this.dragDraftConnector,
                 from: { node: overlaying?.id, handle: from_handle },
@@ -3309,36 +3660,31 @@ export class DiagramEditView extends DiagramView {
             const adapter = NodeRegistry.adapter(connector.type);
             adapter?.afterConnect?.(connector, 'from', { node: overlaying!.id, handle: from_handle });
             adapter?.afterConnect?.(connector, 'to', { node: created.id, handle: to_handle });
-            // ConnectionBasics.reconnect(connector, from_point.x, from_point.y);
 
             this.upsertNode(connector);
             this.current.layer?.nodes.push(connector.id);
 
-            // and place it as expected
+            /* and place it as expected */
             this.positionDraftConnectedTo(created, from_point, from_handle);
             connected_to = overlaying?.id;
 
         } else {
-            // The created node is not over another node.
-            this.centerNodeAt(created, point);
+            /* The created node is not over another node. */
+            this.animations.animateNodeCenter(created, point, () => { });
+            // this.centerNodeAt(created, point);
         }
 
         created.ready = true;
 
         const layer = this.ensureCurrentLayer();
 
-        // this.addUndo();
-
         this.upsertNode(created);
         layer.nodes.push(created.id);
-        // if (!layer.nodes.includes(created.id)) {
-        //     layer.nodes.push(created.id);
-        // }
 
-        // Handle groups
+        /* Handle groups */
         const overlaying = this.hitNodes(event.offsetX, event.offsetY).filter(node => node.id !== created.id);
         for (const one of overlaying) {
-            // Don't become a memebr of a container you connected to; that would be confusing.
+            /* Don't become a member of a container you connected to; that would be confusing. */
             if (one.id === connected_to) {
                 continue;
             }
@@ -3395,7 +3741,8 @@ export class DiagramEditView extends DiagramView {
             case NodeHandle.SW: offsetX = - stub - w; offsetY = stub + h; break;
         }
 
-        this.centerNodeAt(draft, { x: point.x + offsetX, y: point.y + offsetY });
+        this.animations.animateNodeCenter(draft, { x: point.x + offsetX, y: point.y + offsetY }, () => { });
+        // this.centerNodeAt(draft, { x: point.x + offsetX, y: point.y + offsetY });
     }
 
     /**
@@ -3408,19 +3755,6 @@ export class DiagramEditView extends DiagramView {
     private connectDragDraftTo(draft: INode, from_point: IPoint, from_handle: NodeHandle, to_point: IPoint): void {
         if (!this.dragCreateDraft) return;
 
-        // const rect = this.coordinates.getBoundingRect(draft);
-        // let to_point = { x: point.x, y: point.y };
-        // switch (to_handle) {
-        //     case NodeHandle.N: to_point = { x: rect.left + rect.width / 2, y: rect.top }; break;
-        //     case NodeHandle.S: to_point = { x: rect.left + rect.width / 2, y: rect.top + rect.height }; break;
-        //     case NodeHandle.E: to_point = { x: rect.left + rect.width, y: rect.top + rect.height / 2 }; break;
-        //     case NodeHandle.W: to_point = { x: rect.left, y: rect.top + rect.height / 2 }; break;
-        //     case NodeHandle.NE: to_point = { x: rect.left + rect.width, y: rect.top }; break;
-        //     case NodeHandle.NW: to_point = { x: rect.left, y: rect.top }; break;
-        //     case NodeHandle.SE: to_point = { x: rect.left + rect.width, y: rect.top + rect.height }; break;
-        //     case NodeHandle.SW: to_point = { x: rect.left, y: rect.top + rect.height }; break;
-        // }
-
         this.positionDraftConnectedTo(draft, from_point, from_handle);
         if (this.dragDraftConnector) {
             this.dragDraftConnector.invisible = false;
@@ -3430,31 +3764,6 @@ export class DiagramEditView extends DiagramView {
                 { x: to_point.x, y: to_point.y }
             ];
         }
-
-        // const rect = this.coordinates.getBoundingRect(draft);
-        // let offsetX = 0, offsetY = 0, stub = 24 * 2, w = rect.width / 2, h = rect.height / 2;
-
-        // switch (handle) {
-        //     case NodeHandle.N: offsetY = - stub - h; break;
-        //     case NodeHandle.S: offsetY = stub + h; break;
-        //     case NodeHandle.E: offsetX = stub + w; break;
-        //     case NodeHandle.W: offsetX = - stub - w; break;
-        //     case NodeHandle.NE: offsetX = stub + w; offsetY = - stub - h; break;
-        //     case NodeHandle.NW: offsetX = - stub - w; offsetY = - stub - h; break;
-        //     case NodeHandle.SE: offsetX = stub + w; offsetY = stub + h; break;
-        //     case NodeHandle.SW: offsetX = - stub - w; offsetY = stub + h; break;
-        // }
-
-        // if (this.dragDraftConnector) {
-        //     this.dragDraftConnector.invisible = false;
-        //     this.dragDraftConnector.ready = true;
-        //     this.dragDraftConnector.points = [
-        //         { x: point.x, y: point.y },
-        //         { x: point.x + offsetX, y: point.y + offsetY }
-        //     ];
-        // }
-
-        // this.centerNodeAt(draft, { x: point.x + offsetX, y: point.y + offsetY });
     }
 
     /**
@@ -3572,10 +3881,6 @@ export class DiagramEditView extends DiagramView {
             const at = NodeBasics.connectionHandleAtPoint(source, pointer);
             if (!at || at.handle === NodeHandle.ROTATE) continue;
 
-            // Previous implementation (kept for comparison):
-            // const handle = this.hitConnectionHandle(canvasX, canvasY, source);
-            // if (handle === NodeHandle.ROTATE) continue;
-
             const rect = this.coordinates.getBoundingRect(source, false);
             const point = this.coordinates.getHitPoint({ x: canvasX, y: canvasY }, rect, source.angle || 0);
             const anchor = ConnectionBasics.buildConnectableAnchor(source, at.handle, point, rect);
@@ -3603,7 +3908,7 @@ export class DiagramEditView extends DiagramView {
     private renderConnectorTargets(node: INode & IConnection, canvasX: number, canvasY: number): void {
         const targets = new Map<string, INode>();
 
-        // Select existing connection anchors
+        /* Select existing connection anchors */
         const fromNode = this.resolveAnchorNode(node.from);
         if (fromNode && fromNode.id !== node.id) {
             targets.set(fromNode.id, fromNode);
@@ -3614,24 +3919,20 @@ export class DiagramEditView extends DiagramView {
             targets.set(toNode.id, toNode);
         }
 
-        // Start with the cursor for creating..
+        /* Start with the cursor for creating. */
         this.canvas!.style.cursor = (this.current.draft) ? 'crosshair' : 'default';
 
-        // Select potential connection targets
+        /* Select potential connection targets */
         for (const hover of this.hitNodes(canvasX, canvasY)) {
             if (hover.id === node.id) continue;
 
             if (hover.id !== node.id) {
                 targets.set(hover.id, hover);
             }
-            // Cursor should reflect actual connectability, not just raw hit-test handle.
+            /* Cursor should reflect actual connectability, not just raw hit-test handle. */
             if (this.getPointerConnectionAnchorAndPoint(node, canvasX, canvasY)) {
                 this.canvas!.style.cursor = 'pointer';
             }
-            // Previous implementation (kept for comparison):
-            // if (ConnectionBasics.getPointerConnectionAnchor(node, canvasX, canvasY)) {
-            //     this.canvas!.style.cursor = 'pointer';
-            // }
         }
 
         for (const target of targets.values()) {
@@ -3647,10 +3948,10 @@ export class DiagramEditView extends DiagramView {
     private previewConnectorTargets(canvasX: number, canvasY: number): void {
         this.render('all');
 
-        // Start with the cursor for creating..
+        /* Start with the cursor for creating. */
         this.canvas!.style.cursor = (this.current.draft) ? 'crosshair' : 'default';
 
-        // Highlight potential connection targets
+        /* Highlight potential connection targets */
         for (const hover of this.hitNodes(canvasX, canvasY)) {
             this.renderConnectionHandles(hover);
 
@@ -3663,13 +3964,6 @@ export class DiagramEditView extends DiagramView {
             if (this.getPointerConnectionAnchorAndPoint(probe, canvasX, canvasY)) {
                 this.canvas!.style.cursor = 'pointer';
             }
-            // Previous implementation (kept for comparison):
-            // if (ConnectionBasics.getPointerConnectionAnchor(probe, canvasX, canvasY)) {
-            //     this.canvas!.style.cursor = 'pointer';
-            // }
-            // if (handle !== NodeHandle.MOVE && handle !== NodeHandle.ROTATE) {
-            //     this.canvas!.style.cursor = 'pointer';
-            // }
         }
     }
 
@@ -3830,8 +4124,9 @@ export class DiagramEditView extends DiagramView {
             }
             this.current.layer = this.layers[0]!;
         } else {
-            // Keep the current layer reference synchronized with the live layer
-            // object because some operations rebuild this.layers with new instances.
+            /* Keep the current layer reference synchronized with the live layer
+             * object because some operations rebuild this.layers with new instances. 
+             */
             this.current.layer = active;
         }
 
@@ -3863,7 +4158,7 @@ export class DiagramEditView extends DiagramView {
         this.guides = [];
         this.pendingGuideSnap = undefined;
 
-        // End drawing polylines..
+        /* End drawing polylines. */
         if (this.current.draft && !this.current.draft.ready) {
             this.current.draft.ready = true;
 
@@ -3884,20 +4179,22 @@ export class DiagramEditView extends DiagramView {
      * @param zoom The zoom value.
      * @param centerX The center x value.
      * @param centerY The center y value.
+     * @param mode The animation mode for the zoom operation.
      */
-    public override zoomTo(zoom: number, centerX?: number, centerY?: number): void {
+    public override zoomTo(zoom: number, centerX?: number, centerY?: number, mode: AnimationMode = 'instant'): void {
         this.closeTextEditor(false);
-        super.zoomTo(zoom, centerX, centerY);
+        super.zoomTo(zoom, centerX, centerY, mode);
     }
 
     /**
      * Pans the canvas by given deltas.
      * @param byX Horizontal delta value.
      * @param byY Vertical delta value.
+     * @param mode The animation mode for the pan operation.
      */
-    public override panBy(byX: number, byY: number): void {
+    public override panBy(byX: number, byY: number, mode: AnimationMode = 'instant'): void {
         this.closeTextEditor(false);
-        super.panBy(byX, byY);
+        super.panBy(byX, byY, mode);
     }
 
     /**
@@ -3916,12 +4213,12 @@ export class DiagramEditView extends DiagramView {
         this.closeTextEditor(true);
         this.setInteractionHint('Editing text');
 
-        // Prepare shortcuts and rrequired data for all cases:
+        /* Prepare shortcuts and required data for all cases: */
 
         const canvasRect = this.canvas.getBoundingClientRect();
         const zoom = this.coordinates.zoom;
         const pan = this.coordinates.pan;
-        const singleLine = NodeRegistry.isConnection(node.type);
+        const singleLine = NodeRegistry.isSingleLineText(node.type);
 
         const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
         const baseline = textBaseline(node);
@@ -3937,7 +4234,7 @@ export class DiagramEditView extends DiagramView {
         const scaledLineHeight = Math.max(scaledFontSize * 1.25, 1);
 
         let rect = this.coordinates.getBoundingRect(node);
-        const screenRect: IRect = {
+        let screenRect: IRect = {
             left: canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x,
             top: canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y,
             width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
@@ -3950,13 +4247,19 @@ export class DiagramEditView extends DiagramView {
         let top: number;
         let transform = '';
 
-        // Decide where text should be placed:
+        /* Decide where text should be placed: */
 
         const placement = NodeRegistry.adapter(node.type)?.textPlacement(node);
         if (placement?.rect) {
-            // Lines in a bounded rect
+            /* Lines in a bounded rect */
 
             rect = placement.rect;
+            screenRect = {
+                left: canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x,
+                top: canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y,
+                width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
+                height: Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom),
+            };
             left = screenRect.left;
             editorWidth = Math.max(24, screenRect.width);
 
@@ -3986,11 +4289,11 @@ export class DiagramEditView extends DiagramView {
             top = firstLineTop;
 
         } else if (placement?.segment) {
-            // Text along a line segment
+            /* Text along a line segment */
 
             rect = this.coordinates.getBoundingRect(node);
 
-            // Normalise direction the same way the renderer does.
+            /* Normalise direction the same way the renderer does. */
             const { from, to } = NodeBasics.normalizeLine(placement.segment.from, placement.segment.to);
 
             const worldToScreen = (x: number, y: number): IPoint => ({
@@ -4003,7 +4306,7 @@ export class DiagramEditView extends DiagramView {
             const midScreen = { x: (fromScreen.x + toScreen.x) / 2, y: (fromScreen.y + toScreen.y) / 2 };
 
             if (textOrientation(node) === 'path') {
-                // Path label: rotate the textarea to follow the segment angle.
+                /* Path label: rotate the textarea to follow the segment angle. */
                 const angle = NodeBasics.calculateAngle(from, to);
                 const nx = Math.sin(angle);
                 const ny = -Math.cos(angle);
@@ -4016,15 +4319,15 @@ export class DiagramEditView extends DiagramView {
                 transform = `rotate(${angle}rad)`;
 
             } else if (textOrientation(node) === 'horizontal') {
-                // Horizontal label: anchor at segment midpoint shifted up by half a line, no rotation.
+                /* Horizontal label: anchor at segment midpoint shifted up by half a line, no rotation. */
                 editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
                 editorHeight = scaledLineHeight;
                 left = midScreen.x - editorWidth / 2;
                 top = midScreen.y - editorHeight / 2;
-                // transform stays undefined — no rotation on the textarea.
+                /* transform stays undefined — no rotation on the textarea. */
 
             } else {
-                // Unknown orientation: fallback to horizontal.
+                /* Unknown orientation: fallback to horizontal. */
                 editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
                 editorHeight = scaledLineHeight;
                 left = midScreen.x - editorWidth / 2;
@@ -4034,7 +4337,7 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
-        // Now we have the data so we can create the textarea:
+        /* Now we have the data so we can create the textarea: */
 
         const textarea = document.createElement('textarea');
         textarea.value = nodeText(node);
@@ -4064,16 +4367,17 @@ export class DiagramEditView extends DiagramView {
         textarea.style.zIndex = '2147483647';
         textarea.style.cursor = 'text';
 
-        // Rotate the textarea if required:
+        /* Rotate the textarea if required: */
 
         if (transform) {
-            // Sloped connector: textarea is already centered on the midpoint so center-center is correct.
+            /* Sloped connector: textarea is already centered on the midpoint so center-center is correct. */
             textarea.style.transformOrigin = 'center center';
             textarea.style.transform = transform;
         } else if (node.angle) {
-            // Non-sloped rotated node: the textarea is inset from the node rect, so its center ≠ the node's
-            // visual center. Set transform-origin explicitly to the node center in textarea-local coords so
-            // rotation pivots on the right point.
+            /* Non-sloped rotated node: the textarea is inset from the node rect, so its center ≠ the node's
+               visual center. Set transform-origin explicitly to the node center in textarea-local coords so
+               rotation pivots on the right point. 
+            */
             const nodeCenterX = canvasRect.left + ((rect.left + rect.width / 2) * zoom) - pan.x;
             const nodeCenterY = canvasRect.top + ((rect.top + rect.height / 2) * zoom) - pan.y;
             textarea.style.transformOrigin = `${nodeCenterX - left}px ${nodeCenterY - top}px`;
@@ -4095,7 +4399,7 @@ export class DiagramEditView extends DiagramView {
             singleLine,
         };
 
-        // Add behaviour to the textarea:
+        /* Add behaviour to the textarea: */
 
         const autosizeEditor = (): void => {
             if (singleLine) {
@@ -4345,7 +4649,9 @@ export class DiagramEditView extends DiagramView {
         context.strokeStyle = DiagramConstants.SELECTION_RECT_STROKESTYLE;
         context.fillStyle = DiagramConstants.SELECTION_RECT_FILLSTYLE;
         context.lineWidth = 1 / coordinates.zoom;
-        context.setLineDash([4, 4]);
+        context.setLineDash([6, 6]);
+        context.lineDashOffset = this.animations.enabled ? this.animations.lineDashOffset : 0;
+
         let path = new Path2D();
         path.rect(rect.left, rect.top, rect.width, rect.height);
         context.fill(path);
@@ -4363,7 +4669,7 @@ export class DiagramEditView extends DiagramView {
 
         if (additive) {
             const distinct = new Set([...this.selection(), ...selected]);
-            // Handle groups
+            /* Handle groups */
             for (const node of selected) {
                 const group_nodes = GroupBasics.relatedNodes(node, this);
                 for (const related of group_nodes) {
@@ -4372,12 +4678,12 @@ export class DiagramEditView extends DiagramView {
             }
             this.setSelection([...distinct]);
 
-            // Without considering groups, we can just do this:
-            // this.setSelection([...this.selection(), ...selected]);
+            /* Without considering groups, we can just do this:
+                this.setSelection([...this.selection(), ...selected]); */
 
         } else {
             const distinct = new Set(selected);
-            // Handle groups
+            /* Handle groups */
             for (const node of selected) {
                 const group_nodes = GroupBasics.relatedNodes(node, this);
                 for (const related of group_nodes) {
@@ -4386,8 +4692,8 @@ export class DiagramEditView extends DiagramView {
             }
             this.setSelection([...distinct]);
 
-            // Without considering groups, we can just do this:
-            // this.setSelection(selected);
+            /* Without considering groups, we can just do this:
+                this.setSelection(selected); */
         }
     }
 
@@ -4433,6 +4739,7 @@ export class DiagramEditView extends DiagramView {
                 byX,
                 byY,
                 downShapeId: this.downShape?.id,
+                handle: NodeHandle.MOVE,
             });
 
             if (guideResult) {
@@ -4441,7 +4748,7 @@ export class DiagramEditView extends DiagramView {
             }
         }
 
-        // Store the moved nodes so we can emit events later. We only want to emit events for nodes that are not locked.
+        /* Store the moved nodes so we can emit events later. We only want to emit events for nodes that are not locked. */
         for (const node of this.selection()) {
             if (!isLocked(node)) {
                 this.movedNodes.add(node);
@@ -4484,21 +4791,21 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
-        // Handle groups
+        /* Handle groups */
 
         const group = this.nodeGroup(reference_node);
         if (group) {
             const owner = this.groupOwner(group);
             if (owner !== reference_node) {
-                // Resizing a node inside a container only resizes that node, not the whole group.
-                // The group will resize when the container node is resized. 
+                /* Resizing a node inside a container only resizes that node, not the whole group.
+                   The group will resize when the container node is resized. */
                 NodeBasics.resizeHandle(reference_node, handle, byX, byY, preserveAspect);
                 NodeRegistry.adapter(reference_node.type)?.afterResize?.(reference_node, handle);
                 return;
             }
         }
 
-        // Resize nodes proportionally
+        /* Resize nodes proportionally */
 
         const baseRect = this.coordinates.getBoundingRect(reference_node);
 
@@ -4506,7 +4813,7 @@ export class DiagramEditView extends DiagramView {
             let relX = byX;
             let relY = byY;
             if (node !== reference_node) {
-                // calculate relative resize amounts based on the reference node's bounding rect
+                /* calculate relative resize amounts based on the reference node's bounding rect */
                 const nodeRect = this.coordinates.getBoundingRect(node);
                 relX = byX * (nodeRect.width / baseRect.width);
                 relY = byY * (nodeRect.height / baseRect.height);
@@ -4527,6 +4834,7 @@ export class DiagramEditView extends DiagramView {
                 byX,
                 byY,
                 downShapeId: this.downShape?.id,
+                handle,
             });
 
             if (guideResult) {
@@ -4550,7 +4858,7 @@ export class DiagramEditView extends DiagramView {
             diagram: this,
             snap: this.pendingGuideSnap,
             handle,
-            nodes: nodes,   // this.selection(),
+            nodes: nodes,
             preserveAspect,
         });
     }
@@ -4613,7 +4921,7 @@ export class DiagramEditView extends DiagramView {
 
         if (owner === this.downShape) {
             this.applyPendingGuideSnap([owner], handle, preserveAspect);
-            // When snapping the owner while moving, move all members by the same dx,dy.
+            /* When snapping the owner while moving, move all members by the same dx,dy. */
             if (handle === NodeHandle.MOVE) {
                 this.applyPendingGuideGroupSnap(group, owner);
             }
@@ -4621,7 +4929,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (handle === NodeHandle.MOVE) {
-            // Keep grouped nodes rigid: apply the same guide snap delta to the moved selection.
+            /* Keep grouped nodes rigid: apply the same guide snap delta to the moved selection. */
             this.applyPendingGuideSnap(this.selection(), handle, preserveAspect);
             return;
         }
@@ -4648,8 +4956,8 @@ export class DiagramEditView extends DiagramView {
 
             const container = isContainer(shape) ? shape : undefined;
             if (container) {
-                // This node owns a group
-                // Snap the container to the grid, then move all group members by the same delta to keep them rigidly grouped.
+                /* This node owns a group
+                   Snap the container to the grid, then move all group members by the same delta to keep them rigidly grouped. */
                 const group = this.group((container as IContainer).owns_group);
                 if (group) {
                     const before = this.coordinates.getBoundingRect(container);
@@ -4666,33 +4974,33 @@ export class DiagramEditView extends DiagramView {
 
             const group = this.nodeGroup(shape);
             if (!group) {
-                // This node is not part of a group, so just snap it to the grid.
+                /* This node is not part of a group, so just snap it to the grid. */
                 adapter.snapToGrid(shape, this.grid, handle);
                 continue;
             }
 
             const owner = this.groupOwner(group);
             if (!owner) {
-                // This node is not part of a group, so just snap it to the grid.
+                /* This node is not part of a group, so just snap it to the grid. */
                 adapter.snapToGrid(shape, this.grid, handle);
                 continue;
             }
 
             if (owner !== shape) {
-                // Group members follow owner snapping to keep grouped movement coherent.
+                /* Group members follow owner snapping to keep grouped movement coherent. */
                 continue;
             }
 
             if (snappedOwners.has(owner.id)) {
-                // This node belongs to an already handled group, so skip it to avoid double-snapping.
+                /* This node belongs to an already handled group, so skip it to avoid double-snapping. */
                 continue;
             }
 
-            // Now we have node that is in a group, and know its owner that hasn't been snapped yet. 
-            // Snap it, then move all group members by the same delta to keep them rigidly grouped.
+            /* Now we have node that is in a group, and know its owner that hasn't been snapped yet. 
+               Snap it, then move all group members by the same delta to keep them rigidly grouped. */
 
             if (handle !== NodeHandle.MOVE) {
-                // Resizing a group member only snaps that member, not the whole group. The group will resize when the owner is resized.
+                /* Resizing a group member only snaps that member, not the whole group. The group will resize when the owner is resized. */
                 adapter.snapToGrid(owner, this.grid, handle);
                 snappedOwners.add(owner.id);
                 continue;
@@ -4888,6 +5196,30 @@ export class DiagramEditView extends DiagramView {
             from: this.anchorSignature(node.from),
             to: this.anchorSignature(node.to),
         };
+    }
+
+    /**
+     * Emits diagram model changed.
+     * @param sourceEvent Source event name.
+     */
+    private emitDiagramModelChanged(sourceEvent: string): void {
+        const host = (this as any).host as HTMLElement | undefined;
+        host?.dispatchEvent(new CustomEvent<DiagramChanged>(DIAGRAM_CHANGED_EVENT, {
+            detail: { scope: 'model', sourceEvent },
+            bubbles: true,
+        }));
+    }
+
+    /**
+     * Emits the sheet-loaded event payload for inspector and toolbar sync.
+     */
+    private emitSheetLoaded(): void {
+        const sheetId = this.current.sheet?.id || '';
+        const sheetNames = this.sheetRepository.sheetNames || [];
+        this.eventDispatcher.sheetLoaded({
+            sheetId,
+            sheetNames,
+        });
     }
 
     /**

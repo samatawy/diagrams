@@ -1,7 +1,8 @@
 import type { Serializable } from "./io/serialized.types";
-import type { ArrowDirection, ImageAlign, ImageMode } from "./types";
+import type { ImageAlign, ImageMode } from "./types";
 import type { ShadowStyle, StrokeStyle, TextStyle } from "./style.interfaces";
 import type { IPoint, NodeHandle } from "./types";
+import type { SheetRepository } from "./sheets/sheet.repository";
 
 /**
  * INode defines the properties of a node in the diagram, including its ID, type, geometry (points), text properties, styling options, and its relationship to the diagram it belongs to.
@@ -33,6 +34,11 @@ export interface INode {
      * The text content of the node, which can be displayed within the node's bounding box. 
      */
     text?: string,
+
+    /**
+     * The optional class name of the node, which can be used to apply specific styles or behaviors to the node based on its class.
+     */
+    class_name?: string;
 
     /**
      * The text style properties of the node, which can be used to control the appearance of the node's text, 
@@ -122,6 +128,8 @@ export interface INode {
     // sin?: number;
 
     geometry?: Record<string, number | string | boolean>;
+
+    specific?: Record<string, unknown>;
 
     meta?: Record<string, unknown>;
 }
@@ -271,6 +279,8 @@ export interface IDiagram extends Serializable {
     nodes: INode[];
     groups?: IGroup[];
     layers: ILayer[];
+    sheet_id?: string;
+    // sheet: SheetStyles;
     background?: string;
     meta?: Record<string, unknown>;
     grid?: IGrid;
@@ -287,4 +297,8 @@ export interface HasSelection {
     select(node: INode, option: 'in_group' | 'isolated'): void;
     deselect(node: INode, option: 'in_group' | 'isolated'): void;
     clearSelection(): void;
+}
+
+export interface HasSheetRepository {
+    sheetRepository: SheetRepository;
 }

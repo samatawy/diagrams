@@ -16,7 +16,7 @@ export class TrapezoidAdapter extends RectangleAdapter {
 
     public static TYPE = 'trapezoid';
 
-    public override render(node: INode, context: CanvasRenderingContext2D): void {
+    public override render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -40,7 +40,7 @@ export class TrapezoidAdapter extends RectangleAdapter {
             const insetTop = skew >= 0;
 
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
 
             const path = new Path2D();
             if (insetTop) {
@@ -75,7 +75,9 @@ export class TrapezoidAdapter extends RectangleAdapter {
             }
             context.stroke(path);
 
-            RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
+            if (node.text && show !== 'quick') {
+                RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
+            }
 
             cached.path = path;
             cache.setNode(node, cached);

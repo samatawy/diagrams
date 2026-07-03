@@ -8,6 +8,11 @@ import {
     type DiagramSaveOptions,
     type DiagramSaveHandler,
     type ISerializedDiagram,
+    type DiagramOpenStylesheetHandler,
+    type DiagramSaveStylesheetHandler,
+    type StylesheetOpenOptions,
+    type StylesheetOpenSource,
+    type StylesheetSaveOptions,
 } from "../io";
 import { Diagram } from "../model/diagram";
 import { ColorSelect, type ColorSelectConfig } from "./inputs/color.select";
@@ -40,6 +45,7 @@ import { DiagramStatusBar } from "../status/diagram.status.bar";
 import { ShadowPresetSelect, SHADOW_PRESET_CHANGE_EVENT } from "./inputs/shadow.preset.select";
 import type { ShadowStyle } from "../style.interfaces";
 import { DiagramHintService } from "../status/diagram.hint.service";
+import { SheetRepository } from "../sheets/sheet.repository";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
@@ -54,6 +60,8 @@ export type DiagramEditorFileDialogsConfig = {
     onOpenDiagram?: DiagramOpenHandler;
     onSaveDiagram?: DiagramSaveHandler;
     onExportDiagram?: DiagramExportHandler;
+    onOpenStylesheet?: DiagramOpenStylesheetHandler;
+    onSaveStylesheet?: DiagramSaveStylesheetHandler;
 };
 
 export type DiagramEditorConfig = {
@@ -232,6 +240,8 @@ export class DiagramEditor {
 
     protected diagram: DiagramEditView;
 
+    protected sheet_repository: SheetRepository;
+
     protected headerHost?: HTMLElement;
     protected stageHost?: HTMLElement;
     protected statusBarHost?: HTMLElement;
@@ -313,9 +323,18 @@ export class DiagramEditor {
         this.eventDispatcher = new EventDispatcher(host);
         this.config = config || {};
 
+        if (diagram && diagram.sheetRepository) {
+            this.sheet_repository = diagram.sheetRepository;
+        } else {
+            this.sheet_repository = this.getSheetRepository();
+            if (diagram) diagram.sheetRepository = this.sheet_repository;
+        }
+
         this.initialize(this.host, this.config, diagram);
+
         // Workaround to keep diagram required even if none was passed.
         this.diagram = this.getDiagramView();
+        this.diagram.sheetRepository = this.sheet_repository;
     }
 
     /**
@@ -396,6 +415,33 @@ export class DiagramEditor {
     }
 
     /**
+     * Loads a stylesheet from a provided source object/string and applies it.
+     * @param source Stylesheet source payload.
+     * @param options Optional load behavior.
+     * @returns True when loading succeeded; otherwise false.
+     */
+    public async loadStylesheet(source: StylesheetOpenSource, options?: Pick<StylesheetOpenOptions, 'applyAfterLoad' | 'preferId'>): Promise<boolean> {
+        const loaded = await this.diagram.loadStylesheet(source, options);
+        if (loaded) {
+            this.reflectStyles();
+        }
+        return loaded;
+    }
+
+    /**
+     * Opens a stylesheet using dialog integrations and applies it.
+     * @param options Optional open/load behavior.
+     * @returns True when loading succeeded; otherwise false.
+     */
+    public async openStylesheet(options?: StylesheetOpenOptions): Promise<boolean> {
+        const opened = await this.diagram.openStylesheet(options);
+        if (opened) {
+            this.reflectStyles();
+        }
+        return opened;
+    }
+
+    /**
      * Saves the current diagram using the underlying {@link DiagramEditView}.
      * A prompt will be shown if the diagram has no changes to save.
      * @param options Optional serialization settings.
@@ -403,6 +449,15 @@ export class DiagramEditor {
      */
     public async saveDiagram(options?: DiagramSaveOptions): Promise<string | undefined> {
         return await this.diagram.saveDiagram(options);
+    }
+
+    /**
+     * Saves the currently active stylesheet through the underlying {@link DiagramEditView}.
+     * @param options Optional save behavior.
+     * @returns The resolved filename, or undefined when saving was canceled.
+     */
+    public async saveStylesheet(options?: StylesheetSaveOptions): Promise<string | undefined> {
+        return await this.diagram.saveStylesheet(options);
     }
 
     /**
@@ -439,9 +494,67 @@ export class DiagramEditor {
 
     /**
      * Returns the owned diagram editing view.
+     * @returns The current diagram in this editor.
      */
     public getDiagramView(): DiagramEditView {
+        // TODO: Should we create a new diagram if undefined (since this method is called in the constructor)?
+        // Currently its not a single-liner.
         return this.diagram;
+    }
+
+    /**
+     * Returns the current sheet repository, creating a default one if none exists.
+     * @returns The sheet repository used by this editor.
+     */
+    public getSheetRepository(): SheetRepository {
+        if (!this.sheet_repository) {
+            const repo = new SheetRepository();
+            repo.upsertSheet({
+                id: 'default_sheet',
+                name: 'Default',
+                types: {},
+                classes: {
+                    'default': {
+                        // id: 'default_node',
+                        strokeStyle: {
+                            color: 'red',
+                            width: 2
+                        },
+                        fillStyle: 'white',
+                        textStyle: {},
+                        shadowStyle: DiagramConstants.LOW_SHADOW,
+                    }
+                },
+                diagram: {
+                    background: 'transparent',
+                }
+            });
+            repo.upsertSheet({
+                id: 'bw_sheet',
+                name: 'Black and White',
+                types: {},
+                classes: {
+                    'default': {
+                        // id: 'default_node',
+                        strokeStyle: {
+                            color: 'black',
+                            width: 2
+                        },
+                        fillStyle: 'white',
+                        textStyle: {
+                            weight: 700,
+                        },
+                        shadowStyle: DiagramConstants.MEDIUM_SHADOW,
+                    }
+                },
+                diagram: {
+                    background: 'transparent',
+                }
+            });
+
+            this.sheet_repository = repo;
+        }
+        return this.sheet_repository;
     }
 
     /**
@@ -570,6 +683,7 @@ export class DiagramEditor {
         // Create the local diagram edit view and load the provided diagram if any
         const id = diagram?.id || `diagram-${Date.now()}`;
         this.diagram = new DiagramEditView(id, canvasHost);
+        this.diagram.sheetRepository = this.sheet_repository;
         this.diagram.fileDialogs = this.createFileDialogs();
         this.diagram.prompts = this.createDiagramPrompts();
         this.diagram.contextMenu = new DiagramContextMenu(this.diagram);
@@ -1230,6 +1344,12 @@ export class DiagramEditor {
         }
         if (configured?.onExportDiagram) {
             dialogs.onExportDiagram = configured.onExportDiagram;
+        }
+        if (configured?.onOpenStylesheet) {
+            dialogs.onOpenStylesheet = configured.onOpenStylesheet;
+        }
+        if (configured?.onSaveStylesheet) {
+            dialogs.onSaveStylesheet = configured.onSaveStylesheet;
         }
 
         return dialogs;

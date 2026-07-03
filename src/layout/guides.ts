@@ -59,7 +59,7 @@ export type SnapPointKey = "left" | "centerX" | "right" | "top" | "middleY" | "b
 /**
  * Candidate target rectangle used for guide matching.
  */
-export interface SnapCandidate {
+interface SnapCandidate {
     /** 
      * Candidate node id. 
      */
@@ -129,7 +129,7 @@ export interface SnapOptions {
 /**
  * Axis deltas and top-ranked/all-ranked matches for a snap pass.
  */
-export interface SnapDeltaResult {
+interface SnapDeltaResult {
     /** 
      * Chosen X-axis snap delta.
      */
@@ -186,6 +186,11 @@ export interface GuidesComputeInput {
      * Optional down-shape id to explicitly exclude from candidate matching. 
      */
     downShapeId?: string;
+    /**
+     * Active interaction handle. When provided, guides are restricted to the
+     * edges that are actually moving, matching the snap behavior of pointer-up.
+     */
+    handle?: NodeHandle;
 }
 
 /**
@@ -263,7 +268,7 @@ export class Guides {
 
         const options = this.buildSnapOptions(input.diagram.grid, input.byX, input.byY);
 
-        return this.snapWithGuides(bounds, candidates, options);
+        return this.snapWithGuides(bounds, candidates, options, input.handle);
     }
 
     /**
@@ -299,7 +304,7 @@ export class Guides {
     /**
      * Build SnapOptions from a grid and the current drag direction.
      */
-    public static buildSnapOptions(grid: Pick<IGrid, 'width' | 'height'>, byX: number, byY: number): SnapOptions {
+    private static buildSnapOptions(grid: Pick<IGrid, 'width' | 'height'>, byX: number, byY: number): SnapOptions {
         const xThreshold = Math.max(1, grid.width || 6);
         const yThreshold = Math.max(1, grid.height || 6);
 
@@ -318,7 +323,7 @@ export class Guides {
       * edge of that handle is eligible.  A match is only applied when its
       * distance falls within `snap_threshold`.
      */
-    public static snapDeltas(snap: SnapGuideResult, handle: NodeHandle, options?: SnapOptions): { dx: number; dy: number } {
+    private static snapDeltas(snap: SnapGuideResult, handle: NodeHandle, options?: SnapOptions): { dx: number; dy: number } {
         const effective = options ?? snap.options ?? {};
         const xThreshold = this.thresholdForAxis(effective, 'x', 'snap');
         const yThreshold = this.thresholdForAxis(effective, 'y', 'snap');
@@ -344,7 +349,7 @@ export class Guides {
      * @param options Snap behavior options.
      * @returns Ordered axis matches from best to worst.
      */
-    public static matchesByAxis(movingRect: IRect, candidates: SnapCandidate[], axis: SnapAxis, options: SnapOptions = {}): SnapMatch[] {
+    private static matchesByAxis(movingRect: IRect, candidates: SnapCandidate[], axis: SnapAxis, options: SnapOptions = {}): SnapMatch[] {
         const threshold = this.thresholdForAxis(options, axis, 'match');
         const preferredDirection = options.preferDeltaSign?.[axis] ?? 0;
         const sourcePoints = this.axisPoints(movingRect, axis);
@@ -420,7 +425,7 @@ export class Guides {
      * @param options Snap behavior options.
      * @returns Delta result and ordered axis match lists.
      */
-    public static snapDelta(movingRect: IRect, candidates: SnapCandidate[], options: SnapOptions = {}): SnapDeltaResult {
+    private static snapDelta(movingRect: IRect, candidates: SnapCandidate[], options: SnapOptions = {}): SnapDeltaResult {
         const xMatches = this.matchesByAxis(movingRect, candidates, "x", options);
         const yMatches = this.matchesByAxis(movingRect, candidates, "y", options);
         const xMatch = xMatches[0];
@@ -441,12 +446,25 @@ export class Guides {
      * @param options Snap behavior options.
      * @returns Snap result augmented with renderable guides.
      */
-    private static snapWithGuides(movingRect: IRect, candidates: SnapCandidate[], options: SnapOptions = {}): SnapGuideResult {
+    private static snapWithGuides(movingRect: IRect, candidates: SnapCandidate[], options: SnapOptions = {}, handle?: NodeHandle): SnapGuideResult {
         const result = this.snapDelta(movingRect, candidates, options);
         const xGuideThreshold = this.thresholdForAxis(options, 'x', 'render');
         const yGuideThreshold = this.thresholdForAxis(options, 'y', 'render');
-        const xGuideMatches = result.xMatches.filter(match => match.distance <= xGuideThreshold);
-        const yGuideMatches = result.yMatches.filter(match => match.distance <= yGuideThreshold);
+        const isMove = !handle || handle === NodeHandle.MOVE;
+        const xSourceKey = isMove ? undefined : this.handleSourceKey(handle, 'x');
+        const ySourceKey = isMove ? undefined : this.handleSourceKey(handle, 'y');
+
+        const xFiltered = result.xMatches.filter(
+            m => m.distance <= xGuideThreshold && (xSourceKey === undefined || m.sourcePoint === xSourceKey)
+        );
+        const xBest = xFiltered[0]?.distance ?? Infinity;
+        const xGuideMatches = xFiltered.filter(m => m.distance === xBest);
+
+        const yFiltered = result.yMatches.filter(
+            m => m.distance <= yGuideThreshold && (ySourceKey === undefined || m.sourcePoint === ySourceKey)
+        );
+        const yBest = yFiltered[0]?.distance ?? Infinity;
+        const yGuideMatches = yFiltered.filter(m => m.distance === yBest);
 
         return {
             ...result,
@@ -697,7 +715,6 @@ export class Guides {
 
     /**
      * Collects snap candidates from visible layers while excluding selected and linked nodes.
-     * Falls back to all nodes when no candidate is found from layer membership.
      * @param excludedNodeIds Node ids excluded from snapping.
      * @param movingBounds Current bounds of moving nodes.
      * @param diagram Diagram access point.
@@ -745,11 +762,11 @@ export class Guides {
         }
 
         // Defensive fallback: if layer membership is stale, compute candidates from all nodes.
-        if (!candidates.length) {
-            for (const node of diagram.nodes) {
-                tryAddNode(node);
-            }
-        }
+        // if (!candidates.length) {
+        //     for (const node of diagram.nodes) {
+        //         tryAddNode(node);
+        //     }
+        // }
 
         return candidates;
     }

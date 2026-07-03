@@ -479,8 +479,11 @@ const editor = mountEditor('editor-demo', {
             strokeStyle: { color: '#111827' },
             fillStyle: 'transparent',
             hollow: true,
-            font: '24px Georgia',
-            textBaseline: 'middle',
+            textStyle: {
+                fontFace: 'Georgia',
+                size: 24,
+                baseline: 'middle',
+            },
         });
         const service = makeBox(view, 'service', 'round_rectangle', 60, 130, 200, 84, {
             text: 'API Service',
@@ -501,7 +504,7 @@ const editor = mountEditor('editor-demo', {
             text: 'Try selection, marquee, space-pan,\nAlt point editing, and text editing.',
             fillStyle: '#fff7ed',
             strokeStyle: { color: '#c2410c' },
-            textBaseline: 'middle',
+            textStyle: { baseline: 'middle' },
         });
 
         const edges = [

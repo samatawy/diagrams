@@ -18,7 +18,7 @@ export class SvgAdapter extends RectangleAdapter {
 
     hollow_mode: HollowMode = 'never';
 
-    render(node: INode, context: CanvasRenderingContext2D): void {
+    render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -30,7 +30,7 @@ export class SvgAdapter extends RectangleAdapter {
             const rect = coordinates.getBoundingRect(node);
 
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
 
             const path = new Path2D();
             path.rect(rect.left, rect.top, rect.width, rect.height);

@@ -1,11 +1,13 @@
 import { NodeRegistry } from "../../factory/node.registry";
 import { type INode } from "../../interfaces";
-import { type ITextOrientation, type IPoint } from "../../types";
+import { type ITextOrientation, type IPoint, NodeHandle } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { ConnectionBasics } from "../connection.basics";
 import { PolylineAdapter } from "./polyline.adapter";
 import { RenderBasics } from "../render.basics";
+import { isHollow, lineWidth, nodeAngle } from "../../value.utils";
+import { DiagramConstants } from "../../model/diagram.constants";
 
 /**
  * CurveAdapter is a node adapter responsible for rendering curve nodes in the diagram. 
@@ -22,7 +24,47 @@ export class CurveAdapter extends PolylineAdapter {
     has_text = true;
     text_orientations: ITextOrientation[] = ['horizontal'];
 
-    render(node: INode, context: CanvasRenderingContext2D): void {
+
+    public hitTest(node: INode, point: IPoint): NodeHandle {
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return NodeHandle.NONE;
+        const coordinates = diagram.getCoordinates();
+        const cache = diagram.getCache();
+        const cached = cache.getNode(node) || {} as INodeCached;
+
+        if (node.points.length > 1) {
+            const angle = nodeAngle(node);
+            const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
+
+            const rect = coordinates.getBoundingRect(node, false);
+            const cos = cached.cos || Math.cos(angle);
+            const sin = cached.sin || Math.sin(angle);
+            const hitPoint = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, angle, cos, sin);
+
+            /* Check if the hit point is near the start or end points of the curve */
+            for (const sourcePoint of [node.points[0]!, node.points[node.points.length - 1]!]) {
+                if (Math.abs(sourcePoint.x - hitPoint.x) <= epsilon && Math.abs(sourcePoint.y - hitPoint.y) <= epsilon) {
+                    return NodeHandle.POINT;
+                }
+            }
+
+            if (cached?.text_path && coordinates.isPointInPath(cached.text_path, hitPoint.x, hitPoint.y)) {
+                return NodeHandle.MOVE;
+            }
+
+            if (cached.path) {
+                const hitStrokeWidth = Math.max(lineWidth(node) + DiagramConstants.PATH_HIT_PADDING, 10);
+                const inPath = isHollow(node) ?
+                    coordinates.isPointInStroke(cached.path, hitPoint.x, hitPoint.y, hitStrokeWidth) :
+                    coordinates.isPointInPath(cached.path, hitPoint.x, hitPoint.y);
+                return inPath ? NodeHandle.MOVE : NodeHandle.NONE;
+            }
+        }
+
+        return NodeHandle.NONE;
+    }
+
+    render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -31,7 +73,7 @@ export class CurveAdapter extends PolylineAdapter {
 
         if (node.points.length > 1) {
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
             if (isConnectionNode(node)) {
                 ConnectionBasics.syncEndpoints(node);
             }
@@ -43,7 +85,7 @@ export class CurveAdapter extends PolylineAdapter {
                 RenderBasics.renderArrows(node, context);
             }
 
-            if (node.text) {
+            if (node.text && show !== 'quick') {
                 const placement = this.textPlacement(node);
                 const segment = placement?.segment;
                 if (segment) {
@@ -70,7 +112,7 @@ export class CurveAdapter extends PolylineAdapter {
         context.save();
         RenderBasics.prepareHandles(node, context);
         context.strokeStyle = 'rgba(0,0,0,.25)';
-        context.setLineDash([4, 2]);
+        context.setLineDash([4, 2, 4, 2]);
 
         const handles = new Path2D();
 

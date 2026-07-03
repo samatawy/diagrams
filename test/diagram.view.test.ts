@@ -289,8 +289,8 @@ describe('DiagramView', () => {
             initialView: { mode: 'fit-all', padding: 0 },
         });
 
-        expect(view.getCoordinates().zoom).toBeCloseTo(0.5);
-        expect(view.getCoordinates().pan).toEqual({ x: 0, y: -25 });
+        expect(view.getCoordinates().zoom).toBeCloseTo(0.9);
+        expect(view.getCoordinates().pan).toEqual({ x: 0, y: -5 });
     });
 
     it('supports top-right alignment when fitting all nodes initially', () => {
@@ -316,7 +316,7 @@ describe('DiagramView', () => {
         });
 
         expect(view.getCoordinates().zoom).toBeCloseTo(1);
-        expect(view.getCoordinates().pan).toEqual({ x: -100, y: 0 });
+        expect(view.getCoordinates().pan).toEqual({ x: -20, y: 0 });
     });
 
     it('defaults fit-width to top alignment vertically', () => {
@@ -340,7 +340,7 @@ describe('DiagramView', () => {
             },
         });
 
-        expect(view.getCoordinates().zoom).toBeCloseTo(2);
+        expect(view.getCoordinates().zoom).toBeCloseTo(1.2);
         expect(view.getCoordinates().pan).toEqual({ x: 0, y: 0 });
     });
 

@@ -1,5 +1,6 @@
 import { NodeRegistry } from "./factory";
 import type { IConnection, IContainer, IDiagram, INode } from "./interfaces";
+import type { DiagramAnimations } from "./layout/animations";
 import type { CoordinateSystem } from "./view/coordinate.system";
 import type { ViewCache } from "./view/view.cache";
 
@@ -65,6 +66,7 @@ export function isContainerNode(value: unknown): value is INode & IContainer {
  */
 export interface DiagramViewLike extends IDiagram {
     render_mode: 'edit' | 'view';
+    animations: DiagramAnimations;
     getCache(): ViewCache;
     getCoordinates(): CoordinateSystem;
 }

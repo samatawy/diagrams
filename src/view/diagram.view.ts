@@ -28,6 +28,8 @@ import { isConnection, isContainer, isContainerNode } from "../guards";
 import { DiagramKeyboard } from "../keyboard/diagram.keyboard";
 import { DiagramViewKeyboard } from "./view.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
+import type { AnimationChannelType, AnimationLineDash, AnimationMode } from "../animation.types";
+import { DiagramAnimations } from "../layout/animations";
 
 export type RenderMode = 'view' | 'editing';
 
@@ -99,6 +101,8 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected fitViewport: FitViewport;
 
+    protected animations: DiagramAnimations;
+
     public grid: IGrid;
 
     public guideOptions: DiagramGuideOptions = {
@@ -114,6 +118,16 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected dragPanningWithSpace: boolean = false;
 
+    // protected animation: AnimationLineDash = {
+    //     enabled: true,
+    //     animate: false,
+    //     fps: 60,
+    //     dashOffset: 0,
+    // };
+
+    // private viewportAnimationFrame?: number;
+
+    // private viewportAnimationToken: number = 0;
 
     protected hover_listener?: DiagramPointerListener;
 
@@ -127,7 +141,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected readonly handlePointerUp = (event: PointerEvent) => this.pointerUp(event);
 
-    // Only cancel an in-progress drag when the pointer leaves; ignore plain hover-exits.
+    /* Only cancel an in-progress drag when the pointer leaves; ignore plain hover-exits. */
     protected readonly handlePointerLeave = (event: PointerEvent) => {
         if (event.buttons !== 0) this.pointerUp(event);
     };
@@ -163,7 +177,12 @@ export class DiagramView extends Diagram implements HasSelection {
         this.coordinates = new CoordinateSystem(this.context);
         this.coordinates.attach(this);
         this.cache = new ViewCache();
+
         this.fitViewport = new FitViewport(this);
+        this.animations = new DiagramAnimations(this, {
+            enabled: true,
+            fps: 60,
+        });
 
         this.keyboard = new DiagramViewKeyboard();
 
@@ -220,7 +239,6 @@ export class DiagramView extends Diagram implements HasSelection {
 
     public override clear(): void {
         this.clearSelection();
-        // this.grid = { ...defaultGrid };
         super.clear();
     }
 
@@ -283,7 +301,6 @@ export class DiagramView extends Diagram implements HasSelection {
      * @returns The selected node, if any.
      */
     public selectNode(node: string | INode): INode | undefined {
-        // this.setSelection(nodeId ? [this.node(nodeId)].filter((node): node is INode => !!node) : []);
         const _node = typeof node === 'string' ? this.node(node) : node;
         if (!_node) return;
 
@@ -335,9 +352,6 @@ export class DiagramView extends Diagram implements HasSelection {
                 break;
         }
 
-        // this.selected_nodes = this.selectionOptions.enable_multi
-        //     ? [...this.selected_nodes, node]
-        //     : [node];
         this.emitSelectionChange();
     }
 
@@ -426,6 +440,8 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param viewport The viewport changes to apply.
      */
     public setViewport(viewport: Partial<DiagramViewportChange>): void {
+        this.stopViewportAnimation();
+
         let panChanged = false;
         let zoomChanged = false;
 
@@ -467,8 +483,9 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param zoom The desired zoom level.
      * @param centerX The x coordinate (canvas space) to keep visually stable during zoom.
      * @param centerY The y coordinate (canvas space) to keep visually stable during zoom.
+     * @param mode The animation mode for the zoom operation.
      */
-    public zoomTo(zoom: number, centerX?: number, centerY?: number): void {
+    public zoomTo(zoom: number, centerX?: number, centerY?: number, mode: AnimationMode = 'instant'): void {
         if (!Number.isFinite(zoom) || zoom <= 0) {
             return;
         }
@@ -486,13 +503,24 @@ export class DiagramView extends Diagram implements HasSelection {
             return;
         }
 
-        this.coordinates.pan = {
-            x: ((centerX + this.coordinates.pan.x) / currentZoom) * nextZoom - centerX,
-            y: ((centerY + this.coordinates.pan.y) / currentZoom) * nextZoom - centerY,
-        };
-        this.coordinates.zoom = nextZoom;
-        this.emitViewportEvents(true, true);
-        this.render();
+        if (mode === 'animate') {
+            this.animateViewport({
+                zoom: nextZoom,
+                pan: {
+                    x: ((centerX + this.coordinates.pan.x) / currentZoom) * nextZoom - centerX,
+                    y: ((centerY + this.coordinates.pan.y) / currentZoom) * nextZoom - centerY,
+                }
+            });
+        } else {    /* 'instant' */
+            this.stopViewportAnimation();
+            this.coordinates.pan = {
+                x: ((centerX + this.coordinates.pan.x) / currentZoom) * nextZoom - centerX,
+                y: ((centerY + this.coordinates.pan.y) / currentZoom) * nextZoom - centerY,
+            };
+            this.coordinates.zoom = nextZoom;
+            this.emitViewportEvents(true, true);
+            this.render();
+        }
     }
 
     /**
@@ -500,26 +528,39 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param factor The zoom multiplier. Values greater than 1 zoom in and values between 0 and 1 zoom out.
      * @param centerX The x coordinate (canvas space) to keep visually stable during zoom.
      * @param centerY The y coordinate (canvas space) to keep visually stable during zoom.
+     * @param mode The animation mode for the zoom operation.
      */
-    public zoomBy(factor: number, centerX?: number, centerY?: number): void {
+    public zoomBy(factor: number, centerX?: number, centerY?: number, mode: AnimationMode = 'instant'): void {
         if (!Number.isFinite(factor) || factor <= 0) {
             return;
         }
 
-        this.zoomTo(this.coordinates.zoom * factor, centerX, centerY);
+        this.zoomTo(this.coordinates.zoom * factor, centerX, centerY, mode);
     }
 
     /**
      * Pan the diagram by the specified delta values.
      * @param deltaX The amount to pan in the x direction.
      * @param deltaY The amount to pan in the y direction.
+     * @param mode The animation mode for the pan operation.
      */
-    public panBy(deltaX: number, deltaY: number): void {
-        this.coordinates.pan = {
-            x: this.coordinates.pan.x - deltaX,
-            y: this.coordinates.pan.y - deltaY,
-        };
-        this.emitViewportEvents(true, false);
+    public panBy(deltaX: number, deltaY: number, mode: AnimationMode = 'instant'): void {
+        if (mode === 'animate') {
+            this.animateViewport({
+                pan: {
+                    x: this.coordinates.pan.x - deltaX,
+                    y: this.coordinates.pan.y - deltaY
+                }
+            });
+
+        } else {   /* 'instant' */
+            this.stopViewportAnimation();
+            this.coordinates.pan = {
+                x: this.coordinates.pan.x - deltaX,
+                y: this.coordinates.pan.y - deltaY,
+            };
+            this.emitViewportEvents(true, false);
+        }
     }
 
     // ============================================
@@ -632,7 +673,7 @@ export class DiagramView extends Diagram implements HasSelection {
             const containers = nodes.filter(isContainerNode);
             const connections = nodes.filter(isConnection);
 
-            // Render containers first..
+            /* Render containers first.. */
             for (const container of containers) {
                 if (what === 'nodes' || what === 'all') {
                     const handler = NodeRegistry.adapter(container.type);
@@ -640,7 +681,7 @@ export class DiagramView extends Diagram implements HasSelection {
                 }
             }
 
-            // Render connections first..
+            /* then render connections before other nodes.. */
             for (const node of connections) {
                 if (what === 'nodes' || what === 'all') {
                     const handler = NodeRegistry.adapter(node.type);
@@ -648,7 +689,7 @@ export class DiagramView extends Diagram implements HasSelection {
                 }
             }
 
-            // Then render non-connection nodes on top, so they appear above connecting lines.
+            /* Then render non-connection nodes on top, so they appear above connecting lines. */
             for (const node of nodes) {
                 const handler = NodeRegistry.adapter(node.type);
                 if (what === 'nodes' || what === 'all') {
@@ -657,7 +698,7 @@ export class DiagramView extends Diagram implements HasSelection {
                     }
                 }
 
-                // and render selection anchors on top.
+                /* and render selection anchors on top. */
                 if (what === 'selection' || what === 'all') {
                     if (this.isSelected(node)) {
                         handler?.renderSelection(node, this.context, 'all_handles');
@@ -681,7 +722,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
         context.save();
         this.coordinates.resetTransform(context);
-        context.strokeStyle = this.grid.color || DiagramConstants.GRID_LINE_COLOR;   // lightgray
+        context.strokeStyle = this.grid.color || DiagramConstants.GRID_LINE_COLOR;
         context.lineWidth = 0.5 / zoom;
         context.globalAlpha = 0.6;
         context.beginPath();
@@ -808,7 +849,9 @@ export class DiagramView extends Diagram implements HasSelection {
         throw new Error('Unsupported runtime for image save operation');
     }
 
-    // Create a new offscreen canvas element to be used for rendering the full diagram.
+    /**
+     * Create a new offscreen canvas element to be used for rendering the full diagram.
+     */
     private createExportCanvas(padding: number): HTMLCanvasElement {
         const bounds = this.getNodeBounds();
 
@@ -823,7 +866,9 @@ export class DiagramView extends Diagram implements HasSelection {
         return canvas;
     }
 
-    // Render the diagram content onto a canvas context, applying the necessary transformations to position the content based on the provided bounds and padding.
+    /**
+     * Render the diagram content onto a canvas context, applying the necessary transformations to position the content based on the provided bounds and padding.
+     */
     private renderContentToContext(context: CanvasRenderingContext2D, bounds: IRect, padding: number): void {
         this.coordinates.resetTransform(context);
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
@@ -841,7 +886,9 @@ export class DiagramView extends Diagram implements HasSelection {
         this.coordinates.resetTransform(context);
     }
 
-    // Determine the appropriate file extension for an image based on its MIME type.
+    /**
+     * Determine the appropriate file extension for an image based on its MIME type.
+     */
     private getImageExtension(mimeType: string): string {
         switch (mimeType) {
             case 'image/jpeg':
@@ -884,6 +931,131 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         return bounds;
+    }
+
+    // ================================================
+    // ============== Animation methods ==============
+    // ================================================
+
+    protected startAnimation(type: AnimationChannelType, id: string | undefined, func: () => void): void {
+        this.animations.startAnimation(type, id, func);
+        // this.stopAnimation();
+
+        // if (!this.animation.enabled) {
+        //     func?.();
+        //     return;
+        // }
+
+        // this.animation.animate = true;
+        // this.animation.lastTimestamp = performance.now();
+        // this.animation.lastFrame = requestAnimationFrame(() => this.renderAnimated(func));
+    }
+
+    protected stopAnimation(id: string): void {
+        this.animations.stopAnimation(id);
+        // if (this.animation.lastFrame) {
+        //     cancelAnimationFrame(this.animation.lastFrame);
+        //     this.animation.lastFrame = undefined;
+        //     this.animation.lastTimestamp = undefined;
+        // }
+        // this.animation.animate = false;
+    }
+
+    protected stopAnimations(type: AnimationChannelType): void {
+        this.animations.stopAnimationsByType(type);
+    }
+    // if (this.animation.lastFrame) {
+
+    // private renderAnimated(func?: () => void): void {
+    //     if (!this.animation.animate || !this.animation.lastTimestamp) {
+    //         return;
+    //     }
+
+    //     const now = performance.now();
+    //     const delta = (now - this.animation.lastTimestamp);
+    //     const interval = 1000 / this.animation.fps;
+    //     const offset = (delta / interval) * 0.25;
+
+    //     this.animation.dashOffset -= offset;
+    //     // if (this.animation.dashOffset < -12) {
+    //     //     this.animation.dashOffset = 0;
+    //     // }
+
+    //     if (func) {
+    //         func();
+    //     } else {
+    //         this.render();
+    //     }
+
+    //     this.animation.lastTimestamp = now;
+    //     this.animation.lastFrame = requestAnimationFrame(() => this.renderAnimated(func));
+    // }
+
+    public animateLineDash(id: string, func: () => void): void {
+        this.animations.animateLineDash(id, func);
+    }
+
+    public animateViewport(target: { zoom?: number, pan?: { x: number, y: number } }, func?: () => void): void {
+        this.animations.animateViewport(target, func);
+        // () => {
+        //     // this.render('all');
+        //     func ? func() : this.render('all');
+        // });
+
+        // if (!this.animation.enabled) {
+        //     this.setViewport(target);   /* sets and emits events */
+        //     return;
+        // }
+
+        // this.stopViewportAnimation();
+        // const token = ++this.viewportAnimationToken;
+
+        // const animate = () => {
+        //     if (token !== this.viewportAnimationToken) {
+        //         return;
+        //     }
+
+        //     const currentZoom = this.coordinates.zoom;
+        //     const currentPan = { ...this.coordinates.pan };
+
+        //     const zoomDiff = (target.zoom ?? currentZoom) - currentZoom;
+        //     const panDiff = {
+        //         x: (target.pan?.x ?? currentPan.x) - currentPan.x,
+        //         y: (target.pan?.y ?? currentPan.y) - currentPan.y,
+        //     };
+
+        //     const attainedZoom = target.zoom === undefined || Math.abs(zoomDiff) < 0.01;
+        //     const attainedPan = target.pan === undefined || (Math.abs(panDiff.x) < 0.5 && Math.abs(panDiff.y) < 0.5);
+
+        //     if (attainedZoom && attainedPan) {
+        //         this.viewportAnimationFrame = undefined;
+        //         this.setViewport(target); /* Finalize the viewport to the target values */
+        //         return;
+        //     }
+
+        //     const step = 0.2; /* Adjust this value for smoother or faster animation */
+
+        //     const nextZoom = currentZoom + (zoomDiff * step);
+        //     const nextPan = {
+        //         x: currentPan.x + (panDiff.x * step),
+        //         y: currentPan.y + (panDiff.y * step),
+        //     };
+
+        //     this.coordinates.zoom = nextZoom;
+        //     this.coordinates.pan = nextPan;
+        //     this.render('all');
+
+        //     this.viewportAnimationFrame = requestAnimationFrame(animate);
+        // };
+        // animate();
+    }
+
+    private stopViewportAnimation(): void {
+        this.animations.stopAnimation('viewport');
+        // if (this.viewportAnimationFrame !== undefined) {
+        //     cancelAnimationFrame(this.viewportAnimationFrame);
+        //     this.viewportAnimationFrame = undefined;
+        // }
     }
 
     // =================================================
@@ -931,20 +1103,6 @@ export class DiagramView extends Diagram implements HasSelection {
     protected hitNode(x: number, y: number): INode | undefined {
         const found = this.hitNodes(x, y);
         return found.length ? found[0] : undefined;
-
-        // for (let layer of this.layers) {
-        //     if (!layer.visible) continue;
-
-        //     const nodes = this.layerNodes(layer);
-
-        //     for (let i = nodes.length - 1; i >= 0; i--) {
-        //         let node = nodes[i]!;
-        //         const handler = NodeRegistry.adapter(node.type);
-        //         const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
-        //         if (handle != NodeHandle.NONE) return node;
-        //     }
-        // }
-        // return undefined;
     }
 
     /**
@@ -957,16 +1115,14 @@ export class DiagramView extends Diagram implements HasSelection {
     protected hitNodes(x: number, y: number): INode[] {
         let found: INode[] = [];
 
-        // Layers in order of rendering
+        /* Layers in order of rendering */
         for (let layer of this.layers) {
             if (!layer.visible) continue;
 
             const nodes = this.layerNodes(layer);
 
-            // Containers only
+            /* Containers only */
             for (const node of nodes) {
-                // for (let i = nodes.length - 1; i >= 0; i--) {
-                // let node = nodes[i]!;
                 if (isContainer(node)) {
                     const handler = NodeRegistry.adapter(node.type);
                     const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
@@ -974,10 +1130,8 @@ export class DiagramView extends Diagram implements HasSelection {
                 }
             }
 
-            // Nodes only
+            /* Nodes only */
             for (const node of nodes) {
-                // for (let i = nodes.length - 1; i >= 0; i--) {
-                //     let node = nodes[i]!;
                 if (!isContainer(node) && !isConnection(node)) {
                     const handler = NodeRegistry.adapter(node.type);
                     const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
@@ -985,10 +1139,8 @@ export class DiagramView extends Diagram implements HasSelection {
                 }
             }
 
-            // Connections only
+            /* Connections only */
             for (const node of nodes) {
-                // for (let i = nodes.length - 1; i >= 0; i--) {
-                // let node = nodes[i]!;
                 if (isConnection(node)) {
                     const handler = NodeRegistry.adapter(node.type);
                     const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
@@ -1017,19 +1169,6 @@ export class DiagramView extends Diagram implements HasSelection {
                 return handle;
             }
         }
-
-        // for (let layer of this.layers) {
-        //     if (!target && !layer.visible) continue;
-
-        //     for (let i = nodes.length - 1; i >= 0; i--) {
-        //         let node = nodes[i]!;
-        //         const handler = NodeRegistry.adapter(node.type);
-        //         const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
-        //         if (!target || node === target) {
-        //             return handle;
-        //         }
-        //     }
-        // }
         return NodeHandle.NONE;
     }
 
@@ -1138,7 +1277,7 @@ export class DiagramView extends Diagram implements HasSelection {
         const toggleSelection = this.selectionOptions.enable_multi && (event.shiftKey || event.ctrlKey || event.metaKey);
 
         if (hit) {
-            // Handle groups
+            /* Handle groups */
             const select_option = this.selectionOptions.enable_multi ? 'in_group' : 'isolated';
 
             if (toggleSelection) {
@@ -1159,7 +1298,7 @@ export class DiagramView extends Diagram implements HasSelection {
             this.emitBackgroundClick(event.offsetX, event.offsetY);
         }
 
-        // Notify listening external code
+        /* Notify listening external code */
         if (this.click_listener) {
             this.click_listener(hit, event);
         }
@@ -1192,7 +1331,7 @@ export class DiagramView extends Diagram implements HasSelection {
         const handle = this.hitHandle(event.offsetX, event.offsetY, hoverNode);
         this.canvas.style.cursor = this.getCursor(handle) || 'default';
 
-        // Notify listening external code
+        /* Notify listening external code */
         if (this.hover_listener) {
             this.hover_listener(hoverNode, event);
         }
@@ -1233,7 +1372,7 @@ export class DiagramView extends Diagram implements HasSelection {
             const zoomFactor = event.deltaY > 0 ? wheelZoomStep : 1 / wheelZoomStep;
             this.zoomBy(zoomFactor, event.offsetX, event.offsetY);
         } else {
-            this.panBy(event.deltaX, event.deltaY);
+            this.panBy(event.deltaX, event.deltaY, 'animate');
         }
 
         this.render();
@@ -1259,10 +1398,6 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         this.setKeyboardFlag(event, true);
-        // const key = event.key.toLowerCase();
-        // if (key === ' ' || key === 'space' || key === 'spacebar') {
-        //     this.isSpacePanning = true;
-        // }
 
         if (this.keyboard.invokeEvent(this, event)) {
             return;
@@ -1318,7 +1453,7 @@ export class DiagramView extends Diagram implements HasSelection {
         const cssWidth = Math.max(1, this.host.clientWidth || this.canvas.clientWidth || Math.floor(this.canvas.width / this.pixelRatio) || 1);
         const cssHeight = Math.max(1, this.host.clientHeight || this.canvas.clientHeight || Math.floor(this.canvas.height / this.pixelRatio) || 1);
         const dpr = typeof window !== 'undefined' ? Math.max(1, window.devicePixelRatio || 1) : 1;
-        // const dpr = 1; To turn off when testing.
+
         const width = Math.max(1, Math.round(cssWidth * dpr));
         const height = Math.max(1, Math.round(cssHeight * dpr));
 
@@ -1390,7 +1525,7 @@ export class DiagramView extends Diagram implements HasSelection {
         });
     }
 
-    // Emits any events that can be captured outside the diagram, such as for selection changes or viewport changes.
+    /* Emit any events that can be captured outside the diagram, such as for selection changes or viewport changes. */
     private emitViewportEvents(panChanged: boolean, zoomChanged: boolean): void {
         if (!panChanged && !zoomChanged) {
             return;
@@ -1408,7 +1543,9 @@ export class DiagramView extends Diagram implements HasSelection {
     // ========== Helper methods for starting. ==========
     // ==================================================
 
-    // Start with the layout specified in the initial view options.
+    /** 
+     * Start with the layout specified in the initial view options. 
+     */
     private applyInitialView(initialView?: DiagramInitialView): void {
         const mode = initialView?.mode || 'saved';
 
@@ -1430,7 +1567,7 @@ export class DiagramView extends Diagram implements HasSelection {
         }
     }
 
-    // Start with given selection based on options, then emit selection change to notify external listeners.
+    /* Start with given selection based on options, then emit selection change to notify external listeners. */
     private initializeSelection(options?: DiagramViewOptions): void {
         if (options?.selectedNodeIds?.length) {
             const nodes = options.selectedNodeIds

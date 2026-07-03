@@ -8,6 +8,7 @@ import { NORMAL_FONT_WEIGHT, BOLD_FONT_WEIGHT } from '../style.interfaces';
  * Available built-in diagram actions. These can be used in the toolbar layout, context menu, etc.
  */
 export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
+    'load-stylesheet' | 'save-stylesheet' |
     'show-grid' | 'snap-grid' | 'show-guides' | 'snap-guides' |
     'zoom-in' | 'zoom-out' | 'fit-width' | 'fit-all' |
     'undo' | 'redo' |
@@ -82,6 +83,21 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Export the diagram as an image or file',
         execute: async (d) => { await d.saveImageDiagram(); },
     },
+    {
+        id: 'load-stylesheet',
+        label: 'Load Stylesheet',
+        tooltip: 'Load a stylesheet for the diagram',
+        execute: async (d) => { await d.openStylesheet(); },
+        isEnabled: (d) => d.canOpenStylesheet,
+    },
+    {
+        id: 'save-stylesheet',
+        label: 'Save Stylesheet',
+        tooltip: 'Save the current stylesheet',
+        execute: async (d) => { await d.saveStylesheet(); },
+        isEnabled: (d) => d.canSaveStylesheet,
+    },
+
     {
         id: 'undo',
         label: 'Undo',
@@ -163,13 +179,13 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'zoom-in',
         label: 'Zoom In',
         tooltip: 'Zoom in',
-        execute: (d) => d.zoomBy(1.05),
+        execute: (d) => d.zoomBy(1.05, undefined, undefined, 'animate'),
     },
     {
         id: 'zoom-out',
         label: 'Zoom Out',
         tooltip: 'Zoom out',
-        execute: (d) => d.zoomBy(1 / 1.05),
+        execute: (d) => d.zoomBy(1 / 1.05, undefined, undefined, 'animate'),
     },
     {
         id: 'fit-width',
@@ -251,7 +267,9 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ baseline: 'top' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'top'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
+        isEnabled: (d) => d.selection().length > 0
+            && d.selection().some((n) => (NodeRegistry.adapter(n.type)?.text_baselines.includes('top') ?? true)),
+        // isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-middle',
@@ -260,7 +278,9 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ baseline: 'middle' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'middle'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
+        isEnabled: (d) => d.selection().length > 0
+            && d.selection().some((n) => (NodeRegistry.adapter(n.type)?.text_baselines.includes('middle') ?? true)),
+        // isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
     },
     {
         id: 'text-bottom',
@@ -269,7 +289,9 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         toggle: true,
         execute: (d) => d.setTextStyle({ baseline: 'bottom' }),
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => !isConnectionNode(n) && textBaseline(n) === 'bottom'),
-        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
+        isEnabled: (d) => d.selection().length > 0
+            && d.selection().some((n) => (NodeRegistry.adapter(n.type)?.text_baselines.includes('bottom') ?? true)),
+        // isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => !isConnectionNode(n) && NodeRegistry.hasText(n.type)),
     },
 
     // text formatting

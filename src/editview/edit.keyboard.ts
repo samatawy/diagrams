@@ -102,7 +102,7 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
             if (d.selection().length > 0) {
                 d.moveSelectedWithUndo(0, -dy);
             } else {
-                d.panBy(0, -dy);
+                d.panBy(0, -dy, 'animate');
                 d.render();
             }
         }, 'Move up');
@@ -112,7 +112,7 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
             if (d.selection().length > 0) {
                 d.moveSelectedWithUndo(0, dy);
             } else {
-                d.panBy(0, dy);
+                d.panBy(0, dy, 'animate');
                 d.render();
             }
         }, 'Move down');
@@ -122,7 +122,7 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
             if (d.selection().length > 0) {
                 d.moveSelectedWithUndo(-dx, 0);
             } else {
-                d.panBy(-dx, 0);
+                d.panBy(-dx, 0, 'animate');
                 d.render();
             }
         }, 'Move left');
@@ -132,7 +132,7 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
             if (d.selection().length > 0) {
                 d.moveSelectedWithUndo(dx, 0);
             } else {
-                d.panBy(dx, 0);
+                d.panBy(dx, 0, 'animate');
                 d.render();
             }
         }, 'Move right');

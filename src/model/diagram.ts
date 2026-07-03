@@ -1,4 +1,4 @@
-import type { IConnection, IConnectionAnchor, IDiagram, IGroup, ILayer, INode } from "../interfaces";
+import type { IConnection, IConnectionAnchor, IDiagram, IGroup, ILayer, INode, HasSheetRepository } from "../interfaces";
 import type { ISerializer, ISerializedConnectionAnchor, ISerializedDiagram, ISerializedLayer, ISerializedNode, ISerializedGroup } from '../io/serialized.types';
 import { jsonSerializer } from '../io/json.serializer';
 import { downloadTextFile, exportTextBlob, isBrowserRuntime } from '../io/browser.support';
@@ -6,6 +6,8 @@ import { isNodeRuntime, writeTextFile } from '../io/node.support';
 import type { DiagramExportFormat, DiagramSaveOptions } from "../io/export.types";
 import { AssetStore } from "../view/asset.store";
 import type { ImageMode } from "../types";
+import { SheetRepository } from "../sheets/sheet.repository";
+import type { SpecSheet } from "../sheets/spec.sheet";
 
 
 /**
@@ -15,7 +17,7 @@ import type { ImageMode } from "../types";
  * It does not support viewing. For that, use DiagramView which extends this base model and adds rendering, selection, and interaction capabilities.
  * It does not support editing. For that, use DiagramController which manages user interactions and updates the Diagram model accordingly.
  */
-export class Diagram implements IDiagram {
+export class Diagram implements IDiagram, HasSheetRepository {
 
     public id: string;
 
@@ -24,6 +26,10 @@ export class Diagram implements IDiagram {
     public groups: IGroup[];
 
     public layers: ILayer[] = [];
+
+    public sheet_id?: string;
+
+    private sheet_repository: SheetRepository;
 
     public background?: string;
 
@@ -37,6 +43,7 @@ export class Diagram implements IDiagram {
 
     constructor(id: string, initial?: Partial<Omit<IDiagram, 'id'>>) {
         this.id = id;
+        this.sheet_id = initial?.sheet_id;
         this.nodes = [];
         this.groups = initial?.groups ? initial.groups.map(group => this.createGroup(group.id, group.nodes)) : [];
         this.layers = initial?.layers ? initial.layers.map(layer => this.createLayer(layer.id, layer.name, layer.visible, layer.nodes)) : [];
@@ -48,6 +55,7 @@ export class Diagram implements IDiagram {
                 this.upsertNode(node);
             }
         }
+        this.sheet_repository = new SheetRepository();
     }
 
     /**
@@ -302,7 +310,30 @@ export class Diagram implements IDiagram {
     }
 
     /**
+     * The diagram's sheet repository, for managing and applying spec sheets to the diagram and its nodes.
+     * @returns The SheetRepository instance associated with the diagram.
+     */
+    public get sheetRepository(): SheetRepository {
+        if (!this.sheet_repository) {
+            this.sheet_repository = new SheetRepository();
+        }
+        return this.sheet_repository;
+    }
+
+    /**
+     * Sets the diagram's sheet repository, allowing for the management and application of spec sheets to the diagram and its nodes.
+     * @param repo The SheetRepository instance to set for the diagram. Cannot be null or undefined.
+     */
+    public set sheetRepository(repo: SheetRepository) {
+        if (!repo) {
+            throw new Error("SheetRepository cannot be null or undefined.");
+        }
+        this.sheet_repository = repo;
+    }
+
+    /**
      * The diagram's asset store, for registering and resolving image/SVG asset sources.
+     * @returns The AssetStore instance associated with the diagram.
      */
     public get assetStore(): AssetStore {
         return this.asset_store;
@@ -460,7 +491,31 @@ export class Diagram implements IDiagram {
         }
 
         this.id = json.id;
+        this.sheet_id = json.sheet_id;
+
+        // Load embedded sheet if any
+        if (json.sheet && typeof json.sheet === 'object') {
+            const styles = this.sheet_repository.readEmbedded(json.sheet);
+            const size = Object.keys(styles.types ?? {}).length + Object.keys(styles.classes ?? {}).length;
+            if (size > 0) {
+                const sheetId = this.sheet_id ?? this.sheet_repository.makeCustomSheetId(this.id);
+                const isCustomSheet = this.sheet_repository.isCustomSheetId(sheetId);
+                this.sheet_id = sheetId;
+
+                this.sheet_repository.upsertSheet({
+                    id: sheetId,
+                    name: !isCustomSheet && json.sheet.name ? json.sheet.name : 'Custom',
+                    version: !isCustomSheet ? json.sheet.version : undefined,
+                    description: !isCustomSheet && json.sheet.description ? json.sheet.description : 'Custom sheet saved with diagram',
+                    diagram: styles.diagram ?? {},
+                    types: styles.types,
+                    classes: styles.classes,
+                });
+            }
+        }
+
         this.asset_store.merge(json.image_assets);
+
         this.nodes = (json.nodes ?? []).map(node => this.hydrateNode(node));
         this.groups = (json.groups ?? []).map(group => this.hydrateGroup(group));
         this.layers = (json.layers ?? []).map(layer => this.hydrateLayer(layer));
@@ -481,6 +536,9 @@ export class Diagram implements IDiagram {
      * @returns The serialized diagram data.
      */
     public write(serializer: ISerializer): any {
+        const hasSheet = !!(this.sheet_id && this.sheet_repository.sheet(this.sheet_id));
+        const serializedSheet = hasSheet ? this.sheet_repository.writeEmbedded(this.sheet_id!) : undefined;
+
         const serializedNodes = this.nodes.map(node => this.serializeNode(node));
 
         const serializedGroups = this.groups?.length ? this.groups.map(group => this.serializeGroup(group)) : undefined;
@@ -507,6 +565,8 @@ export class Diagram implements IDiagram {
 
         return serializer.write({
             id: this.id,
+            sheet_id: this.sheet_id,
+            sheet: serializedSheet,
             nodes: serializedNodes,
             groups: serializedGroups,
             layers: serializedLayers,

@@ -22,12 +22,10 @@ export class FitViewport {
      * @param diagram the DiagramView instance to attach to
      * @param options optional configuration for minimum and maximum zoom levels
      */
-    constructor(
-        diagram: DiagramView,
-        options?: {
-            minZoom?: number,
-            maxZoom?: number,
-        }
+    constructor(diagram: DiagramView, options?: {
+        minZoom?: number,
+        maxZoom?: number,
+    }
     ) {
         this.diagram = diagram;
         if (options) {
@@ -44,6 +42,7 @@ export class FitViewport {
         const bounds = this.diagram.getNodeBounds();
         if (!bounds) return;
         const canvas = this.diagram.getCanvas();
+        const pixelRatio = this.diagram.getCoordinates().pixelRatio || 1;
 
         const padding = options?.padding ?? DiagramConstants.FIT_IMAGE_PADDING;
         const fitAlignment: FitAlign = {
@@ -51,7 +50,7 @@ export class FitViewport {
             vertical: options?.alignment?.vertical || 'top',
         };
 
-        const width = Math.max(1, canvas.width - padding * 2);
+        const width = Math.max(1, (canvas.width / pixelRatio) - padding * 2);
         const zoom = this.clampZoom(width / Math.max(bounds.width, 1));
         this.applyViewportForBounds(bounds, zoom, padding, fitAlignment);
     }
@@ -64,6 +63,7 @@ export class FitViewport {
         const bounds = this.diagram.getNodeBounds();
         if (!bounds) return;
         const canvas = this.diagram.getCanvas();
+        const pixelRatio = this.diagram.getCoordinates().pixelRatio || 1;
 
         const padding = options?.padding ?? DiagramConstants.FIT_IMAGE_PADDING;
         const alignment = {
@@ -71,8 +71,8 @@ export class FitViewport {
             vertical: options?.alignment?.vertical ?? 'center',
         };
 
-        const availableWidth = Math.max(1, canvas.width - padding * 2);
-        const availableHeight = Math.max(1, canvas.height - padding * 2);
+        const availableWidth = Math.max(1, (canvas.width / pixelRatio) - padding * 2);
+        const availableHeight = Math.max(1, (canvas.height / pixelRatio) - padding * 2);
         const zoom = this.clampZoom(Math.min(
             availableWidth / Math.max(bounds.width, 1),
             availableHeight / Math.max(bounds.height, 1),
@@ -91,19 +91,30 @@ export class FitViewport {
     protected applyViewportForBounds(bounds: IRect, zoom: number, padding: number, alignment?: FitAlign): void {
         const canvas = this.diagram.getCanvas();
         const coordinates = this.diagram.getCoordinates();
+        const pixelRatio = coordinates.pixelRatio || 1;
         const horizontal = alignment?.horizontal || 'center';
         const vertical = alignment?.vertical || 'center';
 
         const contentWidth = bounds.width * zoom;
         const contentHeight = bounds.height * zoom;
-        const offsetX = this.getHorizontalOffset(canvas.width, contentWidth, padding, horizontal);
-        const offsetY = this.getVerticalOffset(canvas.height, contentHeight, padding, vertical);
+        const viewportWidth = canvas.width / pixelRatio;
+        const viewportHeight = canvas.height / pixelRatio;
+        const offsetX = this.getHorizontalOffset(viewportWidth, contentWidth, padding, horizontal);
+        const offsetY = this.getVerticalOffset(viewportHeight, contentHeight, padding, vertical);
 
-        coordinates.zoom = zoom;
-        coordinates.pan = {
-            x: bounds.left * zoom - offsetX,
-            y: bounds.top * zoom - offsetY,
-        };
+        this.diagram.animateViewport({
+            zoom: zoom,
+            pan: {
+                x: bounds.left * zoom - offsetX,
+                y: bounds.top * zoom - offsetY,
+            }
+        });
+
+        // coordinates.zoom = zoom;
+        // coordinates.pan = {
+        //     x: bounds.left * zoom - offsetX,
+        //     y: bounds.top * zoom - offsetY,
+        // };
     }
 
     /**

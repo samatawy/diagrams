@@ -2,7 +2,7 @@ import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
 import { EnumSelect, ENUM_SELECT_CHANGE_EVENT } from "../inputs/enum.select";
 
-export type EnumSelectOption = string | { value: string; label?: string };
+export type EnumSelectAdapterOption = string | { value: string; label?: string };
 
 /**
  * Configuration options for EnumSelectAdapter.
@@ -13,7 +13,7 @@ export interface EnumSelectAdapterConfig {
      * May be a static array or a zero-argument factory called on every refresh,
      * which lets the inspector narrow the list based on the current selection.
      */
-    options: EnumSelectOption[] | (() => EnumSelectOption[]);
+    options: EnumSelectAdapterOption[] | (() => EnumSelectAdapterOption[]);
     /**
      * Optional placeholder text when no value is selected.
      */
@@ -35,7 +35,7 @@ export class EnumSelectAdapter extends InspectorAdapter {
 
         const cfg = (initial.def.editorOptions as EnumSelectAdapterConfig | undefined) || { options: [] };
         const rawOptions = cfg.options;
-        const mapOptions = (opts: EnumSelectOption[]) =>
+        const mapOptions = (opts: EnumSelectAdapterOption[]) =>
             opts.map((option) => {
                 if (typeof option === 'string') return { value: option, label: option };
                 return { value: option.value, label: option.label || option.value };
@@ -60,6 +60,13 @@ export class EnumSelectAdapter extends InspectorAdapter {
             this.notifyChange(detail);
         };
         cell.addEventListener(ENUM_SELECT_CHANGE_EVENT, this.onEnumChange as EventListener);
+    }
+
+    override setMixed(mixed: boolean): void {
+        super.setMixed(mixed);
+        if (mixed) {
+            this.select.value = undefined;
+        }
     }
 
     override showValue(editable: EditableRecord): void {

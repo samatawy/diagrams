@@ -108,15 +108,15 @@ export class DiagramConstants {
 
         // ========== Shadows ==========
         NO_SHADOW: { name: 'No Shadow', color: 'transparent', blur: 0, offset: { x: 0, y: 0 } },
-        DEFAULT_SHADOW: { name: 'Shadow', color: 'inherit', blur: 8, offset: { x: 4, y: 4 } },
+        // DEFAULT_SHADOW: { name: 'Shadow', color: 'inherit', blur: 8, offset: { x: 4, y: 4 } },
 
-        LOW_SHADOW: { name: 'Low Shadow', color: 'rgba(0, 0, 0, 0.3)', blur: 4, offset: { x: 2, y: 2 } },
-        MEDIUM_SHADOW: { name: 'Medium Shadow', color: 'rgba(0, 0, 0, 0.35)', blur: 8, offset: { x: 4, y: 4 } },
-        HIGH_SHADOW: { name: 'High Shadow', color: 'rgba(0, 0, 0, 0.4)', blur: 16, offset: { x: 8, y: 8 } },
+        LOW_SHADOW: { name: 'Low Shadow', color: 'rgba(0, 0, 0, 0.3)', blur: 4, offset: { x: 4, y: 4 } },
+        MEDIUM_SHADOW: { name: 'Medium Shadow', color: 'rgba(0, 0, 0, 0.4)', blur: 7, offset: { x: 6, y: 6 } },
+        HIGH_SHADOW: { name: 'High Shadow', color: 'rgba(0, 0, 0, 0.5)', blur: 10, offset: { x: 8, y: 8 } },
 
-        LOW_COLOR_SHADOW: { name: 'Low Shadow', color: 'inherit', blur: 4, offset: { x: 2, y: 2 } },
-        MEDIUM_COLOR_SHADOW: { name: 'Medium Shadow', color: 'inherit', blur: 8, offset: { x: 4, y: 4 } },
-        HIGH_COLOR_SHADOW: { name: 'High Shadow', color: 'inherit', blur: 16, offset: { x: 8, y: 8 } },
+        LOW_COLOR_SHADOW: { name: 'Low Shadow', color: 'inherit', blur: 4, offset: { x: 4, y: 4 } },
+        MEDIUM_COLOR_SHADOW: { name: 'Medium Shadow', color: 'inherit', blur: 7, offset: { x: 6, y: 6 } },
+        HIGH_COLOR_SHADOW: { name: 'High Shadow', color: 'inherit', blur: 10, offset: { x: 8, y: 8 } },
 
         // ========== Icons ==========
         ICON_SIZE: 18,

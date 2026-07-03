@@ -28,7 +28,7 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
         }
     }
 
-    public override render(node: INode, context: CanvasRenderingContext2D): void {
+    public override render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -50,7 +50,7 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
             const radius = this.getCornerRadius(node, rect);
 
             context.save();
-            RenderBasics.prepare(node, context);
+            RenderBasics.prepare(node, context, show);
 
             const path = new Path2D();
             path.moveTo(rect.left, rect.top + radius);
@@ -74,8 +74,9 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
             }
             context.stroke(path);
 
-            RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
-
+            if (node.text && show !== 'quick') {
+                RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
+            }
             cached.path = path;
             cache.setNode(node, cached);
 
@@ -148,7 +149,8 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
 
             // line dash respecting the current zoom level
             // [6 / zoom, 4 / zoom])
-            context.setLineDash([4 / coordinates.zoom, 2 / coordinates.zoom]);
+            context.setLineDash([6 / coordinates.zoom, 6 / coordinates.zoom]);
+            context.lineDashOffset = diagram.animations.enabled ? diagram.animations.lineDashOffset : 0;
 
             const holder = new Path2D();
             holder.rect(rect.left + epsilon, rect.top + epsilon, rect.width - 2 * epsilon, rect.height - 2 * epsilon);

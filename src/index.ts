@@ -3,9 +3,16 @@
 export * from './types';
 export * from './interfaces';
 export * from './style.interfaces';
+export * from './animation.types';
+export * from './guards';
+export * from './value.utils';
 
 // model
-export * from './model/diagram';
+export * from './model/index';
+
+// sheets
+export * from './sheets/index';
+
 
 // io
 export * from './io/index';
@@ -31,8 +38,7 @@ export * from './view/index';
 export * from './status/index';
 
 // elements
-export * from './elements/diagram.view.element';
-export * from './elements/diagram.edit.element';
+export * from './elements/index';
 
 // editor UI
 export * from './editor/index';
