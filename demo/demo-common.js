@@ -19,7 +19,7 @@ import {
     // LineAdapter,
     // TrapezoidAdapter,
     // DocumentAdapter,
-    registerBasicAdapters,
+    registerBasicAdapters, registerBpmnAdapters,
 } from '../dist/index.js';
 
 let registered = false;
@@ -47,6 +47,8 @@ export function registerAdapters() {
     registered = true;
 
     registerBasicAdapters();
+    registerBpmnAdapters();
+
     /*
     RectangleAdapter.register();
     RoundRectangleAdapter.register();

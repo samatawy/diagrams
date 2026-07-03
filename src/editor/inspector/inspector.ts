@@ -401,15 +401,6 @@ export class Inspector {
         Inspector.adapterRegistry.set(name, adapterClass);
     }
 
-    // /**
-    //  * Alias for {@link registerAdapter}; kept for backwards compatibility.
-    //  * @param name Lookup key used in property definitions.
-    //  * @param editorClass The adapter constructor to register.
-    //  */
-    // public static registerEditor(name: string, editorClass: InspectorAdapterClass): void {
-    //     Inspector.registerAdapter(name, editorClass);
-    // }
-
     /**
      * Evaluates every row's isVisible() callback and toggles the 'is-hidden' CSS class on
      * its label and value cells. Also hides sections whose every row is hidden.
@@ -437,14 +428,6 @@ export class Inspector {
         Inspector.adapterRegistry.delete(name);
     }
 
-    // /**
-    //  * Alias for {@link unregisterAdapter}; kept for backwards compatibility.
-    //  * @param name The lookup key of the adapter to remove.
-    //  */
-    // public static unregisterEditor(name: string): void {
-    //     Inspector.unregisterAdapter(name);
-    // }
-
     /**
      * Returns the adapter class registered under a given name, or undefined if not found.
      * @param name The lookup key.
@@ -453,15 +436,6 @@ export class Inspector {
     public static getAdapter(name: string): InspectorAdapterClass | undefined {
         return Inspector.adapterRegistry.get(name);
     }
-
-    // /**
-    //  * Alias for {@link getAdapter}; kept for backwards compatibility.
-    //  * @param name The lookup key.
-    //  * @returns The registered adapter class, or undefined.
-    //  */
-    // public static getEditor(name: string): InspectorAdapterClass | undefined {
-    //     return Inspector.getAdapter(name);
-    // }
 
     protected host: HTMLElement;
 

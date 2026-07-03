@@ -428,6 +428,9 @@ export class RenderBasics {
      */
     private static renderLines(node: INode, context: CanvasRenderingContext2D, rect: IRect): Path2D | undefined {
         if (!context) return undefined;
+        if (textOrientation(node) === 'vertical') {
+            return this.renderLinesVertical(node, context, rect);
+        }
 
         const { lines, lineHeight, startline, textRect } = this.getTextLayout(node, context, rect);
         const path = new Path2D();
@@ -508,6 +511,130 @@ export class RenderBasics {
         }
 
         // Finally return the text hit path
+        return path;
+    }
+
+    /**
+     * Render text over vertical lines by rotating the text layout space around the rect center.
+     * Returns a Path2D representing the hit area for the text (that can be used for hit testing).
+     */
+    private static renderLinesVertical(node: INode, context: CanvasRenderingContext2D, rect: IRect): Path2D | undefined {
+        if (!context) return undefined;
+
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const angle = -Math.PI / 2;
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+
+        const rotatePoint = (x: number, y: number): IPoint => {
+            const dx = x - centerX;
+            const dy = y - centerY;
+            return {
+                x: centerX + (dx * cos) - (dy * sin),
+                y: centerY + (dx * sin) + (dy * cos),
+            };
+        };
+
+        const rotatedRect: IRect = {
+            left: centerX - rect.height / 2,
+            top: centerY - rect.width / 2,
+            width: rect.height,
+            height: rect.width,
+        };
+
+        const { lines, lineHeight, startline, textRect } = this.getTextLayout(node, context, rotatedRect);
+        const path = new Path2D();
+        const padding = DiagramConstants.HANDLE_HIT_EPSILON;
+        const align = textAlign(node);
+        const baseline = textBaseline(node);
+
+        const preferBackgroundHalo = this.isTextPlacedOutsideNode(node, rect);
+        const haloColor = this.resolveTextHaloColor(node, preferBackgroundHalo);
+        const fontSize = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+        const haloWidth = Math.max(2, fontSize * 0.12);
+
+        context.save();
+        context.translate(centerX, centerY);
+        context.rotate(angle);
+        context.translate(-centerX, -centerY);
+
+        for (let i = 0; i < lines.length; i++) {
+            let x = textRect.left;
+            let y = startline + (i * lineHeight);
+            if (haloColor) {
+                context.save();
+                context.strokeStyle = haloColor;
+                context.lineWidth = haloWidth * 2;
+                context.lineJoin = 'round';
+                context.lineCap = 'round';
+                switch (align) {
+                    case 'left': context.strokeText(lines[i]!, x, y); break;
+                    case 'center': context.strokeText(lines[i]!, x + textRect.width / 2, y); break;
+                    case 'right': context.strokeText(lines[i]!, x + textRect.width, y); break;
+                }
+                context.restore();
+            }
+            switch (align) {
+                case 'left':
+                    context.fillText(lines[i]!, x, y);
+                    break;
+                case 'center':
+                    context.fillText(lines[i]!, x + textRect.width / 2, y);
+                    break;
+                case 'right':
+                    context.fillText(lines[i]!, x + textRect.width, y);
+                    break;
+            }
+
+            const line = lines[i] || '';
+            const width = context.measureText(line).width;
+
+            let left = textRect.left;
+            switch (align) {
+                case 'left':
+                    left = textRect.left;
+                    break;
+                case 'center':
+                    left = textRect.left + (textRect.width - width) / 2;
+                    break;
+                case 'right':
+                    left = textRect.left + textRect.width - width;
+                    break;
+            }
+
+            let top = y;
+            switch (baseline) {
+                case 'top':
+                    top = y;
+                    break;
+                case 'middle':
+                    top = y - lineHeight / 2;
+                    break;
+                case 'bottom':
+                    top = y - lineHeight;
+                    break;
+            }
+
+            const boxLeft = left - padding;
+            const boxTop = top - padding;
+            const boxWidth = Math.max(width + padding * 2, padding * 2);
+            const boxHeight = lineHeight + padding * 2;
+
+            const p1 = rotatePoint(boxLeft, boxTop);
+            const p2 = rotatePoint(boxLeft + boxWidth, boxTop);
+            const p3 = rotatePoint(boxLeft + boxWidth, boxTop + boxHeight);
+            const p4 = rotatePoint(boxLeft, boxTop + boxHeight);
+
+            path.moveTo(p1.x, p1.y);
+            path.lineTo(p2.x, p2.y);
+            path.lineTo(p3.x, p3.y);
+            path.lineTo(p4.x, p4.y);
+            path.closePath();
+        }
+
+        context.restore();
+
         return path;
     }
 

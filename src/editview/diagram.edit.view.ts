@@ -73,7 +73,7 @@ export type DiagramEditViewPrompts = {
     onNoChangesSave?: () => boolean | Promise<boolean>;
 };
 
-export type EditKeyboardFlags = KeyboardFlags & { forceRectSelection: boolean };
+export type EditKeyboardFlags = KeyboardFlags & { forceRectSelection: boolean, applyToAll: boolean };
 
 
 /**
@@ -2747,6 +2747,10 @@ export class DiagramEditView extends DiagramView {
             this.keyboardFlags.forceRectSelection = isDown;
             this.emitKeyboardModeHint(isDown, 'Rectangle selection forced (hold R)');
         }
+        if (event.key.toLowerCase() === 'a') {
+            this.keyboardFlags.applyToAll = isDown;
+            this.emitKeyboardModeHint(isDown, 'Apply to all selected (hold A)');
+        }
     }
 
     /**
@@ -3139,15 +3143,27 @@ export class DiagramEditView extends DiagramView {
 
                     let preserveAspect = event.shiftKey;
 
-                    this.resizeSelected(this.downHandle,
-                        movePos.x - this.downPos.x,
-                        movePos.y - this.downPos.y,
-                        this.downShape!,
-                        preserveAspect
-                    );
-                    for (const node of this.selection()) {
-                        if (!isLocked(node)) {
-                            this.resizedNodes.add(node);
+                    if (this.downShape && !this.keyboardFlags.applyToAll) {
+                        /* Only resize the downShape, not the entire selection. */
+                        this.resizeNode(this.downShape, this.downHandle,
+                            movePos.x - this.downPos.x,
+                            movePos.y - this.downPos.y,
+                            preserveAspect);
+                        this.resizedNodes.add(this.downShape);
+
+                    } else if (this.keyboardFlags.applyToAll) {
+                        /* This is almost hidden till we find a suitable key combination */
+                        /* Proportional resize is generally not safe and needs revision */
+                        this.resizeSelected(this.downHandle,
+                            movePos.x - this.downPos.x,
+                            movePos.y - this.downPos.y,
+                            this.downShape!,
+                            preserveAspect
+                        );
+                        for (const node of this.selection()) {
+                            if (!isLocked(node)) {
+                                this.resizedNodes.add(node);
+                            }
                         }
                     }
                     this.downPos = movePos;
@@ -4222,6 +4238,9 @@ export class DiagramEditView extends DiagramView {
 
         const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
         const baseline = textBaseline(node);
+        const orientation = textOrientation(node);
+        let rotateCenter: IPoint | undefined;
+        let transformOrigin = 'center center';
 
         const fontFace = node.textStyle?.fontFace || this.textStyle.fontFace || DiagramConstants.DEFAULT_NODE_FONT_FACE;
         const fontSize = node.textStyle?.size || this.textStyle.size || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
@@ -4240,6 +4259,7 @@ export class DiagramEditView extends DiagramView {
             width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
             height: Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom),
         };
+        let layoutRect: IRect = { ...screenRect };
 
         let editorWidth: number;
         let editorHeight: number;
@@ -4260,8 +4280,26 @@ export class DiagramEditView extends DiagramView {
                 width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
                 height: Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom),
             };
-            left = screenRect.left;
-            editorWidth = Math.max(24, screenRect.width);
+            layoutRect = { ...screenRect };
+
+            if (orientation === 'vertical') {
+                rotateCenter = {
+                    x: screenRect.left + screenRect.width / 2,
+                    y: screenRect.top + screenRect.height / 2,
+                };
+                layoutRect = {
+                    left: rotateCenter.x - screenRect.height / 2,
+                    top: rotateCenter.y - screenRect.width / 2,
+                    width: screenRect.height,
+                    height: screenRect.width,
+                };
+            }
+
+            left = layoutRect.left;
+            editorWidth = Math.max(24, layoutRect.width);
+
+            // left = screenRect.left;
+            // editorWidth = Math.max(24, screenRect.width);
 
             const text = nodeText(node);
             const measureContext = this.context;
@@ -4274,10 +4312,10 @@ export class DiagramEditView extends DiagramView {
             const textBlockHeight = lineCount * scaledLineHeight;
 
             const startline = baseline === 'top'
-                ? screenRect.top + (scaledFontSize / 2)
+                ? layoutRect.top + (scaledFontSize / 2)
                 : baseline === 'bottom'
-                    ? screenRect.top + screenRect.height - (scaledLineHeight * (lineCount - 1))
-                    : screenRect.top + (scaledFontSize / 4) + (screenRect.height / 2) - (scaledLineHeight * (lineCount - 1) / 2);
+                    ? layoutRect.top + layoutRect.height - (scaledLineHeight * (lineCount - 1))
+                    : layoutRect.top + (scaledFontSize / 4) + (layoutRect.height / 2) - (scaledLineHeight * (lineCount - 1) / 2);
 
             const firstLineTop = baseline === 'top'
                 ? startline
@@ -4287,6 +4325,15 @@ export class DiagramEditView extends DiagramView {
 
             editorHeight = Math.max(scaledLineHeight, textBlockHeight);
             top = firstLineTop;
+
+            if (orientation === 'vertical') {
+                transform = `rotate(-90deg)`;
+                if (rotateCenter) {
+                    transformOrigin = `${rotateCenter.x - left}px ${rotateCenter.y - top}px`;
+                } else {
+                    transformOrigin = 'center center';
+                }
+            }
 
         } else if (placement?.segment) {
             /* Text along a line segment */
@@ -4366,12 +4413,14 @@ export class DiagramEditView extends DiagramView {
         textarea.style.textAlign = textAlign(node);
         textarea.style.zIndex = '2147483647';
         textarea.style.cursor = 'text';
+        textarea.style.fontSynthesis = 'none';
+        // textarea.style.textRendering = 'geometricPrecision';
 
         /* Rotate the textarea if required: */
 
         if (transform) {
             /* Sloped connector: textarea is already centered on the midpoint so center-center is correct. */
-            textarea.style.transformOrigin = 'center center';
+            textarea.style.transformOrigin = transformOrigin;   //'center center';
             textarea.style.transform = transform;
         } else if (node.angle) {
             /* Non-sloped rotated node: the textarea is inset from the node rect, so its center ≠ the node's
@@ -4411,11 +4460,16 @@ export class DiagramEditView extends DiagramView {
             textarea.style.height = `${nextHeight}px`;
 
             if (baseline === 'top') {
-                textarea.style.top = `${screenRect.top + (scaledFontSize / 2)}px`;
+                textarea.style.top = `${layoutRect.top + (scaledFontSize / 2)}px`;
             } else if (baseline === 'bottom') {
-                textarea.style.top = `${screenRect.top + screenRect.height - nextHeight}px`;
+                textarea.style.top = `${layoutRect.top + layoutRect.height - nextHeight}px`;
             } else {
-                textarea.style.top = `${screenRect.top + (scaledFontSize / 4) + (screenRect.height / 2) - (nextHeight / 2)}px`;
+                textarea.style.top = `${layoutRect.top + (scaledFontSize / 4) + (layoutRect.height / 2) - (nextHeight / 2)}px`;
+            }
+
+            if (orientation === 'vertical' && rotateCenter) {
+                const nextTop = parseFloat(textarea.style.top);
+                textarea.style.transformOrigin = `${rotateCenter.x - left}px ${rotateCenter.y - nextTop}px`;
             }
 
             if (node.angle) {
@@ -4775,6 +4829,23 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Resize a single node in isolation, without considering sselection, groups, or containers.
+     * This is not considered use addUndo() so it should be called inside another operation 
+     * that has already called addUndo().
+     * This does not emit any events, and is intended for internal use only.
+     * @param node The node to resize.
+     * @param handle The handle used for the operation.
+     * @param byX Horizontal delta value.
+     * @param byY Vertical delta value.
+     * @param reference_node Reference node for alignment and snapping.
+     * @param preserveAspect Whether to preserve aspect ratio.
+     */
+    private resizeNode(node: INode, handle: NodeHandle, byX: number, byY: number, preserveAspect = false): void {
+        NodeBasics.resizeHandle(node, handle, byX, byY, preserveAspect);
+        NodeRegistry.adapter(node.type)?.afterResize?.(node, handle);
+    }
+
+    /**
      * Resizes selected nodes.
      * This handles groups and containers properly.
      * @param handle The handle used for the operation.
@@ -4793,6 +4864,7 @@ export class DiagramEditView extends DiagramView {
 
         /* Handle groups */
 
+        // TODO: Is this needed any more?
         const group = this.nodeGroup(reference_node);
         if (group) {
             const owner = this.groupOwner(group);
