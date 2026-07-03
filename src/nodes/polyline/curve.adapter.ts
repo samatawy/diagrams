@@ -42,7 +42,12 @@ export class CurveAdapter extends PolylineAdapter {
             const hitPoint = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, angle, cos, sin);
 
             /* Check if the hit point is near the start or end points of the curve */
-            for (const sourcePoint of [node.points[0]!, node.points[node.points.length - 1]!]) {
+            // for (const sourcePoint of [node.points[0]!, node.points[node.points.length - 1]!]) {
+            //     if (Math.abs(sourcePoint.x - hitPoint.x) <= epsilon && Math.abs(sourcePoint.y - hitPoint.y) <= epsilon) {
+            //         return NodeHandle.POINT;
+            //     }
+            // }
+            for (const sourcePoint of node.points) {
                 if (Math.abs(sourcePoint.x - hitPoint.x) <= epsilon && Math.abs(sourcePoint.y - hitPoint.y) <= epsilon) {
                     return NodeHandle.POINT;
                 }

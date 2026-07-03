@@ -193,9 +193,15 @@ IconRegistry.registerSymbol('copy', 'copy',
 IconRegistry.registerSymbol('paste', 'paste',
     sym('paste', '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>'));
 
-// vertical swimlane: single top header with one inner item to suggest containment.
-IconRegistry.registerSymbol('vertical_swimlane', 'vertical_swimlane',
-    sym('vertical_swimlane', '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="8" x2="21" y2="8"/><rect x="9" y="12" width="6" height="4" rx="1"/>'));
+// vertical pool: single top header with one inner item to suggest containment.
+IconRegistry.registerSymbol('vertical_pool', 'vertical_pool',
+    sym('vertical_pool', '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="8" x2="21" y2="8"/>'));
+// <rect x="9" y="12" width="6" height="4" rx="1"/>'));
+
+// horizontal pool: side header with one inner item; inner shape keeps same orientation.
+IconRegistry.registerSymbol('horizontal_pool', 'horizontal_pool',
+    sym('horizontal_pool', '<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="3" x2="8" y2="21"/>'));
+// <rect x="12" y="10" width="6" height="4" rx="1"/>'));
 
 // group-nodes: three peer nodes in a triangular arrangement enclosed by a dashed boundary.
 IconRegistry.registerSymbol('group-nodes', 'group-nodes',
@@ -372,6 +378,8 @@ IconRegistry.registerSymbol('rectangle', 'tool-rectangle',
 IconRegistry.registerSymbol('round_rectangle', 'tool-round-rect',
     sym('tool-round-rect', '<rect x="3" y="5" width="18" height="14" rx="5"/>'));
 
+IconRegistry.registerSymbol('rhombus', 'tool-rhombus',
+    sym('tool-rhombus', '<polygon points="12 2 22 12 12 22 2 12"/>'));
 
 IconRegistry.registerSymbol('parallelogram', 'tool-parallelogram',
     sym('tool-parallelogram', '<polygon points="6 5 21 5 18 19 3 19"/>'));
@@ -394,24 +402,27 @@ IconRegistry.registerSymbol('bpmn_intermediate_event', 'tool-bpmn-intermediate',
 IconRegistry.registerSymbol('bpmn_end_event', 'tool-bpmn-end',
     sym('tool-bpmn-end', '<circle cx="12" cy="12" r="8" stroke-width="4"/>'));
 
-IconRegistry.registerSymbol('rhombus', 'tool-rhombus',
-    sym('tool-rhombus', '<polygon points="12 2 22 12 12 22 2 12"/>'));
+IconRegistry.registerSymbol('bpmn_gateway', 'tool-bpmn-gateway',
+    sym('tool-bpmn-gateway', '<polygon points="12 2 22 12 12 22 2 12"/>'));
 
-// BPMN parallel gateway: diamond with X marker.
-IconRegistry.registerSymbol('bpmn_parallel_gateway', 'tool-bpmn-parallel-gateway',
-    sym('tool-bpmn-parallel-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="9.25" y1="9.25" x2="14.75" y2="14.75"/><line x1="14.75" y1="9.25" x2="9.25" y2="14.75"/>'));
+IconRegistry.registerSymbol('bpmn_task', 'tool-bpmn-task',
+    sym('tool-bpmn-task', '<rect x="3" y="5" width="18" height="14" rx="3"/>'));
 
-// BPMN inclusive gateway: diamond with inner ring.
-IconRegistry.registerSymbol('bpmn_inclusive_gateway', 'tool-bpmn-inclusive-gateway',
-    sym('tool-bpmn-inclusive-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><circle cx="12" cy="12" r="3.5"/>'));
+// // BPMN parallel gateway: diamond with X marker.
+// IconRegistry.registerSymbol('bpmn_parallel_gateway', 'tool-bpmn-parallel-gateway',
+//     sym('tool-bpmn-parallel-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="9.25" y1="9.25" x2="14.75" y2="14.75"/><line x1="14.75" y1="9.25" x2="9.25" y2="14.75"/>'));
 
-// BPMN exclusive gateway: diamond with plus marker.
-IconRegistry.registerSymbol('bpmn_exclusive_gateway', 'tool-bpmn-exclusive-gateway',
-    sym('tool-bpmn-exclusive-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="12" y1="8.5" x2="12" y2="15.5"/><line x1="8.5" y1="12" x2="15.5" y2="12"/>'));
+// // BPMN inclusive gateway: diamond with inner ring.
+// IconRegistry.registerSymbol('bpmn_inclusive_gateway', 'tool-bpmn-inclusive-gateway',
+//     sym('tool-bpmn-inclusive-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><circle cx="12" cy="12" r="3.5"/>'));
 
-// BPMN complex gateway: diamond with star/asterisk marker.
-IconRegistry.registerSymbol('bpmn_complex_gateway', 'tool-bpmn-complex-gateway',
-    sym('tool-bpmn-complex-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="12" y1="8.25" x2="12" y2="15.75"/><line x1="8.75" y1="10.125" x2="15.25" y2="13.875"/><line x1="15.25" y1="10.125" x2="8.75" y2="13.875"/>'));
+// // BPMN exclusive gateway: diamond with plus marker.
+// IconRegistry.registerSymbol('bpmn_exclusive_gateway', 'tool-bpmn-exclusive-gateway',
+//     sym('tool-bpmn-exclusive-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="12" y1="8.5" x2="12" y2="15.5"/><line x1="8.5" y1="12" x2="15.5" y2="12"/>'));
+
+// // BPMN complex gateway: diamond with star/asterisk marker.
+// IconRegistry.registerSymbol('bpmn_complex_gateway', 'tool-bpmn-complex-gateway',
+//     sym('tool-bpmn-complex-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="12" y1="8.25" x2="12" y2="15.75"/><line x1="8.75" y1="10.125" x2="15.25" y2="13.875"/><line x1="15.25" y1="10.125" x2="8.75" y2="13.875"/>'));
 
 IconRegistry.registerSymbol('text', 'tool-text',
     sym('tool-text', '<line x1="4" y1="6" x2="20" y2="6"/><line x1="12" y1="6" x2="12" y2="20"/>'));

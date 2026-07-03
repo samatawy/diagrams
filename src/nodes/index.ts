@@ -4,6 +4,7 @@ import { LineAdapter } from './polyline/line.adapter';
 import { ManhattanAdapter } from './polyline/manhattan.adapter';
 import { PolygonAdapter } from './polyline/polygon.adapter';
 import { PolylineAdapter } from './polyline/polyline.adapter';
+import { HorizontalPoolAdapter } from './container/horizontal.pool.adapter';
 import { DocumentAdapter } from './rectangle/document.adapter';
 import { EllipseAdapter } from './rectangle/ellipse.adapter';
 import { CircleAdapter } from './rectangle/circle.adapter';
@@ -15,12 +16,7 @@ import { SvgAdapter } from './rectangle/svg.adapter';
 import { TextAdapter } from './rectangle/text.adapter';
 import { TrapezoidAdapter } from './rectangle/trapezoid.adapter';
 
-import { VerticalSwimlaneAdapter } from './container/vertical.swimlane.adapter';
-
-import { BpmnStartEventAdapter } from './bpmn/start.event.adapter';
-import { BpmnIntermediateEventAdapter } from './bpmn/intermediate.event.adapter';
-import { BpmnEndEventAdapter } from './bpmn/end.event.adapter';
-import { BpmnGatewayAdapter } from './bpmn/gateway.adapter';
+import { VerticalPoolAdapter } from './container/vertical.pool.adapter';
 
 export * from './node.basics';
 export * from './connection.basics';
@@ -32,6 +28,8 @@ export * from './container/index';
 export * from './rectangle/index';
 
 export * from './polyline/index';
+
+export * from './bpmn/index';
 
 export function registerBasicAdapters(): void {
     RectangleAdapter.register();
@@ -45,7 +43,8 @@ export function registerBasicAdapters(): void {
     ManhattanAdapter.register();
     CurveAdapter.register();
 
-    VerticalSwimlaneAdapter.register();
+    VerticalPoolAdapter.register();
+    HorizontalPoolAdapter.register();
 
     RhombusAdapter.register();
     ParallelogramAdapter.register();
@@ -54,11 +53,6 @@ export function registerBasicAdapters(): void {
 
     PolygonAdapter.register();
     SvgAdapter.register();
-
-    BpmnStartEventAdapter.register();
-    BpmnIntermediateEventAdapter.register();
-    BpmnEndEventAdapter.register();
-    BpmnGatewayAdapter.register();
 
     NodeRegistry.registerTransferables([
         RectangleAdapter.TYPE,
@@ -90,11 +84,6 @@ export function registerBasicAdapters(): void {
     //     PolygonAdapter.TYPE,
     // ]);
 
-    NodeRegistry.registerTransferables([
-        BpmnStartEventAdapter.TYPE,
-        BpmnIntermediateEventAdapter.TYPE,
-        BpmnEndEventAdapter.TYPE,
-    ]);
 
     // NodeRegistry.registerTransferables([
     //     BpmnGatewayAdapter.TYPE,

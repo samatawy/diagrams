@@ -271,7 +271,7 @@ export class RectangleAdapter implements INodeAdapter {
             const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
             const allowed = (show === 'connection_handles') ?
                 this.connection_handles :
-                [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE];
+                [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE, NodeHandle.ALTER];
 
             context.save();
             RenderBasics.prepareHandles(node, context);

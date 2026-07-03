@@ -1,29 +1,33 @@
 import type { INode, IContainer } from "../../interfaces";
-import { NodeHandle, type IRect } from "../../types";
+import { NodeHandle, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
+import type { TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
 
 /**
- * VerticalSwimlaneAdapter is a node adapter responsible for rendering vertical swimlane nodes in the diagram. 
- * It extends the RectangleAdapter to leverage basic rectangle rendering capabilities while adding specific logic for handling vertical swimlane shapes and hit testing.
- * Registers with the NodeRegistry under the name 'vertical_swimlane'.
+ * VerticalPoolAdapter is a node adapter responsible for rendering vertical pool nodes in the diagram. 
+ * It extends the RectangleAdapter to leverage basic rectangle rendering capabilities while adding specific logic for handling vertical pool shapes and hit testing.
+ * Registers with the NodeRegistry under the name 'vertical_pool'.
  */
-export class VerticalSwimlaneAdapter extends RectangleAdapter {
+export class VerticalPoolAdapter extends RectangleAdapter {
 
-    public static TYPE = 'vertical_swimlane';
+    public static TYPE = 'vertical_pool';
 
     public is_container = true;
     public can_rotate = false;
+    text_baselines = ['top'] as ITextBaseline[];
+    text_overflow = 'hidden' as TextOverflowMode;
+    text_orientations = ['horizontal'] as ITextOrientation[];
 
-    public onCreateDraft(tool: string): Partial<INode & IContainer> | undefined {
+    public override onCreateDraft(tool: string): Partial<INode & IContainer> | undefined {
         return {
             type: this.type,
             points: [{ x: 0, y: 0 }, { x: 104, y: 240 }],
-            geometry: { radius: DiagramConstants.HANDLE_HIT_EPSILON },
+            geometry: { radius: 8 },    // DiagramConstants.HANDLE_HIT_EPSILON },
             owns_group: `group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         }
     }
@@ -97,7 +101,7 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
         return radius;
     }
 
-    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
+    public override renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
         // super.renderSelection(node, context);
 
         if (!context) return;
@@ -163,6 +167,28 @@ export class VerticalSwimlaneAdapter extends RectangleAdapter {
 
             context.restore();
         }
+    }
+
+    public override textPlacement(node: INode): TextPlacement {
+        if (node.points.length > 1) {
+            const diagram = node.owner;
+            if (!isDiagramViewLike(diagram)) return {};
+            const coordinates = diagram.getCoordinates();
+            const rect = coordinates.getBoundingRect(node);
+
+            const textWidth = Math.max(rect.width * 1.9, 120);
+            const textGap = 0;
+            const textHeight = Math.max(rect.height * 0.9, 44);
+            return {
+                rect: {
+                    left: rect.left,
+                    top: rect.top,
+                    width: rect.width,
+                    height: textHeight
+                }
+            };
+        }
+        return {};
     }
 
 }

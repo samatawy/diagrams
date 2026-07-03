@@ -3,26 +3,27 @@ import { NodeRegistry } from '../../factory/node.registry';
 import { IconRegistry } from '../../factory/icon.registry';
 import { DIAGRAM_TOOL_CHANGED_EVENT, type DiagramToolChange } from '../../events/diagram.events';
 
-export const TOOL_PALETTE_TOOL_SELECTED_EVENT = 'tool-selected';
+export const TOOLSET_TOOL_SELECTED_EVENT = 'tool-selected';
 
-export type ToolPaletteLayoutItem = string | '*';
+export type ToolsetLayoutItem = string | '*';
 
 /**
- * Configuration options for the ToolPalette component.
+ * Configuration options for the Toolset component.
  * Provide only the properties you want to customize. All other properties will use default values.
  */
-export interface ToolPaletteConfig {
+export interface ToolsetConfig {
+    name: string;
     /**
      * Ordered layout of tools in the palette. '*' means insert all remaining tools at this position.
      */
-    layout?: ToolPaletteLayoutItem[];
+    layout: ToolsetLayoutItem[];
     /**
      * Optional CSS class name to apply to the host element of the tool palette. This allows for custom styling of the entire palette.
      */
     hostClassName?: string;
 }
 
-export const DEFAULT_TOOL_LAYOUT: ToolPaletteLayoutItem[] = [
+export const DEFAULT_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'select',
     'rectangle',
     'round_rectangle',
@@ -42,7 +43,25 @@ export const DEFAULT_TOOL_LAYOUT: ToolPaletteLayoutItem[] = [
     '*',
 ];
 
-const STYLE_ID = 'tool-palette-defaults';
+export const BASIC_TOOL_LAYOUT: ToolsetLayoutItem[] = [
+    'select',
+    'rectangle',
+    'round_rectangle',
+    'ellipse',
+    'circle',
+    'text',
+    'line',
+    'polyline',
+    'manhattan',
+    'curve',
+    'rhombus',
+    'parallelogram',
+    'trapezoid',
+    'document',
+    'polygon',
+];
+
+const STYLE_ID = 'toolset-defaults';
 
 const DEFAULT_STYLES = `
 .editor-tool-list {
@@ -114,16 +133,14 @@ function prettyToolName(name: string): string {
  * It allows users to select a tool, and the selected tool is highlighted.
  * The component emits a 'tool-selected' event when a tool is selected.
  * The layout of the tools can be customized via the configuration options.
- * 
- * @deprecated('ToolPalette is deprecated. Use DiagramToolBox instead.')
  */
-export class ToolPalette {
+export class DiagramToolset {
 
     protected host: HTMLElement;
 
     protected diagram: DiagramEditView;
 
-    protected config: ToolPaletteConfig;
+    protected config: ToolsetConfig;
 
     protected manualTools = new Map<string, string>();
 
@@ -135,11 +152,15 @@ export class ToolPalette {
      * @param diagram The diagram view whose tool selection the palette controls.
      * @param config Optional layout and style configuration.
      */
-    constructor(host: HTMLElement, diagram: DiagramEditView, config: ToolPaletteConfig = {}) {
+    constructor(host: HTMLElement, diagram: DiagramEditView, config: Partial<ToolsetConfig> = {}) {
         ensureDefaultStyles();
         this.host = host;
         this.diagram = diagram;
-        this.config = config;
+        this.config = {
+            name: 'default',
+            layout: DEFAULT_TOOL_LAYOUT,
+            ...config,
+        };
         if (config.hostClassName) {
             setClasses(this.host, 'editor-tool-list', config.hostClassName);
         } else {
@@ -158,6 +179,14 @@ export class ToolPalette {
         this.host.innerHTML = '';
         this.manualTools.clear();
         this.renderedTools = [];
+    }
+
+    public get name(): string {
+        return this.config.name || 'default';
+    }
+
+    public set name(value: string) {
+        this.config.name = value;
     }
 
     /**
@@ -251,10 +280,12 @@ export class ToolPalette {
         const remaining = allTools.filter((tool) => tool !== '');
         const used = new Set<string>();
         const result: string[] = [];
+        let hasWildcard = false;
         let consumedWildcard = false;
 
         for (const item of layout) {
             if (item === '*') {
+                hasWildcard = true;
                 consumedWildcard = true;
                 for (const tool of remaining) {
                     if (!used.has(tool)) {
@@ -271,7 +302,7 @@ export class ToolPalette {
             }
         }
 
-        if (!consumedWildcard) {
+        if (hasWildcard && !consumedWildcard) {
             for (const tool of remaining) {
                 if (!used.has(tool)) {
                     used.add(tool);
@@ -311,7 +342,7 @@ export class ToolPalette {
             const previousTool = this.diagram.currentTool;
             await this.diagram.setTool(tool);
             this.highlight(this.diagram.currentTool || tool);
-            this.host.dispatchEvent(new CustomEvent(TOOL_PALETTE_TOOL_SELECTED_EVENT, {
+            this.host.dispatchEvent(new CustomEvent(TOOLSET_TOOL_SELECTED_EVENT, {
                 detail: {
                     tool,
                     previousTool,

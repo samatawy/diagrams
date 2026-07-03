@@ -46,6 +46,9 @@ import { ShadowPresetSelect, SHADOW_PRESET_CHANGE_EVENT } from "./inputs/shadow.
 import type { ShadowStyle } from "../style.interfaces";
 import { DiagramHintService } from "../status/diagram.hint.service";
 import { SheetRepository } from "../sheets/sheet.repository";
+import { DiagramToolbox, type DiagramToolBoxConfig } from "./toolbox";
+import { registerBasicAdapters } from "../nodes";
+import { registerBpmnAdapters } from "../nodes/bpmn";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
@@ -67,8 +70,9 @@ export type DiagramEditorFileDialogsConfig = {
 export type DiagramEditorConfig = {
     hostClassName?: string;
     showInspector?: boolean;
-    toolPalette?: ToolPaletteConfig;
+    // toolPalette?: ToolPaletteConfig;
     toolbars?: DiagramToolBarConfig[];
+    toolbox?: DiagramToolBoxConfig;
     prompts?: DiagramEditorPrompts;
     fontSelect?: FontSelectConfig;
     fontSizeSelect?: SizeSelectConfig;
@@ -135,6 +139,11 @@ const DIAGRAM_EDITOR_STYLES = `
     min-height: 0;
 }
 .diagram-editor-tool-palette {
+    border-right: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    padding: 8px var(--diagram-ui-panel-padding, 6px);
+    overflow-y: auto;
+}
+.diagram-editor-toolbox {
     border-right: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
     padding: 8px var(--diagram-ui-panel-padding, 6px);
     overflow-y: auto;
@@ -250,7 +259,8 @@ export class DiagramEditor {
     protected toolbars: DiagramToolBar[] = [];
 
     protected toolboxHost?: HTMLElement;
-    protected toolbox?: ToolPalette;
+    // protected toolbox?: ToolPalette;
+    protected toolbox?: DiagramToolbox;
 
     protected inspectorHost?: HTMLElement;
     protected inspector?: DiagramInspector;
@@ -311,6 +321,11 @@ export class DiagramEditor {
     private hoverHint?: string;
 
     private focusHint?: string;
+
+    static {
+        registerBasicAdapters();
+        registerBpmnAdapters();
+    }
 
     /**
      * Creates an instance of DiagramEditor.
@@ -567,9 +582,12 @@ export class DiagramEditor {
     /**
      * Returns the tool palette instance when available.
      */
-    public getToolbox(): ToolPalette | undefined {
+    public getToolbox(): DiagramToolbox | undefined {
         return this.toolbox;
     }
+    // public getToolbox(): ToolPalette | undefined {
+    //     return this.toolbox;
+    // }
 
     /**
      * Returns the font family selector control when available.
@@ -665,7 +683,8 @@ export class DiagramEditor {
 
         // Tool palette is the left column of the stage grid — must be first child
         this.toolboxHost = document.createElement('div');
-        setClasses(this.toolboxHost, 'diagram-editor-tool-palette');
+        // setClasses(this.toolboxHost, 'diagram-editor-tool-palette');
+        setClasses(this.toolboxHost, 'diagram-editor-toolbox');
         this.stageHost.appendChild(this.toolboxHost);
 
         // Canvas wrapper is the right column — DiagramEditView fills it
@@ -707,7 +726,8 @@ export class DiagramEditor {
         if (diagram) this.diagram.read(diagram);
 
         // Initialize the tool palette
-        this.toolbox = new ToolPalette(this.toolboxHost, this.diagram, config.toolPalette || {});
+        // this.toolbox = new ToolPalette(this.toolboxHost, this.diagram, config.toolPalette || {});
+        this.toolbox = new DiagramToolbox(this.toolboxHost, this.diagram, config.toolbox || {});
 
         // Load toolbars or the default toolbar if none are specified
         this.toolbars = [];
