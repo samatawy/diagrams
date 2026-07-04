@@ -3,7 +3,7 @@ import { NodeHandle, type ITextOrientation, type ITextBaseline, type IRect } fro
 import { CircleAdapter } from "../rectangle/circle.adapter";
 import { isDiagramViewLike } from "../../guards";
 import type { SpecificOptions, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
-import { BpmnBasics } from "./Bpmn.Basics";
+import { BpmnBasics, EVENT_FILL_STYLE } from "./Bpmn.Basics";
 
 type BpmnEventTriggerType = 'timer' | 'message' | 'signal' | 'error' | 'cancel' | 'compensation' | 'conditional' | 'escalation' | 'none';
 
@@ -17,33 +17,32 @@ export abstract class AbstractBpmnEventAdapter extends CircleAdapter {
     text_overflow: TextOverflowMode = 'visible';
     text_orientations: ITextOrientation[] = ['horizontal'];
     text_baselines: ITextBaseline[] = ['top'];
-    connection_handles: NodeHandle[] = [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W];
 
     protected renderInternal(node: INode, rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         switch (node.specific?.bpmn_event_trigger as BpmnEventTriggerType) {
             case 'message':
-                BpmnBasics.renderMessage(rect, context, show);
+                BpmnBasics.renderMessage(rect, context, node, show);
                 break;
             case 'signal':
-                BpmnBasics.renderSignal(rect, context, show);
+                BpmnBasics.renderSignal(rect, context, node, show);
                 break;
             case 'timer':
-                BpmnBasics.renderTimer(rect, context, show);
+                BpmnBasics.renderTimer(rect, context, node, show);
                 break;
             case 'error':
-                BpmnBasics.renderError(rect, context, show);
+                BpmnBasics.renderError(rect, context, node, show);
                 break;
             case 'cancel':
-                BpmnBasics.renderCancel(rect, context, show);
+                BpmnBasics.renderCancel(rect, context, node, show);
                 break;
             case 'conditional':
-                BpmnBasics.renderConditional(rect, context, show);
+                BpmnBasics.renderConditional(rect, context, node, show);
                 break;
             case 'compensation':
-                BpmnBasics.renderCompensation(rect, context, show);
+                BpmnBasics.renderCompensation(rect, context, node, show);
                 break;
             case 'escalation':
-                BpmnBasics.renderEscalation(rect, context, show);
+                BpmnBasics.renderEscalation(rect, context, node, show);
                 break;
             default:
         }
@@ -79,6 +78,7 @@ export abstract class AbstractBpmnEventAdapter extends CircleAdapter {
             },
             locked_aspect: true,
             points: [{ x: 0, y: 0 }, { x: 40, y: 40 }],
+            fillStyle: EVENT_FILL_STYLE,
         }
     }
 
@@ -86,7 +86,7 @@ export abstract class AbstractBpmnEventAdapter extends CircleAdapter {
 
         if (path === 'specific.bpmn_event_trigger' || path === 'bpmn_event_trigger') {
             const result: SpecificOptions = {
-                label: 'Event Trigger',
+                label: 'Trigger',
                 readonly: false,
                 datatype: 'enum',
                 options: {}
@@ -130,6 +130,27 @@ export abstract class AbstractBpmnEventAdapter extends CircleAdapter {
                     return result;
             }
         }
+        if (path === 'specific.bpmn_event_interrupting' || path === 'bpmn_event_interrupting') {
+            const result: SpecificOptions = {
+                label: 'Interrupting',
+                readonly: false,
+                datatype: 'boolean',
+            }
+            return result;
+        }
+        if (path === 'specific.bpmn_event_behavior' || path === 'bpmn_event_behavior') {
+            const result: SpecificOptions = {
+                label: 'Behavior',
+                readonly: node.type !== 'bpmn_intermediate_event',
+                datatype: 'enum',
+                options: {
+                    catch: { label: 'Catch', value: 'catch' },
+                    throw: { label: 'Throw', value: 'throw' },
+                },
+            }
+            return result;
+        }
+
         return undefined;
     }
 

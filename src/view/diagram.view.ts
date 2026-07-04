@@ -1186,13 +1186,17 @@ export class DiagramView extends Diagram implements HasSelection {
         for (let i = 0; i < nodes.length; i++) {
             let node = nodes[i]!;
             const handler = NodeRegistry.adapter(node.type);
-            const allowed = handler?.connection_handles || [];
-            if (allowed.length === 0) continue;
+            // const allowed = handler?.connection_handles || [];
+            // if (allowed.length === 0) continue;
             const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
-
-            if (handle !== NodeHandle.NONE && allowed.includes(handle)) {
+            const isAllowed = handler?.canConnect(node, 'to', handle, { x, y }) ?? false;
+            if (handle !== NodeHandle.NONE && isAllowed) {
                 return handle;
             }
+
+            // if (handle !== NodeHandle.NONE && allowed.includes(handle)) {
+            //     return handle;
+            // }
         }
 
         return NodeHandle.NONE;

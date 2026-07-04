@@ -138,6 +138,17 @@ export interface INodeAdapter {
     connection_handles: NodeHandle[];
 
     /**
+     * Additional logic to determine whether a connection can be made to this node from the specified direction and handle.
+     * This method is called during connection creation to validate whether a connection is allowed based on the node's state, geometry, or other criteria.
+     * Adapters that support connections should override this to implement custom connection rules.
+     * @param node The node to which the connection is being made.
+     * @param direction The direction of the connection, either 'from' (outgoing) or 'to' (incoming).
+     * @param handle The connection handle on the node.
+     * @param point The world-space coordinates of the connection point, if available.
+     */
+    canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point?: IPoint): boolean;
+
+    /**
      * Indicates whether the adapter supports owning a group of other nodes.
      */
     is_container?: boolean;
@@ -171,7 +182,7 @@ export interface INodeAdapter {
      * @param direction The direction of the connection ('from' or 'to').
      * @param anchor The connection anchor involved in the connection, or null if none.
      */
-    afterConnect?(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor | null): void;
+    afterConnect?(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor): void;
 
     /**
      * Updates the node's size while the user is dragging a resize handle.

@@ -5,7 +5,7 @@ import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow } from "../../value.utils";
-import { NodeHandle } from "../../types";
+import { NodeHandle, type IPoint } from "../../types";
 
 /**
  * EllipseAdapter is a node adapter responsible for rendering ellipse nodes in the diagram. 
@@ -66,6 +66,10 @@ export class EllipseAdapter extends RectangleAdapter {
             context.restore();
         }
     }
+
+    // public canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point: IPoint): boolean {
+    //     return this.connection_handles.includes(handle);
+    // }
 
     public onCreateDraft(tool: string): Partial<INode> | undefined {
         return {

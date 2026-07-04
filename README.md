@@ -99,6 +99,9 @@ You can tailor the editor for your own product:
 
 ## Version History
 
+- Since version `0.5.5`
+  - Fixed major issues with (0.5.0)
+  - Added new toolbox and new shapes.
 - Since version `0.5.0`
   - Groups and Containers.
   - Style classes and stylesheets.

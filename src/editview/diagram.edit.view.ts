@@ -2361,19 +2361,29 @@ export class DiagramEditView extends DiagramView {
             /* Normalize connection anchors if the new type does not support the current anchor handle.
                Anchors whose handle is still valid for the new type are left untouched. 
             */
-            const allowedHandles = NodeRegistry.connectionHandles(type);
+            // const allowedHandles = NodeRegistry.connectionHandles(type);
             const connections: (INode & IConnection)[] = this.nodes.filter(n => isConnection(n)) as (INode & IConnection)[];
             for (let conn of connections) {
                 if ((conn.from?.node === _node.id || conn.from?.node === _node) &&
-                    conn.from?.handle !== undefined && !allowedHandles.includes(conn.from.handle)) {
+                    conn.from?.handle !== undefined && !NodeRegistry.canConnect(_node, 'from', conn.from.handle)) {
                     ConnectionBasics.reconnectToBestHandle(conn, 'from');
                     ConnectionBasics.syncEndpoints(conn);
                 }
                 if ((conn.to?.node === _node.id || conn.to?.node === _node) &&
-                    conn.to?.handle !== undefined && !allowedHandles.includes(conn.to.handle)) {
+                    conn.to?.handle !== undefined && !NodeRegistry.canConnect(_node, 'to', conn.to.handle)) {
                     ConnectionBasics.reconnectToBestHandle(conn, 'to');
                     ConnectionBasics.syncEndpoints(conn);
                 }
+                // if ((conn.from?.node === _node.id || conn.from?.node === _node) &&
+                //     conn.from?.handle !== undefined && !allowedHandles.includes(conn.from.handle)) {
+                //     ConnectionBasics.reconnectToBestHandle(conn, 'from');
+                //     ConnectionBasics.syncEndpoints(conn);
+                // }
+                // if ((conn.to?.node === _node.id || conn.to?.node === _node) &&
+                //     conn.to?.handle !== undefined && !allowedHandles.includes(conn.to.handle)) {
+                //     ConnectionBasics.reconnectToBestHandle(conn, 'to');
+                //     ConnectionBasics.syncEndpoints(conn);
+                // }
             }
 
             this.emitNodeTypeChanged(_node);

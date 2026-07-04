@@ -5,6 +5,7 @@ import { isDiagramViewLike } from "../../guards";
 import { isHollow } from "../../value.utils";
 import type { TextPlacement } from "../../factory/node.adapter";
 import { AbstractBpmnEventAdapter } from "./abstract.event.adapter";
+import { EVENT_FILL_STYLE } from "./Bpmn.Basics";
 
 /**
  * BpmnEndEventAdapter is a node adapter responsible for rendering BPMN end event circle nodes in the diagram. 
@@ -90,4 +91,16 @@ export class BpmnEndEventAdapter extends AbstractBpmnEventAdapter {
         return {};
     }
 
+    public override onCreateDraft(tool: string): Partial<INode> | undefined {
+        return {
+            type: this.type,
+            specific: {
+                bpmn_event_trigger: 'none',
+                bpmn_event_behavior: 'throw',
+            },
+            locked_aspect: true,
+            points: [{ x: 0, y: 0 }, { x: 40, y: 40 }],
+            fillStyle: EVENT_FILL_STYLE,
+        }
+    }
 }

@@ -1,5 +1,5 @@
 import { NodeRegistry } from "../../factory/node.registry";
-import { type INode } from "../../interfaces";
+import { type IConnectionAnchor, type INode } from "../../interfaces";
 import { type ITextOrientation, type IPoint, NodeHandle } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
@@ -23,7 +23,6 @@ export class CurveAdapter extends PolylineAdapter {
 
     has_text = true;
     text_orientations: ITextOrientation[] = ['horizontal'];
-
 
     public hitTest(node: INode, point: IPoint): NodeHandle {
         const diagram = node.owner;
@@ -188,7 +187,16 @@ export class CurveAdapter extends PolylineAdapter {
         );
     }
 
-    private gradient(a: IPoint, b: IPoint) {
-        return (b.y - a.y) / (b.x - a.x);
+    public override canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point: IPoint): boolean {
+        if (handle !== NodeHandle.POINT) return false;
+        if (point) {
+            return point == node.points[0] || point == node.points[node.points.length - 1];
+        } else {
+            return true;
+        }
     }
+
+    // private gradient(a: IPoint, b: IPoint) {
+    //     return (b.y - a.y) / (b.x - a.x);
+    // }
 }

@@ -1,11 +1,11 @@
 import { RenderBasics } from "../render.basics";
 import type { INode } from "../../interfaces";
-import { NodeHandle } from "../../types";
-import { CircleAdapter } from "../rectangle/circle.adapter";
 import type { INodeCached } from "../../view/view.cache";
 import { isDiagramViewLike } from "../../guards";
 import { isHollow } from "../../value.utils";
 import { AbstractBpmnEventAdapter } from "./abstract.event.adapter";
+import type { SpecificOptions } from "../../factory/node.adapter";
+import { EVENT_FILL_STYLE } from "./Bpmn.Basics";
 
 /**
  * BpmnIntermediateEventAdapter is a node adapter responsible for rendering BPMN intermediate event circle nodes in the diagram. 
@@ -38,6 +38,12 @@ export class BpmnIntermediateEventAdapter extends AbstractBpmnEventAdapter {
 
             context.save();
             RenderBasics.prepare(node, context, show);
+            /* Specific override */
+            if (node.specific?.bpmn_event_interrupting === false) {
+                context.setLineDash([4, 3]);
+            } else {
+                context.setLineDash([]);
+            }
 
             const path = new Path2D();
             path.ellipse(
@@ -74,6 +80,20 @@ export class BpmnIntermediateEventAdapter extends AbstractBpmnEventAdapter {
             cache.setNode(node, cached);
 
             context.restore();
+        }
+    }
+
+    public override onCreateDraft(tool: string): Partial<INode> | undefined {
+        return {
+            type: this.type,
+            specific: {
+                bpmn_event_trigger: 'none',
+                bpmn_event_interrupting: true,
+                bpmn_event_behavior: 'catch',
+            },
+            locked_aspect: true,
+            points: [{ x: 0, y: 0 }, { x: 40, y: 40 }],
+            fillStyle: EVENT_FILL_STYLE,
         }
     }
 

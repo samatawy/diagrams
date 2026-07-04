@@ -92,6 +92,10 @@ export class PolylineAdapter implements INodeAdapter {
         return NodeHandle.NONE;
     }
 
+    public canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point?: IPoint): boolean {
+        return handle === NodeHandle.POINT;
+    }
+
     public snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;

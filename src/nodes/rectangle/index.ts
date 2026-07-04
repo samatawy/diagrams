@@ -7,4 +7,4 @@ export * from './text.adapter';
 export * from './svg.adapter';
 export * from './trapezoid.adapter';
 export * from './document.adapter';
-// export * from './cylinder.adapter';
+export * from './cylinder.adapter';

@@ -58,6 +58,7 @@ export const BASIC_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'parallelogram',
     'trapezoid',
     'document',
+    'cylinder',
     'polygon',
 ];
 

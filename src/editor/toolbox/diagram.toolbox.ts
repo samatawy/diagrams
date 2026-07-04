@@ -1,6 +1,8 @@
 import type { DiagramEditView } from "../../editview";
 import { injectStyles, setClasses } from "../editor.utils";
-import { BASIC_TOOL_LAYOUT, DEFAULT_TOOL_LAYOUT, DiagramToolset, type ToolsetConfig } from "./diagram.toolset";
+import { BASIC_TOOL_LAYOUT, DiagramToolset, type ToolsetConfig } from "./diagram.toolset";
+import { BPMN_TOOL_LAYOUT } from "../../nodes/bpmn";
+import { C4_TOOL_LAYOUT } from "../../nodes/c4";
 
 export interface DiagramToolBoxConfig {
     /**
@@ -34,10 +36,10 @@ const DEFAULT_CONFIG: Required<DiagramToolBoxConfig> = {
         layout: BASIC_TOOL_LAYOUT,
     }, {
         name: 'BPMN',
-        layout: ['bpmn_task',
-            'bpmn_start_event', 'bpmn_intermediate_event', 'bpmn_end_event',
-            'bpmn_gateway',
-            'vertical_pool', 'horizontal_pool',],
+        layout: BPMN_TOOL_LAYOUT,
+    }, {
+        name: 'C4',
+        layout: C4_TOOL_LAYOUT,
     }],
     hostClassName: 'toolbox',
     sectionClassName: 'toolbox-section',

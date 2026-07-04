@@ -140,6 +140,10 @@ export class RectangleAdapter implements INodeAdapter {
         node.points[1] = { ...point };
     }
 
+    public canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point: IPoint): boolean {
+        return this.connection_handles.includes(handle);
+    }
+
     public snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void {
         if (!grid || !grid.forced) return;
 

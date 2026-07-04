@@ -408,6 +408,16 @@ IconRegistry.registerSymbol('bpmn_gateway', 'tool-bpmn-gateway',
 IconRegistry.registerSymbol('bpmn_task', 'tool-bpmn-task',
     sym('tool-bpmn-task', '<rect x="3" y="5" width="18" height="14" rx="3"/>'));
 
+// BPMN data store: cylinder with double bottom lines indicating a data store / database.
+IconRegistry.registerSymbol('bpmn_data_store', 'tool-bpmn-data-store',
+    sym('tool-bpmn-data-store', `<ellipse cx="12" cy="6" rx="9" ry="3"/>
+        <path d="M3 6v12c0 1.66 4.03 3 9 3s9-1.34 9-3V6"/>`));
+
+// BPMN data object: page with folded top-right corner.
+IconRegistry.registerSymbol('bpmn_data_object', 'tool-bpmn-data-object',
+    sym('tool-bpmn-data-object', `<path d="M6 2h8l4 4v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/>
+        <polyline points="14 2 14 6 18 6"/>`));
+
 // // BPMN parallel gateway: diamond with X marker.
 // IconRegistry.registerSymbol('bpmn_parallel_gateway', 'tool-bpmn-parallel-gateway',
 //     sym('tool-bpmn-parallel-gateway', '<polygon points="12 2 22 12 12 22 2 12"/><line x1="9.25" y1="9.25" x2="14.75" y2="14.75"/><line x1="14.75" y1="9.25" x2="9.25" y2="14.75"/>'));
@@ -450,6 +460,10 @@ IconRegistry.registerSymbol('trapezoid', 'tool-trapezoid',
 
 IconRegistry.registerSymbol('document', 'tool-document',
     sym('tool-document', '<path d="M3 5 H21 V17 Q16 13 12 17 Q7 21 3 17 Z"/>'));
+
+IconRegistry.registerSymbol('cylinder', 'tool-cylinder',
+    sym('tool-cylinder', `<ellipse cx="12" cy="6" rx="9" ry="3"/>
+        <path d="M3 6v12c0 1.66 4.03 3 9 3s9-1.34 9-3V6"/>`));
 
 // ── Image mode icons ─────────────────────────────────────────────────────────
 // Used in the ImageModeSelect toolbar widget.

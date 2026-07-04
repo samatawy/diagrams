@@ -3,10 +3,10 @@ import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RenderBasics } from "../render.basics";
 import { isHollow } from "../../value.utils";
-import { NodeHandle, type ITextOrientation, type ITextBaseline, type IRect } from "../../types";
+import { NodeHandle, type ITextOrientation, type ITextBaseline, type IRect, type IPoint } from "../../types";
 import type { SpecificOptions, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
 import { RhombusAdapter } from "../rectangle/rhombus.adapter";
-import { BpmnBasics } from "./Bpmn.Basics";
+import { BpmnBasics, GATEWAY_FILL_STYLE } from "./Bpmn.Basics";
 
 type BpmnGatewayType = 'exclusive' | 'inclusive' | 'parallel' | 'complex' | 'event_based';
 
@@ -22,9 +22,6 @@ export class BpmnGatewayAdapter extends RhombusAdapter {
     text_overflow: TextOverflowMode = 'hidden';
     text_orientations: ITextOrientation[] = ['horizontal'];
     text_baselines: ITextBaseline[] = ['top'];
-    connection_handles: NodeHandle[] = [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W];
-
-    // abstract renderInternal(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void;
 
     public override render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
@@ -109,6 +106,7 @@ export class BpmnGatewayAdapter extends RhombusAdapter {
             },
             locked_aspect: true,
             points: [{ x: 0, y: 0 }, { x: 40, y: 40 }],
+            fillStyle: GATEWAY_FILL_STYLE,
         }
     }
 

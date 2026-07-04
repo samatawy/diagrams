@@ -1,11 +1,10 @@
-import { NodeRegistry } from "../../factory/node.registry";
 import type { INode } from "../../interfaces";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow } from "../../value.utils";
-import { NodeHandle } from "../../types";
+import { NodeHandle, type IPoint } from "../../types";
 
 /**
  * RhombusAdapter is a node adapter responsible for rendering rhombus nodes in the diagram. 
@@ -65,6 +64,10 @@ export class RhombusAdapter extends RectangleAdapter {
             context.restore();
         }
     }
+
+    // public override canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point?: IPoint): boolean {
+    //     return this.connection_handles.includes(handle);
+    // }
 
     public onCreateDraft(tool: string): Partial<INode> | undefined {
         return {

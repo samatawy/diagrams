@@ -17,6 +17,7 @@ import { TextAdapter } from './rectangle/text.adapter';
 import { TrapezoidAdapter } from './rectangle/trapezoid.adapter';
 
 import { VerticalPoolAdapter } from './container/vertical.pool.adapter';
+import { CylinderAdapter } from './rectangle/cylinder.adapter';
 
 export * from './node.basics';
 export * from './connection.basics';
@@ -50,6 +51,7 @@ export function registerBasicAdapters(): void {
     ParallelogramAdapter.register();
     TrapezoidAdapter.register();
     DocumentAdapter.register();
+    CylinderAdapter.register();
 
     PolygonAdapter.register();
     SvgAdapter.register();
@@ -64,6 +66,7 @@ export function registerBasicAdapters(): void {
         ParallelogramAdapter.TYPE,
         TrapezoidAdapter.TYPE,
         DocumentAdapter.TYPE,
+        CylinderAdapter.TYPE,
     ]);
 
     NodeRegistry.registerTransferables([

@@ -1,4 +1,11 @@
+import type { INode } from "../../interfaces";
 import type { IRect } from "../../types";
+
+const THROW_FILL_STYLE = 'lightgray';
+export const EVENT_FILL_STYLE = 'white';
+export const GATEWAY_FILL_STYLE = 'white';
+export const TASK_FILL_STYLE = 'white';
+export const DATA_FILL_STYLE = 'white';
 
 export class BpmnBasics {
 
@@ -124,7 +131,7 @@ export class BpmnBasics {
      * @param context The canvas rendering context.
      * @param show Indicates whether to render fully ('all') or quickly ('quick').
      */
-    public static renderMessage(rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
+    public static renderMessage(rect: IRect, context: CanvasRenderingContext2D, node: INode, show?: 'all' | 'quick'): void {
         context.lineWidth = Math.min(2, context.lineWidth); // Reduce line width for the envelope
 
         const envelopePath = new Path2D();
@@ -144,6 +151,10 @@ export class BpmnBasics {
         envelopePath.lineTo((left + right) / 2, (top + bottom) / 2);
         envelopePath.lineTo(right, top);
 
+        if (node.specific?.bpmn_event_behavior === 'throw') {
+            context.fillStyle = THROW_FILL_STYLE;
+            context.fill(envelopePath);
+        }
         context.stroke(envelopePath);
     }
 
@@ -154,7 +165,7 @@ export class BpmnBasics {
      * @param context The canvas rendering context.
      * @param show Indicates whether to render fully ('all') or quickly ('quick').
      */
-    public static renderTimer(rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
+    public static renderTimer(rect: IRect, context: CanvasRenderingContext2D, node: INode, show?: 'all' | 'quick'): void {
         context.lineWidth = Math.min(2, context.lineWidth); // Reduce line width for the clock
 
         const clockPath = new Path2D();
@@ -171,6 +182,10 @@ export class BpmnBasics {
         clockPath.moveTo(centerX, centerY);
         clockPath.lineTo(centerX + radius * 0.9, centerY); // Minute hand
 
+        if (node.specific?.bpmn_event_behavior === 'throw') {
+            context.fillStyle = THROW_FILL_STYLE;
+            context.fill(clockPath);
+        }
         context.stroke(clockPath);
     }
 
@@ -181,7 +196,7 @@ export class BpmnBasics {
      * @param context The canvas rendering context.
      * @param show Indicates whether to render fully ('all') or quickly ('quick').
      */
-    public static renderSignal(rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
+    public static renderSignal(rect: IRect, context: CanvasRenderingContext2D, node: INode, show?: 'all' | 'quick'): void {
         context.lineWidth = Math.min(2, context.lineWidth); // Reduce line width for the triangle
 
         const trianglePath = new Path2D();
@@ -195,6 +210,10 @@ export class BpmnBasics {
         trianglePath.lineTo(left, bottom); // Bottom left vertex
         trianglePath.closePath();
 
+        if (node.specific?.bpmn_event_behavior === 'throw') {
+            context.fillStyle = THROW_FILL_STYLE;
+            context.fill(trianglePath);
+        }
         context.stroke(trianglePath);
     }
 
@@ -205,7 +224,7 @@ export class BpmnBasics {
      * @param context The canvas rendering context.
      * @param show Indicates whether to render fully ('all') or quickly ('quick').
      */
-    public static renderError(rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
+    public static renderError(rect: IRect, context: CanvasRenderingContext2D, node: INode, show?: 'all' | 'quick'): void {
         context.lineWidth = Math.min(2, context.lineWidth); // Reduce line width for the exclamation mark
 
         const exclamationPath = new Path2D();
@@ -231,7 +250,7 @@ export class BpmnBasics {
      * @param context The canvas rendering context.
      * @param show Indicates whether to render fully ('all') or quickly ('quick').
      */
-    public static renderCancel(rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
+    public static renderCancel(rect: IRect, context: CanvasRenderingContext2D, node: INode, show?: 'all' | 'quick'): void {
         context.lineWidth = Math.min(2, context.lineWidth); // Reduce line width for the "X"
 
         const cancelPath = new Path2D();
@@ -244,6 +263,10 @@ export class BpmnBasics {
         cancelPath.moveTo(centerX - size, centerY + size);
         cancelPath.lineTo(centerX + size, centerY - size);
 
+        if (node.specific?.bpmn_event_behavior === 'throw') {
+            context.fillStyle = THROW_FILL_STYLE;
+            context.fill(cancelPath);
+        }
         context.stroke(cancelPath);
     }
 
@@ -254,7 +277,7 @@ export class BpmnBasics {
      * @param context The canvas rendering context.
      * @param show Indicates whether to render fully ('all') or quickly ('quick').
      */
-    public static renderEscalation(rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
+    public static renderEscalation(rect: IRect, context: CanvasRenderingContext2D, node: INode, show?: 'all' | 'quick'): void {
         context.lineWidth = Math.min(2, context.lineWidth); // Keep marker strokes subtle inside events
 
         const path = new Path2D();
@@ -275,6 +298,10 @@ export class BpmnBasics {
         path.moveTo(cx, shoulderY);
         path.lineTo(cx, bottom);
 
+        if (node.specific?.bpmn_event_behavior === 'throw') {
+            context.fillStyle = THROW_FILL_STYLE;
+            context.fill(path);
+        }
         context.stroke(path);
     }
 
@@ -285,7 +312,7 @@ export class BpmnBasics {
      * @param context The canvas rendering context.
      * @param show Indicates whether to render fully ('all') or quickly ('quick').
      */
-    public static renderCompensation(rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
+    public static renderCompensation(rect: IRect, context: CanvasRenderingContext2D, node: INode, show?: 'all' | 'quick'): void {
         context.lineWidth = Math.min(2, context.lineWidth); // Keep marker strokes subtle inside events
 
         const path = new Path2D();
@@ -310,6 +337,10 @@ export class BpmnBasics {
         path.lineTo(right2, cy + h / 2);
         path.closePath();
 
+        if (node.specific?.bpmn_event_behavior === 'throw') {
+            context.fillStyle = THROW_FILL_STYLE;
+            context.fill(path);
+        }
         context.stroke(path);
     }
 
@@ -382,7 +413,7 @@ export class BpmnBasics {
      * @param context The canvas rendering context.
      * @param show Optional parameter to control rendering detail ('all' | 'quick').
      */
-    public static renderConditional(rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
+    public static renderConditional(rect: IRect, context: CanvasRenderingContext2D, node: INode, show?: 'all' | 'quick'): void {
         context.lineWidth = Math.min(2, context.lineWidth); // Reduce line width for the diamond
 
         const conditionalPath = new Path2D();
@@ -397,6 +428,10 @@ export class BpmnBasics {
         conditionalPath.lineTo(centerX - diamondWidth / 2, centerY); // Left vertex
         conditionalPath.closePath();
 
+        if (node.specific?.bpmn_event_behavior === 'throw') {
+            context.fillStyle = THROW_FILL_STYLE;
+            context.fill(conditionalPath);
+        }
         context.stroke(conditionalPath);
     }
 

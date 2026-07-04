@@ -49,6 +49,7 @@ import { SheetRepository } from "../sheets/sheet.repository";
 import { DiagramToolbox, type DiagramToolBoxConfig } from "./toolbox";
 import { registerBasicAdapters } from "../nodes";
 import { registerBpmnAdapters } from "../nodes/bpmn";
+import { registerC4Adapters } from "../nodes/c4";
 
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
@@ -325,6 +326,7 @@ export class DiagramEditor {
     static {
         registerBasicAdapters();
         registerBpmnAdapters();
+        registerC4Adapters();
     }
 
     /**

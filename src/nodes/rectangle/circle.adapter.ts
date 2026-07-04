@@ -15,8 +15,6 @@ export class CircleAdapter extends EllipseAdapter {
 
     public static TYPE = 'circle';
 
-    connection_handles: NodeHandle[] = [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W];
-
     public override render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
         const diagram = node.owner;
