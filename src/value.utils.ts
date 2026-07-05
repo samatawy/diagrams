@@ -181,13 +181,13 @@ export function lineDashArray(node: INode): number[] {
             case 'solid':
                 return [];
             case 'dashed':
-                return [4 * scale, 4 * scale];
+                return [10 * scale, 6 * scale];
             case 'dotted':
-                return [1 * scale, 2 * scale];
+                return [2 * scale, 4 * scale];
             case 'dashdot':
             case 'dash-dot':
             case 'dash_dot':
-                return [4 * scale, 2 * scale, 1 * scale, 2 * scale];
+                return [10 * scale, 4 * scale, 2 * scale, 4 * scale];
             default:
                 return [];
         }

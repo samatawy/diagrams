@@ -14,6 +14,8 @@ export class C4SystemAdapter extends RoundRectangleAdapter {
             fillStyle: '#1168bd',
             strokeStyle: {
                 color: 'white',
+                width: 2,
+                dash: [],
             },
             textStyle: {
                 color: 'white',

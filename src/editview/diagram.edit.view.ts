@@ -4107,8 +4107,8 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (NodeRegistry.isConnection(tool)) {
-            draft.strokeStyle!.arrow_at = this.settings.arrow_at;
-            draft.strokeStyle!.arrow_type = this.settings.arrow_type;
+            draft.strokeStyle!.arrow_at = draft.strokeStyle!.arrow_at ?? this.settings.arrow_at;
+            draft.strokeStyle!.arrow_type = draft.strokeStyle!.arrow_type ?? this.settings.arrow_type;
             draft.textStyle = {
                 ...(draft.textStyle || {}),
                 orientation: 'horizontal',

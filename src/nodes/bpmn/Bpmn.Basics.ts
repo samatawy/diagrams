@@ -7,6 +7,8 @@ export const GATEWAY_FILL_STYLE = 'white';
 export const TASK_FILL_STYLE = 'white';
 export const DATA_FILL_STYLE = 'white';
 
+export const BPMN_CONNECTION_STROKE_STYLE = 'black';
+
 export class BpmnBasics {
 
     /**

@@ -153,7 +153,7 @@ export class HorizontalPoolAdapter extends RectangleAdapter {
 
             // line dash respecting the current zoom level
             // [6 / zoom, 4 / zoom])
-            context.setLineDash([6 / coordinates.zoom, 6 / coordinates.zoom]);
+            context.setLineDash([6 / coordinates.zoom, 4 / coordinates.zoom]);
             context.lineDashOffset = diagram.animations.enabled ? diagram.animations.lineDashOffset : 0;
 
             const holder = new Path2D();

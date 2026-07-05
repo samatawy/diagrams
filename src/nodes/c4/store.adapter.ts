@@ -143,6 +143,8 @@ export class C4StoreAdapter extends CylinderAdapter {
             fillStyle: '#438dd5',
             strokeStyle: {
                 color: 'white',
+                width: 2,
+                dash: [],
             },
             textStyle: {
                 color: 'white',

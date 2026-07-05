@@ -7,6 +7,10 @@ import { NodeRegistry } from '../../factory/node.registry';
 import { BpmnTaskAdapter } from './task.adapter';
 import { BpmnDataStoreAdapter } from './data.store.adapter';
 import { BpmnDataObjectAdapter } from './data.object.adapter';
+import { BpmnDataAssociationAdapter } from './data.association.adapter';
+import { BpmnAssociationAdapter } from './association.adapter';
+import { BpmnMessageFlowAdapter } from './message.flow.adapter';
+import { BpmnSequenceFlowAdapter } from './sequence.flow.adapter';
 
 // export * from './Bpmn.Basics';
 // export * from './start.event.adapter';
@@ -30,10 +34,22 @@ export function registerBpmnAdapters(): void {
     BpmnDataStoreAdapter.register();
     BpmnDataObjectAdapter.register();
 
+    BpmnSequenceFlowAdapter.register();
+    BpmnMessageFlowAdapter.register();
+    BpmnAssociationAdapter.register();
+    BpmnDataAssociationAdapter.register();
+
     NodeRegistry.registerTransferables([
         BpmnStartEventAdapter.TYPE,
         BpmnIntermediateEventAdapter.TYPE,
         BpmnEndEventAdapter.TYPE,
+    ]);
+
+    NodeRegistry.registerTransferables([
+        BpmnSequenceFlowAdapter.TYPE,
+        BpmnMessageFlowAdapter.TYPE,
+        BpmnAssociationAdapter.TYPE,
+        BpmnDataAssociationAdapter.TYPE,
     ]);
 }
 
@@ -43,4 +59,6 @@ export const BPMN_TOOL_LAYOUT = [
     'bpmn_gateway', 'text',
     'bpmn_data_store', 'bpmn_data_object',
     'vertical_pool', 'horizontal_pool',
+    'bpmn_sequence_flow', 'bpmn_message_flow',
+    'bpmn_association', 'bpmn_data_association',
 ];

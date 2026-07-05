@@ -119,17 +119,6 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected dragPanningWithSpace: boolean = false;
 
-    // protected animation: AnimationLineDash = {
-    //     enabled: true,
-    //     animate: false,
-    //     fps: 60,
-    //     dashOffset: 0,
-    // };
-
-    // private viewportAnimationFrame?: number;
-
-    // private viewportAnimationToken: number = 0;
-
     protected hover_listener?: DiagramPointerListener;
 
     protected click_listener?: DiagramPointerListener;
