@@ -1,6 +1,6 @@
 import type { INode } from "../interfaces";
 import type { Diagram } from "../model/diagram";
-import { nodeClass } from "../value.utils";
+import { deepClone, nodeClass } from "../value.utils";
 import type { NodeStyle, EmbeddedSheet, SpecSheet } from "./spec.sheet";
 
 export class SheetRepository {
@@ -158,8 +158,8 @@ export class SheetRepository {
             description: sheet.description,
 
             diagram: sheet.diagram,
-            types: { ...sheet.types },
-            classes: { ...sheet.classes },
+            types: deepClone(sheet.types),
+            classes: deepClone(sheet.classes),
         };
     }
 
@@ -347,7 +347,7 @@ export class SheetRepository {
         }
 
         if (old_name === new_name || !(old_name in sheet.classes)) return;
-        sheet.classes[new_name] = { ...sheet.classes[old_name]! };
+        sheet.classes[new_name] = deepClone(sheet.classes[old_name]!);
         delete sheet.classes[old_name];
     }
 
@@ -359,11 +359,11 @@ export class SheetRepository {
     private cloneNodeStyle(style: NodeStyle): NodeStyle {
         return {
             fillStyle: style.fillStyle,
-            textStyle: { ...style.textStyle },
-            strokeStyle: { ...style.strokeStyle },
+            textStyle: deepClone(style.textStyle),
+            strokeStyle: deepClone(style.strokeStyle),
             shadowStyle: {
                 ...style.shadowStyle,
-                offset: { ...style.shadowStyle.offset },
+                offset: deepClone(style.shadowStyle.offset),
             },
         };
     }
@@ -386,7 +386,7 @@ export class SheetRepository {
 
         return {
             ...sheet,
-            diagram: { ...(sheet.diagram ?? {}) },
+            diagram: deepClone(sheet.diagram ?? {}),
             types,
             classes,
         };

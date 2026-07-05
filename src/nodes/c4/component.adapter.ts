@@ -17,6 +17,7 @@ export class C4ComponentAdapter extends RoundRectangleAdapter {
             },
             textStyle: {
                 color: 'white',
+                halo: 'inherit',
                 size: 12,
                 fontFace: 'system-ui',
                 baseline: 'bottom',

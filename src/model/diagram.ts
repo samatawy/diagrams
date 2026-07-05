@@ -8,6 +8,7 @@ import { AssetStore } from "../view/asset.store";
 import type { ImageMode } from "../types";
 import { SheetRepository } from "../sheets/sheet.repository";
 import type { SpecSheet } from "../sheets/spec.sheet";
+import { deepClone } from "../value.utils";
 
 
 /**
@@ -48,7 +49,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
         this.groups = initial?.groups ? initial.groups.map(group => this.createGroup(group.id, group.nodes)) : [];
         this.layers = initial?.layers ? initial.layers.map(layer => this.createLayer(layer.id, layer.name, layer.visible, layer.nodes)) : [];
         this.background = initial?.background;
-        this.meta = initial?.meta ? { ...initial.meta } : undefined;
+        this.meta = initial?.meta ? deepClone(initial.meta) : undefined;
 
         if (initial?.nodes) {
             for (const node of initial.nodes) {
@@ -234,12 +235,15 @@ export class Diagram implements IDiagram, HasSheetRepository {
         }
 
         this.nodes = this.nodes.filter(node => node.id !== nodeId);
-        this.layers = this.layers.map(layer => this.createLayer(
-            layer.id,
-            layer.name,
-            layer.visible,
-            layer.nodes.filter(id => id !== nodeId),
-        ));
+        this.layers.forEach(layer => {
+            layer.nodes = layer.nodes.filter(id => id !== nodeId);
+        });
+        // this.layers = this.layers.map(layer => this.createLayer(
+        //     layer.id,
+        //     layer.name,
+        //     layer.visible,
+        //     layer.nodes.filter(id => id !== nodeId),
+        // ));
     }
 
     /**
@@ -520,8 +524,8 @@ export class Diagram implements IDiagram, HasSheetRepository {
         this.groups = (json.groups ?? []).map(group => this.hydrateGroup(group));
         this.layers = (json.layers ?? []).map(layer => this.hydrateLayer(layer));
         this.background = json.background;
-        this.meta = json.meta ? { ...json.meta } : undefined;
-        // this.grid = json.grid ? { ...defaultGrid, ...json.grid } : { ...defaultGrid };
+        this.meta = json.meta ? deepClone(json.meta) : undefined;
+
         if (this.layers.length === 0) {
             this.buildMissingLayer();
         } else {
@@ -572,7 +576,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
             layers: serializedLayers,
             image_assets: imageAssets,
             background: this.background,
-            meta: this.meta ? { ...this.meta } : undefined,
+            meta: this.meta ? deepClone(this.meta) : undefined,
         } satisfies ISerializedDiagram);
     }
 
@@ -684,7 +688,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
     protected serializeNode(node: INode): ISerializedNode {
         const serialized: ISerializedNode = {
             ...node,
-            points: node.points.map(point => ({ ...point })),
+            points: deepClone(node.points), // node.points.map(point => ({ ...point })),
         };
 
         delete (serialized as Partial<INode>).owner;
@@ -713,7 +717,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
     private hydrateNode(node: ISerializedNode): INode {
         return {
             ...node,
-            points: node.points.map(point => ({ ...point })),
+            points: deepClone(node.points),
             from: this.hydrateAnchor(node.from),
             to: this.hydrateAnchor(node.to),
             owner: this,
@@ -772,7 +776,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
     }
 
     private hydrateAnchor(anchor?: ISerializedConnectionAnchor): IConnection['from'] | undefined {
-        return anchor ? { ...anchor } : undefined;
+        return anchor ? deepClone(anchor) : undefined;
     }
 
     private anchorTargetsNode(anchor: IConnectionAnchor | undefined, nodeId: string): boolean {

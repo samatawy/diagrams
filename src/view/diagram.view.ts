@@ -30,6 +30,7 @@ import { DiagramViewKeyboard } from "./view.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
 import type { AnimationChannelType, AnimationLineDash, AnimationMode } from "../animation.types";
 import { DiagramAnimations } from "../layout/animations";
+import { deepClone } from "../value.utils";
 
 export type RenderMode = 'view' | 'editing';
 
@@ -446,7 +447,7 @@ export class DiagramView extends Diagram implements HasSelection {
         let zoomChanged = false;
 
         if (viewport.pan) {
-            this.coordinates.pan = { ...viewport.pan };
+            this.coordinates.pan = deepClone(viewport.pan);
             panChanged = true;
         }
         if (viewport.zoom !== undefined) {
@@ -917,7 +918,7 @@ export class DiagramView extends Diagram implements HasSelection {
                 const rect = this.coordinates.getBoundingRect(node, true);
 
                 if (!bounds) {
-                    bounds = { ...rect };
+                    bounds = deepClone(rect);
                     continue;
                 }
 
@@ -1376,7 +1377,7 @@ export class DiagramView extends Diagram implements HasSelection {
             const zoomFactor = event.deltaY > 0 ? wheelZoomStep : 1 / wheelZoomStep;
             this.zoomBy(zoomFactor, event.offsetX, event.offsetY);
         } else {
-            this.panBy(event.deltaX, event.deltaY, 'animate');
+            this.panBy(-event.deltaX, -event.deltaY, 'animate');    // negate to match the expected direction of panning
         }
 
         this.render();
@@ -1564,7 +1565,7 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         if (initialView?.pan) {
-            this.coordinates.pan = { ...initialView.pan };
+            this.coordinates.pan = deepClone(initialView.pan);
         }
         if (initialView?.zoom !== undefined) {
             this.coordinates.zoom = this.fitViewport.clampZoom(initialView.zoom);

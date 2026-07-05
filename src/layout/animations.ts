@@ -2,6 +2,7 @@ import type { AnimationConfig, AnimationChannel, AnimationLineDash, AnimationCha
 import type { INode } from "../interfaces";
 import { NodeBasics } from "../nodes";
 import type { IPoint, IRect } from "../types";
+import { deepClone } from "../value.utils";
 import type { DiagramView } from "../view";
 
 export class DiagramAnimations {
@@ -219,7 +220,7 @@ export class DiagramAnimations {
 
     private doAnimateNodeCenter(channel: AnimationNodeCenter, node: INode, target: IPoint, func: () => void): void {
         if (!this.config.enabled) {
-            node.points[0] = { ...target };
+            node.points[0] = deepClone(target);
             func();
             return;
         }
@@ -271,7 +272,7 @@ export class DiagramAnimations {
 
             const coordinates = this.diagram.getCoordinates();
             const currentZoom = coordinates.zoom;
-            const currentPan = { ...coordinates.pan };
+            const currentPan = deepClone(coordinates.pan);
 
             const zoomDiff = (target.zoom ?? currentZoom) - currentZoom;
             const panDiff = {

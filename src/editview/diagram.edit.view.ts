@@ -51,6 +51,7 @@ interface DiagramClipboardEnvelope {
     image_assets?: Record<string, string>;
 }
 import {
+    deepClone,
     fillStyle, humanize, isHollow, isInvisible, isLocked, lineDash, lineWidth,
     nodeAngle, nodeFontFace, nodeFontSize, nodeOpacity, nodeText, strokeColor,
     textAlign, textBaseline, textColor, textHaloColor, textItalic, textOrientation, textWeight
@@ -1059,7 +1060,7 @@ export class DiagramEditView extends DiagramView {
         const { owner: _owner, id: _id, ready: _ready, points, ...rest } = draft;
         Object.assign(node, rest);
         if (Array.isArray(points) && points.length > 0) {
-            node.points = points.map((pt) => ({ x: pt.x, y: pt.y }));
+            node.points = deepClone(points);        // points.map((pt) => ({ x: pt.x, y: pt.y }));
         }
 
         this.centerNodeAt(node, center);
@@ -2329,15 +2330,15 @@ export class DiagramEditView extends DiagramView {
      */
     protected cloneNode(node: INode | ISerializedNode, id?: string): INode {
         return {
-            ...node,
+            ...node,    /* Must NOT use deepClone on INode */
             id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            points: node.points.map(p => ({ ...p })),
-            ...(node.textStyle && { textStyle: { ...node.textStyle } }),
-            ...(node.strokeStyle && { strokeStyle: { ...node.strokeStyle } }),
-            ...(node.shadowStyle && { shadowStyle: { ...node.shadowStyle } }),
-            ...(node.specific && { specific: { ...node.specific } }),
-            ...(node.geometry && { geometry: { ...node.geometry } }),
-            ...(node.meta && { meta: { ...node.meta } }),
+            points: deepClone(node.points),         // node.points.map(p => ({ ...p })),
+            ...(node.textStyle && { textStyle: deepClone(node.textStyle) }),
+            ...(node.strokeStyle && { strokeStyle: deepClone(node.strokeStyle) }),
+            ...(node.shadowStyle && { shadowStyle: deepClone(node.shadowStyle) }),
+            ...(node.specific && { specific: deepClone(node.specific) }),
+            ...(node.geometry && { geometry: deepClone(node.geometry) }),
+            ...(node.meta && { meta: deepClone(node.meta) }),
         } as INode;
     }
 
@@ -3677,10 +3678,13 @@ export class DiagramEditView extends DiagramView {
         // TODO: Is this necessary?
         this.dragOver(event);
 
+        const layer = this.ensureCurrentLayer();
+
         this.addUndo();
 
         const created = {
             ...this.dragCreateDraft,
+            points: deepClone(this.dragCreateDraft.points),
             id: `${this.dragCreateDraft.type}-drop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
         };
         const point = this.coordinates.getPointFromEvent(event, this.grid);
@@ -3717,9 +3721,12 @@ export class DiagramEditView extends DiagramView {
                 to_point = to_nearest.point;
             }
 
-            /* Insert the connector into the diagram */
+            /* Insert the connector into the diagram.
+               Shallow spread keeps `owner` as a live reference — deepClone must NOT be used here
+               because it would serialise/break the DiagramEditView `owner` reference. */
             const connector = {
                 ...this.dragDraftConnector,
+                points: (this.dragDraftConnector?.points || []).map(pt => ({ ...pt })),
                 from: { node: overlaying?.id, handle: from_handle },
                 to: { node: created.id, handle: to_handle },
                 id: `auto-line-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
@@ -3743,8 +3750,6 @@ export class DiagramEditView extends DiagramView {
         }
 
         created.ready = true;
-
-        const layer = this.ensureCurrentLayer();
 
         this.upsertNode(created);
         layer.nodes.push(created.id);
@@ -4060,13 +4065,17 @@ export class DiagramEditView extends DiagramView {
             id: _id,
             ready: _ready,
             points: templatePoints,
+            fillStyle: templateFillStyle,
             strokeStyle: templateStrokeStyle,
             textStyle: templateTextStyle,
             shadowStyle: templateShadowStyle,
             ...templateRest
         } = template;
 
-        /* Merge current settings with tool template */
+        /* Merge current editor settings with adapter template.
+           For every style sub-object the template values take priority over the current
+           editor defaults. The current defaults are the fallback when the template omits
+           a property (signalled by null / undefined → nullish-coalescing). */
         const draft: INode = {
             id: `${tool}-draft-${Date.now()}`,
             type: tool,
@@ -4075,7 +4084,7 @@ export class DiagramEditView extends DiagramView {
             textStyle: { ...this.textStyle, ...(templateTextStyle || {}) },
             ready: false,
             strokeStyle: { ...this.strokeStyle, ...(templateStrokeStyle || {}) },
-            fillStyle: defaultFillStyle,
+            fillStyle: templateFillStyle ?? defaultFillStyle,
             shadowStyle: { ...this.shadowStyle, ...(templateShadowStyle || {}) },
             ...templateRest,
             owner: this,
