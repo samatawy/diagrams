@@ -195,10 +195,6 @@ export class DiagramEditView extends DiagramView {
 
     private dragDraftConnector?: INode;
 
-    protected readonly handleWindowPointerUp = (event: PointerEvent) => this.windowPointerUp(event);
-
-    protected readonly handleWindowPointerCancel = (_event: PointerEvent) => this.cancelDragCreateDraft();
-
     public fileDialogs?: DiagramFileDialogs;
 
     public prompts?: DiagramEditViewPrompts;
@@ -222,17 +218,12 @@ export class DiagramEditView extends DiagramView {
         this.zOrder = new ZOrder(this);
         this.color_palette = new ColorPalette(this);
         this.editKeyboard = new DiagramEditViewKeyboard();
-
-        window.addEventListener('pointerup', this.handleWindowPointerUp, true);
-        window.addEventListener('pointercancel', this.handleWindowPointerCancel, true);
     }
 
     /**
      * Cleans up resources used by the diagram, such as event listeners and active text editors.
      */
     public override destroy(): void {
-        window.removeEventListener('pointerup', this.handleWindowPointerUp, true);
-        window.removeEventListener('pointercancel', this.handleWindowPointerCancel, true);
         this.clear();
         super.destroy();
     }
@@ -1041,16 +1032,34 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Begins a tool drag-create gesture and lets the canvas own pointer capture.
+     * @param draft Partial node data to initialize the draft.
+     * @param pointerId Optional pointer id for capture ownership transfer.
+     */
+    public beginToolDragCreate(draft: Partial<INode>, pointerId?: number): void {
+        if (pointerId !== undefined) {
+            try {
+                this.canvas.setPointerCapture?.(pointerId);
+            } catch {
+                // Pointer capture can fail for stale pointer ids; creation still proceeds.
+            }
+        }
+
+        this.createDragDraft(draft);
+    }
+
+    /**
      * Creates a draft node for the current tool, if applicable. This is used for tools that create new nodes.
      * @param draft Partial node data to initialize the draft.
      */
-    public createDragDraft(draft: Partial<INode>): void {
+    protected createDragDraft(draft: Partial<INode>): void {
         if (!draft || !draft.type || draft.type === 'select' || !NodeRegistry.adapter(draft.type)) {
             return;
         }
 
         void this.setTool(draft.type, this.current.toolOptions);
         const center = this.coordinates.getPoint(this.canvas.width / 2, this.canvas.height / 2, this.grid);
+
         const node = this.createDraftFromCurrent(
             draft.type,
             { ...this.current.toolOptions, useTemplatePoints: true },
@@ -1065,6 +1074,8 @@ export class DiagramEditView extends DiagramView {
 
         this.centerNodeAt(node, center);
         node.ready = false;
+        node.invisible = true;
+        // this.dragCreatePositioned = false;
         this.dragCreateDraft = node;
         this.render('all');
 
@@ -2678,6 +2689,10 @@ export class DiagramEditView extends DiagramView {
     protected override pointerDown(event: PointerEvent): void {
         if (!this.canvas) return;
 
+        if (event.button === 0) {
+            this.canvas.setPointerCapture?.(event.pointerId);
+        }
+
         if (this.dragCreateDraft && event.button === 0) {
             /* This should never happen! */
             event.preventDefault();
@@ -2743,15 +2758,14 @@ export class DiagramEditView extends DiagramView {
         if (!this.canvas) return;
         this.stopAnimations('linedash');
 
+        if (this.canvas.hasPointerCapture?.(event.pointerId) && event.type !== 'pointerleave') {
+            this.canvas.releasePointerCapture(event.pointerId);
+        }
+
         if (this.dragCreateDraft) {
             /* DiagramView routes pointerleave with pressed buttons into pointerUp;
                do not treat leaving canvas as release/cancel. */
             if (event.type === 'pointerleave') {
-                return;
-            }
-
-            if (!this.isPointerInsideCanvas(event)) {
-                this.cancelDragCreateDraft();
                 return;
             }
 
@@ -2837,6 +2851,12 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (this.shouldIgnoreGlobalKeydown(event)) {
+            return;
+        }
+
+        if (key === 'escape' && this.dragCreateDraft) {
+            consumeEvent();
+            this.cancelDragCreateDraft();
             return;
         }
 
@@ -3652,7 +3672,7 @@ export class DiagramEditView extends DiagramView {
         this.canvas.style.cursor = 'default';
 
         const point = this.coordinates.getPointFromEvent(event, this.grid);
-        this.animations.animateNodeCenter(this.dragCreateDraft, point, () => { });
+        this.centerDragDraftAt(this.dragCreateDraft, point);
         // this.centerNodeAt(this.dragCreateDraft, point);
         this.render('all');
 
@@ -3814,8 +3834,20 @@ export class DiagramEditView extends DiagramView {
             case NodeHandle.SW: offsetX = - stub - w; offsetY = stub + h; break;
         }
 
-        this.animations.animateNodeCenter(draft, { x: point.x + offsetX, y: point.y + offsetY }, () => { });
-        // this.centerNodeAt(draft, { x: point.x + offsetX, y: point.y + offsetY });
+        this.centerDragDraftAt(draft, { x: point.x + offsetX, y: point.y + offsetY });
+    }
+
+    /**
+     * Positions drag draft center, snapping instantly on first placement then animating subsequent moves.
+     */
+    private centerDragDraftAt(draft: INode, center: IPoint): void {
+        if (draft === this.dragCreateDraft && draft.invisible) {
+            this.centerNodeAt(draft, center);
+            draft.invisible = false;
+            return;
+        }
+
+        this.animations.animateNodeCenter(draft, center, () => { });
     }
 
     /**
@@ -3856,31 +3888,6 @@ export class DiagramEditView extends DiagramView {
         this.setInteractionHint(undefined);
         this.render('all');
         void this.setTool('select');
-    }
-
-    /**
-     * Determines whether the pointer is inside the canvas.
-     * @param event The pointer or keyboard event.
-     * @returns True if pointer inside canvas, otherwise false.
-     */
-    private isPointerInsideCanvas(event: PointerEvent): boolean {
-        if (!this.canvas) return false;
-
-        const rect = this.canvas.getBoundingClientRect();
-        return event.clientX >= rect.left
-            && event.clientX <= rect.right
-            && event.clientY >= rect.top
-            && event.clientY <= rect.bottom;
-    }
-
-    /**
-     * Handles window pointer up, canceling drag create draft if pointer is outside canvas.
-     * @param event The pointer or keyboard event.
-     */
-    private windowPointerUp(event: PointerEvent): void {
-        if (!this.dragCreateDraft) return;
-        if (this.isPointerInsideCanvas(event)) return;
-        this.cancelDragCreateDraft();
     }
 
     // ===================================================
@@ -4058,7 +4065,7 @@ export class DiagramEditView extends DiagramView {
             : [{ ...start }, { ...start }];
         const defaultFillStyle = NodeRegistry.isConnection(tool) ? 'transparent' : this.fillColor;
 
-        // Read the template defined by the tool itself..
+        /* Read the template defined by the tool itself. */
         const template = NodeRegistry.adapter(tool)?.onCreateDraft?.(tool) || {};
         const {
             owner: _owner,
@@ -4388,9 +4395,6 @@ export class DiagramEditView extends DiagramView {
 
             left = layoutRect.left;
             editorWidth = Math.max(24, layoutRect.width);
-
-            // left = screenRect.left;
-            // editorWidth = Math.max(24, screenRect.width);
 
             const text = nodeText(node);
             const measureContext = this.context;

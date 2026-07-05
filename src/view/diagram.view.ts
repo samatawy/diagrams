@@ -131,9 +131,13 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected readonly handlePointerUp = (event: PointerEvent) => this.pointerUp(event);
 
-    /* Only cancel an in-progress drag when the pointer leaves; ignore plain hover-exits. */
+    /* Keep active gestures alive while pointer capture is held; only end on leave when uncaptured. */
     protected readonly handlePointerLeave = (event: PointerEvent) => {
-        if (event.buttons !== 0) this.pointerUp(event);
+        if (!this.canvas) return;
+
+        if ((event.buttons !== 0) && !this.canvas.hasPointerCapture?.(event.pointerId)) {
+            this.pointerUp(event);
+        }
     };
 
     protected readonly handleDblClick = (event: MouseEvent) => this.dblClick(event);

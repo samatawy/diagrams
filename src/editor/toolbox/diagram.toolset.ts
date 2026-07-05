@@ -393,7 +393,7 @@ export class DiagramToolset {
             draftStarted = true;
             const draft = adapter?.onCreateDraft ? adapter.onCreateDraft(tool) : undefined;
             if (draft) {
-                this.diagram.createDragDraft(draft);
+                this.diagram.beginToolDragCreate(draft, event.pointerId);
             }
         });
     }
