@@ -10,13 +10,14 @@ import { NodeRegistry } from "../../factory/node.registry";
 import { Inspector, type InspectorConfig, type InspectorPropertyDefinition, type EditableRecord } from "./inspector";
 import type { ColorSelectConfig } from "../inputs/color.select";
 import type { WidthSelectConfig } from "../inputs/width.select";
-import type { ArrowSelectConfig } from "../inputs/arrow.select";
+import type { ArrowDirectionSelectConfig } from "../inputs/arrow.direction.select";
 import type { DashSelectConfig } from "../inputs/dash.select";
 import type { FontSelectConfig } from "../inputs/font.select";
 import type { SizeSelectConfig } from "../inputs/size.select";
 import { ColorSelectAdapter } from "./color.select.adapter";
 import { WidthSelectAdapter } from "./width.select.adapter";
-import { ArrowSelectAdapter } from "./arrow.select.adapter";
+import { ArrowDirectionSelectAdapter } from "./arrow.direction.select.adapter";
+import { ArrowTypeSelectAdapter } from "./arrow.type.select.adapter";
 import { DashSelectAdapter } from "./dash.select.adapter";
 import { FontSelectAdapter } from "./font.select.adapter";
 import { SizeSelectAdapter } from "./size.select.adapter";
@@ -28,6 +29,7 @@ import { ImageSelectAdapter } from "./image.select.adapter";
 import type { NumberInputAdapterConfig } from "./number.input.adapter";
 import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./meta.kv.adapters";
 import { ClassActionsAdapter, type ClassActionsAdapterConfig } from "./class.actions.adapter";
+import type { ArrowTypeSelectConfig } from "../inputs";
 
 export type DiagramInspectorConfig = InspectorConfig & {
     colorSelect?: ColorSelectConfig;
@@ -37,7 +39,8 @@ export type DiagramInspectorConfig = InspectorConfig & {
     shadowColor?: ColorSelectConfig;
     widthSelect?: WidthSelectConfig;
     dashSelect?: DashSelectConfig;
-    arrowSelect?: ArrowSelectConfig;
+    arrowDirectionSelect?: ArrowDirectionSelectConfig;
+    arrowTypeSelect?: ArrowTypeSelectConfig;
     fontSelect?: FontSelectConfig;
     sizeSelect?: SizeSelectConfig;
     textAlignOptions?: EnumSelectAdapterConfig['options'];
@@ -98,7 +101,8 @@ export class DiagramInspector extends Inspector {
 
         Inspector.registerAdapter('ColorSelect', ColorSelectAdapter);
         Inspector.registerAdapter('WidthSelect', WidthSelectAdapter);
-        Inspector.registerAdapter('ArrowSelect', ArrowSelectAdapter);
+        Inspector.registerAdapter('ArrowDirectionSelect', ArrowDirectionSelectAdapter);
+        Inspector.registerAdapter('ArrowTypeSelect', ArrowTypeSelectAdapter);
         Inspector.registerAdapter('DashSelect', DashSelectAdapter);
         Inspector.registerAdapter('FontSelect', FontSelectAdapter);
         Inspector.registerAdapter('SizeSelect', SizeSelectAdapter);
@@ -345,9 +349,15 @@ export class DiagramInspector extends Inspector {
             readonly: readonly, isVisible: hasSelected
         });
         this.addRow(line, {
-            key: 'strokeStyle.arrow', label: 'Arrow',
-            type: 'string', editor: 'ArrowSelect',
-            editorOptions: this.inspectorConfig.arrowSelect || {},
+            key: 'strokeStyle.arrow_at', label: 'Arrows',
+            type: 'string', editor: 'ArrowDirectionSelect',
+            editorOptions: this.inspectorConfig.arrowDirectionSelect || {},
+            readonly: readonly, isVisible: hasConnections
+        });
+        this.addRow(line, {
+            key: 'strokeStyle.arrow_type', label: 'Arrow Type',
+            type: 'string', editor: 'ArrowTypeSelect',
+            editorOptions: this.inspectorConfig.arrowTypeSelect || {},
             readonly: readonly, isVisible: hasConnections
         });
 

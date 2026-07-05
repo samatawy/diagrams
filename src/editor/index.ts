@@ -19,5 +19,8 @@ export * from './menus/index';
 // Inspector
 export * from './inspector/index';
 
+// Toolbox
+export * from './toolbox/index';
+
 // Editor component
 export * from './diagram.editor';

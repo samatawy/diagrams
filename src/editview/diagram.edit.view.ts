@@ -8,7 +8,8 @@ import {
     type ITextAlign, type ITextBaseline, type ITextOrientation,
     type ArrowDirection,
     type ImageMode, type ImageAlign,
-    type IFontWeight
+    type IFontWeight,
+    type ArrowType
 } from "../types";
 import { HistoryStack } from "./history";
 import { NORMAL_FONT_WEIGHT, type ShadowStyle, type StrokeStyle, type TextStyle } from "../style.interfaces";
@@ -111,7 +112,8 @@ export class DiagramEditView extends DiagramView {
         opacity: number;
         lineWidth: number;
         lineDash: string | number[];
-        arrow: ArrowDirection;
+        arrow_at: ArrowDirection;
+        arrow_type: ArrowType;
         strokeColor: string;
         fillColor: string;
         shadowColor: string;
@@ -135,7 +137,8 @@ export class DiagramEditView extends DiagramView {
             opacity: 100,
             lineDash: [],
             lineWidth: DiagramConstants.DEFAULT_NODE_LINE_WIDTH,
-            arrow: 'end',
+            arrow_at: 'end',
+            arrow_type: 'solid_triangle',
             strokeColor: DiagramConstants.DEFAULT_STROKE_STYLE,
             fillColor: DiagramConstants.DEFAULT_FILL_STYLE,
             shadowColor: DiagramConstants.NO_SHADOW.color ?? 'transparent',
@@ -856,16 +859,23 @@ export class DiagramEditView extends DiagramView {
     /**
      * Gets the current arrow direction derived from the settings flags.
      */
-    public get arrow(): ArrowDirection {
-        return this.settings.arrow || 'end';
+    public get arrowAt(): ArrowDirection {
+        return this.settings.arrow_at || 'end';
+    }
+
+    /**
+     * Gets the current arrow type derived from the settings flags.
+     */
+    public get arrowType(): ArrowType {
+        return this.settings.arrow_type || 'solid_triangle';
     }
 
     /**
      * Sets the default arrow direction and applies it to current selection.
      * @param value Arrow direction value.
      */
-    public set arrow(value: ArrowDirection) {
-        this.setArrow(value);
+    public set arrowAt(value: ArrowDirection) {
+        this.setArrowAt(value);
     }
 
     /**
@@ -926,7 +936,8 @@ export class DiagramEditView extends DiagramView {
             color: this.settings.strokeColor,
             width: this.settings.lineWidth,
             dash: this.settings.lineDash,
-            arrow: this.settings.arrow,
+            arrow_at: this.settings.arrow_at,
+            arrow_type: this.settings.arrow_type,
         };
     }
 
@@ -1039,7 +1050,10 @@ export class DiagramEditView extends DiagramView {
 
         void this.setTool(draft.type, this.current.toolOptions);
         const center = this.coordinates.getPoint(this.canvas.width / 2, this.canvas.height / 2, this.grid);
-        const node = this.createDraftFromCurrent(draft.type, this.current.toolOptions, center);
+        const node = this.createDraftFromCurrent(
+            draft.type,
+            { ...this.current.toolOptions, useTemplatePoints: true },
+            center);
 
         /* Let adapters define drag-draft geometry and optional draft properties. */
         const { owner: _owner, id: _id, ready: _ready, points, ...rest } = draft;
@@ -1076,7 +1090,8 @@ export class DiagramEditView extends DiagramView {
                 color: this.settings.strokeColor,
                 width: this.settings.lineWidth,
                 dash: this.settings.lineDash,
-                arrow: this.settings.arrow,
+                arrow_at: this.settings.arrow_at,
+                arrow_type: this.settings.arrow_type,
             },
             hollow: true,
             invisible: true,
@@ -1280,23 +1295,46 @@ export class DiagramEditView extends DiagramView {
      * Sets the arrow direction for the selected nodes and new nodes to be created.
      * @param arrow The arrow direction to set.
      */
-    public setArrow(arrow: ArrowDirection): void {
+    public setArrowAt(arrow: ArrowDirection): void {
         const selected = this.selection();
         if (selected.length) {
             this.addUndo();
         }
 
-        this.settings.arrow = arrow;
+        this.settings.arrow_at = arrow;
 
         for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
-            node.strokeStyle.arrow = arrow;
+            node.strokeStyle.arrow_at = arrow;
         }
-        this.applyClassChange(selected, { strokeStyle: { arrow } });
+        this.applyClassChange(selected, { strokeStyle: { arrow_at: arrow } });
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-arrow');
+        this.eventDispatcher.styleChanged('set-arrow-at');
+    }
+
+    /**
+     * Sets the arrow type for the selected nodes and new nodes to be created.
+     * @param arrow The arrow type to set.
+     */
+    public setArrowType(arrow: ArrowType): void {
+        const selected = this.selection();
+        if (selected.length) {
+            this.addUndo();
+        }
+
+        this.settings.arrow_type = arrow;
+
+        for (let node of selected) {
+            node.strokeStyle = node.strokeStyle || {};
+            node.strokeStyle.arrow_type = arrow;
+        }
+        this.applyClassChange(selected, { strokeStyle: { arrow_type: arrow } });
+
+        this.render('all');
+        this.renderPreview();
+        this.eventDispatcher.styleChanged('set-arrow-type');
     }
 
     /**
@@ -1312,13 +1350,15 @@ export class DiagramEditView extends DiagramView {
         if (style.color !== undefined) this.settings.strokeColor = style.color;
         if (style.width !== undefined) this.settings.lineWidth = style.width;
         if (style.dash !== undefined) this.settings.lineDash = style.dash;
-        if (style.arrow !== undefined) this.settings.arrow = style.arrow;
+        if (style.arrow_at !== undefined) this.settings.arrow_at = style.arrow_at;
+        if (style.arrow_type !== undefined) this.settings.arrow_type = style.arrow_type;
 
         const merged: StrokeStyle = {
             color: this.settings.strokeColor,
             width: this.settings.lineWidth,
             dash: this.settings.lineDash,
-            arrow: this.settings.arrow,
+            arrow_at: this.settings.arrow_at,
+            arrow_type: this.settings.arrow_type,
         };
 
         for (let node of selected) {
@@ -1468,7 +1508,8 @@ export class DiagramEditView extends DiagramView {
         if (patch['strokeStyle.color'] !== undefined) this.settings.strokeColor = String(patch['strokeStyle.color']);
         if (patch['strokeStyle.width'] !== undefined) this.settings.lineWidth = Number(patch['strokeStyle.width']);
         if (patch['strokeStyle.dash'] !== undefined) this.settings.lineDash = patch['strokeStyle.dash'] as string | number[];
-        if (patch['strokeStyle.arrow'] !== undefined) this.settings.arrow = patch['strokeStyle.arrow'] as ArrowDirection;
+        if (patch['strokeStyle.arrow_at'] !== undefined) this.settings.arrow_at = patch['strokeStyle.arrow_at'] as ArrowDirection;
+        if (patch['strokeStyle.arrow_type'] !== undefined) this.settings.arrow_type = patch['strokeStyle.arrow_type'] as ArrowType;
 
         if (patch['fillStyle'] !== undefined) this.settings.fillColor = String(patch['fillStyle']);
         if (patch['shadowStyle.color'] !== undefined) this.settings.shadowColor = String(patch['shadowStyle.color']);
@@ -1501,7 +1542,8 @@ export class DiagramEditView extends DiagramView {
             if (patch['strokeStyle.color'] !== undefined) nodeStyle.strokeStyle!.color = patch['strokeStyle.color'] as string;
             if (patch['strokeStyle.width'] !== undefined) nodeStyle.strokeStyle!.width = patch['strokeStyle.width'] as number;
             if (patch['strokeStyle.dash'] !== undefined) nodeStyle.strokeStyle!.dash = patch['strokeStyle.dash'] as string | number[];
-            if (patch['strokeStyle.arrow'] !== undefined) nodeStyle.strokeStyle!.arrow = patch['strokeStyle.arrow'] as ArrowDirection;
+            if (patch['strokeStyle.arrow_at'] !== undefined) nodeStyle.strokeStyle!.arrow_at = patch['strokeStyle.arrow_at'] as ArrowDirection;
+            if (patch['strokeStyle.arrow_type'] !== undefined) nodeStyle.strokeStyle!.arrow_type = patch['strokeStyle.arrow_type'] as ArrowType;
 
             if (patch['fillStyle'] !== undefined) nodeStyle.fillStyle = patch['fillStyle'] as string;
 
@@ -3411,8 +3453,8 @@ export class DiagramEditView extends DiagramView {
 
             const draft = this.createDraftFromCurrent(
                 this.current.tool,
-                this.current.toolOptions,
-                point,
+                { ...this.current.toolOptions, useTemplatePoints: false },
+                point
             );
 
             this.current.draft = draft;
@@ -4000,34 +4042,64 @@ export class DiagramEditView extends DiagramView {
      * @param start Initial point for draft creation.
      * @returns The created draft node.
      */
-    private createDraftFromCurrent(toolName?: string, options?: { url?: string }, start: { x: number; y: number } = { x: 0, y: 0 }): INode {
+    private createDraftFromCurrent(toolName: string, options: {
+        useTemplatePoints: boolean
+        url?: string,
+    }, start: { x: number; y: number } = { x: 0, y: 0 }): INode {
+
         const tool = toolName || this.current.tool || 'rectangle';
         const points = (tool === 'polygon')
             ? [{ ...start }, { ...start }, { ...start }, { ...start }]
             : [{ ...start }, { ...start }];
-        const fillStyle = NodeRegistry.isConnection(tool) ? 'transparent' : this.fillColor;
-        const hollow_mode = NodeRegistry.adapter(tool)?.hollow_mode || 'if_transparent';
-        const hollow = (hollow_mode === 'always')
-            || (hollow_mode === 'if_transparent' && fillStyle === 'transparent');
+        const defaultFillStyle = NodeRegistry.isConnection(tool) ? 'transparent' : this.fillColor;
 
+        // Read the template defined by the tool itself..
         const template = NodeRegistry.adapter(tool)?.onCreateDraft?.(tool) || {};
+        const {
+            owner: _owner,
+            id: _id,
+            ready: _ready,
+            points: templatePoints,
+            strokeStyle: templateStrokeStyle,
+            textStyle: templateTextStyle,
+            shadowStyle: templateShadowStyle,
+            ...templateRest
+        } = template;
+
+        /* Merge current settings with tool template */
         const draft: INode = {
-            ...template,
             id: `${tool}-draft-${Date.now()}`,
             type: tool,
             points,
-            hollow,
             text: tool === 'text' ? 'Text' : '',
-            textStyle: { ...this.textStyle },
+            textStyle: { ...this.textStyle, ...(templateTextStyle || {}) },
             ready: false,
-            strokeStyle: { ...this.strokeStyle },
-            fillStyle,
-            shadowStyle: { ...this.shadowStyle },
+            strokeStyle: { ...this.strokeStyle, ...(templateStrokeStyle || {}) },
+            fillStyle: defaultFillStyle,
+            shadowStyle: { ...this.shadowStyle, ...(templateShadowStyle || {}) },
+            ...templateRest,
             owner: this,
         };
 
+        /* For pointer-create we keep point-at-cursor behavior and only use template styling.
+            Drag-create can opt into template geometry. */
+        if (options.useTemplatePoints && Array.isArray(templatePoints) && templatePoints.length > 0) {
+            const origin = templatePoints[0]!;
+            const dx = start.x - origin.x;
+            const dy = start.y - origin.y;
+            draft.points = templatePoints.map((pt) => ({ x: pt.x + dx, y: pt.y + dy }));
+        }
+
+        const hollow_mode = NodeRegistry.adapter(tool)?.hollow_mode || 'if_transparent';
+        if (typeof draft.hollow !== 'boolean') {
+            const fillStyle = draft.fillStyle || defaultFillStyle;
+            draft.hollow = (hollow_mode === 'always')
+                || (hollow_mode === 'if_transparent' && fillStyle === 'transparent');
+        }
+
         if (NodeRegistry.isConnection(tool)) {
-            draft.strokeStyle!.arrow = this.settings.arrow;
+            draft.strokeStyle!.arrow_at = this.settings.arrow_at;
+            draft.strokeStyle!.arrow_type = this.settings.arrow_type;
             draft.textStyle = {
                 ...(draft.textStyle || {}),
                 orientation: 'horizontal',
@@ -5359,7 +5431,8 @@ export class DiagramEditView extends DiagramView {
             this.settings.shadowOffsetY = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).offset.y;
 
             if (isConnection(shape)) {
-                this.settings.arrow = shape.strokeStyle?.arrow || 'end';
+                this.settings.arrow_at = shape.strokeStyle?.arrow_at || 'end';
+                this.settings.arrow_type = shape.strokeStyle?.arrow_type || 'solid_triangle';
             }
         }
     }

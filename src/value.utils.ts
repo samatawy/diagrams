@@ -1,6 +1,6 @@
 import type { INode } from "./interfaces";
 import { BOLD_FONT_WEIGHT, NORMAL_FONT_WEIGHT, type ShadowStyle, type TextStyle } from "./style.interfaces";
-import type { IFontWeight, ImageMode, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
+import type { ArrowDirection, ArrowType, IFontWeight, ImageMode, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 import { DiagramConstants } from "./model/diagram.constants";
 import { NodeRegistry } from "./factory/node.registry";
 
@@ -174,6 +174,14 @@ export function lineDashArray(node: INode): number[] {
                 return [];
         }
     }
+}
+
+export function arrowAt(node: INode): ArrowDirection {
+    return node.strokeStyle?.arrow_at || (node.strokeStyle as any)?.['arrow'] || 'none';
+}
+
+export function arrowType(node: INode): ArrowType {
+    return node.strokeStyle?.arrow_type || 'solid_triangle';
 }
 
 export function strokeColor(node: INode): string {

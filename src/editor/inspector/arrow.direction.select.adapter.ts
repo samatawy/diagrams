@@ -1,24 +1,24 @@
-import { ArrowSelect, type ArrowSelectConfig } from "../inputs/arrow.select";
+import { ArrowDirectionSelect, type ArrowDirectionSelectConfig } from "../inputs/arrow.direction.select";
 import type { InspectorAdapterInit, EditableRecord } from "./inspector";
 import { InspectorAdapter } from "./inspector";
 
 /**
- * Inspector adapter for selecting arrow types on connections, using the ArrowSelect component. 
- * It also manages the "mixed" state when multiple selected connections have different arrow types.
+ * Inspector adapter for selecting arrow directions on connections, using the ArrowDirectionSelect component.
+ * It also manages the "mixed" state when multiple selected connections have different arrow directions.
  */
-export class ArrowSelectAdapter extends InspectorAdapter {
+export class ArrowDirectionSelectAdapter extends InspectorAdapter {
 
-    private readonly editor: ArrowSelect;
+    private readonly editor: ArrowDirectionSelect;
 
     constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorAdapterInit) {
         super(cell, mixedClassName);
         const host = document.createElement('div');
         host.style.width = '100%';
         cell.appendChild(host);
-        const options: ArrowSelectConfig = {
-            ...(initial.def.editorOptions as ArrowSelectConfig),
+        const options: ArrowDirectionSelectConfig = {
+            ...(initial.def.editorOptions as ArrowDirectionSelectConfig),
         };
-        this.editor = new ArrowSelect(host, options);
+        this.editor = new ArrowDirectionSelect(host, options);
         host.addEventListener('arrowchange', (e) => {
             this.setUnset(false);
             this.notifyChange((e as CustomEvent<string>).detail);
@@ -54,4 +54,3 @@ export class ArrowSelectAdapter extends InspectorAdapter {
         this.editor.destroy();
     }
 }
-

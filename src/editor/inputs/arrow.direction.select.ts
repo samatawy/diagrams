@@ -1,7 +1,7 @@
 /**
- * Configuration options for the ArrowSelect component.
+ * Configuration options for the ArrowDirectionSelect component.
  */
-export interface ArrowSelectConfig {
+export interface ArrowDirectionSelectConfig {
     /**
      * An array of arrow types to display in the dropdown. Each type is represented as a string.
      * The default arrow types are: 'start', 'end', 'both', and 'none'.
@@ -13,38 +13,38 @@ export interface ArrowSelectConfig {
      */
     strokeColor?: string;
     /**
-     * Optional CSS class name to apply to the host element of the ArrowSelect component. This allows for custom styling of the component.
+     * Optional CSS class name to apply to the host element of the ArrowDirectionSelect component. This allows for custom styling of the component.
      */
     hostClassName?: string;
     /**
-     * Optional CSS class name to apply to the trigger button of the ArrowSelect component. This allows for custom styling of the trigger button.
+     * Optional CSS class name to apply to the trigger button of the ArrowDirectionSelect component. This allows for custom styling of the trigger button.
      */
     triggerClassName?: string;
     /**
-     * Optional CSS class name to apply to the dropdown menu of the ArrowSelect component. This allows for custom styling of the dropdown menu.
+     * Optional CSS class name to apply to the dropdown menu of the ArrowDirectionSelect component. This allows for custom styling of the dropdown menu.
      */
     menuClassName?: string;
     /**
-     * Optional CSS class name to apply to each option in the dropdown menu. This allows for custom styling of the options.
+     * Optional CSS class name to apply to each option in the dropdown menu of the ArrowDirectionSelect component. This allows for custom styling of the options.
      */
     optionClassName?: string;
     /**
-     * Optional CSS class name to apply to the swatch element of the ArrowSelect component. This allows for custom styling of the swatch.
+     * Optional CSS class name to apply to the swatch element of the ArrowDirectionSelect component. This allows for custom styling of the swatch.
      */
     swatchClassName?: string;
     /**
-     * Optional CSS class name to apply to the selected option of the ArrowSelect component. This allows for custom styling of the selected option.
+     * Optional CSS class name to apply to the selected option of the ArrowDirectionSelect component. This allows for custom styling of the selected option.
      */
     selectedClassName?: string;
     /**
-     * Optional CSS class name to apply when the ArrowSelect component is open. This allows for custom styling when the component is open.
+     * Optional CSS class name to apply when the ArrowDirectionSelect component is open. This allows for custom styling when the component is open.
      */
     openClassName?: string;
 }
 
 const DEFAULT_ARROWS: ArrowDirection[] = ['end', 'start', 'both', 'none'];
 
-const DEFAULT_CONFIG: Required<Omit<ArrowSelectConfig, 'arrows'>> & { arrows: ArrowDirection[] } = {
+const DEFAULT_CONFIG: Required<Omit<ArrowDirectionSelectConfig, 'arrows'>> & { arrows: ArrowDirection[] } = {
     arrows: DEFAULT_ARROWS,
     strokeColor: '#1f2937',
     hostClassName: 'arrow-select-control',
@@ -165,11 +165,11 @@ function ensureDefaultStyles(): void {
  * The selected direction is exposed through the `value` property.
  * The component emits an `arrowchange` event when the direction changes.
  */
-export class ArrowSelect {
+export class ArrowDirectionSelect {
 
     protected host: HTMLElement;
 
-    protected config: Required<Omit<ArrowSelectConfig, 'arrows'>> & { arrows: ArrowDirection[] };
+    protected config: Required<Omit<ArrowDirectionSelectConfig, 'arrows'>> & { arrows: ArrowDirection[] };
 
     protected selected: ArrowDirection;
 
@@ -182,11 +182,11 @@ export class ArrowSelect {
     protected menu: HTMLDivElement;
 
     /**
-     * Creates an ArrowSelect component inside the given element.
+     * Creates an ArrowDirectionSelect component inside the given element.
      * @param target The host element that will contain the arrow picker.
      * @param config Optional display and behaviour configuration.
      */
-    constructor(target: HTMLElement, config: ArrowSelectConfig = {}) {
+    constructor(target: HTMLElement, config: ArrowDirectionSelectConfig = {}) {
         ensureDefaultStyles();
 
         this.host = target;
@@ -456,3 +456,5 @@ export class ArrowSelect {
         this.trigger.setAttribute('aria-expanded', 'false');
     }
 }
+
+// export class ArrowDirectionSelect extends ArrowDirectionSelect { }

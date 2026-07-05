@@ -1,4 +1,4 @@
-import type { ArrowDirection, IFontWeight, IPoint, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
+import type { ArrowDirection, ArrowType, IFontWeight, IPoint, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 
 /**
  * TextStyle defines the properties of text that can be rendered on nodes in the diagram, including font, size, alignment, and color.
@@ -90,7 +90,13 @@ export interface StrokeStyle {
      * The direction of the arrow on the stroke, which can be 'start', 'end', 'both', or 'none'.
      * If the arrow direction is undefined, the rendering logic may choose a default direction based on the node's properties or theme.
      */
-    arrow?: ArrowDirection;
+    arrow_at?: ArrowDirection;
+
+    /**
+     * The type of the arrow on the stroke, which can be 'solid_triangle', 'hollow_triangle', 'solid_diamond', 'hollow_diamond', 'solid_circle', 'hollow_circle', or 'none'.
+     * If the arrow type is undefined, the rendering logic may choose a default type based on the node's properties or theme.
+     */
+    arrow_type?: ArrowType;
 }
 
 /**

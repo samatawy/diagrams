@@ -38,7 +38,7 @@ function createNode(owner: any, overrides: NodeOverrides = {}): INode & IConnect
     const strokeStyle = {
         ...(overrides.strokeStyle || {}),
         ...(overrides.lineWidth !== undefined ? { width: overrides.lineWidth } : {}),
-        ...(overrides.arrow ? { arrow: overrides.arrow } : {}),
+        ...(overrides.arrow ? { arrow_at: overrides.arrow } : {}),
     } as StrokeStyle;
 
     return {

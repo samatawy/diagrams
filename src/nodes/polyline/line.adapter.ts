@@ -79,4 +79,15 @@ export class LineAdapter extends PolylineAdapter {
 
         path.lineTo(to.x, to.y);
     }
+
+    onCreateDraft(tool: string): Partial<INode> | undefined {
+        return {
+            type: this.type,
+            points: [{ x: 0, y: 0 }, { x: 104, y: 64 }],
+            strokeStyle: {
+                arrow_at: 'both',
+                arrow_type: 'solid_diamond',
+            },
+        }
+    }
 }

@@ -1,4 +1,5 @@
-export * from './arrow.select';
+export * from './arrow.direction.select';
+export * from './arrow.type.select';
 export * from './color.select';
 export * from './dash.select';
 export * from './enum.select';

@@ -3,7 +3,7 @@ import type { ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDash, lineDashArray } from "../value.utils";
+import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDash, lineDashArray, arrowType, arrowAt } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
@@ -985,18 +985,43 @@ export class RenderBasics {
         points = points || node.points;
         if (points.length < 2) return;
 
-        if (node.strokeStyle?.arrow === 'start' || node.strokeStyle?.arrow === 'both') {
-            this.renderArrow(points[1]!, points[0]!, context);
+        const direction = arrowAt(node);
+
+        if (direction === 'start' || direction === 'both') {
+            this.renderArrowTyped(node, points[1]!, points[0]!, context);
         }
 
-        if (node.strokeStyle?.arrow === 'end' || node.strokeStyle?.arrow === 'both') {
-            this.renderArrow(points[points.length - 2]!, points[points.length - 1]!, context);
+        if (direction === 'end' || direction === 'both') {
+            this.renderArrowTyped(node, points[points.length - 2]!, points[points.length - 1]!, context);
         }
     }
 
-    private static renderArrow(from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+    private static renderArrowTyped(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+        switch (arrowType(node)) {
+            case 'solid_triangle':
+            case 'hollow_triangle':
+                this.renderTriangleArrow(node, from, to, context);
+                break;
+            case 'solid_spear':
+            case 'hollow_spear':
+                this.renderSpearArrow(node, from, to, context);
+                break;
+            case 'solid_diamond':
+            case 'hollow_diamond':
+                this.renderDiamondArrow(node, from, to, context);
+                break;
+            case 'solid_circle':
+            case 'hollow_circle':
+                this.renderCircleArrow(node, from, to, context);
+                break;
+            default:
+            // None or unsupported arrow type; do nothing.
+        }
+    }
+
+    private static renderTriangleArrow(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
         const headlen = 10;
-        const angle = NodeBasics.calculateAngle(from, to);  //to.y - from.y, to.x - from.x);
+        const angle = NodeBasics.calculateAngle(from, to);
 
         context.beginPath();
         context.moveTo(to.x, to.y);
@@ -1009,14 +1034,105 @@ export class RenderBasics {
             to.y - headlen * Math.sin(angle + Math.PI / 7),
         );
         context.lineTo(to.x, to.y);
+        // context.lineTo(
+        //     to.x - headlen * Math.cos(angle - Math.PI / 7),
+        //     to.y - headlen * Math.sin(angle - Math.PI / 7),
+        // );
+
+        if (arrowType(node) === 'solid_triangle') {
+            context.fillStyle = context.strokeStyle;
+        } else {
+            context.fillStyle = this.getHollowFillColor(node);
+        }
+        context.setLineDash([]);
+        context.fill();
+        context.stroke();
+    }
+
+    private static renderSpearArrow(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+        const headlen = 10;
+        const angle = NodeBasics.calculateAngle(from, to);
+
+        context.beginPath();
+        context.moveTo(to.x, to.y);
         context.lineTo(
             to.x - headlen * Math.cos(angle - Math.PI / 7),
             to.y - headlen * Math.sin(angle - Math.PI / 7),
         );
+        context.lineTo(
+            to.x - headlen / 2 * Math.cos(angle),
+            to.y - headlen / 2 * Math.sin(angle),
+        );
+        context.lineTo(
+            to.x - headlen * Math.cos(angle + Math.PI / 7),
+            to.y - headlen * Math.sin(angle + Math.PI / 7),
+        );
+        context.lineTo(to.x, to.y);
 
-        context.fillStyle = context.strokeStyle;
+        if (arrowType(node) === 'solid_spear') {
+            context.fillStyle = context.strokeStyle;
+        } else {
+            context.fillStyle = this.getHollowFillColor(node);
+        }
         context.setLineDash([]);
         context.fill();
         context.stroke();
+    }
+
+    private static renderDiamondArrow(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+        const headlen = 10;
+        const angle = NodeBasics.calculateAngle(from, to);
+
+        context.beginPath();
+        context.moveTo(to.x, to.y);
+        context.lineTo(
+            to.x - headlen * Math.cos(angle - Math.PI / 7),
+            to.y - headlen * Math.sin(angle - Math.PI / 7),
+        );
+        context.lineTo(
+            to.x - headlen * 2 * Math.cos(angle),
+            to.y - headlen * 2 * Math.sin(angle),
+        );
+        context.lineTo(
+            to.x - headlen * Math.cos(angle + Math.PI / 7),
+            to.y - headlen * Math.sin(angle + Math.PI / 7),
+        );
+        context.lineTo(to.x, to.y);
+
+        if (arrowType(node) === 'solid_diamond') {
+            context.fillStyle = context.strokeStyle;
+        } else {
+            context.fillStyle = this.getHollowFillColor(node);
+        }
+        context.setLineDash([]);
+        context.fill();
+        context.stroke();
+    }
+
+    private static renderCircleArrow(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+        const headlen = 10;
+        const angle = NodeBasics.calculateAngle(from, to);
+
+        context.beginPath();
+        context.arc(to.x - headlen / 2 * Math.cos(angle),
+            to.y - headlen / 2 * Math.sin(angle),
+            headlen / 2, 0, 2 * Math.PI);
+
+        if (arrowType(node) === 'solid_circle') {
+            context.fillStyle = context.strokeStyle;
+        } else {
+            context.fillStyle = this.getHollowFillColor(node);
+        }
+        context.setLineDash([]);
+        context.fill();
+        context.stroke();
+    }
+
+    private static getHollowFillColor(node: INode): string {
+        let fill = node.fillStyle || 'white';
+        if (fill === 'transparent' || fill === 'inherit' || fill.match(/^rgba\(.*,\s*0\)$/)) {
+            fill = 'white';
+        }
+        return fill;
     }
 }

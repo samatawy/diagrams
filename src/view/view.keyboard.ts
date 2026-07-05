@@ -33,25 +33,25 @@ export class DiagramViewKeyboard<T extends DiagramView = DiagramView> extends Di
 
         kb.setShortcut(['ArrowUp'], (d: T) => {
             const dy = (d.grid.forced) ? d.grid.width : 4;
-            d.panBy(0, -dy, 'animate');
+            d.panBy(0, dy, 'animate');      // or -dy?
             d.render();
         }, 'Pan up');
 
         kb.setShortcut(['ArrowDown'], (d: T) => {
             const dy = (d.grid.forced) ? d.grid.width : 4;
-            d.panBy(0, dy, 'animate');
+            d.panBy(0, -dy, 'animate');     // or dy?
             d.render();
         }, 'Pan down');
 
         kb.setShortcut(['ArrowLeft'], (d: T) => {
             const dx = (d.grid.forced) ? d.grid.width : 4;
-            d.panBy(-dx, 0, 'animate');
+            d.panBy(dx, 0, 'animate');      // or -dx?
             d.render();
         }, 'Pan left');
 
         kb.setShortcut(['ArrowRight'], (d: T) => {
             const dx = (d.grid.forced) ? d.grid.width : 4;
-            d.panBy(dx, 0, 'animate');
+            d.panBy(-dx, 0, 'animate');     // or dx?
             d.render();
         }, 'Pan right');
     }

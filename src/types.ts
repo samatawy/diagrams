@@ -102,6 +102,12 @@ type LineDash = 'solid' | 'dashed' | 'dotted' | 'dashdot' | number[];
  */
 export type ArrowDirection = 'start' | 'end' | 'both' | 'none';
 
+export type ArrowType = 'solid_triangle' | 'hollow_triangle'
+    | 'solid_spear' | 'hollow_spear'
+    | 'solid_diamond' | 'hollow_diamond'
+    | 'solid_circle' | 'hollow_circle'
+    /* | 'open' */ | 'none';
+
 /**
  * NodeHandle represents the different types of handles that can be used for manipulating nodes in the diagram.
  * - MOVE: A handle for moving the entire node.

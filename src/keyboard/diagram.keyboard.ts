@@ -165,14 +165,4 @@ export class DiagramKeyboard<T> {
         }
         return false;
     }
-
-    // public invoke(key: string, modifiers: { shift?: boolean, ctrl?: boolean, alt?: boolean, meta?: boolean } = {}): void {
-    //     const shortcut = this.getAction(key, modifiers);
-    //     if (shortcut) {
-    //         const result = shortcut.action(this.diagram);
-    //         if (typeof result === 'string') {
-    //             console.log(`Action result: ${result}`);
-    //         }
-    //     }
-    // }
 }

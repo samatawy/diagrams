@@ -105,7 +105,7 @@ describe('Diagram', () => {
                     image_mode: 'none',
                     ready: false,
                     invisible: true,
-                    strokeStyle: { color: '#2563eb', width: 2, arrow: 'end' },
+                    strokeStyle: { color: '#2563eb', width: 2, arrow_at: 'end' },
                     fillStyle: 'transparent',
                     angle: 0,
                     from: { node: 'source', handle: 8 },
