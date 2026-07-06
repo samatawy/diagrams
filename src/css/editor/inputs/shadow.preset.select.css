@@ -1,0 +1,12 @@
+
+.shadow-preset-select-control {
+    min-width: 130px;
+}
+.shadow-preset-select-control .shadow-preset-trigger {
+    justify-content: space-between;
+    white-space: nowrap;
+}
+.shadow-preset-select-control .shadow-preset-menu {
+    max-height: 260px;
+}
+

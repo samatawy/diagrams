@@ -2,6 +2,14 @@ import { DiagramEditView } from '../../editview/diagram.edit.view';
 import { NodeRegistry } from '../../factory/node.registry';
 import { IconRegistry } from '../../factory/icon.registry';
 import { DIAGRAM_TOOL_CHANGED_EVENT, type DiagramToolChange } from '../../events/diagram.events';
+import { injectStyles, setClasses } from '../editor.utils';
+
+import DEFAULT_STYLES from '../../css_generated/editor/toolbox/diagram.toolset.css';
+const STYLE_ID = 'toolset-defaults';
+
+function ensureDefaultStyles(): void {
+    injectStyles(STYLE_ID, DEFAULT_STYLES);
+}
 
 export const TOOLSET_TOOL_SELECTED_EVENT = 'tool-selected';
 
@@ -61,62 +69,6 @@ export const BASIC_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'cylinder',
     'polygon',
 ];
-
-const STYLE_ID = 'toolset-defaults';
-
-const DEFAULT_STYLES = `
-.editor-tool-list {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--diagram-ui-toolbar-gap, 6px);
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-.editor-tool-list button {
-    appearance: none;
-    width: var(--diagram-ui-palette-button-size, 40px);
-    height: var(--diagram-ui-palette-button-size, 40px);
-    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
-    border-radius: var(--diagram-ui-control-radius, 10px);
-    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
-    padding: var(--diagram-ui-palette-button-padding, 9px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 0;
-    font: 600 var(--diagram-ui-font-size, 12px)/1.2 var(--diagram-ui-font-family, system-ui);
-    color: var(--diagram-ui-text-muted, #334155);
-    cursor: pointer;
-    transition: border-color var(--diagram-ui-transition-fast, 100ms ease), background-color var(--diagram-ui-transition-fast, 100ms ease), color var(--diagram-ui-transition-fast, 100ms ease);
-}
-
-.editor-tool-list button svg {
-    display: block;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-}
-
-.editor-tool-list button:hover,
-.editor-tool-list button:focus-visible {
-    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
-    color: var(--diagram-ui-accent, #0f766e);
-}
-
-.editor-tool-list button.is-active {
-    background: var(--diagram-ui-accent, #0f766e);
-    border-color: var(--diagram-ui-accent, #0f766e);
-    color: var(--diagram-ui-accent-contrast, #ffffff);
-}
-`;
-
-import { injectStyles, setClasses } from '../editor.utils';
-
-function ensureDefaultStyles(): void {
-    injectStyles(STYLE_ID, DEFAULT_STYLES);
-}
 
 /**
  * Converts a tool key into a display label.

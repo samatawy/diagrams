@@ -1,0 +1,89 @@
+
+.image-align-select-control {
+    position: relative;
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-family: var(--diagram-ui-font-family, system-ui);
+    line-height: 1.2;
+}
+.image-align-select-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--diagram-ui-control-gap, 6px);
+    padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
+    cursor: pointer;
+    appearance: none;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 10px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text, #1f2937);
+    font-weight: 600;
+}
+.image-align-select-trigger:hover,
+.image-align-select-trigger:focus-visible {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+}
+.image-align-select-trigger svg {
+    display: block;
+    pointer-events: none;
+}
+.image-align-select-caret {
+    color: var(--diagram-ui-text-muted, #334155);
+    font-size: var(--diagram-ui-font-size, 12px);
+    line-height: 1;
+}
+.image-align-select-menu {
+    position: absolute;
+    left: 0;
+    top: calc(100% + var(--diagram-ui-control-gap, 6px));
+    z-index: 40;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-panel-radius, 10px);
+    background: var(--diagram-ui-surface-elevated, #ffffff);
+    padding: var(--diagram-ui-panel-padding, 6px);
+    box-shadow: 0 10px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
+    min-width: 0;
+    display: none;
+}
+.image-align-select-control.is-open .image-align-select-menu {
+    display: block;
+}
+.image-align-select-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 30px);
+    gap: 2px;
+}
+.image-align-select-option {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: var(--diagram-ui-border-width, 1px) solid transparent;
+    border-radius: var(--diagram-ui-control-radius, 6px);
+    background: transparent;
+    color: var(--diagram-ui-text-muted, #475569);
+    cursor: pointer;
+    appearance: none;
+    padding: 0;
+    transition: border-color var(--diagram-ui-transition-fast, 100ms ease),
+                background var(--diagram-ui-transition-fast, 100ms ease),
+                color var(--diagram-ui-transition-fast, 100ms ease);
+}
+.image-align-select-option svg {
+    display: block;
+    pointer-events: none;
+}
+.image-align-select-option:hover {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    color: var(--diagram-ui-accent, #0f766e);
+}
+.image-align-select-option.is-selected {
+    border-color: var(--diagram-ui-accent, #0f766e);
+    background: rgba(15, 118, 110, 0.12);
+    color: var(--diagram-ui-accent, #0f766e);
+}
+.image-align-select-control.is-disabled .image-align-select-trigger {
+    opacity: 0.4;
+    pointer-events: none;
+}
+

@@ -1,4 +1,5 @@
 import { injectStyles, setClasses, toggleClasses } from "../editor.utils";
+import DEFAULT_STYLES from '../../css_generated/editor/menus/context.menu.css';
 
 const STYLE_ID = 'context-menu-defaults';
 
@@ -21,69 +22,6 @@ export interface ContextMenuConfig {
     /** Class applied to separator elements. Default: `context-menu-separator`. */
     separatorClassName?: string;
 }
-
-const DEFAULT_STYLES = `
-.context-menu {
-    position: absolute;
-    z-index: 1000;
-    min-width: 180px;
-    padding: 4px 0;
-    background: var(--diagram-ui-surface-elevated, #ffffff);
-    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-    border-radius: var(--diagram-ui-panel-radius, 10px);
-    box-shadow: 0 8px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
-    font: var(--diagram-ui-font-size, 12px)/1.4 var(--diagram-ui-font-family, system-ui);
-    color: var(--diagram-ui-text, #1f2937);
-    user-select: none;
-}
-.context-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px 6px 6px;
-    cursor: pointer;
-    border-radius: 6px;
-    margin: 1px 4px;
-}
-.context-menu-item:hover {
-    background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
-}
-.context-menu-item.is-active .context-menu-item-icon {
-    background: var(--diagram-ui-accent, #0f766e);
-    color: var(--diagram-ui-accent-contrast, #ffffff);
-    border-radius: 4px;
-}
-.context-menu-item.is-disabled {
-    opacity: 0.45;
-    pointer-events: none;
-}
-.context-menu-item-icon {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 3px;
-    border-radius: 4px;
-}
-.context-menu-item-icon svg,
-.context-menu-item-icon img {
-    width: 18px;
-    height: 18px;
-    display: block;
-    pointer-events: none;
-}
-.context-menu-item-label {
-    flex: 1 1 auto;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.context-menu-separator {
-    height: 1px;
-    margin: 4px 8px;
-    background: var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
-}
-`;
 
 /**
  * Lightweight context menu that renders at fixed viewport coordinates.

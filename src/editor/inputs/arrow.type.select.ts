@@ -1,6 +1,13 @@
 import type { ArrowType } from '../../types';
 import { injectStyles, setClasses, toggleClasses, removeClasses } from '../editor.utils';
 
+import DEFAULT_STYLES from '../../css_generated/editor/inputs/arrow.type.select.css';
+const STYLE_ID = 'arrow-select-defaults';
+
+function ensureDefaultStyles(): void {
+    injectStyles(STYLE_ID, DEFAULT_STYLES);
+}
+
 export interface ArrowTypeSelectConfig {
     arrows?: ArrowType[];
     strokeColor?: string;
@@ -36,97 +43,6 @@ const DEFAULT_CONFIG: Required<Omit<ArrowTypeSelectConfig, 'arrows'>> & { arrows
     selectedClassName: 'is-selected',
     openClassName: 'is-open',
 };
-
-const STYLE_ID = 'arrow-select-defaults';
-
-const DEFAULT_STYLES = `
-.arrow-select-control {
-    position: relative;
-    min-width: 90px;
-    max-width: 130px;
-    font-size: var(--diagram-ui-font-size, 12px);
-    font-family: var(--diagram-ui-font-family, system-ui);
-    line-height: 1.2;
-}
-.arrow-select-control .color-preset-trigger,
-.arrow-select-control button[aria-haspopup='listbox'] {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: center;
-    gap: var(--diagram-ui-control-gap, 8px);
-    padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
-    cursor: pointer;
-    appearance: none;
-    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-    border-radius: var(--diagram-ui-control-radius, 10px);
-    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
-    color: var(--diagram-ui-text, #1f2937);
-    font-weight: 600;
-}
-.arrow-select-control .color-preset-trigger::after {
-    content: '▾';
-    font-size: var(--diagram-ui-font-size, 12px);
-    color: var(--diagram-ui-text-muted, #334155);
-}
-.arrow-select-control .color-preset-trigger:hover,
-.arrow-select-control .color-preset-trigger:focus-visible,
-.arrow-select-control button[aria-haspopup='listbox']:hover,
-.arrow-select-control button[aria-haspopup='listbox']:focus-visible {
-    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
-}
-.arrow-width-swatch {
-    width: 100%;
-    min-height: 20px;
-    display: flex;
-    align-items: center;
-}
-.arrow-width-swatch svg {
-    width: 100%;
-    display: block;
-    overflow: visible;
-}
-.arrow-select-control .color-preset-menu {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(100% + var(--diagram-ui-control-gap, 6px));
-    z-index: 40;
-    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-    border-radius: var(--diagram-ui-panel-radius, 10px);
-    background: var(--diagram-ui-surface-elevated, #ffffff);
-    padding: var(--diagram-ui-panel-padding, 6px);
-    display: none;
-    max-height: 220px;
-    overflow: auto;
-    box-shadow: 0 10px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
-}
-.arrow-select-control.is-open .color-preset-menu {
-    display: grid;
-    gap: var(--diagram-ui-group-gap, 6px);
-}
-.arrow-select-control .color-preset-option {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    gap: var(--diagram-ui-group-gap, 8px);
-    border: none;
-    border-radius: var(--diagram-ui-control-radius, 6px);
-    background: transparent;
-    padding: var(--diagram-ui-group-gap, 4px) var(--diagram-ui-control-padding-x, 6px);
-    cursor: pointer;
-    font: inherit;
-}
-.arrow-select-control .color-preset-option:hover,
-.arrow-select-control .color-preset-option.is-selected {
-    background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
-}
-`;
-
-function ensureDefaultStyles(): void {
-    injectStyles(STYLE_ID, DEFAULT_STYLES);
-}
 
 export class ArrowTypeSelect {
 

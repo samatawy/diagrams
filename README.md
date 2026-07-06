@@ -121,9 +121,13 @@ You can tailor the editor for your own product:
 
 ## Development Scripts
 
+- `npm run css:embed` (converts `src/css/**/*.css` into generated `src/css_generated/**/*.css.ts` string modules)
 - `npm run lint`
 - `npm run test`
 - `npm run build`
 - `npm run docs`
 - `npm run site`
+
+The `lint`, `test`, `build`, `dev`, and `docs` scripts run CSS embedding automatically.
+Author CSS under `src/css`, and treat `src/css_generated` as generated output.
 

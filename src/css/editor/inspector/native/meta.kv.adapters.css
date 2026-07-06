@@ -1,0 +1,46 @@
+.inspector .meta-kv-value,
+.inspector .meta-kv-add {
+    display: grid;
+    width: 100%;
+    gap: 4px;
+}
+
+.inspector .meta-kv-value {
+    grid-template-columns: minmax(0, 1fr) 28px;
+}
+
+.inspector .meta-kv-add {
+    grid-template-columns: minmax(0, 1fr) 28px;
+}
+
+.inspector .meta-kv-value button,
+.inspector .meta-kv-add button {
+    width: 100%;
+    min-height: 24px;
+    padding: 0;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 6px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text, #1f2937);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.inspector .meta-kv-value button:hover,
+.inspector .meta-kv-add button:hover,
+.inspector .meta-kv-value button:focus-visible,
+.inspector .meta-kv-add button:focus-visible {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+}
+
+.inspector .meta-kv-add button {
+    color: rgba(var(--inspector-base), 1);
+}
+
+.inspector .meta-kv-value button {
+    color: var(--diagram-ui-text-muted, #475569);
+}

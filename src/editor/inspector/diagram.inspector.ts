@@ -14,21 +14,21 @@ import type { ArrowDirectionSelectConfig } from "../inputs/arrow.direction.selec
 import type { DashSelectConfig } from "../inputs/dash.select";
 import type { FontSelectConfig } from "../inputs/font.select";
 import type { SizeSelectConfig } from "../inputs/size.select";
-import { ColorSelectAdapter } from "./color.select.adapter";
-import { WidthSelectAdapter } from "./width.select.adapter";
-import { ArrowDirectionSelectAdapter } from "./arrow.direction.select.adapter";
-import { ArrowTypeSelectAdapter } from "./arrow.type.select.adapter";
-import { DashSelectAdapter } from "./dash.select.adapter";
-import { FontSelectAdapter } from "./font.select.adapter";
-import { SizeSelectAdapter } from "./size.select.adapter";
-import { AngleAdapter } from "./angle.adapter";
-import { EnumSelectAdapter, type EnumSelectAdapterConfig } from "./enum.select.adapter";
-import { TypeTransferAdapter, type TypeTransferAdapterConfig } from "./type.transfer.adapter";
-import { PointAdapter } from "./point.adapter";
-import { ImageSelectAdapter } from "./image.select.adapter";
-import type { NumberInputAdapterConfig } from "./number.input.adapter";
-import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./meta.kv.adapters";
-import { ClassActionsAdapter, type ClassActionsAdapterConfig } from "./class.actions.adapter";
+import { ColorSelectAdapter } from "./adapters/color.select.adapter";
+import { WidthSelectAdapter } from "./adapters/width.select.adapter";
+import { ArrowDirectionSelectAdapter } from "./adapters/arrow.direction.select.adapter";
+import { ArrowTypeSelectAdapter } from "./adapters/arrow.type.select.adapter";
+import { DashSelectAdapter } from "./adapters/dash.select.adapter";
+import { FontSelectAdapter } from "./adapters/font.select.adapter";
+import { SizeSelectAdapter } from "./adapters/size.select.adapter";
+import { AngleAdapter } from "./adapters/angle.adapter";
+import { EnumSelectAdapter, type EnumSelectAdapterConfig } from "./adapters/enum.select.adapter";
+import { TypeTransferAdapter, type TypeTransferAdapterConfig } from "./adapters/type.transfer.adapter";
+import { PointAdapter } from "./native/point.adapter";
+import { ImageSelectAdapter } from "./adapters/image.select.adapter";
+import type { NumberInputAdapterConfig } from "./native/number.input.adapter";
+import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./native/meta.kv.adapters";
+import { ClassActionsAdapter, type ClassActionsAdapterConfig } from "./adapters/class.actions.adapter";
 import type { ArrowTypeSelectConfig } from "../inputs";
 
 export type DiagramInspectorConfig = InspectorConfig & {

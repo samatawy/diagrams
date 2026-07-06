@@ -1,0 +1,68 @@
+.class-actions {
+    display: grid;
+    width: 100%;
+    gap: 4px;
+}
+
+.class-actions.is-idle {
+    grid-template-columns: 1fr 1fr;
+}
+
+.class-actions.is-editing {
+    grid-template-columns: minmax(0, 1fr) 28px 28px;
+}
+
+.class-actions input {
+    width: 100%;
+    min-height: 24px;
+    padding: 2px 6px;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 6px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text, #1f2937);
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-family: var(--diagram-ui-font-family, system-ui);
+    outline: none;
+    box-sizing: border-box;
+}
+
+.class-actions input:focus {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+}
+
+.class-actions button {
+    width: 100%;
+    min-height: 24px;
+    padding: 0 6px;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 6px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text, #1f2937);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    line-height: 1;
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-family: var(--diagram-ui-font-family, system-ui);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.class-actions button:hover,
+.class-actions button:focus-visible {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+}
+
+.class-actions button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.class-actions-confirm {
+    color: var(--diagram-ui-accent, #0f766e);
+}
+
+.class-actions-cancel {
+    color: var(--diagram-ui-text-muted, #475569);
+}

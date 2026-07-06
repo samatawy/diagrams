@@ -3,6 +3,13 @@ import type { ShadowStyle } from '../../style.interfaces';
 import { injectStyles } from '../editor.utils';
 import { EnumSelect, ENUM_SELECT_CHANGE_EVENT, type EnumSelectOption } from './enum.select';
 
+import DEFAULT_STYLES from '../../css_generated/editor/inputs/shadow.preset.select.css';
+const STYLE_ID = 'shadow-preset-select-defaults';
+
+function ensureDefaultStyles(): void {
+    injectStyles(STYLE_ID, DEFAULT_STYLES);
+}
+
 /**
  * A named shadow preset entry used by ShadowPresetSelect.
  */
@@ -26,21 +33,6 @@ const SHADOW_PRESETS: ShadowPreset[] = [
     { label: 'High Color Drop', value: DiagramConstants.HIGH_COLOR_SHADOW },
 ];
 
-const STYLE_ID = 'shadow-preset-select-defaults';
-
-const DEFAULT_STYLES = `
-.shadow-preset-select-control {
-    min-width: 130px;
-}
-.shadow-preset-select-control .shadow-preset-trigger {
-    justify-content: space-between;
-    white-space: nowrap;
-}
-.shadow-preset-select-control .shadow-preset-menu {
-    max-height: 260px;
-}
-`;
-
 /**
  * Dispatched event name when the user selects a shadow preset.
  */
@@ -56,7 +48,8 @@ export class ShadowPresetSelect {
     protected readonly onEnumChange: (event: Event) => void;
 
     constructor(host: HTMLElement, presets: ShadowPreset[] = SHADOW_PRESETS) {
-        injectStyles(STYLE_ID, DEFAULT_STYLES);
+        ensureDefaultStyles();
+
         this.host = host;
 
         const options: EnumSelectOption<ShadowStyle>[] = presets.map((preset) => ({

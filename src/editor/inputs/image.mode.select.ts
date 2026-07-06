@@ -2,6 +2,13 @@ import type { ImageMode } from '../../types';
 import { injectStyles, setClasses, toggleClasses, removeClasses } from '../editor.utils';
 import { IconRegistry } from '../../factory/icon.registry';
 
+import DEFAULT_STYLES from '../../css_generated/editor/inputs/image.mode.select.css';
+const STYLE_ID = 'image-mode-select-defaults';
+
+function ensureDefaultStyles(): void {
+    injectStyles(STYLE_ID, DEFAULT_STYLES);
+}
+
 // ── Shared data ────────────────────────────────────────────────────────────
 
 export const IMAGE_MODE_TITLES: Record<ImageMode, string> = {
@@ -13,101 +20,6 @@ export const IMAGE_MODE_TITLES: Record<ImageMode, string> = {
 };
 
 export const IMAGE_MODES: ImageMode[] = ['none', 'contain', 'cover', 'fit', 'pattern'];
-
-// ── Styles ───────────────────────────────────────────────────────────────── ──────────────────────────────────────────────────────────
-
-const STYLE_ID = 'image-mode-select-defaults';
-
-const DEFAULT_STYLES = `
-.image-mode-select-control {
-    position: relative;
-    font-size: var(--diagram-ui-font-size, 12px);
-    font-family: var(--diagram-ui-font-family, system-ui);
-    line-height: 1.2;
-}
-.image-mode-select-trigger {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--diagram-ui-control-gap, 6px);
-    padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
-    cursor: pointer;
-    appearance: none;
-    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-    border-radius: var(--diagram-ui-control-radius, 10px);
-    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
-    color: var(--diagram-ui-text, #1f2937);
-    font-weight: 600;
-}
-.image-mode-select-trigger:hover,
-.image-mode-select-trigger:focus-visible {
-    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
-}
-.image-mode-select-trigger svg {
-    display: block;
-    pointer-events: none;
-}
-.image-mode-select-caret {
-    color: var(--diagram-ui-text-muted, #334155);
-    font-size: var(--diagram-ui-font-size, 12px);
-    line-height: 1;
-}
-.image-mode-select-menu {
-    position: absolute;
-    left: 0;
-    top: calc(100% + var(--diagram-ui-control-gap, 6px));
-    z-index: 40;
-    min-width: 120px;
-    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-    border-radius: var(--diagram-ui-panel-radius, 10px);
-    background: var(--diagram-ui-surface-elevated, #ffffff);
-    padding: var(--diagram-ui-panel-padding, 6px);
-    box-shadow: 0 10px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
-    display: none;
-}
-.image-mode-select-control.is-open .image-mode-select-menu {
-    display: block;
-}
-.image-mode-select-options {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.image-mode-select-option {
-    display: flex;
-    align-items: center;
-    gap: var(--diagram-ui-control-gap, 8px);
-    width: 100%;
-    padding: var(--diagram-ui-group-gap, 4px) var(--diagram-ui-control-padding-x, 8px);
-    border: none;
-    border-radius: var(--diagram-ui-control-radius, 6px);
-    background: transparent;
-    cursor: pointer;
-    font: inherit;
-    text-align: left;
-    color: var(--diagram-ui-text, #1f2937);
-    white-space: nowrap;
-}
-.image-mode-select-option svg {
-    display: block;
-    pointer-events: none;
-    flex-shrink: 0;
-}
-.image-mode-select-option-label {
-    flex: 1;
-}
-.image-mode-select-option:hover,
-.image-mode-select-option.is-selected {
-    background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
-}
-.image-mode-select-control.is-disabled .image-mode-select-trigger {
-    opacity: 0.4;
-    pointer-events: none;
-}
-`;
-
-function ensureDefaultStyles(): void {
-    injectStyles(STYLE_ID, DEFAULT_STYLES);
-}
 
 // ── ImageModeSelect ────────────────────────────────────────────────────────
 
@@ -253,5 +165,4 @@ export class ImageModeSelect {
         this.trigger.setAttribute('aria-expanded', 'false');
     }
 }
-
 

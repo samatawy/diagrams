@@ -1,3 +1,12 @@
+import { injectStyles, setClasses } from '../editor.utils';
+
+import DEFAULT_STYLES from '../../css_generated/editor/inputs/integer.range.select.css';
+const STYLE_ID = 'integer-range-select-defaults';
+
+function ensureDefaultStyles(): void {
+    injectStyles(STYLE_ID, DEFAULT_STYLES);
+}
+
 /**
  * Configuration options for the IntegerRangeSelect control.
  */
@@ -46,44 +55,6 @@ const DEFAULT_CONFIG: Required<IntegerRangeSelectConfig> = {
     trackClassName: 'integer-range-select-track',
     valueClassName: 'integer-range-select-value',
 };
-
-const STYLE_ID = 'integer-range-select-defaults';
-
-const DEFAULT_STYLES = `
-.integer-range-select {
-    min-width: 116px;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--diagram-ui-control-gap, 6px);
-    font-size: var(--diagram-ui-font-size, 12px);
-    font-family: var(--diagram-ui-font-family, system-ui);
-    line-height: 1.2;
-}
-.integer-range-select .integer-range-select-track {
-    width: 84px;
-    accent-color: var(--diagram-ui-accent, #0f766e);
-}
-.integer-range-select .integer-range-select-track:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-.integer-range-select .integer-range-select-value {
-    min-width: 28px;
-    text-align: right;
-    font-size: var(--diagram-ui-font-size, 12px);
-    font-weight: 400;
-    color: var(--diagram-ui-text-muted, #334155);
-}
-.integer-range-select--disabled .integer-range-select-value {
-    opacity: 0.4;
-}
-`;
-
-import { injectStyles, setClasses } from '../editor.utils';
-
-function ensureDefaultStyles(): void {
-    injectStyles(STYLE_ID, DEFAULT_STYLES);
-}
 
 /**
  * A compact integer range selector based on native input[type=range].

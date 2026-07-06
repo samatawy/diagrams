@@ -1,5 +1,12 @@
 import { injectStyles, setClasses } from "./editor.utils";
 
+import DEFAULT_STYLES from '../css_generated/editor/prompt.dialog.css';
+const STYLE_ID = 'diagram-editor-prompt-dialog';
+
+function ensureDefaultStyles(): void {
+    injectStyles(STYLE_ID, DEFAULT_STYLES);
+}
+
 /**
  * A single action in a prompt dialog, consisting of a value, label, and optional primary flag.
  */
@@ -40,75 +47,6 @@ export type PromptDialogOptions<T extends string> = {
     actions: PromptDialogAction<T>[];
 };
 
-const STYLE_ID = 'diagram-editor-prompt-dialog';
-
-const STYLES = `
-.diagram-prompt-backdrop::backdrop {
-    background: rgba(15, 23, 42, 0.36);
-    backdrop-filter: blur(1.5px);
-}
-.diagram-prompt {
-    border: 1px solid rgba(15, 23, 42, 0.16);
-    border-radius: 14px;
-    min-width: 320px;
-    max-width: min(92vw, 420px);
-    padding: 14px;
-    background: #ffffff;
-    color: #1f2937;
-    box-shadow: 0 16px 48px rgba(15, 23, 42, 0.28);
-    font: 500 13px/1.45 system-ui;
-}
-.diagram-prompt-head {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    align-items: start;
-    gap: 9px;
-}
-.diagram-prompt-icon {
-    width: 22px;
-    height: 22px;
-    line-height: 22px;
-    text-align: center;
-    border-radius: 999px;
-    font-size: 13px;
-    background: rgba(15, 118, 110, 0.1);
-    color: #0f766e;
-}
-.diagram-prompt h3 {
-    margin: 0 0 6px;
-    font: 700 15px/1.3 system-ui;
-    color: #0f172a;
-}
-.diagram-prompt p {
-    margin: 0;
-    color: #334155;
-}
-.diagram-prompt-actions {
-    margin-top: 14px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-}
-.diagram-prompt-actions button {
-    border: 1px solid rgba(15, 23, 42, 0.18);
-    border-radius: 9px;
-    background: #ffffff;
-    color: #334155;
-    padding: 6px 11px;
-    font: 600 12px/1.1 system-ui;
-    cursor: pointer;
-}
-.diagram-prompt-actions button:hover {
-    border-color: rgba(15, 118, 110, 0.45);
-    color: #0f172a;
-}
-.diagram-prompt-actions button.primary {
-    border-color: rgba(15, 118, 110, 0.5);
-    background: rgba(15, 118, 110, 0.12);
-    color: #0f766e;
-}
-`;
-
 /**
  * A simple prompt dialog component that can be used to display a message and a set of actions to the user.
  * It uses the native HTML <dialog> element if available, and falls back to a confirm dialog if not.
@@ -126,7 +64,7 @@ export class PromptDialog {
             return Promise.resolve(this.fallback(input));
         }
 
-        this.ensureStyles();
+        ensureDefaultStyles();
 
         return new Promise<T>((resolve) => {
             const dialog = this.buildDialog(input);
@@ -240,12 +178,5 @@ export class PromptDialog {
      */
     private static supportsDialog(): boolean {
         return typeof document !== 'undefined' && typeof HTMLDialogElement !== 'undefined';
-    }
-
-    /**
-     * Injects the prompt dialog CSS into the document head if not already present.
-     */
-    private static ensureStyles(): void {
-        injectStyles(STYLE_ID, STYLES);
     }
 }

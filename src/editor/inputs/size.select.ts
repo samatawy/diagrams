@@ -1,3 +1,13 @@
+
+import { injectStyles, setClasses, toggleClasses, removeClasses } from '../editor.utils';
+
+import DEFAULT_STYLES from '../../css_generated/editor/inputs/size.select.css';
+const STYLE_ID = 'size-select-defaults';
+
+function ensureDefaultStyles(): void {
+    injectStyles(STYLE_ID, DEFAULT_STYLES);
+}
+
 /**
  * Configuration options for the SizeSelect control.
  * Provide only the properties you want to customize. All other properties will use default values.
@@ -64,94 +74,6 @@ const DEFAULT_CONFIG: Required<Omit<SizeSelectConfig, 'sizes'>> & { sizes: numbe
     selectedClassName: 'is-selected',
     openClassName: 'is-open',
 };
-
-const STYLE_ID = 'size-select-defaults';
-
-const DEFAULT_STYLES = `
-.size-select-control {
-    position: relative;
-    min-width: 72px;
-    max-width: 100px;
-    font-size: var(--diagram-ui-font-size, 12px);
-    font-family: var(--diagram-ui-font-family, system-ui);
-    line-height: 1.2;
-}
-.size-select-control .size-select-trigger,
-.size-select-control button[aria-haspopup='listbox'] {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    align-items: center;
-    gap: var(--diagram-ui-control-gap, 6px);
-    padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
-    cursor: pointer;
-    appearance: none;
-    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-    border-radius: var(--diagram-ui-control-radius, 10px);
-    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
-    color: var(--diagram-ui-text, #1f2937);
-    font-weight: 600;
-}
-.size-select-control .size-select-trigger::after {
-    content: '▾';
-    font-size: var(--diagram-ui-font-size, 12px);
-    color: var(--diagram-ui-text-muted, #334155);
-}
-.size-select-control .size-select-trigger:hover,
-.size-select-control .size-select-trigger:focus-visible,
-.size-select-control button[aria-haspopup='listbox']:hover,
-.size-select-control button[aria-haspopup='listbox']:focus-visible {
-    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
-}
-.size-select-preview {
-    font-weight: 400;
-    font-size: var(--diagram-ui-font-size, 12px);
-    color: var(--diagram-ui-text, #1f2937);
-    white-space: nowrap;
-}
-.size-select-control .size-select-menu {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(100% + var(--diagram-ui-control-gap, 6px));
-    z-index: 40;
-    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-    border-radius: var(--diagram-ui-panel-radius, 10px);
-    background: var(--diagram-ui-surface-elevated, #ffffff);
-    padding: var(--diagram-ui-panel-padding, 6px);
-    display: none;
-    max-height: 220px;
-    overflow: auto;
-    box-shadow: 0 10px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
-}
-.size-select-control.is-open .size-select-menu {
-    display: grid;
-    gap: var(--diagram-ui-group-gap, 4px);
-}
-.size-select-control .size-select-option {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    border: none;
-    border-radius: var(--diagram-ui-control-radius, 6px);
-    background: transparent;
-    padding: var(--diagram-ui-group-gap, 4px) var(--diagram-ui-control-padding-x, 8px);
-    cursor: pointer;
-    font: inherit;
-    text-align: left;
-}
-.size-select-control .size-select-option:hover,
-.size-select-control .size-select-option.is-selected {
-    background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
-}
-`;
-
-import { injectStyles, setClasses, toggleClasses, removeClasses } from '../editor.utils';
-
-function ensureDefaultStyles(): void {
-    injectStyles(STYLE_ID, DEFAULT_STYLES);
-}
 
 /**
  * Normalizes size values by filtering invalid entries, rounding, and removing duplicates.

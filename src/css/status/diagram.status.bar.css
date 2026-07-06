@@ -1,0 +1,235 @@
+.diagram-status-bar {
+    --diagram-status-height: 28px;
+    --diagram-status-gap: var(--diagram-ui-control-gap, 4px);
+    --diagram-status-padding-x: var(--diagram-ui-control-padding-x, 8px);
+    --diagram-status-radius: calc(var(--diagram-ui-control-radius, 10px) - 3px);
+
+    display: grid;
+    grid-template-columns: minmax(120px, max-content) minmax(200px, 1fr) max-content var(--diagram-inspector-width, 300px);
+    align-items: center;
+    gap: var(--diagram-status-gap);
+    min-height: var(--diagram-status-height);
+    padding: 2px var(--diagram-status-padding-x);
+    box-sizing: border-box;
+    border-top: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text-muted, #475569);
+    font: 500 11px/1.15 var(--diagram-ui-font-family, system-ui);
+}
+
+.diagram-status-bar .diagram-status-section {
+    display: inline-flex;
+    align-items: center;
+    min-height: calc(var(--diagram-status-height) - 8px);
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.diagram-status-bar .diagram-status-section--left {
+    justify-self: start;
+    min-width: 0;
+}
+
+.diagram-status-bar .diagram-status-section--middle {
+    display: inline-grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.diagram-status-bar .diagram-status-hint-lead {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(var(--diagram-status-height) - 10px);
+    margin-inline-end: 6px;
+    padding-inline-end: 6px;
+    border-inline-end: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    color: var(--diagram-ui-text-muted, #64748b);
+}
+
+.diagram-status-bar .diagram-status-hint-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+}
+
+.diagram-status-bar .diagram-status-section--buttons {
+    justify-self: end;
+}
+
+.diagram-status-bar .diagram-status-section--quality {
+    position: relative;
+    justify-self: end;
+    width: 100%;
+    min-width: 0;
+    padding-inline-start: 8px;
+    box-sizing: border-box;
+}
+
+.diagram-status-bar .diagram-status-quality-button {
+    appearance: none;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    border-radius: var(--diagram-status-radius);
+    min-height: 18px;
+    padding: 0 6px;
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.diagram-status-bar .diagram-status-quality-button:hover,
+.diagram-status-bar .diagram-status-quality-button:focus-visible,
+.diagram-status-bar .diagram-status-quality-button[aria-expanded='true'] {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    color: var(--diagram-ui-accent, #0f766e);
+}
+
+.diagram-status-bar .diagram-status-quality-menu {
+    position: absolute;
+    z-index: 20;
+    inset-inline-end: 0;
+    inset-block-end: calc(100% + 6px);
+    min-width: 240px;
+    max-width: 320px;
+    padding: 4px 0;
+    background: var(--diagram-ui-surface-elevated, #ffffff);
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-panel-radius, 10px);
+    box-shadow: 0 8px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
+    color: var(--diagram-ui-text, #1f2937);
+    font: var(--diagram-ui-font-size, 12px)/1.4 var(--diagram-ui-font-family, system-ui);
+}
+
+.diagram-status-bar .diagram-status-quality-menu[hidden] {
+    display: none;
+}
+
+.diagram-status-bar .diagram-status-fix-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    width: calc(100% - 20px);
+    margin: 6px 10px 4px;
+    padding: 4px 8px;
+    appearance: none;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    border-radius: var(--diagram-status-radius);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text-muted, #334155);
+    font: 600 11px/1.2 var(--diagram-ui-font-family, system-ui);
+    cursor: pointer;
+    transition: border-color var(--diagram-ui-transition-fast, 100ms ease), color var(--diagram-ui-transition-fast, 100ms ease);
+}
+
+.diagram-status-bar .diagram-status-fix-button:hover,
+.diagram-status-bar .diagram-status-fix-button:focus-visible {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    color: var(--diagram-ui-accent, #0f766e);
+}
+
+.diagram-status-bar .diagram-status-quality-menu-title {
+    display: block;
+    padding: 6px 10px;
+    font-weight: 700;
+    color: var(--diagram-ui-text-muted, #475569);
+}
+
+.diagram-status-bar .diagram-status-quality-menu-separator {
+    height: 1px;
+    margin: 2px 8px;
+    background: var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+}
+
+.diagram-status-bar .diagram-status-quality-metric {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 10px;
+}
+
+.diagram-status-bar .diagram-status-quality-metric-name {
+    color: var(--diagram-ui-text, #1f2937);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.diagram-status-bar .diagram-status-quality-metric-value {
+    color: var(--diagram-ui-text-muted, #475569);
+    font-variant-numeric: tabular-nums;
+}
+
+.diagram-status-bar .diagram-status-label {
+    color: var(--diagram-ui-text-muted, #64748b);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+.diagram-status-bar .diagram-status-value {
+    color: var(--diagram-ui-text, #1f2937);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.diagram-status-bar .diagram-status-hint {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.diagram-status-bar .diagram-status-buttons {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.diagram-status-bar .diagram-status-button {
+    appearance: none;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    border-radius: var(--diagram-status-radius);
+    min-width: 22px;
+    min-height: 18px;
+    padding: 0 6px;
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text-muted, #334155);
+    font: 600 10px/1 var(--diagram-ui-font-family, system-ui);
+    cursor: pointer;
+    transition: border-color var(--diagram-ui-transition-fast, 100ms ease), background-color var(--diagram-ui-transition-fast, 100ms ease), color var(--diagram-ui-transition-fast, 100ms ease);
+}
+
+.diagram-status-bar .diagram-status-button:hover,
+.diagram-status-bar .diagram-status-button:focus-visible {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    color: var(--diagram-ui-accent, #0f766e);
+}
+
+.diagram-status-bar .diagram-status-button.is-active {
+    border-color: var(--diagram-ui-accent, #0f766e);
+    background: var(--diagram-ui-accent, #0f766e);
+    color: var(--diagram-ui-accent-contrast, #ffffff);
+}
+
+.diagram-status-bar .diagram-status-tags {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.diagram-status-bar .diagram-status-tag {
+    display: inline-flex;
+    align-items: center;
+    min-height: 16px;
+    padding: 0 6px;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    border-radius: 999px;
+    background: var(--diagram-ui-surface-elevated, #ffffff);
+    color: var(--diagram-ui-text-muted, #475569);
+    font: 600 10px/1 var(--diagram-ui-font-family, system-ui);
+}

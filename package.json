@@ -27,13 +27,14 @@
     "node": ">=18"
   },
   "scripts": {
+    "css:embed": "node scripts/css-to-ts.mjs",
     "clean": "rimraf dist docs",
-    "build": "tsup src/index.ts --format esm,cjs --dts --clean --platform browser",
-    "dev": "tsup src/index.ts --format esm,cjs --dts --watch --platform browser",
-    "lint": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run",
+    "build": "npm run css:embed && tsup src/index.ts --format esm,cjs --dts --clean --platform browser",
+    "dev": "npm run css:embed && tsup src/index.ts --format esm,cjs --dts --watch --platform browser",
+    "lint": "npm run css:embed && tsc --noEmit -p tsconfig.json",
+    "test": "npm run css:embed && vitest run",
     "test:watch": "vitest",
-    "docs": "typedoc",
+    "docs": "npm run css:embed && typedoc",
     "site": "npm run build && npm run docs && node scripts/build-site.mjs",
     "site:run": "npm run site && npx --yes http-server -p 4173 ./site",
     "prepublishOnly": "npm run lint && npm run test && npm run build && npm run docs"

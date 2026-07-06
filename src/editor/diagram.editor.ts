@@ -51,6 +51,13 @@ import { registerBasicAdapters } from "../nodes";
 import { registerBpmnAdapters } from "../nodes/bpmn";
 import { registerC4Adapters } from "../nodes/c4";
 
+import DIAGRAM_EDITOR_STYLES from '../css_generated/editor/diagram.editor.css';
+const DIAGRAM_EDITOR_STYLE_ID = 'diagram-editor-layout';
+
+function ensureEditorStyles(): void {
+    injectStyles(DIAGRAM_EDITOR_STYLE_ID, DIAGRAM_EDITOR_STYLES);
+}
+
 export type DiagramEditorUnsavedAction = 'save' | 'discard' | 'cancel';
 
 export type DiagramEditorPromptReason = 'new' | 'load' | 'close';
@@ -92,148 +99,6 @@ export type DiagramEditorConfig = {
     inspector?: InspectorConfig;
 
     fileDialogs?: DiagramEditorFileDialogsConfig;
-}
-
-const DIAGRAM_EDITOR_STYLE_ID = 'diagram-editor-layout';
-
-const DIAGRAM_EDITOR_STYLES = `
-.diagram-editor {
-    --diagram-inspector-width: 300px;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    min-height: 0;
-    box-sizing: border-box;
-    font-size: var(--diagram-ui-font-size, 12px);
-    font-family: var(--diagram-ui-font-family, system-ui);
-    line-height: 1.4;
-    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
-}
-.diagram-editor-header {
-    flex: 0 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: var(--diagram-ui-control-gap, 4px);
-    padding: 8px 8px 0;
-    border-bottom: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
-}
-.diagram-editor-toolbars {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--diagram-ui-control-gap, 4px);
-    align-items: stretch;
-    justify-content: flex-start;
-    padding-bottom: 8px;
-}
-.diagram-editor-stage {
-    flex: 1 1 0;
-    display: grid;
-    grid-template-columns: max-content minmax(0, 1fr) max-content;
-    min-height: 0;
-    overflow: hidden;
-}
-.diagram-editor-stage.no-inspector {
-    grid-template-columns: max-content minmax(0, 1fr);
-}
-.diagram-editor-status-host {
-    flex: 0 0 auto;
-    min-height: 0;
-}
-.diagram-editor-tool-palette {
-    border-right: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
-    padding: 8px var(--diagram-ui-panel-padding, 6px);
-    overflow-y: auto;
-}
-.diagram-editor-toolbox {
-    border-right: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
-    padding: 8px var(--diagram-ui-panel-padding, 6px);
-    overflow-y: auto;
-}
-.diagram-editor-inspector {
-    border-left: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
-    padding: 8px var(--diagram-ui-panel-padding, 6px);
-    overflow-y: auto;
-    min-width: 180px;
-}
-.diagram-editor-canvas {
-    position: relative;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-}
-.diagram-editor-canvas canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-}
-
-.diagram-editor-shadow-toolbar {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--diagram-ui-toolbar-gap, 6px);
-    padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
-    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
-    border-radius: var(--diagram-ui-panel-radius, 12px);
-}
-.diagram-editor-control-label {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--diagram-ui-toolbar-gap, 6px);
-    margin-inline-start: 4px;
-    font: 400 var(--diagram-ui-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
-    color: var(--diagram-ui-text-muted, #475569);
-}
-.diagram-editor-shadow-enable-label {
-    display: inline-flex;
-    align-items: normal;
-    gap: var(--diagram-ui-control-gap, 4px);
-    margin-inline-start: 4px;
-    margin-inline-end: 4px;     // added when checkbox stands alone
-    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
-    color: var(--diagram-ui-text-muted, #475569);
-    cursor: pointer;
-    user-select: none;
-}
-.diagram-editor-shadow-enable-label input[type="checkbox"] {
-    width: 14px;
-    height: 14px;
-    cursor: pointer;
-    accent-color: var(--diagram-ui-accent, #0f766e);
-    margin: 0;
-}
-.diagram-editor-text-toolbar,
-.diagram-editor-stroke-toolbar,
-.diagram-editor-fill-toolbar {
-    display: inline-flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--diagram-ui-toolbar-gap, 6px);
-    margin: 0;
-    padding: 4px var(--diagram-ui-control-padding-x, 8px) 6px;
-    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
-    border-radius: var(--diagram-ui-panel-radius, 12px);
-}
-.diagram-editor-text-toolbar > legend,
-.diagram-editor-stroke-toolbar > legend,
-.diagram-editor-fill-toolbar > legend {
-    padding: 0 4px;
-    font: 600 10px/1 var(--diagram-ui-font-family, system-ui);
-    color: var(--diagram-ui-text-muted, #475569);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-.diagram-editor-shadow-toolbar .diagram-editor-control-label {
-    min-width: 30px;
-    justify-content: flex-end;
-    margin-inline-start: 6px;
-    gap: var(--diagram-ui-control-gap, 4px);
-}
-`;
-
-function ensureEditorStyles(): void {
-    injectStyles(DIAGRAM_EDITOR_STYLE_ID, DIAGRAM_EDITOR_STYLES);
 }
 
 /**
