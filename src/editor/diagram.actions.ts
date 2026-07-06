@@ -10,7 +10,7 @@ import { NORMAL_FONT_WEIGHT, BOLD_FONT_WEIGHT } from '../style.interfaces';
 export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
     'load-stylesheet' | 'save-stylesheet' |
     'show-grid' | 'snap-grid' | 'show-guides' | 'snap-guides' |
-    'zoom-in' | 'zoom-out' | 'fit-width' | 'fit-all' |
+    'zoom-in' | 'zoom-out' | 'fit-horizontally' | 'fit-all' |
     'undo' | 'redo' |
     'front' | 'back' |
     'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' | 'copy-styles' | 'paste-styles' |
@@ -188,10 +188,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         execute: (d) => d.zoomBy(1 / 1.05, undefined, undefined, 'animate'),
     },
     {
-        id: 'fit-width',
-        label: 'Fit Width',
-        tooltip: 'Fit to width',
-        execute: (d) => d.fitToWidth(),
+        id: 'fit-horizontally',
+        label: 'Fit Horizontally',
+        tooltip: 'Fit to Horizontal Size',
+        execute: (d) => d.fitHorizontally(),
     },
     {
         id: 'fit-all',

@@ -65,10 +65,6 @@ export class RhombusAdapter extends RectangleAdapter {
         }
     }
 
-    // public override canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point?: IPoint): boolean {
-    //     return this.connection_handles.includes(handle);
-    // }
-
     public onCreateDraft(tool: string): Partial<INode> | undefined {
         return {
             type: this.type,

@@ -350,8 +350,8 @@ IconRegistry.registerSymbol('zoom-in', 'zoom-in',
 IconRegistry.registerSymbol('zoom-out', 'zoom-out',
     sym('zoom-out', '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/>'));
 
-IconRegistry.registerSymbol('fit-width', 'fit-width',
-    sym('fit-width', `<line x1="3" y1="5" x2="3" y2="19"/><line x1="21" y1="5" x2="21" y2="19"/><line x1="7" y1="12" x2="17" y2="12"/>
+IconRegistry.registerSymbol('fit-horizontally', 'fit-horizontally',
+    sym('fit-horizontally', `<line x1="3" y1="5" x2="3" y2="19"/><line x1="21" y1="5" x2="21" y2="19"/><line x1="7" y1="12" x2="17" y2="12"/>
         <polyline points="10 9 7 12 10 15"/><polyline points="14 9 17 12 14 15"/>`));
 
 IconRegistry.registerSymbol('fit-all', 'fit-all',
@@ -361,13 +361,13 @@ IconRegistry.registerSymbol('show-grid', 'show-grid',
     sym('show-grid', '<line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>'));
 
 IconRegistry.registerSymbol('snap-grid', 'snap-grid',
-    sym('snap-grid', '<path d="M6 15V6a6 6 0 0 1 12 0v9"/><path d="M6 15a3 3 0 0 0 6 0m0 0a3 3 0 0 0 6 0"/><line x1="2" y1="6" x2="6" y2="6"/><line x1="18" y1="6" x2="22" y2="6"/>'));
+    sym('snap-grid', '<line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><rect x="8" y="8" width="7" height="7" fill="currentColor" stroke="none"/>'));
 
 IconRegistry.registerSymbol('show-guides', 'show-guides',
     sym('show-guides', '<line x1="8" y1="3" x2="8" y2="21"/><line x1="3" y1="8" x2="21" y2="8"/>'));
 
 IconRegistry.registerSymbol('snap-guides', 'snap-guides',
-    sym('snap-guides', '<line x1="8" y1="3" x2="8" y2="21"/><line x1="3" y1="8" x2="21" y2="8"/><line x1="21" y1="14" x2="12" y2="14"/><polygon points="11 10 11 18 4 14" style="fill:currentColor;stroke:none"/>'));
+    sym('snap-guides', '<line x1="8" y1="3" x2="8" y2="21"/><line x1="3" y1="8" x2="21" y2="8"/><rect x="8" y="8" width="7" height="7" fill="currentColor" stroke="none"/>'));
 
 IconRegistry.registerSymbol('select', 'tool-select',
     sym('tool-select', '<path d="M5 3l14 9-7 1-4 7z"/>'));

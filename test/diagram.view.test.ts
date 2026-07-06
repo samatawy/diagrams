@@ -319,7 +319,7 @@ describe('DiagramView', () => {
         expect(view.getCoordinates().pan).toEqual({ x: -20, y: 0 });
     });
 
-    it('defaults fit-width to top alignment vertically', () => {
+    it('defaults fit-horizontally to top alignment vertically', () => {
         const host = createHost(200, 200);
         const initialLayer: ILayer = { id: 'main', name: 'Main', visible: true, nodes: ['node-1'] };
         const initialNodes = [{
@@ -335,7 +335,7 @@ describe('DiagramView', () => {
             layers: [initialLayer],
         }, {
             initialView: {
-                mode: 'fit-width',
+                mode: 'fit-horizontally',
                 padding: 0,
             },
         });

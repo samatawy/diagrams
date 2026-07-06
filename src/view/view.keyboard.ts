@@ -11,13 +11,13 @@ export class DiagramViewKeyboard<T extends DiagramView = DiagramView> extends Di
     protected initialize(): void {
         const kb = this;
 
-        kb.setShortcut(['Ctrl+F', 'Cmd+F'], (d: T) => {
+        kb.setShortcut(['Ctrl+Alt+F', 'Cmd+Alt+F'], (d: T) => {
             d.fitToNodes();
-        }, 'Fit to nodes');
+        }, 'Fit to nodes (horizontally and vertically)', 'fit-all');
 
-        kb.setShortcut(['Ctrl+W', 'Cmd+W'], (d: T) => {
-            d.fitToWidth();
-        }, 'Fit to width');
+        kb.setShortcut(['Ctrl+Alt+H', 'Cmd+Alt+H'], (d: T) => {
+            d.fitHorizontally();
+        }, 'Fit to horizontal size', 'fit-horizontally');
 
         kb.setShortcut(['Ctrl+0', 'Cmd+0'], (d: T) => {
             d.zoomTo(1, undefined, undefined, 'animate');
@@ -25,11 +25,11 @@ export class DiagramViewKeyboard<T extends DiagramView = DiagramView> extends Di
 
         kb.setShortcut(['Ctrl+Plus', 'Ctrl+=', 'Cmd+Plus', 'Cmd+='], (d: T) => {
             d.zoomBy(1.01, undefined, undefined, 'animate');
-        }, 'Zoom in');
+        }, 'Zoom in', 'zoom-in');
 
         kb.setShortcut(['Ctrl+Minus', 'Cmd+Minus'], (d: T) => {
             d.zoomBy(0.99, undefined, undefined, 'animate');
-        }, 'Zoom out');
+        }, 'Zoom out', 'zoom-out');
 
         kb.setShortcut(['ArrowUp'], (d: T) => {
             const dy = (d.grid.forced) ? d.grid.width : 4;

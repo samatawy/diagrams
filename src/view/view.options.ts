@@ -21,7 +21,7 @@ export interface FitAlign {
 /**
  * Initial view modes for DiagramView. Determines how the viewport is set when the diagram is first loaded.
  */
-export type InitialViewMode = "saved" | "fit-width" | "fit-all";
+export type InitialViewMode = "saved" | "fit-horizontally" | "fit-all";
 
 /**
  * Selection options to define how selection works in the diagram view.

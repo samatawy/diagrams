@@ -157,19 +157,14 @@ export class NodeRegistry {
     }
 
     /**
-     * Gets the connection handles for the specified node type.
-     * @param type The type of the node.
-     * @returns An array of connection handles for the node type.
+     * Checks if the specified node can connect from/to the given handle.
+     * @param node The node instance.
+     * @param direction The direction of the connection ('from' or 'to').
+     * @param handle The connection handle.
+     * @returns True if the node can connect from/to the handle, false otherwise.
      */
-    // public static connectionHandles(type: string): NodeHandle[] {
-    //     const handler = this._nodes.get(type);
-    //     return handler ? handler.connection_handles : [];
-    // }
     public static canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle): boolean {
         const handler = this._nodes.get(node.type);
         return handler ? handler.canConnect(node, direction, handle, { x: 0, y: 0 }) : false;
-
-        // const connection_handles = handler.connection_handles;
-        // return connection_handles ? connection_handles.includes(handle) : false;
     }
 }

@@ -195,8 +195,4 @@ export class CurveAdapter extends PolylineAdapter {
             return true;
         }
     }
-
-    // private gradient(a: IPoint, b: IPoint) {
-    //     return (b.y - a.y) / (b.x - a.x);
-    // }
 }

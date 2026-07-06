@@ -456,8 +456,8 @@ export class DiagramView extends Diagram implements HasSelection {
      * Fits the diagram content to the width of the viewport, with optional padding and alignment.
      * @param options Optional configuration for padding and alignment.
      */
-    public fitToWidth(options?: { padding?: number, alignment?: FitAlign }): void {
-        this.fitViewport.fitToWidth(options);
+    public fitHorizontally(options?: { padding?: number, alignment?: FitAlign }): void {
+        this.fitViewport.fitHorizontally(options);
         this.emitViewportEvents(true, true);
         this.render();
     }
@@ -1552,8 +1552,8 @@ export class DiagramView extends Diagram implements HasSelection {
             return;
         }
 
-        if (mode === 'fit-width') {
-            this.fitViewport.fitToWidth({ padding: initialView?.padding, alignment: initialView?.alignment });
+        if (mode === 'fit-horizontally') {
+            this.fitViewport.fitHorizontally({ padding: initialView?.padding, alignment: initialView?.alignment });
             return;
         }
 

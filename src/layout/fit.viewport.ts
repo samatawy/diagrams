@@ -38,7 +38,7 @@ export class FitViewport {
      * Adjusts the viewport to fit the width of the nodes within the visible area of the canvas.
      * @param options Optional configuration for padding and alignment.
      */
-    public fitToWidth(options?: { padding?: number, alignment?: FitAlign }): void {
+    public fitHorizontally(options?: { padding?: number, alignment?: FitAlign }): void {
         const bounds = this.diagram.getNodeBounds();
         if (!bounds) return;
         const canvas = this.diagram.getCanvas();

@@ -1,4 +1,5 @@
 import { ACTION_MAP } from "../editor/diagram.actions";
+import { appendShortcutSuffix, getActionShortcut } from "../editor/action.shortcuts";
 import { DiagramEditViewKeyboard } from "../editview/edit.keyboard";
 import { DiagramKeyboard } from "../keyboard/diagram.keyboard";
 import type { DiagramHintAccessSurface, DiagramHintPoolItem } from "./hint.types";
@@ -29,7 +30,7 @@ export class DiagramHintMessageResolver {
 
         const action = item.actionId ? ACTION_MAP.get(item.actionId) : undefined;
         const label = action?.label?.trim();
-        const shortcut = this.formatShortcut(item.shortcut);
+        const shortcut = this.formatShortcut(item.shortcut) || getActionShortcut(item.actionId);
         const shortcutHelp = this.resolveShortcutHelp(item.shortcut);
         const access = this.formatAccess(item.access, !!shortcut);
 
@@ -60,7 +61,7 @@ export class DiagramHintMessageResolver {
         }
 
         if (action?.tooltip?.trim()) {
-            return action.tooltip.trim();
+            return appendShortcutSuffix(action.tooltip.trim(), item.actionId);
         }
 
         return undefined;

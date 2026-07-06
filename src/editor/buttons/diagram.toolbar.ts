@@ -5,6 +5,7 @@ import { Toolbar, type ToolbarConfig } from './toolbar';
 
 import { type DiagramAction, type DiagramActionId, ACTION_MAP } from '../diagram.actions';
 import { DIAGRAM_ALIGN_ACTION_LAYOUT, DIAGRAM_CLIPBOARD_ACTION_LAYOUT, DIAGRAM_FILE_ACTION_LAYOUT, DIAGRAM_GROUP_ACTION_LAYOUT, DIAGRAM_HISTORY_ACTION_LAYOUT, DIAGRAM_STYLESHEET_ACTION_LAYOUT, DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT, DIAGRAM_VIEW_ACTION_LAYOUT, DIAGRAM_ZOOM_ACTION_LAYOUT, DIAGRAM_ZORDER_ACTION_LAYOUT } from '../diagram.action.layouts';
+import { appendShortcutSuffix } from '../action.shortcuts';
 
 
 const DIAGRAM_FULL_TOOLBAR_LAYOUT: DiagramActionId[] = [
@@ -145,7 +146,7 @@ export class DiagramToolBar extends Toolbar {
                 id: action.id,
                 icon: action.icon || IconRegistry.createElement(action.id) || undefined,
                 label: action.label,
-                tooltip: action.tooltip,
+                tooltip: appendShortcutSuffix(action.tooltip || '', action.id),
                 toggle: action.toggle,
                 disabled: action.isEnabled ? !action.isEnabled(this.diagram) : false,
                 onClick: async () => {

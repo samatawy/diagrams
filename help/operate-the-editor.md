@@ -85,8 +85,8 @@ Keyboard shortcuts are active when focus is not inside input, textarea, or conte
 
 ### View shortcuts (also available in edit view)
 
-- Ctrl/Cmd + F: fit to nodes.
-- Ctrl/Cmd + W: fit to width.
+- Ctrl/Cmd + Alt + F: fit horizontally and vertically.
+- Ctrl/Cmd + Alt + H: fit to horizontal size.
 - Ctrl/Cmd + 0: reset zoom to 100 percent.
 - Ctrl/Cmd + Plus or Ctrl/Cmd + =: zoom in.
 - Ctrl/Cmd + Minus: zoom out.
@@ -97,7 +97,7 @@ Keyboard shortcuts are active when focus is not inside input, textarea, or conte
 - Ctrl/Cmd + N: new diagram.
 - Ctrl/Cmd + O: open diagram.
 - Ctrl/Cmd + S: save diagram.
-- Ctrl/Cmd + E: export image.
+- Ctrl/Cmd + Alt + E: export image.
 
 ### Selection, clipboard, history
 
@@ -113,6 +113,11 @@ Keyboard shortcuts are active when focus is not inside input, textarea, or conte
 - Ctrl/Cmd + Shift + Z: redo.
 - Ctrl/Cmd + Y: redo.
 
+### Grouping
+
+- Ctrl/Cmd + G: group selected.
+- Ctrl/Cmd + Shift + G: ungroup selected.
+
 ### Layer order
 
 - Ctrl/Cmd + ]: bring forward.
@@ -122,10 +127,9 @@ Keyboard shortcuts are active when focus is not inside input, textarea, or conte
 
 ### Grid and guides
 
-- Ctrl/Cmd + G: toggle guide rendering.
-- Ctrl/Cmd + Shift + G: toggle guide snapping.
-- Ctrl/Cmd + Alt + G: toggle grid visibility.
-- Ctrl/Cmd + Alt + Shift + G: toggle forced grid snapping.
+- Ctrl/Cmd + Alt + L: Toggle guides (visible and snapping).
+- Ctrl/Cmd + Alt + G: Toggle snapping grid.
+- Ctrl/Cmd + Alt + Shift + G: Toggle visual-only grid.
 
 ### Arrow-key editing and panning
 

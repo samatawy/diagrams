@@ -1,3 +1,11 @@
+// export * from './Bpmn.Basics';
+// export * from './start.event.adapter';
+// export * from './intermediate.event.adapter';
+// export * from './end.event.adapter';
+// export * from './gateway.adapter';
+// export * from './task.adapter';
+// export * from './data.store.adapter';
+// export * from './data.object.adapter';
 
 import { BpmnStartEventAdapter } from './start.event.adapter';
 import { BpmnIntermediateEventAdapter } from './intermediate.event.adapter';
@@ -11,16 +19,6 @@ import { BpmnDataAssociationAdapter } from './data.association.adapter';
 import { BpmnAssociationAdapter } from './association.adapter';
 import { BpmnMessageFlowAdapter } from './message.flow.adapter';
 import { BpmnSequenceFlowAdapter } from './sequence.flow.adapter';
-
-// export * from './Bpmn.Basics';
-// export * from './start.event.adapter';
-// export * from './intermediate.event.adapter';
-// export * from './end.event.adapter';
-// export * from './gateway.adapter';
-// export * from './task.adapter';
-// export * from './data.store.adapter';
-// export * from './data.object.adapter';
-
 
 export function registerBpmnAdapters(): void {
     BpmnTaskAdapter.register();

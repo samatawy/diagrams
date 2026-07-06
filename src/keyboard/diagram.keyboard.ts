@@ -1,4 +1,5 @@
 import type { KeyboardShortcut } from "./keyboard.shortcut";
+import type { DiagramActionId } from "../editor/diagram.actions";
 
 export class DiagramKeyboard<T> {
 
@@ -15,7 +16,7 @@ export class DiagramKeyboard<T> {
         }
     }
 
-    public setShortcut(mappings: string | string[], action: (target: T) => void, help?: string): void {
+    public setShortcut(mappings: string | string[], action: (target: T) => void, help?: string, action_id?: DiagramActionId): void {
         if (!Array.isArray(mappings)) {
             mappings = [mappings];
         }
@@ -30,7 +31,7 @@ export class DiagramKeyboard<T> {
                     continue;
                 }
 
-                this.register({ key, shift, ctrl, alt, meta, action, help });
+                this.register({ key, shift, ctrl, alt, meta, action, action_id, help });
             }
         }
     }

@@ -5,7 +5,7 @@ import type { DiagramEditView } from "./diagram.edit.view";
 
 export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView> {
 
-    protected initialize(): void {  // kb: DiagramKeyboard<DiagramEditView>): void {
+    protected initialize(): void {
         super.initialize();
 
         const kb = this;
@@ -14,71 +14,88 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
 
         kb.setShortcut(['Ctrl+N', 'Cmd+N'], (d: DiagramEditView) => {
             d.newDiagram();
-        }, 'New diagram');
+        }, 'New diagram', 'new');
         kb.setShortcut(['Ctrl+O', 'Cmd+O'], (d: DiagramEditView) => {
             d.openDiagram();
-        }, 'Open diagram');
+        }, 'Open diagram', 'open');
         kb.setShortcut(['Ctrl+S', 'Cmd+S'], (d: DiagramEditView) => {
             d.saveDiagram();
-        }, 'Save diagram');
-        kb.setShortcut(['Ctrl+E', 'Cmd+E'], (d: DiagramEditView) => {
-            d.exportImage();
-        }, 'Export diagram');
+        }, 'Save diagram', 'save');
+        kb.setShortcut(['Ctrl+Alt+E', 'Cmd+Alt+E'], (d: DiagramEditView) => {
+            d.saveImageDiagram();
+        }, 'Export diagram', 'export');
 
         // View operations
 
         kb.setShortcut(['Ctrl+A', 'Cmd+A'], (d: DiagramEditView) => {
             d.selectAll();
         }, 'Select all');
-        kb.setShortcut(['Ctrl+G', 'Cmd+G'], (d: DiagramEditView) => {
-            d.updateGuides({ render: !d.guideOptions.render });
-        }, 'Toggle guides visibility');
-        kb.setShortcut(['Ctrl+Shift+G', 'Cmd+Shift+G'], (d: DiagramEditView) => {
-            d.updateGuides({ snap: !d.guideOptions.snap });
-        }, 'Toggle guide snapping');
+
+        // Guides
+
+        kb.setShortcut(['Ctrl+Alt+L', 'Cmd+Alt+L'], (d: DiagramEditView) => {
+            const visible = d.guideOptions.render;
+            d.updateGuides({ render: !visible, snap: !visible });
+        }, 'Toggle guides (visible and snapping)');
+
+        // Grid 
+
         kb.setShortcut(['Ctrl+Alt+G', 'Cmd+Alt+G'], (d: DiagramEditView) => {
-            d.updateGrid({ visible: !d.grid.visible });
-        }, 'Toggle grid visibility');
+            const visible = d.grid.visible;
+            d.updateGrid({ visible: !visible, forced: !visible });
+        }, 'Toggle snapping grid');
         kb.setShortcut(['Ctrl+Alt+Shift+G', 'Cmd+Alt+Shift+G'], (d: DiagramEditView) => {
-            d.updateGrid({ forced: !d.grid.forced });
-        }, 'Toggle grid snapping');
+            const visible = d.grid.visible;
+            d.updateGrid({ visible: !visible, forced: false });
+        }, 'Toggle visual-only grid');
 
         // History operations
 
         kb.setShortcut(['Ctrl+Z', 'Cmd+Z'], (d: DiagramEditView) => {
             d.undo();
-        }, 'Undo');
+        }, 'Undo', 'undo');
         kb.setShortcut(['Ctrl+Shift+Z', 'Cmd+Shift+Z'], (d: DiagramEditView) => {
             d.redo();
-        }, 'Redo');
+        }, 'Redo', 'redo');
         kb.setShortcut(['Ctrl+Y', 'Cmd+Y'], (d: DiagramEditView) => {
             d.redo();
-        }, 'Redo');
+        }, 'Redo', 'redo');
 
         // Clipboard operations
 
         kb.setShortcut(['Ctrl+C', 'Cmd+C'], (d: DiagramEditView) => {
             d.copySelected();
-        }, 'Copy');
+        }, 'Copy', 'copy');
         kb.setShortcut(['Ctrl+V', 'Cmd+V'], (d: DiagramEditView) => {
             d.pasteNodes();
-        }, 'Paste');
+        }, 'Paste', 'paste');
         kb.setShortcut(['Ctrl+X', 'Cmd+X'], (d: DiagramEditView) => {
             d.cutSelected();
-        }, 'Cut');
+        }, 'Cut', 'cut');
         kb.setShortcut(['Delete', 'Backspace'], (d: DiagramEditView) => {
             d.deleteSelected();
-        }, 'Delete selection');
+        }, 'Delete selection', 'delete');
         kb.setShortcut(['Ctrl+D', 'Cmd+D'], (d: DiagramEditView) => {
             d.cloneSelected();
-        }, 'Duplicate selection');
+        }, 'Duplicate selection', 'duplicate');
+
+        // Clipboard for Styles
 
         kb.setShortcut(['Ctrl+Shift+C', 'Cmd+Shift+C'], (d: DiagramEditView) => {
             d.copyStyles();
-        }, 'Copy styles');
+        }, 'Copy styles', 'copy-styles');
         kb.setShortcut(['Ctrl+Shift+V', 'Cmd+Shift+V'], (d: DiagramEditView) => {
             d.pasteStyles();
-        }, 'Paste styles');
+        }, 'Paste styles', 'paste-styles');
+
+        // Group operations
+
+        kb.setShortcut(['Ctrl+G', 'Cmd+G'], (d: DiagramEditView) => {
+            d.groupSelected();
+        }, 'Group selection', 'group-nodes');
+        kb.setShortcut(['Ctrl+Shift+G', 'Cmd+Shift+G'], (d: DiagramEditView) => {
+            d.ungroupSelected();
+        }, 'Ungroup selection', 'ungroup-nodes');
 
         // Layout operations
 
@@ -90,10 +107,10 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
         }, 'Send selection backward');
         kb.setShortcut(['Ctrl+Shift+]', 'Cmd+Shift+]'], (d: DiagramEditView) => {
             d.bringSelectionToFront();
-        }, 'Bring selection to front');
+        }, 'Bring selection to front', 'front');
         kb.setShortcut(['Ctrl+Shift+[', 'Cmd+Shift+['], (d: DiagramEditView) => {
             d.sendSelectionToBack();
-        }, 'Send selection to back');
+        }, 'Send selection to back', 'back');
 
         // Arrow operations - Nudge (large) 
 
@@ -168,10 +185,10 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
         kb.setShortcut(['Ctrl+B', 'Cmd+B'], (d: DiagramEditView) => {
             const isBold = d.selection().length > 0 && d.selection().every((n) => textBold(n));
             d.setTextStyle({ weight: isBold ? NORMAL_FONT_WEIGHT : BOLD_FONT_WEIGHT });
-        }, 'Toggle bold');
+        }, 'Toggle bold', 'text-bold');
         kb.setShortcut(['Ctrl+I', 'Cmd+I'], (d: DiagramEditView) => {
             d.setTextStyle({ italic: !d.textStyle.italic });
-        }, 'Toggle italic');
+        }, 'Toggle italic', 'text-italic');
 
         // Node style operations
 

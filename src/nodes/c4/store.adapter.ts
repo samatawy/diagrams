@@ -129,11 +129,6 @@ export class C4StoreAdapter extends CylinderAdapter {
         return rect.height / 5;
     }
 
-    public override canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point?: IPoint): boolean {
-        const connection_handles = [NodeHandle.N, NodeHandle.S];
-        return connection_handles.includes(handle);
-    }
-
     public override onCreateDraft(tool: string): Partial<INode> | undefined {
         return {
             type: 'c4_store',

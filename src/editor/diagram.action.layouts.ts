@@ -22,7 +22,7 @@ export const DIAGRAM_VIEW_ACTION_LAYOUT: DiagramActionId[] = [
 export const DIAGRAM_ZOOM_ACTION_LAYOUT: DiagramActionId[] = [
     'zoom-in',
     'zoom-out',
-    'fit-width',
+    'fit-horizontally',
     'fit-all',
 ];
 
