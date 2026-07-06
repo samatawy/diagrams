@@ -21,9 +21,9 @@ export class C4Basics {
         context.lineWidth = Math.max(2, context.lineWidth); // Increase line width for the cross
 
         const codePath = new Path2D();
-        const codeSize = 16;
-        const padding_top = 16;
-        const padding_left = radius / 2;
+        const codeSize = 8;
+        const padding_top = codeSize;
+        const padding_left = radius / 2 + codeSize;
 
         codePath.moveTo(rect.left + padding_left, rect.top + padding_top);
         codePath.lineTo(rect.left + padding_left + codeSize, rect.top + padding_top + codeSize / 2);

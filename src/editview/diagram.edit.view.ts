@@ -2415,7 +2415,6 @@ export class DiagramEditView extends DiagramView {
             /* Normalize connection anchors if the new type does not support the current anchor handle.
                Anchors whose handle is still valid for the new type are left untouched. 
             */
-            // const allowedHandles = NodeRegistry.connectionHandles(type);
             const connections: (INode & IConnection)[] = this.nodes.filter(n => isConnection(n)) as (INode & IConnection)[];
             for (let conn of connections) {
                 if ((conn.from?.node === _node.id || conn.from?.node === _node) &&
@@ -2428,16 +2427,6 @@ export class DiagramEditView extends DiagramView {
                     ConnectionBasics.reconnectToBestHandle(conn, 'to');
                     ConnectionBasics.syncEndpoints(conn);
                 }
-                // if ((conn.from?.node === _node.id || conn.from?.node === _node) &&
-                //     conn.from?.handle !== undefined && !allowedHandles.includes(conn.from.handle)) {
-                //     ConnectionBasics.reconnectToBestHandle(conn, 'from');
-                //     ConnectionBasics.syncEndpoints(conn);
-                // }
-                // if ((conn.to?.node === _node.id || conn.to?.node === _node) &&
-                //     conn.to?.handle !== undefined && !allowedHandles.includes(conn.to.handle)) {
-                //     ConnectionBasics.reconnectToBestHandle(conn, 'to');
-                //     ConnectionBasics.syncEndpoints(conn);
-                // }
             }
 
             this.emitNodeTypeChanged(_node);
@@ -5484,23 +5473,23 @@ export class DiagramEditView extends DiagramView {
     //     return {dataurl: src, width: full.width || 400, height: full.height || 300};
     // }
 
-    /**
-     * Opens SVG tool/image selection workflow.
-     */
-    public pickSVG(): void {
-        // let ref = this.dialog.open(StencilDialog, {});
-        // ref.afterClosed().subscribe(choice => {
-        //     if (choice && choice.tool) {
-        //         // let src = (choice.tool as StencilTool).url;
-        //         this.pickTool('svg', choice.tool);
-        //         // if (this.current.shape) {
-        //         //     this.current.shape.setImage(src, 'contain');
-        //         // }
-        //     } else {
-        //         this.pickTool('select');
-        //     }
-        // })
-    }
+    // /**
+    //  * Opens SVG tool/image selection workflow.
+    //  */
+    // public pickSVG(): void {
+    //     // let ref = this.dialog.open(StencilDialog, {});
+    //     // ref.afterClosed().subscribe(choice => {
+    //     //     if (choice && choice.tool) {
+    //     //         // let src = (choice.tool as StencilTool).url;
+    //     //         this.pickTool('svg', choice.tool);
+    //     //         // if (this.current.shape) {
+    //     //         //     this.current.shape.setImage(src, 'contain');
+    //     //         // }
+    //     //     } else {
+    //     //         this.pickTool('select');
+    //     //     }
+    //     // })
+    // }
 
     /**
      * Opens image selection workflow for the current node selection.

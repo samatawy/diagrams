@@ -48,10 +48,9 @@ export class ConnectionBasics {
             const point = node.points[0]!;
             if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
                 const fromAnchor = this.getPointerConnectionAnchor(node, x, y);
-                const toTarget = node.to ? this.resolveAnchorNode(node, node.to) : undefined;
-                const fromTarget = fromAnchor ? this.resolveAnchorNode(node, fromAnchor) : undefined;
+                const toAnchor = node.to;
 
-                if (fromAnchor && (!toTarget || toTarget.id !== fromTarget?.id)) {
+                if (fromAnchor && !this.isSameAnchor(fromAnchor, toAnchor)) {
                     node.from = fromAnchor;
                     adapter?.afterConnect?.(node, 'from', fromAnchor ?? null);
 
@@ -64,19 +63,32 @@ export class ConnectionBasics {
         if (node.points.length > 1) {
             const point = node.points[node.points.length - 1]!;
             if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
+                const fromAnchor = node.from;
                 const toAnchor = this.getPointerConnectionAnchor(node, x, y);
-                const fromTarget = node.from ? this.resolveAnchorNode(node, node.from) : undefined;
-                const toTarget = toAnchor ? this.resolveAnchorNode(node, toAnchor) : undefined;
 
-                if (toAnchor && (!fromTarget || fromTarget.id !== toTarget?.id)) {
+                if (toAnchor && (!this.isSameAnchor(toAnchor, fromAnchor))) {
                     node.to = toAnchor;
                     adapter?.afterConnect?.(node, 'to', toAnchor ?? null);
-
                 } else {
                     node.to = undefined;
                 }
             }
         }
+    }
+
+    /**
+     * Checks if two connection anchors are effectively the same by comparing their node, handle, and point properties.
+     * @param anchorA The first anchor to compare.
+     * @param anchorB The second anchor to compare.
+     * @returns True if the anchors are effectively the same, false otherwise.
+     */
+    private static isSameAnchor(anchorA: IConnectionAnchor | undefined, anchorB: IConnectionAnchor | undefined): boolean {
+        if (anchorA && !anchorB) return false;
+        if (!anchorA && anchorB) return false;
+        if (anchorA?.node !== anchorB?.node) return false;
+        if (anchorA?.handle !== anchorB?.handle) return false;
+        if (anchorA?.point !== anchorB?.point) return false;
+        return true;
     }
 
     /**
