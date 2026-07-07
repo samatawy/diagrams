@@ -121,12 +121,13 @@ export function gradientArgsForBox(g: GradientValue, rect: IRect): CanvasGradien
     const cy = y + h / 2;
     const rad = (g.angle * Math.PI) / 180;
 
-    // Linear
+    // Linear: CSS angle θ means "to top" at 0deg — direction vector is (sin θ, -cos θ) in canvas coords (y down).
+    // So 0% start point is at (cx - sinθ·half, cy + cosθ·half) and 100% end at (cx + sinθ·half, cy - cosθ·half).
     const halfLen = (Math.abs(w * Math.sin(rad)) + Math.abs(h * Math.cos(rad))) / 2;
     const lx0 = cx - Math.sin(rad) * halfLen;
-    const ly0 = cy - Math.cos(rad) * halfLen;
+    const ly0 = cy + Math.cos(rad) * halfLen;
     const lx1 = cx + Math.sin(rad) * halfLen;
-    const ly1 = cy + Math.cos(rad) * halfLen;
+    const ly1 = cy - Math.cos(rad) * halfLen;
 
     // Radial / conic center
     const ox = x + w * (g.centerX / 100);
