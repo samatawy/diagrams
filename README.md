@@ -14,8 +14,9 @@ This package is being published as an experimental tool for web developers.
 
 ## Documentation And Demo
 
-- API docs (GitHub Pages): https://samatawy.github.io/diagrams/
-- Hosted demos: https://samatawy.github.io/diagrams/demo/
+- See it in action: [Full-Size Editor](https://samatawy.github.io/diagrams/demo/editor_simple/diagram-editor-full.html)
+- Other demos: [Demo Gallery](https://samatawy.github.io/diagrams/demo/)
+- API docs: [GitHub Pages](https://samatawy.github.io/diagrams/)
 
 ## Install
 
@@ -99,9 +100,13 @@ You can tailor the editor for your own product:
 
 ## Version History
 
+- Since version `0.6.0`
+  - Added gradient support
+  - Improved pointer interaction and keyboard shortcuts
+  - Fixed major issue with high-resolution screens.
 - Since version `0.5.5`
   - Fixed major issues with (0.5.0)
-  - Added new toolbox and new shapes.
+  - Added new toolbox and new shapes to support BPMN and C4.
 - Since version `0.5.0`
   - Groups and Containers.
   - Style classes and stylesheets.

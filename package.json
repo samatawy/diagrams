@@ -1,6 +1,6 @@
 {
   "name": "@samatawy/diagrams",
-  "version": "0.5.5",
+  "version": "0.6.0",
   "description": "TypeScript library for designing, viewing, and managing diagrams.",
   "type": "module",
   "main": "./dist/index.cjs",

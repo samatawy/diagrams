@@ -305,7 +305,7 @@ export class ConnectionBasics {
      * @returns A normalized anchor for the target, or undefined when no supported handle is found.
      */
     private static getNearestSupportedAnchor(target: INode, nearPoint: IPoint, tolerance: number = 24): IConnectionAnchor | undefined {
-        const diagram = target.owner;
+        const diagram = target?.owner;
         if (!isDiagramViewLike(diagram)) {
             return undefined;
         }

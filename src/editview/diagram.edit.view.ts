@@ -3318,6 +3318,10 @@ export class DiagramEditView extends DiagramView {
 
                         let movePos = { x: event.offsetX, y: event.offsetY }
 
+                        if (event.shiftKey) {
+                            movePos = this.snapPointDragToAngle45(movePos, this.downShape, this.downPos);
+                        }
+
                         this.moveSelectedPoint(this.downShape,
                             this.downPos.x, this.downPos.y,
                             movePos.x - this.downPos.x,
@@ -3611,8 +3615,14 @@ export class DiagramEditView extends DiagramView {
     private createMove(event: PointerEvent): void {
         if (!this.current.draft) return;
 
-        const point = this.getCoordinates().getPointFromEvent(event, this.grid);
+        let point = this.getCoordinates().getPointFromEvent(event, this.grid);
         const draft = this.current.draft;
+
+        // Snap the active endpoint to 45° when shift is held for connections/polylines
+        if (event.shiftKey && NodeRegistry.isConnection(draft.type) && draft.points.length >= 2) {
+            const anchor = draft.points[draft.points.length - 2]!;
+            point = this.snapAngle45(point, anchor);
+        }
 
         NodeRegistry.adapter(draft.type)?.onCreateMove(draft, point);
 
@@ -5287,6 +5297,57 @@ export class DiagramEditView extends DiagramView {
                 return;
             }
         }
+    }
+
+    /**
+     * Snaps `cursor` to the nearest 45° multiple relative to `anchor`, in world (diagram) space.
+     * Returns the snapped world point.
+     */
+    private snapAngle45(cursor: IPoint, anchor: IPoint): IPoint {
+        const dx = cursor.x - anchor.x;
+        const dy = cursor.y - anchor.y;
+        const distance = Math.hypot(dx, dy);
+        if (distance === 0) return { ...cursor };
+        const snappedAngle = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4);
+        return {
+            x: anchor.x + distance * Math.cos(snappedAngle),
+            y: anchor.y + distance * Math.sin(snappedAngle),
+        };
+    }
+
+    /**
+     * Snaps a screen-space point-drag position to the nearest 45° angle relative to
+     * the fixed neighbor of the dragged point on `node`.
+     *
+     * Handles all coordinate conversions internally: screen → world for the lookup,
+     * snap math in world space, then world → screen for the returned value.
+     *
+     * @param screenCursor  Current cursor position in screen (CSS-pixel / offsetX) space.
+     * @param node          The node whose point is being dragged.
+     * @param screenDownPos The screen position recorded at pointer-down (used to identify which point is dragged).
+     * @returns The snapped cursor position in screen space.
+     */
+    private snapPointDragToAngle45(screenCursor: IPoint, node: INode, screenDownPos: IPoint): IPoint {
+        const zoom = this.coordinates.zoom;
+        const pan = this.coordinates.pan;
+
+        const cursorWorld = this.coordinates.getPoint(screenCursor.x, screenCursor.y, 'ignore_grid');
+        const prevWorld = this.coordinates.getPoint(screenDownPos.x, screenDownPos.y, 'ignore_grid');
+
+        const tol = 4 / zoom;
+        const index = node.points.findIndex(
+            p => Math.abs(p.x - prevWorld.x) <= tol && Math.abs(p.y - prevWorld.y) <= tol
+        );
+
+        const anchor: IPoint = index > 0
+            ? node.points[index - 1]!
+            : (node.points.length > 1 ? node.points[1]! : prevWorld);
+
+        const snappedWorld = this.snapAngle45(cursorWorld, anchor);
+        return {
+            x: snappedWorld.x * zoom - pan.x,
+            y: snappedWorld.y * zoom - pan.y,
+        };
     }
 
     /**
