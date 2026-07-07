@@ -102,7 +102,9 @@ export function makeBox(owner, id, type, left, top, width, height, options = {})
         image_mode: 'none',
         ready: options.ready ?? true,
         strokeStyle,
-        fillStyle: options.fillStyle ?? '#ffffff',
+        fillStyle: options.fillStyle === undefined
+            ? { color: '#ffffff' }
+            : (typeof options.fillStyle === 'string' ? { color: options.fillStyle } : options.fillStyle),
         shadowStyle: options.shadowStyle,
         angle: options.angle ?? 0,
         owner,
@@ -111,9 +113,15 @@ export function makeBox(owner, id, type, left, top, width, height, options = {})
 
 export function makeLine(owner, id, points, options = {}) {
     const strokeStyle = {
-        arrow: 'end',
+        arrow_at: 'end',
         ...(options.strokeStyle || {}),
     };
+
+    // Backward compatibility for old demo seeds.
+    if (strokeStyle.arrow && !strokeStyle.arrow_at) {
+        strokeStyle.arrow_at = strokeStyle.arrow;
+    }
+    delete strokeStyle.arrow;
 
     const textStyle = {
         align: 'center',
@@ -137,10 +145,51 @@ export function makeLine(owner, id, points, options = {}) {
         image_mode: 'none',
         ready: options.ready ?? true,
         strokeStyle,
-        fillStyle: 'transparent',
+        fillStyle: { color: 'transparent' },
         shadowStyle: options.shadowStyle,
         angle: 0,
         owner,
+    };
+}
+
+export function normalizeDemoDiagram(diagram) {
+    const nodes = Array.isArray(diagram?.nodes) ? diagram.nodes : [];
+
+    // Guard against stale demo data with duplicate node IDs.
+    const ids = new Set();
+    const duplicates = new Set();
+    for (const node of nodes) {
+        const id = node?.id;
+        if (!id) continue;
+        if (ids.has(id)) duplicates.add(id);
+        ids.add(id);
+    }
+    if (duplicates.size > 0) {
+        throw new Error(`Demo diagram has duplicate node id(s): ${[...duplicates].join(', ')}`);
+    }
+
+    const normalizedNodes = nodes.map((node) => {
+        const normalized = { ...node };
+
+        if (typeof normalized.fillStyle === 'string') {
+            normalized.fillStyle = { color: normalized.fillStyle };
+        }
+
+        if (normalized.strokeStyle && typeof normalized.strokeStyle === 'object') {
+            const stroke = { ...normalized.strokeStyle };
+            if (stroke.arrow && !stroke.arrow_at) {
+                stroke.arrow_at = stroke.arrow;
+            }
+            delete stroke.arrow;
+            normalized.strokeStyle = stroke;
+        }
+
+        return normalized;
+    });
+
+    return {
+        ...diagram,
+        nodes: normalizedNodes,
     };
 }
 
@@ -183,6 +232,21 @@ function mountBase(target, seed, createView, fitPadding) {
         registerAdapters();
         const view = createView(seed.id, host);
         seed.populate(view);
+
+        // Guard against accidental duplicate node references inside demo layers.
+        for (const layer of view.layers || []) {
+            const ids = Array.isArray(layer?.nodes) ? layer.nodes : [];
+            const seen = new Set();
+            const duplicates = new Set();
+            for (const id of ids) {
+                if (seen.has(id)) duplicates.add(id);
+                seen.add(id);
+            }
+            if (duplicates.size > 0) {
+                throw new Error(`Demo layer '${layer.id}' contains duplicate node id reference(s): ${[...duplicates].join(', ')}`);
+            }
+        }
+
         view.fitToNodes(fitPadding, 'center');
         return view;
     };

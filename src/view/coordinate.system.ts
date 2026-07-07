@@ -290,12 +290,11 @@ export class CoordinateSystem {
      * @returns true if the point is within the stroke, false otherwise
      */
     public isPointInStroke(path: Path2D, x: number, y: number, lineWidth?: number): boolean {
-        if (!lineWidth || lineWidth <= 0) {
-            return this.context.isPointInStroke(path, x, y);
-        }
-
         this.context.save();
-        this.context.lineWidth = lineWidth;
+        this.context.setTransform(1, 0, 0, 1, 0, 0);
+        if (lineWidth && lineWidth > 0) {
+            this.context.lineWidth = lineWidth;
+        }
         const hit = this.context.isPointInStroke(path, x, y);
         this.context.restore();
         return hit;
@@ -310,7 +309,11 @@ export class CoordinateSystem {
      * @returns true if the point is within the path, false otherwise
      */
     public isPointInPath(path: Path2D, x: number, y: number): boolean {
-        return this.context.isPointInPath(path, x, y);
+        this.context.save();
+        this.context.setTransform(1, 0, 0, 1, 0, 0);
+        const hit = this.context.isPointInPath(path, x, y);
+        this.context.restore();
+        return hit;
     }
 
 }

@@ -199,6 +199,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
         this.syncCanvasSize();
         this.bindResizeObserver();
+        this.bindDprObserver();
         this.applyInitialView(options?.initialView);
         this.initializeSelection(options);
         this.bindCanvasEvents();
@@ -1481,6 +1482,19 @@ export class DiagramView extends Diagram implements HasSelection {
             this.render();
         });
         this.resizeObserver.observe(this.host);
+    }
+
+    private bindDprObserver(): void {
+        if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+        const dpr = window.devicePixelRatio ?? 1;
+        const mq = window.matchMedia(`(resolution: ${dpr}dppx)`);
+        const onChange = () => {
+            this.syncCanvasSize();
+            this.render();
+            // Re-register for the next DPR change (handles multiple monitor moves).
+            this.bindDprObserver();
+        };
+        mq.addEventListener('change', onChange, { once: true });
     }
 
     private bindCanvasEvents(): void {

@@ -1146,6 +1146,7 @@ export class RenderBasics {
 
         if (color === 'inherit') {
             context.fillStyle = fillColor(node);
+            console.log(`Warning: Node ${node.id} has fillStyle.color set to ${context.fillStyle}.`);
         } else {
             context.fillStyle = color;
         }

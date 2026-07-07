@@ -208,7 +208,7 @@ export function strokeColor(node: INode): string {
 }
 
 export function fillColor(node: INode): string {
-    return node.fillStyle?.color || '#ffffff';
+    return node.fillStyle?.color || 'transparent';
 }
 
 export function fillStyle(node: INode): FillStyle {

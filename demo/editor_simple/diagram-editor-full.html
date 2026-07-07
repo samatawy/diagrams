@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1" />
+    <title>DiagramEditor — Full Screen</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #diagram-editor-host {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="diagram-editor-host"></div>
+    <script type="module"
+            src="./diagram-editor.js"></script>
+</body>
+
+</html>

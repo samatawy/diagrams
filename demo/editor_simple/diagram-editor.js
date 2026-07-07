@@ -1,5 +1,5 @@
 import { DiagramEditor } from '../../dist/index.js';
-import { registerAdapters } from '../demo-common.js';
+import { registerAdapters, normalizeDemoDiagram } from '../demo-common.js';
 
 registerAdapters();
 
@@ -9,7 +9,7 @@ if (!host) throw new Error('Host element not found');
 const editor = new DiagramEditor(host);
 
 const view = editor.getDiagramView();
-view.loadDiagram({
+view.loadDiagram(normalizeDemoDiagram({
     "id": "diagram-1782205972639",
     "nodes": [
         {
@@ -18,7 +18,8 @@ view.loadDiagram({
             "text": "Software Access Subsystem",
             "textStyle": { "align": "center", "baseline": "bottom", "fontFace": "Georgia", "size": 22, "weight": 700, "orientation": "horizontal" },
             "strokeStyle": { "color": "#0f172a", "width": 1 },
-            "fillStyle": "transparent", "hollow": true, "image_mode": "none"
+            "fillStyle": { "color": "transparent" },
+            "hollow": true, "image_mode": "none"
         }, {
             "id": "round_rectangle-drop-1782206047672-ovcf8", "type": "round_rectangle",
             "points": [{ "x": -35.558415757393114, "y": 95.99999999999996 }, { "x": 108.44158424260591, "y": 144 }],
@@ -26,7 +27,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0d6327", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "transparent" },
             "ready": true,
             "strokeStyle": { "color": "#0d6327", "width": 2 },
-            "fillStyle": "#d3effd",
+            "fillStyle": { "color": "#d3effd" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } }
         }, {
             "id": "round_rectangle-drop-1782206049993-aoeqg", "type": "round_rectangle",
@@ -34,7 +35,7 @@ view.loadDiagram({
             "hollow": false, "text": "Roles",
             "textStyle": { "color": "#0d6327", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "transparent" },
             "ready": true, "strokeStyle": { "color": "#0d6327", "width": 2 },
-            "fillStyle": "#d3effd",
+            "fillStyle": { "color": "#d3effd" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } }
         }, {
             "id": "round_rectangle-drop-1782206052431-bs399", "type": "round_rectangle",
@@ -43,7 +44,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0d6327", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "transparent" },
             "ready": true,
             "strokeStyle": { "color": "#0d6327", "width": 2 },
-            "fillStyle": "#d3effd",
+            "fillStyle": { "color": "#d3effd" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } }
         }, {
             "id": "rectangle-drop-1782206056828-x2vw4", "type": "rectangle",
@@ -52,7 +53,7 @@ view.loadDiagram({
             "textStyle": { "color": "#459274", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "transparent" },
             "ready": true,
             "strokeStyle": { "color": "#459274", "width": 2 },
-            "fillStyle": "#ffffff",
+            "fillStyle": { "color": "#ffffff" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } }
         }, {
             "id": "rectangle-drop-1782206059462-zzr4q", "type": "rectangle",
@@ -60,7 +61,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0d6327", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "transparent" },
             "ready": true,
             "strokeStyle": { "color": "#0d6327", "width": 2, "arrow_at": "end" },
-            "fillStyle": "#d3effd",
+            "fillStyle": { "color": "#d3effd" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } }
         }, {
             "id": "trapezoid-drop-1782206074206-0lji3", "type": "trapezoid",
@@ -69,7 +70,7 @@ view.loadDiagram({
             "textStyle": { "color": "#4c1d95", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "transparent" },
             "ready": true,
             "strokeStyle": { "color": "#7c3aed", "width": 2 },
-            "fillStyle": "#ede9fe",
+            "fillStyle": { "color": "#ede9fe" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } }
         }, {
             "id": "rhombus-drop-1782206090864-tibza", "type": "rhombus",
@@ -78,7 +79,7 @@ view.loadDiagram({
             "textStyle": { "color": "#4c1d95", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "transparent" },
             "ready": true,
             "strokeStyle": { "color": "#7c3aed", "width": 2, "arrow_at": "end" },
-            "fillStyle": "#ede9fe",
+            "fillStyle": { "color": "#ede9fe" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } }
         }, {
             "id": "document-drop-1782206098409-frkde", "type": "document",
@@ -87,7 +88,7 @@ view.loadDiagram({
             "textStyle": { "color": "#456eb0", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "transparent" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 2 },
-            "fillStyle": "#ffffff",
+            "fillStyle": { "color": "#d3effd" },
             "shadowStyle": { "name": "Shadow", "color": "inherit", "blur": 8, "offset": { "x": 4, "y": 4 } }
         }, {
             "id": "parallelogram-drop-1782206107301-vbi0g", "type": "parallelogram",
@@ -105,7 +106,7 @@ view.loadDiagram({
             "textStyle": { "color": "#459274", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "transparent" },
             "ready": true,
             "strokeStyle": { "color": "#459274", "width": 2 },
-            "fillStyle": "#ffffff",
+            "fillStyle": { "color": "#ffffff" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } }
         }, {
             "id": "line-draft-1782206385370", "type": "line",
@@ -114,7 +115,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "bottom", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "end" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } }
         }, {
             "id": "line-draft-1782206428606", "type": "line",
@@ -123,7 +124,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "bottom", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "end" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } },
             "from": { "node": "round_rectangle-drop-1782206049993-aoeqg", "handle": "e" },
             "to": { "node": "round_rectangle-drop-1782206052431-bs399", "handle": "w" }
@@ -134,7 +135,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "bottom", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "end" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } },
             "from": { "node": "round_rectangle-drop-1782206047672-ovcf8", "handle": "w" },
             "to": { "node": "rectangle-drop-1782206150129-r64b3", "handle": "w" }
@@ -145,7 +146,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "bottom", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "end" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } },
             "from": { "node": "round_rectangle-drop-1782206049993-aoeqg", "handle": "s" },
             "to": { "node": "rectangle-drop-1782206059462-zzr4q", "handle": "n" }
@@ -156,7 +157,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "bottom", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "end" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } },
             "from": { "node": "trapezoid-drop-1782206074206-0lji3", "handle": "e" },
             "to": { "node": "rhombus-drop-1782206090864-tibza", "handle": "w" }
@@ -167,7 +168,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "bottom", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "end" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } },
             "from": { "node": "rhombus-drop-1782206090864-tibza", "handle": "e" },
             "to": { "node": "parallelogram-drop-1782206107301-vbi0g", "handle": "w" }
@@ -178,7 +179,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "bottom", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "end" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } },
             "from": { "node": "rhombus-drop-1782206090864-tibza", "handle": "s" },
             "geometry": { "from_handle": "s", "to_handle": "n" },
@@ -190,7 +191,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "bottom", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "start" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } },
             "from": { "node": "rectangle-drop-1782206059462-zzr4q", "handle": "s" },
             "to": { "node": "rhombus-drop-1782206090864-tibza", "handle": "n" }
@@ -201,7 +202,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 700, "italic": false, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "end" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } },
             "to": { "node": "trapezoid-drop-1782206074206-0lji3", "handle": "sw" }
         }, {
@@ -211,7 +212,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "end" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } },
             "from": { "node": "parallelogram-drop-1782206107301-vbi0g", "handle": "n" },
             "to": { "node": "rectangle-drop-1782206056828-x2vw4", "handle": "s" }
@@ -222,7 +223,7 @@ view.loadDiagram({
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
             "ready": true,
             "strokeStyle": { "color": "#0f172a", "width": 1, "arrow_at": "end" },
-            "fillStyle": "transparent",
+            "fillStyle": { "color": "transparent" },
             "shadowStyle": { "name": "Custom", "color": "transparent", "blur": 0, "offset": { "x": 0, "y": 0 } },
             "from": { "node": "document-drop-1782206098409-frkde", "handle": "e" },
             "geometry": { "from_handle": "e", "to_handle": "e" },
@@ -252,7 +253,7 @@ view.loadDiagram({
                     "line-draft-1782212701801",
                     "manhattan-draft-1782212724191"]
             }]
-});
+}));
 
 setTimeout(() => {
     view.fitToNodes(48, { horizontal: 'center', vertical: 'center' });

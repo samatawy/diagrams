@@ -953,11 +953,8 @@ export class DiagramEditView extends DiagramView {
      */
     public get fillStyle(): FillStyle {
         return {
-            color: this.settings.strokeColor,
-            // width: this.settings.lineWidth,
-            // dash: this.settings.lineDash,
-            // arrow_at: this.settings.arrow_at,
-            // arrow_type: this.settings.arrow_type,
+            color: this.settings.fillColor,
+            gradient: this.settings.fillGradient,
         };
     }
 
@@ -3460,12 +3457,20 @@ export class DiagramEditView extends DiagramView {
         if (this.downHandle === NodeHandle.MOVE || this.downHandle === NodeHandle.N || this.downHandle === NodeHandle.S
             || this.downHandle === NodeHandle.E || this.downHandle === NodeHandle.W || this.downHandle === NodeHandle.NE
             || this.downHandle === NodeHandle.NW || this.downHandle === NodeHandle.SE || this.downHandle === NodeHandle.SW) {
-            this.applyGuideSnapForSelection(this.downHandle, event.altKey);
+            const isResize = this.downHandle !== NodeHandle.MOVE;
+            const snapNodes = isResize && this.downShape && !this.keyboardFlags.applyToAll
+                ? [this.downShape]
+                : this.selection();
+            this.applyGuideSnapForSelection(snapNodes, this.downHandle, event.altKey);
         }
 
         if (this.grid && this.grid.forced && !event.ctrlKey) {
             if (this.downHandle !== NodeHandle.ROTATE) {
-                this.applyGridSnapForSelection(this.downHandle ?? NodeHandle.MOVE);
+                const isResize = this.downHandle !== NodeHandle.MOVE;
+                const snapNodes = isResize && this.downShape && !this.keyboardFlags.applyToAll
+                    ? [this.downShape]
+                    : this.selection();
+                this.applyGridSnapForSelection(snapNodes, this.downHandle ?? NodeHandle.MOVE);
             }
         }
 
@@ -5130,16 +5135,16 @@ export class DiagramEditView extends DiagramView {
      * @param handle The handle used for the operation.
      * @param preserveAspect Whether to preserve aspect ratio.
      */
-    private applyGuideSnapForSelection(handle: NodeHandle, preserveAspect?: boolean): void {
+    private applyGuideSnapForSelection(nodes: INode[], handle: NodeHandle, preserveAspect?: boolean): void {
         const group = this.downShape ? this.nodeGroup(this.downShape) : undefined;
         if (!group || !this.downShape) {
-            this.applyPendingGuideSnap(this.selection(), handle, preserveAspect);
+            this.applyPendingGuideSnap(nodes, handle, preserveAspect);
             return;
         }
 
         const owner = this.groupOwner(group);
         if (!owner) {
-            this.applyPendingGuideSnap(this.selection(), handle, preserveAspect);
+            this.applyPendingGuideSnap(nodes, handle, preserveAspect);
             return;
         }
 
@@ -5154,7 +5159,7 @@ export class DiagramEditView extends DiagramView {
 
         if (handle === NodeHandle.MOVE) {
             /* Keep grouped nodes rigid: apply the same guide snap delta to the moved selection. */
-            this.applyPendingGuideSnap(this.selection(), handle, preserveAspect);
+            this.applyPendingGuideSnap(nodes, handle, preserveAspect);
             return;
         }
 
@@ -5166,13 +5171,13 @@ export class DiagramEditView extends DiagramView {
      * This handles groups and containers properly.
      * @param handle The handle used for the operation.
      */
-    private applyGridSnapForSelection(handle: NodeHandle): void {
+    private applyGridSnapForSelection(nodes: INode[], handle: NodeHandle): void {
         if (!this.grid) {
             return;
         }
 
         const snappedOwners = new Set<string>();
-        for (const shape of this.selection()) {
+        for (const shape of nodes) {
             const adapter = NodeRegistry.adapter(shape.type);
             if (!adapter?.snapToGrid) {
                 continue;
