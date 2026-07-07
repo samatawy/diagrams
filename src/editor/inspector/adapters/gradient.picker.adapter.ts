@@ -1,5 +1,5 @@
 import { GradientPicker } from '../../gradient/gradient.picker';
-import type { GradientValue } from '../../../color.types';
+import type { IGradient } from '../../../color.types';
 import { CHECKER_CSS_IMAGE } from '../../../color.types';
 import { buildGradientCss } from '../../gradient/color.utils';
 import { InspectorAdapter, type EditableRecord, type InspectorAdapterInit } from '../inspector.adapter';
@@ -20,7 +20,7 @@ export class GradientPickerAdapter extends InspectorAdapter {
     private readonly trigger: HTMLButtonElement;
     /** Inner swatch div — gradient background lives here so CSS `>* opacity:0` hides it during mixed/unset. */
     private readonly swatch: HTMLDivElement;
-    private _value: GradientValue | null = null;
+    private _value: IGradient | null = null;
     private _picker: GradientPicker | null = null;
 
     constructor(cell: HTMLElement, mixedClassName: string, _initial: InspectorAdapterInit) {
@@ -64,7 +64,7 @@ export class GradientPickerAdapter extends InspectorAdapter {
     override showValue(editable: EditableRecord): void {
         const { key, value } = this.extractValueFrom(editable);
         this.returnKey = key;
-        const gradient = value as GradientValue | undefined | null;
+        const gradient = value as IGradient | undefined | null;
         const hasValue = gradient != null && Array.isArray(gradient.stops) && gradient.stops.length > 0;
         this.setUnset(!hasValue);
         this._value = hasValue ? gradient : null;

@@ -1,7 +1,7 @@
 import { TRANSPARENT_CSS_PATTERN, CHECKER_CSS_IMAGE } from '../../color.types';
 import { injectStyles, setClasses, toggleClasses } from '../editor.utils';
 import DEFAULT_STYLES from '../../css_generated/editor/gradient/gradient.picker.css';
-import type { GradientStop, GradientType, GradientValue } from '../../color.types';
+import type { GradientStop, GradientType, IGradient } from '../../color.types';
 import { buildGradientCss, hslToRgba, parseColor, rgbaToCss, rgbaToHex, rgbaToHsl } from './color.utils';
 
 const STYLE_ID = 'gradient-picker-defaults';
@@ -23,7 +23,7 @@ function clamp(v: number, min: number, max: number): number {
     return Math.max(min, Math.min(max, v));
 }
 
-function defaultValue(): GradientValue {
+function defaultValue(): IGradient {
     return {
         type: 'linear',
         angle: 90,
@@ -57,10 +57,10 @@ function defaultValue(): GradientValue {
 export class GradientPicker {
 
     /** Fires whenever the gradient value changes. */
-    public onChange: ((value: GradientValue) => void) | null = null;
+    public onChange: ((value: IGradient) => void) | null = null;
 
     private readonly panel: HTMLElement;
-    private _value: GradientValue;
+    private _value: IGradient;
     private _selectedStopId: string | null = null;
     private _colorMode: 'rgba' | 'hsla' | 'hex' = 'rgba';
 
@@ -103,7 +103,7 @@ export class GradientPicker {
 
     private readonly _onDocClick: (e: Event) => void;
 
-    constructor(container: HTMLElement, initial?: Partial<GradientValue>) {
+    constructor(container: HTMLElement, initial?: Partial<IGradient>) {
         ensureDefaultStyles();
 
         const base = defaultValue();
@@ -151,8 +151,8 @@ export class GradientPicker {
      */
     public static open(
         anchor: HTMLElement,
-        initial?: GradientValue,
-        onChange?: (v: GradientValue) => void,
+        initial?: IGradient,
+        onChange?: (v: IGradient) => void,
     ): GradientPicker {
         const picker = new GradientPicker(document.body, initial);
         if (onChange) picker.onChange = onChange;
@@ -188,12 +188,12 @@ export class GradientPicker {
     // ---- Value ---------------------------------------------------------
 
     /** Returns a deep copy of the current gradient value. */
-    public get value(): GradientValue {
+    public get value(): IGradient {
         return { ...this._value, stops: this._value.stops.map(s => ({ ...s })) };
     }
 
     /** Replaces the current value and re-renders the panel. */
-    public set value(v: GradientValue) {
+    public set value(v: IGradient) {
         this._value = { ...v, stops: v.stops.map(s => ({ ...s })) };
         this.syncAll();
     }

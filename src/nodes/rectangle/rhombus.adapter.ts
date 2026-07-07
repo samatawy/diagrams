@@ -15,6 +15,8 @@ export class RhombusAdapter extends RectangleAdapter {
 
     public static TYPE = 'rhombus';
 
+    min_width: number = 16;
+    min_height: number = 16;
     connection_handles: NodeHandle[] = [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W];
 
     render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {

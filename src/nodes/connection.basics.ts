@@ -5,6 +5,7 @@ import type { CoordinateSystem } from "../view/coordinate.system";
 import { NodeRegistry } from "../factory/node.registry";
 import { NodeBasics } from "./node.basics";
 import { DiagramConstants } from "../model/diagram.constants";
+import { SelectionBasics } from "./selection.basics";
 
 type InteractiveDiagram = INode['owner'] & {
     getCoordinates(): CoordinateSystem;
@@ -47,7 +48,11 @@ export class ConnectionBasics {
         if (node.points.length > 0) {
             const point = node.points[0]!;
             if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
-                const fromAnchor = this.getPointerConnectionAnchor(node, x, y);
+                let fromAnchor = this.getPointerConnectionAnchor(node, x, y);
+                if (!fromAnchor || fromAnchor?.handle === NodeHandle.MOVE) {
+                    const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
+                    fromAnchor = this.getNearestSupportedAnchor(target!, hit);
+                }
                 const toAnchor = node.to;
 
                 if (fromAnchor && !this.isSameAnchor(fromAnchor, toAnchor)) {
@@ -64,7 +69,11 @@ export class ConnectionBasics {
             const point = node.points[node.points.length - 1]!;
             if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
                 const fromAnchor = node.from;
-                const toAnchor = this.getPointerConnectionAnchor(node, x, y);
+                let toAnchor = this.getPointerConnectionAnchor(node, x, y);
+                if (!toAnchor || toAnchor?.handle === NodeHandle.MOVE) {
+                    const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
+                    toAnchor = this.getNearestSupportedAnchor(target!, hit);
+                }
 
                 if (toAnchor && (!this.isSameAnchor(toAnchor, fromAnchor))) {
                     node.to = toAnchor;
@@ -252,7 +261,7 @@ export class ConnectionBasics {
      * @param tolerance Maximum distance used while selecting the nearest supported handle.
      * @returns The updated anchor if one could be resolved, otherwise undefined.
      */
-    public static reconnectToBestHandle(node: INode & IConnection, endpoint: 'from' | 'to', tolerance: number = DiagramConstants.HANDLE_HIT_EPSILON): IConnectionAnchor | undefined {
+    public static reconnectToBestHandle(node: INode & IConnection, endpoint: 'from' | 'to', tolerance: number = 24): IConnectionAnchor | undefined {
         const anchor = endpoint === 'from' ? node.from : node.to;
         if (!anchor) {
             return undefined;
@@ -295,7 +304,7 @@ export class ConnectionBasics {
      * @param tolerance Maximum distance used while selecting a handle.
      * @returns A normalized anchor for the target, or undefined when no supported handle is found.
      */
-    private static getNearestSupportedAnchor(target: INode, nearPoint: IPoint, tolerance: number = DiagramConstants.HANDLE_HIT_EPSILON): IConnectionAnchor | undefined {
+    private static getNearestSupportedAnchor(target: INode, nearPoint: IPoint, tolerance: number = 24): IConnectionAnchor | undefined {
         const diagram = target.owner;
         if (!isDiagramViewLike(diagram)) {
             return undefined;

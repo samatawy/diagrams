@@ -1,5 +1,6 @@
 import type { IConnectionAnchor, IGrid, INode } from "../interfaces";
 import type { EmbeddedSheet } from "../sheets/spec.sheet";
+import type { FillStyle } from "../style.interfaces";
 
 /**
  * An ISerializer defines the methods for serializing and deserializing data, allowing objects to be converted to and from a string representation.
@@ -63,7 +64,7 @@ export interface ISerializedDiagram {
     layers: ISerializedLayer[];
     sheet_id?: string;
     sheet?: EmbeddedSheet;
-    background?: string;
+    background?: FillStyle;
     meta?: Record<string, unknown>;
     image_assets?: Record<string, string>;
 }

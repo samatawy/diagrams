@@ -1,5 +1,5 @@
 import type { INode } from "../../interfaces";
-import type { IPoint, IRect, NodeHandle } from "../../types";
+import { NodeHandle, type IPoint, type IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "./rectangle.adapter";
@@ -15,6 +15,8 @@ import { DiagramConstants } from "../../model/diagram.constants";
 export class TrapezoidAdapter extends RectangleAdapter {
 
     public static TYPE = 'trapezoid';
+
+    connection_handles: NodeHandle[] = [NodeHandle.N, NodeHandle.S];
 
     public override render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
@@ -192,6 +194,8 @@ export class TrapezoidAdapter extends RectangleAdapter {
     }
 
     public afterResize(node: INode, _handle: NodeHandle): void {
+        super.afterResize(node, _handle);
+
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         if (!node.geometry || typeof node.geometry.skew !== 'number' || !Number.isFinite(node.geometry.skew)) return;

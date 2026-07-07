@@ -167,4 +167,17 @@ export class NodeRegistry {
         const handler = this._nodes.get(node.type);
         return handler ? handler.canConnect(node, direction, handle, { x: 0, y: 0 }) : false;
     }
+
+    /**
+     * Invokes the afterResize method of the node handler for the specified node type.
+     * This method is called after a node has been resized to allow the handler to perform any necessary adjustments or updates.
+     * @param node The node instance that was resized.
+     * @param handle The handle that was used to resize the node.
+     */
+    public static afterResize(node: INode, handle: NodeHandle): void {
+        const handler = this._nodes.get(node.type);
+        if (handler && typeof handler.afterResize === 'function') {
+            handler.afterResize(node, handle);
+        }
+    }
 }

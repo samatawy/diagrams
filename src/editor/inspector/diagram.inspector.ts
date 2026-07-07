@@ -154,16 +154,56 @@ export class DiagramInspector extends Inspector {
             readonly: readonly,
             isVisible: noSelection,
         });
-        this.addRow(diagramGrid, {
-            key: 'diagram.background',
-            label: 'Background',
+
+        // ---- Diagram section (visible only when nothing is selected) ----
+        const { grid: diagramFillGrid } = this.buildSection('Background', 'collapsed');
+        this.addRow(diagramFillGrid, {
+            key: 'diagram.background.color',
+            label: 'Color',
             type: 'string',
             editor: 'ColorSelect',
             editorOptions: { ...(this.inspectorConfig.colorSelect || {}), allowEmpty: true },
             readonly: readonly,
             isVisible: noSelection,
         });
-        const { grid: diagramMetaGridEl } = this.buildSection('Diagram Metadata', 'expanded');
+        this.addRow(diagramFillGrid, {
+            key: 'diagram.background.gradient', label: 'Gradient',
+            type: 'string', editor: 'GradientPicker',
+            readonly: readonly, isVisible: noSelection,
+        });
+
+        const { grid: diagramSettingsGrid } = this.buildSection('Settings', 'collapsed');
+        this.addRow(diagramSettingsGrid, {
+            key: 'grid.visible',
+            label: 'Show Grid',
+            type: 'boolean',
+            readonly: false,
+            isVisible: noSelection,
+        });
+        this.addRow(diagramSettingsGrid, {
+            key: 'grid.forced',
+            label: 'Snap Grid',
+            type: 'boolean',
+            readonly: false,
+            isVisible: noSelection,
+        });
+        this.addRow(diagramSettingsGrid, {
+            key: 'guideOptions.visible',
+            label: 'Guide Lines',
+            type: 'boolean',
+            readonly: false,
+            isVisible: noSelection,
+        });
+        this.addRow(diagramSettingsGrid, {
+            key: 'guideOptions.snap',
+            label: 'Line Snap',
+            type: 'boolean',
+            readonly: false,
+            isVisible: noSelection,
+        });
+
+        // ---- Diagram Meta section (visible only when nothing is selected) ----
+        const { grid: diagramMetaGridEl } = this.buildSection('Diagram Metadata', 'collapsed');
         this.diagramMetaGrid = diagramMetaGridEl;
         this.addRow(diagramMetaGridEl, {
             key: 'diagram.meta.__add',

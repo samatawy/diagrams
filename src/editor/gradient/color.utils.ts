@@ -1,4 +1,4 @@
-import type { GradientValue, HSL, RGBA } from "../../color.types";
+import type { IGradient, HSL, RGBA } from "../../color.types";
 import type { IRect } from "../../types";
 
 
@@ -90,7 +90,7 @@ export function hslToRgba(hsl: HSL, a = 1): RGBA {
 
 // ---- Gradient CSS generator --------------------------------------------
 
-export function buildGradientCss(v: GradientValue): string {
+export function buildGradientCss(v: IGradient): string {
     const stops = [...v.stops]
         .sort((a, b) => a.position - b.position)
         .map(s => `${s.color} ${s.position}%`)
@@ -113,7 +113,7 @@ export interface CanvasGradientArgs {
     angle: number;             // radians, for conic only
 }
 
-export function gradientArgsForBox(g: GradientValue, rect: IRect): CanvasGradientArgs {
+export function gradientArgsForBox(g: IGradient, rect: IRect): CanvasGradientArgs {
 
     const { left: x, top: y, width: w, height: h } = rect;
 

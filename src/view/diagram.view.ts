@@ -31,6 +31,7 @@ import { GroupBasics } from "../nodes/group.basics";
 import type { AnimationChannelType, AnimationLineDash, AnimationMode } from "../animation.types";
 import { DiagramAnimations } from "../layout/animations";
 import { deepClone } from "../value.utils";
+import { RenderBasics } from "../nodes";
 
 export type RenderMode = 'view' | 'editing';
 
@@ -107,7 +108,7 @@ export class DiagramView extends Diagram implements HasSelection {
     public grid: IGrid;
 
     public guideOptions: DiagramGuideOptions = {
-        render: true,
+        visible: true,
         snap: true,
     };
 
@@ -643,10 +644,13 @@ export class DiagramView extends Diagram implements HasSelection {
         this.coordinates.resetTransform(this.context);
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        const background = this.background ?? this.canvasBackgroundColor;
-        if (background && background !== 'transparent') {
+        const background = this.background ?? { color: this.canvasBackgroundColor };
+        if ((background.color && background.color !== 'transparent') || background.gradient) {
             this.context.save();
-            this.context.fillStyle = background;
+            // this.context.fillStyle = background.color;
+            RenderBasics.applyContextFillStyle(background,
+                { left: 0, top: 0, width: this.canvas.width, height: this.canvas.height },
+                this.context);
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.context.restore();
         }

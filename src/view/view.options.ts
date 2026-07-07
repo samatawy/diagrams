@@ -37,7 +37,7 @@ export interface DiagramSelectionOptions {
  * Options for rendering and snapping guides in the diagram view.
  */
 export interface DiagramGuideOptions {
-    render: boolean;
+    visible: boolean;
     snap: boolean;
     render_threshold?: number;
     snap_threshold?: number;

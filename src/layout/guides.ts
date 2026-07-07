@@ -296,7 +296,7 @@ export class Guides {
         const zoom = input.diagram.getCoordinates().zoom || 1;
         for (const node of input.nodes) {
             NodeBasics.resizeHandle(node, input.handle, dx * zoom, dy * zoom, input.preserveAspect);
-            NodeRegistry.adapter(node.type)?.afterResize?.(node, input.handle);
+            NodeRegistry.afterResize(node, input.handle);
         }
         return true;
     }

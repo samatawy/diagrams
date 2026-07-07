@@ -414,7 +414,7 @@ export class DiagramEditor {
                     }
                 },
                 diagram: {
-                    background: 'transparent',
+                    background: { color: 'transparent' },
                 }
             });
             repo.upsertSheet({
@@ -438,7 +438,7 @@ export class DiagramEditor {
                     }
                 },
                 diagram: {
-                    background: 'transparent',
+                    background: { color: 'transparent' },
                 }
             });
 

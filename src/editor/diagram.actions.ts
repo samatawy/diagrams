@@ -220,8 +220,8 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         label: 'Show Guides',
         tooltip: 'Toggle guide visibility',
         toggle: true,
-        execute: (d) => d.updateGuides({ render: !d.guideOptions?.render }),
-        isActive: (d) => !!d.guideOptions?.render,
+        execute: (d) => d.updateGuides({ visible: !d.guideOptions?.visible }),
+        isActive: (d) => !!d.guideOptions?.visible,
     },
     {
         id: 'snap-guides',

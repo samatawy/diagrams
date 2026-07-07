@@ -281,7 +281,7 @@ export interface IDiagram extends Serializable {
     layers: ILayer[];
     sheet_id?: string;
     // sheet: SheetStyles;
-    background?: string;
+    background?: FillStyle;
     meta?: Record<string, unknown>;
     grid?: IGrid;
 

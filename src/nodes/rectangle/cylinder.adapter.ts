@@ -256,6 +256,8 @@ export class CylinderAdapter extends RectangleAdapter {
     }
 
     public afterResize(node: INode, _handle: NodeHandle): void {
+        super.afterResize(node, _handle);
+
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         if (!node.geometry || typeof node.geometry.aspect !== 'number' || !Number.isFinite(node.geometry.aspect)) return;

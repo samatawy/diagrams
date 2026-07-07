@@ -34,8 +34,8 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
         // Guides
 
         kb.setShortcut(['Ctrl+Alt+L', 'Cmd+Alt+L'], (d: DiagramEditView) => {
-            const visible = d.guideOptions.render;
-            d.updateGuides({ render: !visible, snap: !visible });
+            const visible = d.guideOptions.visible;
+            d.updateGuides({ visible: !visible, snap: !visible });
         }, 'Toggle guides (visible and snapping)');
 
         // Grid 

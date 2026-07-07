@@ -245,9 +245,9 @@ export class MinimapView {
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         const background = source.background;
-        if (background && background !== 'transparent') {
+        if (background?.color && background.color !== 'transparent') {
             this.context.save();
-            this.context.fillStyle = background;
+            this.context.fillStyle = background.color;
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
             this.context.restore();
         }

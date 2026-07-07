@@ -123,7 +123,7 @@ export function textHaloColor(node: INode): string {    //} | undefined {
     // if (fill && fill !== 'transparent' && colorContrastsWithText(fill, tc)) return fill;
 
     const diagram = node.owner as any;
-    const bg = diagram?.background ?? diagram?.canvasBackgroundColor;
+    const bg = diagram?.background?.color ?? diagram?.canvasBackgroundColor;
     if (bg && bg !== 'transparent' && colorContrastsWithText(bg, tc)) return bg;
 
     // Last resort: a pure-contrast fallback guaranteed to work.

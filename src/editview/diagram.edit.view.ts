@@ -63,7 +63,7 @@ import { GroupBasics } from "../nodes/group.basics";
 import type { SheetRepository } from "../sheets/sheet.repository";
 import type { NodeStyle, SpecSheet } from "../sheets/spec.sheet";
 import type { AnimationMode } from "../animation.types";
-import type { GradientValue } from "../color.types";
+import type { IGradient } from "../color.types";
 import { GradientPicker } from "../editor/gradient/gradient.picker";
 
 
@@ -120,7 +120,7 @@ export class DiagramEditView extends DiagramView {
         arrow_type: ArrowType;
         strokeColor: string;
         fillColor: string;
-        fillGradient?: GradientValue;
+        fillGradient?: IGradient;
         shadowColor: string;
         shadowBlur: number;
         shadowOffsetX: number;
@@ -1234,13 +1234,26 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Sets background.
+     * Sets background color.
      * @param color The color value.
      * @returns Nothing.
      */
-    public setBackground(color: string): void {
+    public setBackgroundColor(color: string): void {
         this.addUndo();
-        this.background = color;
+        this.background = { ...this.background ?? {}, color };
+        this.render('all');
+        this.renderPreview();
+        this.eventDispatcher.styleChanged('set-background');
+    }
+
+    /**
+     * Sets background.
+     * @param style The FillStyle value.
+     * @returns Nothing.
+     */
+    public setBackground(style: FillStyle): void {
+        this.addUndo();
+        this.background = { ...this.background ?? {}, ...style };
         this.render('all');
         this.renderPreview();
         this.eventDispatcher.styleChanged('set-background');
@@ -1578,12 +1591,17 @@ export class DiagramEditView extends DiagramView {
         if (patch['strokeStyle.arrow_type'] !== undefined) this.settings.arrow_type = patch['strokeStyle.arrow_type'] as ArrowType;
 
         if (patch['fillStyle.color'] !== undefined) this.settings.fillColor = String(patch['fillStyle.color']);
-        if (patch['fillStyle.gradient'] !== undefined) this.settings.fillGradient = { ...patch['fillStyle.gradient'] } as GradientValue;
+        if (patch['fillStyle.gradient'] !== undefined) this.settings.fillGradient = { ...patch['fillStyle.gradient'] } as IGradient;
 
         if (patch['shadowStyle.color'] !== undefined) this.settings.shadowColor = String(patch['shadowStyle.color']);
         if (patch['shadowStyle.blur'] !== undefined) this.settings.shadowBlur = Number(patch['shadowStyle.blur']);
         if (patch['shadowStyle.offset.x'] !== undefined) this.settings.shadowOffsetX = Number(patch['shadowStyle.offset.x']);
         if (patch['shadowStyle.offset.y'] !== undefined) this.settings.shadowOffsetY = Number(patch['shadowStyle.offset.y']);
+
+        if (patch['grid.visible'] !== undefined) this.grid.visible = Boolean(patch['grid.visible']);
+        if (patch['grid.forced'] !== undefined) this.grid.forced = Boolean(patch['grid.forced']);
+        if (patch['guideOptions.visible'] !== undefined) this.guideOptions.visible = Boolean(patch['guideOptions.visible']);
+        if (patch['guideOptions.snap'] !== undefined) this.guideOptions.snap = Boolean(patch['guideOptions.snap']);
 
         this.color_palette.refresh();
 
@@ -1617,7 +1635,7 @@ export class DiagramEditView extends DiagramView {
             if (patch['strokeStyle.arrow_type'] !== undefined) nodeStyle.strokeStyle!.arrow_type = patch['strokeStyle.arrow_type'] as ArrowType;
 
             if (patch['fillStyle.color'] !== undefined) nodeStyle.fillStyle!.color = patch['fillStyle.color'] as string;
-            if (patch['fillStyle.gradient'] !== undefined) nodeStyle.fillStyle!.gradient = { ...patch['fillStyle.gradient'] } as GradientValue;
+            if (patch['fillStyle.gradient'] !== undefined) nodeStyle.fillStyle!.gradient = { ...patch['fillStyle.gradient'] } as IGradient;
 
             if (patch['shadowStyle.color'] !== undefined) nodeStyle.shadowStyle!.color = patch['shadowStyle.color'] as string;
             if (patch['shadowStyle.blur'] !== undefined) nodeStyle.shadowStyle!.blur = patch['shadowStyle.blur'] as number;
@@ -3130,7 +3148,7 @@ export class DiagramEditView extends DiagramView {
 
             this.guides = [];
             this.pendingGuideSnap = undefined;
-            const useGuides = !!(this.guideOptions.render || this.guideOptions.snap);
+            const useGuides = !!(this.guideOptions.visible || this.guideOptions.snap);
             if (useGuides) {
 
                 if (this.downHandle === NodeHandle.MOVE || this.downHandle === NodeHandle.N || this.downHandle === NodeHandle.S
@@ -3147,7 +3165,7 @@ export class DiagramEditView extends DiagramView {
                     });
 
                     if (guideResult) {
-                        this.guides = this.guideOptions.render ? guideResult.guides : [];
+                        this.guides = this.guideOptions.visible ? guideResult.guides : [];
                         this.pendingGuideSnap = this.guideOptions.snap ? guideResult : undefined;
                         this.render('all');
                     }
@@ -3192,7 +3210,7 @@ export class DiagramEditView extends DiagramView {
 
         this.guides = [];
         this.pendingGuideSnap = undefined;
-        const useGuides = !!(this.guideOptions.render || this.guideOptions.snap);
+        const useGuides = !!(this.guideOptions.visible || this.guideOptions.snap);
         if (useGuides) {
 
             if (handleAllowsGuidePreview || shiftToggleGuidePreview) {
@@ -3206,7 +3224,7 @@ export class DiagramEditView extends DiagramView {
                 });
 
                 if (guideResult) {
-                    this.guides = this.guideOptions.render ? guideResult.guides : [];
+                    this.guides = this.guideOptions.visible ? guideResult.guides : [];
                     this.pendingGuideSnap = this.guideOptions.snap ? guideResult : undefined;
                 }
             }
@@ -3617,6 +3635,8 @@ export class DiagramEditView extends DiagramView {
 
         // TODO: Why is the line here? Must understand.
         this.createMove(event);
+
+        NodeRegistry.afterResize(this.current.draft, NodeHandle.NONE);
 
         if (NodeRegistry.isConnection(this.current.draft.type)) {
             this.renderConnectorTargets(this.current.draft as INode & IConnection, event.offsetX, event.offsetY);
@@ -4941,7 +4961,7 @@ export class DiagramEditView extends DiagramView {
 
         this.guides = [];
         this.pendingGuideSnap = undefined;
-        const useGuides = this.guideOptions?.render || this.guideOptions?.snap;
+        const useGuides = this.guideOptions?.visible || this.guideOptions?.snap;
         if (useGuides) {
 
             const guideResult = Guides.computeResult({
@@ -4955,7 +4975,7 @@ export class DiagramEditView extends DiagramView {
 
             if (guideResult) {
                 this.pendingGuideSnap = this.guideOptions.snap ? guideResult : undefined;
-                this.guides = this.guideOptions.render ? guideResult.guides : [];
+                this.guides = this.guideOptions.visible ? guideResult.guides : [];
             }
         }
 
@@ -4999,7 +5019,7 @@ export class DiagramEditView extends DiagramView {
      */
     private resizeNode(node: INode, handle: NodeHandle, byX: number, byY: number, preserveAspect = false): void {
         NodeBasics.resizeHandle(node, handle, byX, byY, preserveAspect);
-        NodeRegistry.adapter(node.type)?.afterResize?.(node, handle);
+        NodeRegistry.afterResize(node, handle);
     }
 
     /**
@@ -5029,7 +5049,7 @@ export class DiagramEditView extends DiagramView {
                 /* Resizing a node inside a container only resizes that node, not the whole group.
                    The group will resize when the container node is resized. */
                 NodeBasics.resizeHandle(reference_node, handle, byX, byY, preserveAspect);
-                NodeRegistry.adapter(reference_node.type)?.afterResize?.(reference_node, handle);
+                NodeRegistry.afterResize(reference_node, handle);
                 return;
             }
         }
@@ -5049,12 +5069,12 @@ export class DiagramEditView extends DiagramView {
             }
 
             NodeBasics.resizeHandle(node, handle, relX, relY, preserveAspect);
-            NodeRegistry.adapter(node.type)?.afterResize?.(node, handle);
+            NodeRegistry.afterResize(node, handle);
         }
 
         this.guides = [];
         this.pendingGuideSnap = undefined;
-        const useGuides = this.guideOptions?.render || this.guideOptions?.snap;
+        const useGuides = this.guideOptions?.visible || this.guideOptions?.snap;
         if (useGuides) {
 
             const guideResult = Guides.computeResult({
@@ -5068,7 +5088,7 @@ export class DiagramEditView extends DiagramView {
 
             if (guideResult) {
                 this.pendingGuideSnap = this.guideOptions.snap ? guideResult : undefined;
-                this.guides = this.guideOptions.render ? guideResult.guides : [];
+                this.guides = this.guideOptions.visible ? guideResult.guides : [];
             }
         }
     }

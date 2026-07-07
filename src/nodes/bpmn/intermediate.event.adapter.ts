@@ -53,7 +53,8 @@ export class BpmnIntermediateEventAdapter extends AbstractBpmnEventAdapter {
                 rect.height / 2,
                 0, 0, 2 * Math.PI);
 
-            path.ellipse(
+            const inner = new Path2D();
+            inner.ellipse(
                 rect.left + rect.width / 2,
                 rect.top + rect.height / 2,
                 rect.width / 2 - 4,
@@ -70,6 +71,7 @@ export class BpmnIntermediateEventAdapter extends AbstractBpmnEventAdapter {
             if (!isHollow(node)) {
                 RenderBasics.skipShadow(context);
             }
+            context.stroke(inner);
             context.stroke(path);
 
             if (node.text && show !== 'quick') {

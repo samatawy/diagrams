@@ -1,4 +1,4 @@
-import type { GradientValue } from "./color.types";
+import type { IGradient } from "./color.types";
 import type { ArrowDirection, ArrowType, IFontWeight, IPoint, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 
 /**
@@ -111,7 +111,7 @@ export interface FillStyle {
      * The gradient value of the fill, which can be a GradientValue object or undefined for no gradient.
      * If the gradient value is undefined, the rendering logic may choose a default gradient based on the node's properties or theme.
      */
-    gradient?: GradientValue;
+    gradient?: IGradient;
 }
 
 /**

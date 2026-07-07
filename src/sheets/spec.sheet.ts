@@ -34,7 +34,7 @@ export interface EmbeddedSheet {
      * The styles defined for the diagram itself, such as background color.
      */
     diagram: {
-        background?: string;
+        background?: FillStyle;
     };
     /**
      * The styles defined for each node type.

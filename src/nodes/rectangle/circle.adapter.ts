@@ -1,6 +1,6 @@
 import { isDiagramViewLike } from "../../guards";
 import type { INode } from "../../interfaces";
-import { NodeHandle } from "../../types";
+import { NodeHandle, type IPoint } from "../../types";
 import { isHollow } from "../../value.utils";
 import type { INodeCached } from "../../view/view.cache";
 import { RenderBasics } from "../render.basics";
@@ -14,6 +14,9 @@ import { EllipseAdapter } from "./ellipse.adapter";
 export class CircleAdapter extends EllipseAdapter {
 
     public static TYPE = 'circle';
+
+    min_width: number = 16;
+    min_height: number = 16;
 
     public override render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
         if (!context) return;
@@ -76,5 +79,19 @@ export class CircleAdapter extends EllipseAdapter {
             points: [{ x: 0, y: 0 }, { x: 84, y: 84 }],
         }
     }
+
+    // public onCreateMove(node: INode, point: IPoint): void {
+    //     super.onCreateMove(node, point);
+    //     if (node.points.length > 1) {
+    //         const width = node.points[1]!.x - node.points[0]!.x;
+    //         const height = node.points[1]!.y - node.points[0]!.y;
+
+    //         if (width !== height) {
+    //             const size = Math.min(width, height);
+    //             node.points[1]!.x = node.points[0]!.x + size;
+    //             node.points[1]!.y = node.points[0]!.y + size;
+    //         }
+    //     }
+    // }
 
 }

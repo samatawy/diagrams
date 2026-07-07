@@ -7,8 +7,8 @@ import type { DiagramExportFormat, DiagramSaveOptions } from "../io/export.types
 import { AssetStore } from "../view/asset.store";
 import type { ImageMode } from "../types";
 import { SheetRepository } from "../sheets/sheet.repository";
-import type { SpecSheet } from "../sheets/spec.sheet";
 import { deepClone } from "../value.utils";
+import type { FillStyle } from "../style.interfaces";
 
 
 /**
@@ -32,7 +32,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
 
     private sheet_repository: SheetRepository;
 
-    public background?: string;
+    public background?: FillStyle;
 
     public meta?: Record<string, any>;
 
@@ -48,7 +48,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
         this.nodes = [];
         this.groups = initial?.groups ? initial.groups.map(group => this.createGroup(group.id, group.nodes)) : [];
         this.layers = initial?.layers ? initial.layers.map(layer => this.createLayer(layer.id, layer.name, layer.visible, layer.nodes)) : [];
-        this.background = initial?.background;
+        this.background = initial?.background ? deepClone(initial.background) : undefined;
         this.meta = initial?.meta ? deepClone(initial.meta) : undefined;
 
         if (initial?.nodes) {
@@ -523,7 +523,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
         this.nodes = (json.nodes ?? []).map(node => this.hydrateNode(node));
         this.groups = (json.groups ?? []).map(group => this.hydrateGroup(group));
         this.layers = (json.layers ?? []).map(layer => this.hydrateLayer(layer));
-        this.background = json.background;
+        this.background = json.background ? deepClone(json.background) : undefined;
         this.meta = json.meta ? deepClone(json.meta) : undefined;
 
         if (this.layers.length === 0) {
@@ -567,6 +567,9 @@ export class Diagram implements IDiagram, HasSheetRepository {
             }
         }
 
+        const serializedBackground = this.background ? deepClone(this.background) : undefined;
+        const serializedMeta = this.meta ? deepClone(this.meta) : undefined;
+
         return serializer.write({
             id: this.id,
             sheet_id: this.sheet_id,
@@ -575,8 +578,8 @@ export class Diagram implements IDiagram, HasSheetRepository {
             groups: serializedGroups,
             layers: serializedLayers,
             image_assets: imageAssets,
-            background: this.background,
-            meta: this.meta ? deepClone(this.meta) : undefined,
+            background: serializedBackground,
+            meta: serializedMeta,
         } satisfies ISerializedDiagram);
     }
 

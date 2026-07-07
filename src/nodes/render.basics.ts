@@ -3,11 +3,12 @@ import type { ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDash, lineDashArray, arrowType, arrowAt, deepClone, fillColor } from "../value.utils";
+import { imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDash, lineDashArray, arrowType, arrowAt, deepClone, fillColor } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
 import { gradientArgsForBox } from "../editor/gradient/color.utils";
+import type { FillStyle } from "../style.interfaces";
 
 export interface TextOptions {
     overflow: TextOverflowMode;
@@ -1146,8 +1147,41 @@ export class RenderBasics {
 
         if (color === 'inherit') {
             context.fillStyle = fillColor(node);
-            console.log(`Warning: Node ${node.id} has fillStyle.color set to ${context.fillStyle}.`);
         } else {
+            context.fillStyle = color;
+        }
+
+        if (gradient) {
+            let args = gradientArgsForBox(gradient, rect);
+
+            let ctx_gradient;
+            switch (gradient.type) {
+                case 'linear':
+                    ctx_gradient = context.createLinearGradient(args.x0, args.y0, args.x1, args.y1);
+                    break;
+                case 'radial':
+                    ctx_gradient = context.createRadialGradient(args.x0, args.y0, args.r0, args.x1, args.y1, args.r1);
+                    break;
+                case 'conic':
+                    ctx_gradient = context.createConicGradient(args.angle, args.x0, args.y0);
+                    break;
+                default:
+                    ctx_gradient = null;
+            }
+            if (ctx_gradient) {
+                for (const stop of gradient.stops) {
+                    ctx_gradient.addColorStop(stop.position / 100, stop.color);
+                }
+                context.fillStyle = ctx_gradient;
+            }
+        }
+    }
+
+    public static applyContextFillStyle(fillStyle: FillStyle, rect: IRect, context: CanvasRenderingContext2D): void {
+        const color = fillStyle.color || 'transparent';
+        const gradient = fillStyle.gradient;
+
+        if (color) {
             context.fillStyle = color;
         }
 

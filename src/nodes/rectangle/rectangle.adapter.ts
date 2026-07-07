@@ -22,6 +22,8 @@ export class RectangleAdapter implements INodeAdapter {
     }
 
     hollow_mode: HollowMode = 'if_transparent';
+    min_width: number = 24;
+    min_height: number = 16;
 
     is_connector = false;
     multistep_create = false;
@@ -138,10 +140,37 @@ export class RectangleAdapter implements INodeAdapter {
             node.points.push({ ...point });
         }
         node.points[1] = { ...point };
+
+        if (node.locked_aspect) {
+            const width = node.points[1]!.x - node.points[0]!.x;
+            const height = node.points[1]!.y - node.points[0]!.y;
+
+            if (width !== height) {
+                const size = Math.min(width, height);
+                node.points[1]!.x = node.points[0]!.x + size;
+                node.points[1]!.y = node.points[0]!.y + size;
+            }
+        }
     }
 
     public canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point: IPoint): boolean {
         return this.connection_handles.includes(handle);
+    }
+
+    public afterResize(node: INode, _handle: NodeHandle): void {
+        if (node.points.length > 1) {
+            const topLeft = node.points[0]!;
+            const bottomRight = node.points[1]!;
+
+            // Ensure the rectangle maintains a minimum size
+
+            if (bottomRight.x - topLeft.x < this.min_width) {
+                bottomRight.x = topLeft.x + this.min_width;
+            }
+            if (bottomRight.y - topLeft.y < this.min_height) {
+                bottomRight.y = topLeft.y + this.min_height;
+            }
+        }
     }
 
     public snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void {
