@@ -100,7 +100,9 @@ export class C4ContainerAdapter extends RoundRectangleAdapter {
             points: [{ x: 0, y: 0 }, { x: 104, y: 80 }],
 
             text: 'Container',
-            fillStyle: '#438dd5',
+            fillStyle: {
+                color: '#438dd5',
+            },
             strokeStyle: {
                 color: 'white',
                 width: 2,

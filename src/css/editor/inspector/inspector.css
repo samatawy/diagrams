@@ -181,31 +181,36 @@
 
 .inspector .inspector-value.is-mixed .color-preset-trigger,
 .inspector .inspector-value.is-mixed .font-select-trigger,
-.inspector .inspector-value.is-mixed .image-select-trigger {
+.inspector .inspector-value.is-mixed .image-select-trigger,
+.inspector .inspector-value.is-mixed .gp-trigger {
     position: relative;
 }
 
 .inspector .inspector-value.is-unset .color-preset-trigger,
 .inspector .inspector-value.is-unset .font-select-trigger,
-.inspector .inspector-value.is-unset .image-select-trigger {
+.inspector .inspector-value.is-unset .image-select-trigger,
+.inspector .inspector-value.is-unset .gp-trigger {
     position: relative;
 }
 
 .inspector .inspector-value.is-mixed .color-preset-trigger>*,
 .inspector .inspector-value.is-mixed .font-select-trigger>*,
-.inspector .inspector-value.is-mixed .image-select-trigger>* {
+.inspector .inspector-value.is-mixed .image-select-trigger>*,
+.inspector .inspector-value.is-mixed .gp-trigger>* {
     opacity: 0;
 }
 
 .inspector .inspector-value.is-unset .color-preset-trigger>*,
 .inspector .inspector-value.is-unset .font-select-trigger>*,
-.inspector .inspector-value.is-unset .image-select-trigger>* {
+.inspector .inspector-value.is-unset .image-select-trigger>*,
+.inspector .inspector-value.is-unset .gp-trigger>* {
     opacity: 0;
 }
 
 .inspector .inspector-value.is-mixed .color-preset-trigger::after,
 .inspector .inspector-value.is-mixed .font-select-trigger::after,
-.inspector .inspector-value.is-mixed .image-select-trigger::after {
+.inspector .inspector-value.is-mixed .image-select-trigger::after,
+.inspector .inspector-value.is-mixed .gp-trigger::after {
     content: 'Multiple';
     position: absolute;
     inset: 0;
@@ -220,7 +225,8 @@
 
 .inspector .inspector-value.is-unset .color-preset-trigger::after,
 .inspector .inspector-value.is-unset .font-select-trigger::after,
-.inspector .inspector-value.is-unset .image-select-trigger::after {
+.inspector .inspector-value.is-unset .image-select-trigger::after,
+.inspector .inspector-value.is-unset .gp-trigger::after {
     content: '\00A0';
     position: absolute;
     inset: 0;

@@ -100,7 +100,9 @@ export class BpmnEndEventAdapter extends AbstractBpmnEventAdapter {
             },
             locked_aspect: true,
             points: [{ x: 0, y: 0 }, { x: 40, y: 40 }],
-            fillStyle: EVENT_FILL_STYLE,
+            fillStyle: {
+                color: EVENT_FILL_STYLE,
+            },
         }
     }
 }

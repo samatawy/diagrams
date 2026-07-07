@@ -1,0 +1,476 @@
+/* ---------------------------------------------------------------
+   Gradient Picker — clean, system-UI look
+   All colours use --diagram-ui-* custom properties with fallbacks.
+   --------------------------------------------------------------- */
+
+/* ---- Popup shell ---- */
+
+.gp-popup {
+    position: fixed;
+    z-index: 9999;
+    width: 460px;
+    background: var(--diagram-ui-surface, #ffffff);
+    border: 1px solid rgba(0, 0, 0, 0.65);
+    border-radius: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.18);
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-family: var(--diagram-ui-font-family, system-ui);
+    color: var(--diagram-ui-text, #1f2937);
+    overflow: hidden;
+    user-select: none;
+}
+
+/* ---- Two-column body ---- */
+
+.gp-body {
+    display: grid;
+    grid-template-columns: 196px 1fr;
+}
+
+/* ================================================================
+   LEFT COLUMN  — gradient structure (preview · type · controls)
+   ================================================================ */
+
+.gp-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-right: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.1));
+}
+
+/* Controls area below the preview gets the regular padding and spacing */
+.gp-left-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px 16px;
+}
+
+/* Type tabs */
+
+.gp-type-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: 0;
+    overflow: hidden;
+}
+
+.gp-type-tab {
+    padding: 5px 0;
+    text-align: center;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: inherit;
+    background: transparent;
+    border: none;
+    color: var(--diagram-ui-text-muted, #64748b);
+    transition: background 0.12s, color 0.12s;
+    line-height: 1.4;
+}
+
+.gp-type-tab+.gp-type-tab {
+    border-left: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+}
+
+.gp-type-tab.active {
+    background: var(--diagram-ui-accent, #0f766e);
+    color: #ffffff;
+}
+
+.gp-type-tab:not(.active):hover {
+    background: rgba(15, 23, 42, 0.04);
+}
+
+/* Square gradient preview — bleeds flush to the top-left panel edge */
+
+.gp-preview {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 0;
+    border: none;
+    /* border-bottom: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15)); */
+    background-color: #ffffff;
+    /* fallback; real bg set in JS */
+}
+
+/* Structural controls (angle, center X/Y) */
+
+.gp-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.gp-control-row {
+    display: grid;
+    grid-template-columns: 52px 1fr 50px;
+    align-items: center;
+    gap: 5px;
+}
+
+.gp-control-label {
+    font-size: 11px;
+    color: var(--diagram-ui-text-muted, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gp-control-value {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    font-family: inherit;
+    text-align: right;
+    border: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: 5px;
+    padding: 2px 4px;
+    background: transparent;
+    color: var(--diagram-ui-text, #1f2937);
+    appearance: none;
+    -moz-appearance: textfield;
+}
+
+.gp-control-value:focus {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    outline: none;
+    background: var(--diagram-ui-surface, #fff);
+}
+
+.gp-control-value::-webkit-inner-spin-button,
+.gp-control-value::-webkit-outer-spin-button {
+    opacity: 0.5;
+}
+
+/* ================================================================
+   RIGHT COLUMN  — stops list + color editor
+   ================================================================ */
+
+.gp-right {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 9px;
+    min-width: 0;
+}
+
+/* Stop list */
+
+.gp-stops {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    max-height: 140px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(15, 23, 42, 0.15) transparent;
+}
+
+.gp-stops::-webkit-scrollbar {
+    width: 5px;
+}
+
+.gp-stops::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.15);
+    border-radius: 3px;
+}
+
+.gp-stop-row {
+    display: grid;
+    grid-template-columns: 18px 1fr 40px 18px;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.gp-stop-row:hover {
+    background: rgba(15, 23, 42, 0.04);
+}
+
+.gp-stop-row.selected {
+    background: rgba(15, 118, 110, 0.07);
+}
+
+/* Stop colour swatch */
+
+.gp-stop-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(15, 23, 42, 0.18);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    /* checkerboard underlay */
+    background: repeating-conic-gradient(#d1d5db 0% 25%, #ffffff 0% 50%) 0 0 / 6px 6px;
+    /* background: repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #e2e8f0 6px, #e2e8f0 12px); */
+}
+
+.gp-stop-swatch-fill {
+    position: absolute;
+    inset: 0;
+}
+
+/* Stop position inputs */
+
+.gp-stop-pos-value {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+    font-family: inherit;
+    text-align: right;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 2px 3px;
+    background: transparent;
+    color: var(--diagram-ui-text-muted, #64748b);
+    appearance: none;
+    -moz-appearance: textfield;
+}
+
+.gp-stop-pos-value:focus {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    outline: none;
+    background: var(--diagram-ui-surface, #fff);
+}
+
+.gp-stop-pos-value::-webkit-inner-spin-button,
+.gp-stop-pos-value::-webkit-outer-spin-button {
+    display: none;
+}
+
+/* Delete button */
+
+.gp-stop-delete {
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--diagram-ui-text-muted, #94a3b8);
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.1s, color 0.1s;
+    font-family: inherit;
+}
+
+.gp-stop-row:hover .gp-stop-delete,
+.gp-stop-row.selected .gp-stop-delete {
+    opacity: 1;
+}
+
+.gp-stop-delete:hover {
+    color: #ef4444;
+}
+
+/* Add stop button */
+
+.gp-add-stop {
+    align-self: flex-start;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: inherit;
+    color: var(--diagram-ui-accent, #0f766e);
+    background: transparent;
+    border: 1px dashed rgba(15, 118, 110, 0.4);
+    border-radius: 6px;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: border-color 0.12s, opacity 0.12s;
+    opacity: 0.75;
+    line-height: 1.4;
+}
+
+.gp-add-stop:hover {
+    opacity: 1;
+    border-color: var(--diagram-ui-accent, #0f766e);
+}
+
+/* Divider */
+
+.gp-divider {
+    margin-top: auto;
+    height: 1px;
+    background: var(--diagram-ui-border, rgba(15, 23, 42, 0.1));
+    flex-shrink: 0;
+}
+
+/* No-selection placeholder */
+
+.gp-no-selection {
+    font-size: 11px;
+    color: var(--diagram-ui-text-muted, #94a3b8);
+    text-align: center;
+    padding: 16px 0 8px;
+    font-style: italic;
+}
+
+/* ---- Color mode tabs (RGBA / HSL / HEX) ---- */
+
+.gp-color-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.1));
+    flex-shrink: 0;
+}
+
+.gp-color-tab {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 4px 9px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--diagram-ui-text-muted, #64748b);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.12s, border-color 0.12s;
+    line-height: 1.4;
+}
+
+.gp-color-tab.active {
+    color: var(--diagram-ui-accent, #0f766e);
+    border-bottom-color: var(--diagram-ui-accent, #0f766e);
+}
+
+/* ---- Color channel rows ---- */
+
+.gp-channels {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.gp-channel-row {
+    display: grid;
+    grid-template-columns: 14px 1fr 50px;
+    align-items: center;
+    gap: 6px;
+}
+
+.gp-channel-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--diagram-ui-text-muted, #64748b);
+    text-align: center;
+    line-height: 1;
+}
+
+.gp-channel-value {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    font-family: inherit;
+    text-align: right;
+    border: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: 5px;
+    padding: 2px 4px;
+    background: transparent;
+    color: var(--diagram-ui-text, #1f2937);
+    appearance: none;
+    -moz-appearance: textfield;
+}
+
+.gp-channel-value:focus {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    outline: none;
+    background: var(--diagram-ui-surface, #fff);
+}
+
+.gp-channel-value::-webkit-inner-spin-button,
+.gp-channel-value::-webkit-outer-spin-button {
+    opacity: 0.4;
+}
+
+/* HEX input */
+
+.gp-hex-row {
+    display: grid;
+    grid-template-columns: 14px 1fr;
+    align-items: center;
+    gap: 6px;
+}
+
+.gp-hex-input {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 11px;
+    font-family: ui-monospace, monospace;
+    border: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: 5px;
+    padding: 3px 7px;
+    background: transparent;
+    color: var(--diagram-ui-text, #1f2937);
+}
+
+.gp-hex-input:focus {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+    outline: none;
+}
+
+/* ================================================================
+   SHARED — range input
+   Track background is set dynamically in JS for colour channels;
+   the static style below provides the thumb and base geometry.
+   ================================================================ */
+
+input[type='range'].gp-range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    padding: 0;
+    margin: 0;
+    background: #e2e8f0;
+    /* overridden per-channel in JS */
+}
+
+input[type='range'].gp-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid rgba(15, 23, 42, 0.45);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    transition: border-color 0.1s;
+}
+
+input[type='range'].gp-range::-webkit-slider-thumb:hover {
+    border-color: var(--diagram-ui-accent, #0f766e);
+}
+
+input[type='range'].gp-range::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 2px solid rgba(15, 23, 42, 0.45);
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+input[type='range'].gp-range:focus-visible::-webkit-slider-thumb {
+    border-color: var(--diagram-ui-accent, #0f766e);
+    box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+}

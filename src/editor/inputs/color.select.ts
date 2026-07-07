@@ -1,4 +1,5 @@
 import { injectStyles, setClasses, toggleClasses, removeClasses } from '../editor.utils';
+import { CHECKER_CSS_PATTERN } from '../../color.types';
 
 import DEFAULT_STYLES from '../../css_generated/editor/inputs/color.select.css';
 const STYLE_ID = 'color-select-defaults';
@@ -449,7 +450,7 @@ export class ColorSelect {
     protected colorStyleForSwatch(color: string): string {
         const lc = color.trim().toLowerCase();
         if (lc === 'transparent') {
-            return 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 6px, #e2e8f0 6px, #e2e8f0 12px)';
+            return CHECKER_CSS_PATTERN;
         }
         if (lc === 'inherit') {
             return 'linear-gradient(135deg, #e2e8f0 0%, #94a3b8 50%, #475569 100%)';

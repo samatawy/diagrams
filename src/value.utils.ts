@@ -1,5 +1,5 @@
 import type { INode } from "./interfaces";
-import { BOLD_FONT_WEIGHT, NORMAL_FONT_WEIGHT, type ShadowStyle, type TextStyle } from "./style.interfaces";
+import { BOLD_FONT_WEIGHT, NORMAL_FONT_WEIGHT, type FillStyle, type ShadowStyle, type TextStyle } from "./style.interfaces";
 import type { ArrowDirection, ArrowType, IFontWeight, ImageMode, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 import { DiagramConstants } from "./model/diagram.constants";
 import { NodeRegistry } from "./factory/node.registry";
@@ -119,7 +119,8 @@ export function textHaloColor(node: INode): string {    //} | undefined {
 
     // 'inherit' (or missing): walk the resolution chain, skipping conflicting candidates.
     const fill = node.fillStyle;
-    if (fill && fill !== 'transparent' && colorContrastsWithText(fill, tc)) return fill;
+    if (fill?.color && fill.color !== 'transparent' && colorContrastsWithText(fill.color, tc)) return fill.color;
+    // if (fill && fill !== 'transparent' && colorContrastsWithText(fill, tc)) return fill;
 
     const diagram = node.owner as any;
     const bg = diagram?.background ?? diagram?.canvasBackgroundColor;
@@ -206,8 +207,12 @@ export function strokeColor(node: INode): string {
     return node.strokeStyle?.color || '#000000';
 }
 
-export function fillStyle(node: INode): string {
-    return node.fillStyle || '#ffffff';
+export function fillColor(node: INode): string {
+    return node.fillStyle?.color || '#ffffff';
+}
+
+export function fillStyle(node: INode): FillStyle {
+    return node.fillStyle ?? { color: 'transparent' };
 }
 
 export function isInvisible(node: INode): boolean {
@@ -218,7 +223,8 @@ export function isHollow(node: INode): boolean {
     if (node.hollow !== undefined) {
         return node.hollow;
     } else {
-        return (fillStyle(node) === undefined || fillStyle(node) === 'transparent') && imageId(node) === undefined;
+        return (node.fillStyle === undefined || fillColor(node) === 'transparent') && node.image_id === undefined;
+        // return (fillStyle(node) === undefined || fillStyle(node) === 'transparent') && imageId(node) === undefined;
     }
 }
 

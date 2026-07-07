@@ -29,6 +29,7 @@ import { ImageSelectAdapter } from "./adapters/image.select.adapter";
 import type { NumberInputAdapterConfig } from "./native/number.input.adapter";
 import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./native/meta.kv.adapters";
 import { ClassActionsAdapter, type ClassActionsAdapterConfig } from "./adapters/class.actions.adapter";
+import { GradientPickerAdapter } from "./adapters/gradient.picker.adapter";
 import type { ArrowTypeSelectConfig } from "../inputs";
 
 export type DiagramInspectorConfig = InspectorConfig & {
@@ -114,6 +115,7 @@ export class DiagramInspector extends Inspector {
         Inspector.registerAdapter('MetaValue', MetaValueAdapter);
         Inspector.registerAdapter('MetaAdd', MetaAddAdapter);
         Inspector.registerAdapter('ClassActions', ClassActionsAdapter);
+        Inspector.registerAdapter('GradientPicker', GradientPickerAdapter);
     }
 
     /**
@@ -363,11 +365,17 @@ export class DiagramInspector extends Inspector {
 
         const { grid: fill } = this.buildSection('Fill', 'collapsed');
         this.addRow(fill, {
-            key: 'fillStyle', label: 'Fill Color',
+            key: 'fillStyle.color', label: 'Fill Color',
             type: 'string', editor: 'ColorSelect',
             editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.fillColor || {}) },
-            readonly: readonly, isVisible: hasSelected
+            readonly: readonly, isVisible: hasNonConnections // Selected
         });
+        this.addRow(fill, {
+            key: 'fillStyle.gradient', label: 'Gradient',
+            type: 'string', editor: 'GradientPicker',
+            readonly: readonly, isVisible: hasNonConnections,
+        });
+
         this.addRow(fill, {
             key: 'image_id', label: 'Image',
             type: 'string', editor: 'ImageSelect',

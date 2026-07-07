@@ -11,7 +11,9 @@ export class C4DependencyAdapter extends PolylineAdapter {
             type: 'c4_dependency',
 
             text: 'Dependency',
-            fillStyle: '#ffffff00',
+            fillStyle: {
+                color: '#ffffff00',
+            },
             strokeStyle: {
                 arrow_type: 'solid_spear' as ArrowType,
                 arrow_at: 'end' as ArrowDirection,

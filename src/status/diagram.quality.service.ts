@@ -240,7 +240,7 @@ export class DiagramQualityService {
     private static addFillColor(node: INode, colorSet: Set<string>): void {
         if (!node.fillStyle || node.invisible || isHollow(node)) return;
 
-        this.addColor(node.fillStyle, colorSet);
+        this.addColor(node.fillStyle?.color, colorSet);
     }
 
     private static addTextColor(node: INode, colorSet: Set<string>): void {

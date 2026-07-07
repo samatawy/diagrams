@@ -11,7 +11,10 @@ export class C4SystemAdapter extends RoundRectangleAdapter {
             points: [{ x: 0, y: 0 }, { x: 104, y: 80 }],
 
             text: 'System',
-            fillStyle: '#1168bd',
+            // fillStyle: '#1168bd',
+            fillStyle: {
+                color: '#1168bd',
+            },
             strokeStyle: {
                 color: 'white',
                 width: 2,

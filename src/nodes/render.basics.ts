@@ -3,10 +3,11 @@ import type { ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDash, lineDashArray, arrowType, arrowAt, deepClone } from "../value.utils";
+import { fillStyle, imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDash, lineDashArray, arrowType, arrowAt, deepClone, fillColor } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
+import { gradientArgsForBox } from "../editor/gradient/color.utils";
 
 export interface TextOptions {
     overflow: TextOverflowMode;
@@ -51,7 +52,10 @@ export class RenderBasics {
         context.lineWidth = lineWidth(node);
         context.setLineDash(lineDashArray(node));
         context.strokeStyle = strokeColor(node);
-        context.fillStyle = fillStyle(node);
+
+        this.applyFillStyle(node, coordinates.getBoundingRect(node), context);
+        // context.fillStyle = fillColor(node);
+
         if (cached.img && imageMode(node) === 'pattern') {
             context.fillStyle = context.createPattern(cached.img, 'repeat') || '';
         }
@@ -939,7 +943,7 @@ export class RenderBasics {
         // 'inherit' or empty: derive from node visual colors.
         if (node.invisible) return 'transparent';
         if (node.strokeStyle) return this.toAlphaColor(strokeColor(node), 0.35);
-        if (node.fillStyle) return this.toAlphaColor(fillStyle(node), 0.35);
+        if (node.fillStyle) return this.toAlphaColor(fillColor(node), 0.35);
         return 'rgba(0, 0, 0, 0.35)';
     }
 
@@ -1129,10 +1133,46 @@ export class RenderBasics {
     }
 
     private static getHollowFillColor(node: INode): string {
-        let fill = node.fillStyle || 'white';
+        let fill = node.fillStyle?.color || 'white';
         if (fill === 'transparent' || fill === 'inherit' || fill.match(/^rgba\(.*,\s*0\)$/)) {
             fill = 'white';
         }
         return fill;
+    }
+
+    private static applyFillStyle(node: INode, rect: IRect, context: CanvasRenderingContext2D): void {
+        const color = node.fillStyle?.color || 'transparent';
+        const gradient = node.fillStyle?.gradient;
+
+        if (color === 'inherit') {
+            context.fillStyle = fillColor(node);
+        } else {
+            context.fillStyle = color;
+        }
+
+        if (gradient) {
+            let args = gradientArgsForBox(gradient, rect);
+
+            let ctx_gradient;
+            switch (gradient.type) {
+                case 'linear':
+                    ctx_gradient = context.createLinearGradient(args.x0, args.y0, args.x1, args.y1);
+                    break;
+                case 'radial':
+                    ctx_gradient = context.createRadialGradient(args.x0, args.y0, args.r0, args.x1, args.y1, args.r1);
+                    break;
+                case 'conic':
+                    ctx_gradient = context.createConicGradient(args.angle, args.x0, args.y0);
+                    break;
+                default:
+                    ctx_gradient = null;
+            }
+            if (ctx_gradient) {
+                for (const stop of gradient.stops) {
+                    ctx_gradient.addColorStop(stop.position / 100, stop.color);
+                }
+                context.fillStyle = ctx_gradient;
+            }
+        }
     }
 }

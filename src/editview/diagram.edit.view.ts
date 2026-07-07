@@ -12,7 +12,7 @@ import {
     type ArrowType
 } from "../types";
 import { HistoryStack } from "./history";
-import { NORMAL_FONT_WEIGHT, type ShadowStyle, type StrokeStyle, type TextStyle } from "../style.interfaces";
+import { NORMAL_FONT_WEIGHT, type FillStyle, type ShadowStyle, type StrokeStyle, type TextStyle } from "../style.interfaces";
 
 import { isConnection, isContainer, isNode } from "../guards";
 
@@ -52,6 +52,7 @@ interface DiagramClipboardEnvelope {
 }
 import {
     deepClone,
+    fillColor,
     fillStyle, humanize, isHollow, isInvisible, isLocked, lineDash, lineWidth,
     nodeAngle, nodeFontFace, nodeFontSize, nodeOpacity, nodeText, strokeColor,
     textAlign, textBaseline, textColor, textHaloColor, textItalic, textOrientation, textWeight
@@ -62,6 +63,8 @@ import { GroupBasics } from "../nodes/group.basics";
 import type { SheetRepository } from "../sheets/sheet.repository";
 import type { NodeStyle, SpecSheet } from "../sheets/spec.sheet";
 import type { AnimationMode } from "../animation.types";
+import type { GradientValue } from "../color.types";
+import { GradientPicker } from "../editor/gradient/gradient.picker";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -117,6 +120,7 @@ export class DiagramEditView extends DiagramView {
         arrow_type: ArrowType;
         strokeColor: string;
         fillColor: string;
+        fillGradient?: GradientValue;
         shadowColor: string;
         shadowBlur: number;
         shadowOffsetX: number;
@@ -142,6 +146,7 @@ export class DiagramEditView extends DiagramView {
             arrow_type: 'solid_triangle',
             strokeColor: DiagramConstants.DEFAULT_STROKE_STYLE,
             fillColor: DiagramConstants.DEFAULT_FILL_STYLE,
+            fillGradient: undefined,
             shadowColor: DiagramConstants.NO_SHADOW.color ?? 'transparent',
             shadowBlur: DiagramConstants.NO_SHADOW.blur,
             shadowOffsetX: DiagramConstants.NO_SHADOW.offset.x,
@@ -761,9 +766,10 @@ export class DiagramEditView extends DiagramView {
 
             const merged: NodeStyle = {
                 ...class_style,
-                fillStyle: change.fillStyle ?? class_style.fillStyle,
+                // fillStyle: change.fillStyle ?? class_style.fillStyle,
                 textStyle: { ...class_style.textStyle, ...change.textStyle },
                 strokeStyle: { ...class_style.strokeStyle, ...change.strokeStyle },
+                fillStyle: { ...class_style.fillStyle, ...change.fillStyle },
                 shadowStyle: {
                     ...class_style.shadowStyle,
                     ...change.shadowStyle,
@@ -939,6 +945,28 @@ export class DiagramEditView extends DiagramView {
      */
     public set strokeStyle(value: StrokeStyle) {
         this.setStrokeStyle(value);
+    }
+
+
+    /**
+     * Gets the current default stroke style as a composed object.
+     */
+    public get fillStyle(): FillStyle {
+        return {
+            color: this.settings.strokeColor,
+            // width: this.settings.lineWidth,
+            // dash: this.settings.lineDash,
+            // arrow_at: this.settings.arrow_at,
+            // arrow_type: this.settings.arrow_type,
+        };
+    }
+
+    /**
+     * Sets the default fill style and applies it to current selection.
+     * @param value Fill style value.
+     */
+    public set fillStyle(value: FillStyle) {
+        this.setFillStyle(value);
     }
 
     /**
@@ -1151,12 +1179,13 @@ export class DiagramEditView extends DiagramView {
         this.settings.fillColor = color;
 
         for (let node of selected) {
-            node.fillStyle = color;
+            node.fillStyle = { ...node.fillStyle, color };
+            // node.fillStyle = color;
             if (NodeRegistry.adapter(node.type)?.hollow_mode === 'if_transparent') {
                 node.hollow = color === 'transparent';
             }
         }
-        this.applyClassChange(selected, { fillStyle: color });
+        this.applyClassChange(selected, { fillStyle: { color } });
 
         this.color_palette.refresh();
 
@@ -1384,6 +1413,34 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Sets the fill style for the selected nodes and new nodes to be created.
+     * @param style The fill style to set.
+     */
+    public setFillStyle(style: Partial<FillStyle>): void {
+        const selected = this.selection();
+        if (selected.length) {
+            this.addUndo();
+        }
+
+        if (style.color !== undefined) this.settings.fillColor = style.color;
+        if (style.gradient !== undefined) this.settings.fillGradient = { ...style.gradient };
+
+        const merged: FillStyle = {
+            color: this.settings.fillColor,
+            gradient: this.settings.fillGradient,
+        };
+
+        for (let node of selected) {
+            node.fillStyle = merged;
+        }
+        this.applyClassChange(selected, { fillStyle: merged });
+
+        this.render('all');
+        this.renderPreview();
+        this.eventDispatcher.styleChanged('set-fill-style');
+    }
+
+    /**
      * Sets the shadow style for the selected nodes and new nodes to be created.
      * @param style The shadow style to set.
      */
@@ -1523,7 +1580,9 @@ export class DiagramEditView extends DiagramView {
         if (patch['strokeStyle.arrow_at'] !== undefined) this.settings.arrow_at = patch['strokeStyle.arrow_at'] as ArrowDirection;
         if (patch['strokeStyle.arrow_type'] !== undefined) this.settings.arrow_type = patch['strokeStyle.arrow_type'] as ArrowType;
 
-        if (patch['fillStyle'] !== undefined) this.settings.fillColor = String(patch['fillStyle']);
+        if (patch['fillStyle.color'] !== undefined) this.settings.fillColor = String(patch['fillStyle.color']);
+        if (patch['fillStyle.gradient'] !== undefined) this.settings.fillGradient = { ...patch['fillStyle.gradient'] } as GradientValue;
+
         if (patch['shadowStyle.color'] !== undefined) this.settings.shadowColor = String(patch['shadowStyle.color']);
         if (patch['shadowStyle.blur'] !== undefined) this.settings.shadowBlur = Number(patch['shadowStyle.blur']);
         if (patch['shadowStyle.offset.x'] !== undefined) this.settings.shadowOffsetX = Number(patch['shadowStyle.offset.x']);
@@ -1533,14 +1592,17 @@ export class DiagramEditView extends DiagramView {
 
         let hasClassChanges = false;
         for (const key of Object.keys(patch)) {
-            if (key.startsWith('textStyle.') || key.startsWith('strokeStyle.') || key.startsWith('shadowStyle.') || key === 'fillStyle') {
+            if (key.startsWith('textStyle.') ||
+                key.startsWith('strokeStyle.') ||
+                key.startsWith('shadowStyle.') ||
+                key.startsWith('fillStyle.')) {
                 hasClassChanges = true;
                 break;
             }
         }
 
         if (hasClassChanges) {
-            const nodeStyle = { textStyle: {}, strokeStyle: {}, fillStyle: undefined, shadowStyle: {} } as Partial<NodeStyle>;
+            const nodeStyle = { textStyle: {}, strokeStyle: {}, fillStyle: {}, shadowStyle: {} } as Partial<NodeStyle>;
             if (patch['textStyle.fontFace'] !== undefined) nodeStyle.textStyle!.fontFace = patch['textStyle.fontFace'] as string;
             if (patch['textStyle.size'] !== undefined) nodeStyle.textStyle!.size = patch['textStyle.size'] as number;
             if (patch['textStyle.color'] !== undefined) nodeStyle.textStyle!.color = patch['textStyle.color'] as string;
@@ -1557,7 +1619,8 @@ export class DiagramEditView extends DiagramView {
             if (patch['strokeStyle.arrow_at'] !== undefined) nodeStyle.strokeStyle!.arrow_at = patch['strokeStyle.arrow_at'] as ArrowDirection;
             if (patch['strokeStyle.arrow_type'] !== undefined) nodeStyle.strokeStyle!.arrow_type = patch['strokeStyle.arrow_type'] as ArrowType;
 
-            if (patch['fillStyle'] !== undefined) nodeStyle.fillStyle = patch['fillStyle'] as string;
+            if (patch['fillStyle.color'] !== undefined) nodeStyle.fillStyle!.color = patch['fillStyle.color'] as string;
+            if (patch['fillStyle.gradient'] !== undefined) nodeStyle.fillStyle!.gradient = { ...patch['fillStyle.gradient'] } as GradientValue;
 
             if (patch['shadowStyle.color'] !== undefined) nodeStyle.shadowStyle!.color = patch['shadowStyle.color'] as string;
             if (patch['shadowStyle.blur'] !== undefined) nodeStyle.shadowStyle!.blur = patch['shadowStyle.blur'] as number;
@@ -4052,7 +4115,11 @@ export class DiagramEditView extends DiagramView {
         const points = (tool === 'polygon')
             ? [{ ...start }, { ...start }, { ...start }, { ...start }]
             : [{ ...start }, { ...start }];
-        const defaultFillStyle = NodeRegistry.isConnection(tool) ? 'transparent' : this.fillColor;
+
+        // const defaultFillStyle = NodeRegistry.isConnection(tool) ? 'transparent' : this.fillColor;
+        const defaultFillStyle = NodeRegistry.isConnection(tool)
+            ? { color: 'transparent' }
+            : { color: this.settings.fillColor, gradient: this.settings.fillGradient };
 
         /* Read the template defined by the tool itself. */
         const template = NodeRegistry.adapter(tool)?.onCreateDraft?.(tool) || {};
@@ -4080,7 +4147,8 @@ export class DiagramEditView extends DiagramView {
             textStyle: { ...this.textStyle, ...(templateTextStyle || {}) },
             ready: false,
             strokeStyle: { ...this.strokeStyle, ...(templateStrokeStyle || {}) },
-            fillStyle: templateFillStyle ?? defaultFillStyle,
+            fillStyle: { ...this.fillStyle, ...(templateFillStyle || {}) },
+            // fillStyle: templateFillStyle ?? defaultFillStyle,
             shadowStyle: { ...this.shadowStyle, ...(templateShadowStyle || {}) },
             ...templateRest,
             owner: this,
@@ -4099,7 +4167,7 @@ export class DiagramEditView extends DiagramView {
         if (typeof draft.hollow !== 'boolean') {
             const fillStyle = draft.fillStyle || defaultFillStyle;
             draft.hollow = (hollow_mode === 'always')
-                || (hollow_mode === 'if_transparent' && fillStyle === 'transparent');
+                || (hollow_mode === 'if_transparent' && fillStyle.color === 'transparent');
         }
 
         if (NodeRegistry.isConnection(tool)) {
@@ -5415,7 +5483,7 @@ export class DiagramEditView extends DiagramView {
             this.settings.lineWidth = lineWidth(shape);
             this.settings.lineDash = lineDash(shape);
             this.settings.strokeColor = strokeColor(shape);
-            this.settings.fillColor = fillStyle(shape);
+            this.settings.fillColor = fillColor(shape);
             this.settings.textColor = textColor(shape);
             this.settings.textOrientation = textOrientation(shape);
             this.settings.textWeight = textWeight(shape);

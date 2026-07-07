@@ -406,7 +406,9 @@ export class DiagramEditor {
                             color: 'red',
                             width: 2
                         },
-                        fillStyle: 'white',
+                        fillStyle: {
+                            color: 'white',
+                        },
                         textStyle: {},
                         shadowStyle: DiagramConstants.LOW_SHADOW,
                     }
@@ -426,7 +428,9 @@ export class DiagramEditor {
                             color: 'black',
                             width: 2
                         },
-                        fillStyle: 'white',
+                        fillStyle: {
+                            color: 'white',
+                        },
                         textStyle: {
                             weight: 700,
                         },

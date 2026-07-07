@@ -43,7 +43,7 @@ export class ColorPalette {
                 if (node.strokeStyle?.color) this.addColor(node.strokeStyle.color);
             }
             if (node.fillStyle && !node.invisible && !isHollow(node)) {
-                if (node.fillStyle) this.addColor(node.fillStyle);
+                if (node.fillStyle?.color) this.addColor(node.fillStyle.color);
             }
             if (node.textStyle?.color) {
                 this.addColor(node.textStyle.color);

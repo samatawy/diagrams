@@ -122,7 +122,9 @@ export class C4PersonAdapter extends RectangleAdapter {
             points: [{ x: 0, y: 0 }, { x: 80, y: 80 }],
             locked_aspect: true,
             text: 'Person',
-            fillStyle: '#08427B',
+            fillStyle: {
+                color: '#08427B',
+            },
             strokeStyle: {
                 color: 'white',
                 width: 2,

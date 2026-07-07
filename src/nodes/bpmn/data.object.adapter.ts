@@ -71,7 +71,9 @@ export class BpmnDataObjectAdapter extends RectangleAdapter {
         return {
             type: 'bpmn_data_object',
             points: [{ x: 0, y: 0 }, { x: 64, y: 80 }],
-            fillStyle: DATA_FILL_STYLE,
+            fillStyle: {
+                color: DATA_FILL_STYLE,
+            },
         }
     }
 }

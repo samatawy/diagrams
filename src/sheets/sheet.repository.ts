@@ -298,7 +298,8 @@ export class SheetRepository {
         // node.opacity = style.opacity ?? node.opacity;
         // node.geometry = { ...node.geometry, ...style.geometry };
 
-        if (style.fillStyle) node.fillStyle = style.fillStyle;
+        // if (style.fillStyle) node.fillStyle = style.fillStyle;
+        if (style.fillStyle) node.fillStyle = { ...node.fillStyle, ...style.fillStyle };
         if (style.textStyle) node.textStyle = { ...node.textStyle, ...style.textStyle };
         if (style.strokeStyle) node.strokeStyle = { ...node.strokeStyle, ...style.strokeStyle };
         if (style.shadowStyle) node.shadowStyle = { ...node.shadowStyle, ...style.shadowStyle };

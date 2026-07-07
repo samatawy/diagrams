@@ -191,7 +191,8 @@ export class ClassActionsAdapter extends InspectorAdapter {
             return {
                 textStyle: { ...(s.textStyle || {}) },
                 strokeStyle: { ...(s.strokeStyle || {}) },
-                fillStyle: s.fillStyle,
+                fillStyle: { ...(s.fillStyle || {}) },
+                // fillStyle: s.fillStyle,
                 shadowStyle: {
                     ...(s.shadowStyle || DiagramConstants.NO_SHADOW),
                     offset: { ...(s.shadowStyle?.offset || DiagramConstants.NO_SHADOW.offset) },
@@ -203,7 +204,8 @@ export class ClassActionsAdapter extends InspectorAdapter {
         return {
             textStyle: { ...(node?.textStyle || {}) },
             strokeStyle: { ...(node?.strokeStyle || {}) },
-            fillStyle: node?.fillStyle ?? DiagramConstants.DEFAULT_FILL_STYLE,
+            fillStyle: { ...(node?.fillStyle || {}) },
+            // fillStyle: node?.fillStyle ?? DiagramConstants.DEFAULT_FILL_STYLE,
             shadowStyle: {
                 ...(node?.shadowStyle || DiagramConstants.NO_SHADOW),
                 offset: { ...(node?.shadowStyle?.offset || DiagramConstants.NO_SHADOW.offset) },

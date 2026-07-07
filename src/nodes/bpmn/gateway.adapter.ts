@@ -106,7 +106,9 @@ export class BpmnGatewayAdapter extends RhombusAdapter {
             },
             locked_aspect: true,
             points: [{ x: 0, y: 0 }, { x: 40, y: 40 }],
-            fillStyle: GATEWAY_FILL_STYLE,
+            fillStyle: {
+                color: GATEWAY_FILL_STYLE,
+            },
         }
     }
 

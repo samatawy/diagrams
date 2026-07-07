@@ -16,7 +16,9 @@ export class BpmnTaskAdapter extends RoundRectangleAdapter {
             geometry: {
                 radius: 8,
             },
-            fillStyle: TASK_FILL_STYLE,
+            fillStyle: {
+                color: TASK_FILL_STYLE,
+            },
         }
     }
 }

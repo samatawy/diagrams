@@ -11,7 +11,9 @@ export class C4ComponentAdapter extends RoundRectangleAdapter {
             points: [{ x: 0, y: 0 }, { x: 104, y: 80 }],
 
             text: 'Component',
-            fillStyle: '#85bbf0',
+            fillStyle: {
+                color: '#85bbf0',
+            },
             strokeStyle: {
                 color: '#1f77b4',   // 'white', // '#1f77b4',
                 width: 2,

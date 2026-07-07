@@ -346,7 +346,7 @@ describe('DiagramEditable', () => {
             strokeStyle: {
                 color: '#000000'
             },
-            fillStyle: '#ffffff',
+            fillStyle: { color: '#ffffff' },
             shadowStyle: undefined,
             angle: 0,
             owner: editview,
@@ -362,7 +362,7 @@ describe('DiagramEditable', () => {
             strokeStyle: {
                 color: '#000000',
             },
-            fillStyle: '#ffffff',
+            fillStyle: { color: '#ffffff' },
             shadowStyle: undefined,
             angle: 0,
             owner: editview,
@@ -795,7 +795,7 @@ describe('DiagramEditable', () => {
             ready: false,
             invisible: false,
             strokeStyle: { color: '#000000' },
-            fillStyle: '#ffffff',
+            fillStyle: { color: '#ffffff' },
             shadowStyle: undefined,
             angle: 0,
             owner: editview,

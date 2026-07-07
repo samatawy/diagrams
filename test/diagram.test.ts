@@ -23,7 +23,7 @@ describe('Diagram', () => {
         const inserted = diagram.upsertNode(node);
         const updated = diagram.upsertNode({
             ...createNode('node-1', 'Updated', 35, 30),
-            fillStyle: '#dbeafe',
+            fillStyle: { color: '#dbeafe' },
         });
 
         expect(inserted.owner).toBe(diagram);

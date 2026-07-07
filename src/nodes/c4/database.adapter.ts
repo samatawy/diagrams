@@ -11,7 +11,9 @@ export class C4DatabaseAdapter extends CylinderAdapter {
             points: [{ x: 0, y: 0 }, { x: 104, y: 80 }],
 
             text: 'Database',
-            fillStyle: '#438dd5',
+            fillStyle: {
+                color: '#438dd5',
+            },
             strokeStyle: {
                 color: 'white',
                 width: 2,

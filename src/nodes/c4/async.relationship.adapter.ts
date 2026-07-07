@@ -11,7 +11,9 @@ export class C4AsyncRelationshipAdapter extends PolylineAdapter {
             type: 'c4_async_relationship',
 
             text: 'Async ~ Event',
-            fillStyle: '#ffffff00',
+            fillStyle: {
+                color: '#ffffff00',
+            },
             strokeStyle: {
                 arrow_type: 'solid_spear' as ArrowType,
                 arrow_at: 'end' as ArrowDirection,

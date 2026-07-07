@@ -1,6 +1,6 @@
 import type { Serializable } from "./io/serialized.types";
 import type { ImageAlign, ImageMode } from "./types";
-import type { ShadowStyle, StrokeStyle, TextStyle } from "./style.interfaces";
+import type { FillStyle, ShadowStyle, StrokeStyle, TextStyle } from "./style.interfaces";
 import type { IPoint, NodeHandle } from "./types";
 import type { SheetRepository } from "./sheets/sheet.repository";
 
@@ -97,16 +97,16 @@ export interface INode {
      */
     invisible?: boolean;
 
-    // /**
-    //  * The stroke style of the node, which can be used to control the color and pattern of the node's border.
-    //  */
+    /**
+     * The stroke style of the node, which can be used to control the color and pattern of the node's border.
+     */
     strokeStyle?: StrokeStyle;
-    // strokeStyle: string;
 
     /**
      * The fill style of the node, which can be used to control the color and pattern of the node's interior.
      */
-    fillStyle?: string;
+    fillStyle?: FillStyle;
+    // fillStyle?: string;
 
     /**
      * The shadow style of the node, which can be used to apply a shadow effect to the node.

@@ -1,3 +1,4 @@
+import type { GradientValue } from "./color.types";
 import type { ArrowDirection, ArrowType, IFontWeight, IPoint, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 
 /**
@@ -97,6 +98,20 @@ export interface StrokeStyle {
      * If the arrow type is undefined, the rendering logic may choose a default type based on the node's properties or theme.
      */
     arrow_type?: ArrowType;
+}
+
+export interface FillStyle {
+    /**
+     * The color of the fill, which can be a CSS color string (e.g., '#000000' for black) or undefined for a default color.
+     * If the color is undefined, the rendering logic may choose a default fill color based on the node's properties or theme.
+     */
+    color?: string;
+
+    /**
+     * The gradient value of the fill, which can be a GradientValue object or undefined for no gradient.
+     * If the gradient value is undefined, the rendering logic may choose a default gradient based on the node's properties or theme.
+     */
+    gradient?: GradientValue;
 }
 
 /**

@@ -13,7 +13,9 @@ export class BpmnDataStoreAdapter extends CylinderAdapter {
         return {
             type: 'bpmn_data_store',
             points: [{ x: 0, y: 0 }, { x: 64, y: 64 }],
-            fillStyle: DATA_FILL_STYLE,
+            fillStyle: {
+                color: DATA_FILL_STYLE,
+            },
         }
     }
 }
