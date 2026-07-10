@@ -750,7 +750,7 @@ export class DiagramView extends Diagram implements HasSelection {
         for (const guide of this.guides) {
             if (guide.kind === 'line' || guide.kind === 'guideline' || guide.kind === undefined) {
                 context.beginPath();
-                context.strokeStyle = guide.color ?? DiagramConstants.GUIDE_STROKE_STYLE;
+                context.strokeStyle = guide.color ?? DiagramConstants.GUIDE_STROKE_COLOR;
                 context.globalAlpha = guide.alpha ?? 0.45;
                 context.lineWidth = (guide.width ?? 0.9) / zoom;
                 context.setLineDash(guide.dash ?? [6 / zoom, 4 / zoom]);

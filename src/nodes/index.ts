@@ -1,7 +1,8 @@
 import { NodeRegistry } from '../factory';
 import { CurveAdapter } from './polyline/curve.adapter';
 import { LineAdapter } from './polyline/line.adapter';
-import { ManhattanAdapter } from './polyline/manhattan.adapter';
+// import { ManhattanAdapter } from './polyline/manhattan.adapter';
+import { OrthogonalAdapter } from './polyline/orthogonal.adapter';
 import { PolygonAdapter } from './polyline/polygon.adapter';
 import { PolylineAdapter } from './polyline/polyline.adapter';
 import { HorizontalPoolAdapter } from './container/horizontal.pool.adapter';
@@ -23,6 +24,7 @@ import { TableRowAdapter } from './erd/table.row.adapter';
 import { One2OneRelationAdapter } from './erd/one2one.relation.adapter';
 import { One2ManyRelationAdapter } from './erd/one2many.relation.adapter';
 import { Many2ManyRelationAdapter } from './erd/many2many.relation.adapter';
+import { FreehandAdapter } from './free/freehand.adapter';
 
 export * from './node.basics';
 export * from './connection.basics';
@@ -38,6 +40,9 @@ export * from './polyline/index';
 export * from './bpmn/index';
 
 export function registerBasicAdapters(): void {
+
+    FreehandAdapter.register();
+
     RectangleAdapter.register();
     RoundRectangleAdapter.register();
     EllipseAdapter.register();
@@ -46,7 +51,8 @@ export function registerBasicAdapters(): void {
 
     LineAdapter.register();
     PolylineAdapter.register();
-    ManhattanAdapter.register();
+    // ManhattanAdapter.register();
+    OrthogonalAdapter.register();
     CurveAdapter.register();
 
     VerticalPoolAdapter.register();
@@ -82,7 +88,8 @@ export function registerBasicAdapters(): void {
 
     NodeRegistry.registerTransferables([
         PolylineAdapter.TYPE,
-        ManhattanAdapter.TYPE,
+        OrthogonalAdapter.TYPE,
+        // ManhattanAdapter.TYPE,
         CurveAdapter.TYPE,
     ]);
 

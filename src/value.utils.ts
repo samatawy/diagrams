@@ -143,7 +143,7 @@ function colorContrastsWithText(haloColor: string, textCol: string): boolean {
 }
 
 /** Relative luminance of a #rrggbb or #rgb hex color, or -1 if unparseable. */
-function hexLuminance(color: string): number {
+export function hexLuminance(color: string): number {
     const hex = color.trim();
     let r: number, g: number, b: number;
     if (/^#[0-9a-f]{6}$/i.test(hex)) {

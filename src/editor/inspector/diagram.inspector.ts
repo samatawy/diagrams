@@ -129,6 +129,7 @@ export class DiagramInspector extends Inspector {
         const selected = () => this.diagram.selection();
         const hasSelected = () => selected().length > 0;
         const noSelection = () => selected().length === 0;
+        const hasText = () => selected().some((node) => NodeRegistry.hasText(node.type));
         const hasConnections = () => selected().some((node) => isConnection(node));
         const hasNonConnections = () => selected().some((node) => !isConnection(node));
         const canRotate = () => selected().some(n => NodeRegistry.canRotate(n.type));
@@ -301,41 +302,45 @@ export class DiagramInspector extends Inspector {
         this.addRow(text, {
             key: 'text', label: 'Content', type: 'string',
             editorOptions: { multiline: true },
-            readonly: readonly, isVisible: hasSelected
+            readonly: readonly, isVisible: hasText
         });
         this.addRow(text, {
             key: 'textStyle.fontFace', label: 'Font Face',
             type: 'string', editor: 'FontSelect',
             editorOptions: this.inspectorConfig.fontSelect || {},
-            readonly: readonly, isVisible: hasSelected
+            readonly: readonly, isVisible: hasText
         });
         this.addRow(text, {
             key: 'textStyle.size', label: 'Font Size',
             type: 'number', editor: 'SizeSelect',
             editorOptions: this.inspectorConfig.sizeSelect || {},
-            readonly: readonly, isVisible: hasSelected
+            readonly: readonly, isVisible: hasText
         });
         this.addRow(text, {
             key: 'textStyle.color', label: 'Color',
             type: 'string', editor: 'ColorSelect',
             editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.textColor || {}) },
-            readonly: readonly, isVisible: hasSelected
+            readonly: readonly, isVisible: hasText
         });
         this.addRow(text, {
             key: 'textStyle.weight', label: 'Weight', type: 'select', editor: 'EnumSelect',
             editorOptions: { options: [100, 200, 300, 400, 500, 600, 700, 800, 900].map((w) => ({ value: w, label: w })) },
-            readonly: readonly, isVisible: hasSelected,
+            readonly: readonly, isVisible: hasText,
         });
-        this.addRow(text, { key: 'textStyle.italic', label: 'Italic', type: 'boolean', readonly: readonly, isVisible: hasSelected });
+        this.addRow(text, {
+            key: 'textStyle.italic',
+            label: 'Italic', type: 'boolean',
+            readonly: readonly, isVisible: hasText
+        });
         this.addRow(text, {
             key: 'textStyle.halo', label: 'Halo', type: 'string', editor: 'ColorSelect',
             editorOptions: { ...(this.inspectorConfig.colorSelect || {}), allowEmpty: true, showInheritOption: true },
-            readonly: readonly, isVisible: hasSelected,
+            readonly: readonly, isVisible: hasText,
         });
         this.addRow(text, {
             key: 'textStyle.align', label: 'Align', type: 'select', editor: 'EnumSelect',
             editorOptions: { options: this.inspectorConfig.textAlignOptions || ['left', 'center', 'right'] } as EnumSelectAdapterConfig,
-            readonly: readonly, isVisible: hasSelected,
+            readonly: readonly, isVisible: hasText,
         });
         this.addRow(text, {
             key: 'textStyle.baseline', label: 'Baseline', type: 'select', editor: 'EnumSelect',
@@ -356,7 +361,7 @@ export class DiagramInspector extends Inspector {
                     });
                 },
             } as EnumSelectAdapterConfig,
-            readonly: readonly, isVisible: hasSelected,
+            readonly: readonly, isVisible: hasText,
         });
         this.addRow(text, {
             key: 'textStyle.orientation', label: 'Orientation', type: 'select', editor: 'EnumSelect',
@@ -372,7 +377,7 @@ export class DiagramInspector extends Inspector {
                     return base.filter(option => allowed.includes(option));
                 },
             } as EnumSelectAdapterConfig,
-            readonly: readonly, isVisible: hasSelected,
+            readonly: readonly, isVisible: hasText,
         });
 
         const { grid: line } = this.buildSection('Line', 'collapsed');
@@ -647,6 +652,16 @@ export class DiagramInspector extends Inspector {
         this.ensureRowAtEnd(this.metaGrid, 'meta.__add');
     }
 
+    private canShowText(selected: INode[]): boolean {
+        if (!selected.length) {
+            return false;
+        }
+        if (selected.every((node) => !NodeRegistry.hasText(node.type))) {
+            return false;
+        }
+        return true;
+    }
+
     /**
      * Returns true when all selected nodes share an identical point array structure.
      * @param selected Currently selected nodes.
@@ -654,6 +669,9 @@ export class DiagramInspector extends Inspector {
      */
     private canShowPointRows(selected: INode[]): boolean {
         if (!selected.length) {
+            return false;
+        }
+        if (selected.some((node) => node.type === 'freehand')) {
             return false;
         }
 

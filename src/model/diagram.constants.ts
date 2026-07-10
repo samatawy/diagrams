@@ -11,7 +11,7 @@ export const MAX_ZOOM = 'MAX_ZOOM';
 export const GRID_LINE_COLOR = 'GRID_LINE_COLOR';
 export const GRID_CELL_WIDTH = 'GRID_CELL_WIDTH';
 export const GRID_CELL_HEIGHT = 'GRID_CELL_HEIGHT';
-export const GUIDE_STROKE_STYLE = 'GUIDE_STROKE_STYLE';
+export const GUIDE_STROKE_COLOR = 'GUIDE_STROKE_COLOR';
 
 // ======== Layout ==========
 
@@ -22,19 +22,19 @@ export const CANVAS_BACKGROUND_COLOR = 'CANVAS_BACKGROUND_COLOR';
 
 // ========= Selection ==========
 
-export const SELECTION_ANCHOR_STROKESTYLE = 'SELECTION_ANCHOR_STROKESTYLE';
-export const SELECTION_ANCHOR_FILLSTYLE = 'SELECTION_ANCHOR_FILLSTYLE';
-export const SELECTION_RECT_STROKESTYLE = 'SELECTION_RECT_STROKESTYLE';
-export const SELECTION_RECT_FILLSTYLE = 'SELECTION_RECT_FILLSTYLE';
-export const SELECTION_RECT_LINEWIDTH = 'SELECTION_RECT_LINEWIDTH';
+export const SELECTION_ANCHOR_STROKE_COLOR = 'SELECTION_ANCHOR_STROKE_COLOR';
+export const SELECTION_ANCHOR_FILL_COLOR = 'SELECTION_ANCHOR_FILL_COLOR';
+export const SELECTION_RECT_STROKE_COLOR = 'SELECTION_RECT_STROKE_COLOR';
+export const SELECTION_RECT_FILL_COLOR = 'SELECTION_RECT_FILL_COLOR';
+export const SELECTION_RECT_LINE_WIDTH = 'SELECTION_RECT_LINE_WIDTH';
 export const SELECTION_HANDLE_SIZE = 'SELECTION_HANDLE_SIZE';
 export const PATH_HIT_PADDING = 'PATH_HIT_PADDING';
 export const HANDLE_HIT_EPSILON = 'HANDLE_HIT_EPSILON';
 
 // ========= Node Defaults ==========
 
-export const DEFAULT_STROKE_STYLE = 'DEFAULT_STROKE_STYLE';
-export const DEFAULT_FILL_STYLE = 'DEFAULT_FILL_STYLE';
+export const DEFAULT_STROKE_COLOR = 'DEFAULT_STROKE_COLOR';
+export const DEFAULT_FILL_COLOR = 'DEFAULT_FILL_COLOR';
 export const DEFAULT_NODE_TEXT_COLOR = 'DEFAULT_NODE_TEXT_COLOR';
 export const DEFAULT_NODE_TEXT_ALIGN = 'DEFAULT_NODE_TEXT_ALIGN';
 export const DEFAULT_NODE_TEXT_BASELINE = 'DEFAULT_NODE_TEXT_BASELINE';
@@ -71,7 +71,7 @@ export class DiagramConstants {
         GRID_LINE_COLOR: '#c0c0c0',
         GRID_CELL_WIDTH: 16,
         GRID_CELL_HEIGHT: 16,
-        GUIDE_STROKE_STYLE: 'rgba(0, 0, 255, 0.8)',
+        GUIDE_STROKE_COLOR: 'rgba(0, 0, 255, 0.8)',
 
         // ========== Layout ==========
 
@@ -82,19 +82,19 @@ export class DiagramConstants {
 
         // ========== Selection ==========
 
-        SELECTION_ANCHOR_STROKESTYLE: 'rgba(0, 0, 0, 0.5)',
-        SELECTION_ANCHOR_FILLSTYLE: 'rgba(0, 0, 0, 0.05)',
-        SELECTION_RECT_STROKESTYLE: 'rgba(0, 0, 0, 0.5)',
-        SELECTION_RECT_FILLSTYLE: 'rgba(0, 0, 0, 0.05)',
-        SELECTION_RECT_LINEWIDTH: 1,
+        SELECTION_ANCHOR_STROKE_COLOR: 'rgba(0, 0, 0, 0.5)',
+        SELECTION_ANCHOR_FILL_COLOR: 'rgba(0, 0, 0, 0.05)',
+        SELECTION_RECT_STROKE_COLOR: 'rgba(0, 0, 0, 0.5)',
+        SELECTION_RECT_FILL_COLOR: 'rgba(0, 0, 0, 0.05)',
+        SELECTION_RECT_LINE_WIDTH: 1,
         SELECTION_HANDLE_SIZE: 8,
         PATH_HIT_PADDING: 8,
         HANDLE_HIT_EPSILON: 4,
 
         // ========== Node Defaults ==========
 
-        DEFAULT_STROKE_STYLE: '#000000',
-        DEFAULT_FILL_STYLE: '#e8e8e864',
+        DEFAULT_STROKE_COLOR: '#000000',
+        DEFAULT_FILL_COLOR: '#e8e8e864',
         DEFAULT_NODE_TEXT_COLOR: '#000000',
         DEFAULT_NODE_TEXT_ALIGN: 'center',
         DEFAULT_NODE_TEXT_BASELINE: 'middle',
@@ -166,8 +166,8 @@ export class DiagramConstants {
         return this.get(GRID_CELL_HEIGHT);
     }
 
-    public static get GUIDE_STROKE_STYLE(): string {
-        return this.get(GUIDE_STROKE_STYLE);
+    public static get GUIDE_STROKE_COLOR(): string {
+        return this.get(GUIDE_STROKE_COLOR);
     }
 
     // ========== Layout ==========
@@ -190,24 +190,24 @@ export class DiagramConstants {
 
     // ========== Selection ==========
 
-    public static get SELECTION_ANCHOR_STROKESTYLE(): string {
-        return this.get(SELECTION_ANCHOR_STROKESTYLE);
+    public static get SELECTION_ANCHOR_STROKE_COLOR(): string {
+        return this.get(SELECTION_ANCHOR_STROKE_COLOR);
     }
 
-    public static get SELECTION_ANCHOR_FILLSTYLE(): string {
-        return this.get(SELECTION_ANCHOR_FILLSTYLE);
+    public static get SELECTION_ANCHOR_FILL_COLOR(): string {
+        return this.get(SELECTION_ANCHOR_FILL_COLOR);
     }
 
-    public static get SELECTION_RECT_STROKESTYLE(): string {
-        return this.get(SELECTION_RECT_STROKESTYLE);
+    public static get SELECTION_RECT_STROKE_COLOR(): string {
+        return this.get(SELECTION_RECT_STROKE_COLOR);
     }
 
-    public static get SELECTION_RECT_FILLSTYLE(): string {
-        return this.get(SELECTION_RECT_FILLSTYLE);
+    public static get SELECTION_RECT_FILL_COLOR(): string {
+        return this.get(SELECTION_RECT_FILL_COLOR);
     }
 
-    public static get SELECTION_RECT_LINEWIDTH(): number {
-        return this.get(SELECTION_RECT_LINEWIDTH);
+    public static get SELECTION_RECT_LINE_WIDTH(): number {
+        return this.get(SELECTION_RECT_LINE_WIDTH);
     }
 
     public static get SELECTION_HANDLE_SIZE(): number {
@@ -224,12 +224,12 @@ export class DiagramConstants {
 
     // ========== Node Defaults ==========
 
-    public static get DEFAULT_STROKE_STYLE(): string {
-        return this.get(DEFAULT_STROKE_STYLE);
+    public static get DEFAULT_STROKE_COLOR(): string {
+        return this.get(DEFAULT_STROKE_COLOR);
     }
 
-    public static get DEFAULT_FILL_STYLE(): string {
-        return this.get(DEFAULT_FILL_STYLE);
+    public static get DEFAULT_FILL_COLOR(): string {
+        return this.get(DEFAULT_FILL_COLOR);
     }
 
     public static get DEFAULT_NODE_TEXT_COLOR(): string {

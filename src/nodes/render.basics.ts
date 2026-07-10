@@ -175,8 +175,8 @@ export class RenderBasics {
         const coordinates = diagram.getCoordinates();
 
         context.lineWidth = 1;
-        context.strokeStyle = DiagramConstants.SELECTION_ANCHOR_STROKESTYLE;
-        context.fillStyle = DiagramConstants.SELECTION_ANCHOR_FILLSTYLE;
+        context.strokeStyle = DiagramConstants.SELECTION_ANCHOR_STROKE_COLOR;
+        context.fillStyle = DiagramConstants.SELECTION_ANCHOR_FILL_COLOR;
 
         context.shadowColor = 'transparent';
 
@@ -1003,7 +1003,7 @@ export class RenderBasics {
         }
     }
 
-    private static renderArrowTyped(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+    public static renderArrowTyped(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
         switch (arrowType(node)) {
             case 'solid_triangle':
             case 'hollow_triangle':

@@ -33,6 +33,7 @@ export interface ToolsetConfig {
 
 export const DEFAULT_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'select',
+    'freehand',
     'rectangle',
     'round_rectangle',
     'ellipse',
@@ -40,7 +41,7 @@ export const DEFAULT_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'text',
     'line',
     'polyline',
-    'manhattan',
+    'orthogonal',
     'curve',
     'rhombus',
     'parallelogram',
@@ -53,6 +54,7 @@ export const DEFAULT_TOOL_LAYOUT: ToolsetLayoutItem[] = [
 
 export const BASIC_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'select',
+    'freehand',
     'rectangle',
     'round_rectangle',
     'ellipse',
@@ -60,7 +62,7 @@ export const BASIC_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'text',
     'line',
     'polyline',
-    'manhattan',
+    'orthogonal',
     'curve',
     'rhombus',
     'parallelogram',

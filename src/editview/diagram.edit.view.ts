@@ -65,6 +65,7 @@ import type { NodeStyle, SpecSheet } from "../sheets/spec.sheet";
 import type { AnimationMode } from "../animation.types";
 import type { IGradient } from "../color.types";
 import { GradientPicker } from "../editor/gradient/gradient.picker";
+import { FreehandAdapter } from "../nodes/free/freehand.adapter";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -144,8 +145,8 @@ export class DiagramEditView extends DiagramView {
             lineWidth: DiagramConstants.DEFAULT_NODE_LINE_WIDTH,
             arrow_at: 'end',
             arrow_type: 'solid_triangle',
-            strokeColor: DiagramConstants.DEFAULT_STROKE_STYLE,
-            fillColor: DiagramConstants.DEFAULT_FILL_STYLE,
+            strokeColor: DiagramConstants.DEFAULT_STROKE_COLOR,
+            fillColor: DiagramConstants.DEFAULT_FILL_COLOR,
             fillGradient: undefined,
             shadowColor: DiagramConstants.NO_SHADOW.color ?? 'transparent',
             shadowBlur: DiagramConstants.NO_SHADOW.blur,
@@ -164,6 +165,14 @@ export class DiagramEditView extends DiagramView {
             imageAlign: 'center',
             imagePadding: 0,
         };
+
+    protected freehand: {
+        strokeColor: string,
+        lineWidth: number,
+    } = {
+            strokeColor: DiagramConstants.DEFAULT_STROKE_COLOR,
+            lineWidth: DiagramConstants.DEFAULT_NODE_LINE_WIDTH,
+        }
 
     protected palette_mode: 'stroke' | 'fill' = 'stroke';
 
@@ -904,6 +913,36 @@ export class DiagramEditView extends DiagramView {
      */
     public set fillColor(value: string) {
         this.setFillColor(value);
+    }
+
+    /**
+     * Gets the current default freehand stroke color.
+     */
+    public get freehandColor(): string {
+        return this.freehand.strokeColor;
+    }
+
+    /**
+     * Sets the default freehand stroke color and applies it to current selection.
+     * @param value Freehand stroke color value.
+     */
+    public set freehandColor(value: string) {
+        this.freehand.strokeColor = value;
+    }
+
+    /**
+     * Gets the current default freehand line width.
+     */
+    public get freehandLineWidth(): number {
+        return this.freehand.lineWidth;
+    }
+
+    /**
+     * Sets the default freehand line width and applies it to current selection.
+     * @param value Freehand line width value.
+     */
+    public set freehandLineWidth(value: number) {
+        this.freehand.lineWidth = value;
     }
 
     /**
@@ -2765,6 +2804,11 @@ export class DiagramEditView extends DiagramView {
             this.canvas.setPointerCapture?.(event.pointerId);
         }
 
+        if (this.currentTool === 'freehand' && event.button === 0) {
+            this.freehandDown(event);
+            return;
+        }
+
         if (this.dragCreateDraft && event.button === 0) {
             /* This should never happen! */
             event.preventDefault();
@@ -2797,6 +2841,11 @@ export class DiagramEditView extends DiagramView {
     protected override pointerMove(event: PointerEvent): void {
         if (!this.canvas) return;
 
+        if (this.currentTool === 'freehand') {
+            this.freehandMove(event);
+            return;
+        }
+
         if (this.dragCreateDraft) {
             /* Creating by dragging from the palette; just update the draft position. */
             this.dragOver(event);
@@ -2828,6 +2877,12 @@ export class DiagramEditView extends DiagramView {
      */
     protected override pointerUp(event: PointerEvent): void {
         if (!this.canvas) return;
+
+        if (this.currentTool === 'freehand' && event.button === 0) {
+            this.freehandUp(event);
+            return;
+        }
+
         this.stopAnimations('linedash');
 
         if (this.canvas.hasPointerCapture?.(event.pointerId) && event.type !== 'pointerleave') {
@@ -3558,6 +3613,93 @@ export class DiagramEditView extends DiagramView {
     }
 
     // ==================================================
+    // ========== Private Freehand methods ==========
+    // ==================================================
+
+    private freehandPath?: IPoint[];
+
+    private lastFreehandPoint?: IPoint;
+
+    private FREEHAND_MIN_DIST = 2;
+
+    private freehandDown(event: PointerEvent): void {
+        if (event.button !== 0) return;
+
+        const pt = { x: event.offsetX, y: event.offsetY };
+
+        this.freehandPath = [pt];
+        this.lastFreehandPoint = pt;
+
+        this.canvas.style.cursor = 'crosshair';
+        this.setInteractionHint('Drawing freehand');
+
+        /* Canvas will remain using this style till pointerUp */
+        this.context.save();
+        this.context.strokeStyle = this.freehand.strokeColor;
+        this.context.lineWidth = this.freehand.lineWidth;
+        this.context.lineJoin = 'round';
+        this.context.lineCap = 'round';
+    }
+
+    private freehandMove(event: PointerEvent): void {
+        if (!this.freehandPath?.length) return;
+
+        const pt = { x: event.offsetX, y: event.offsetY };
+
+        if (!this.lastFreehandPoint || Math.hypot(pt.x - this.lastFreehandPoint.x, pt.y - this.lastFreehandPoint.y) < this.FREEHAND_MIN_DIST) return;
+
+        this.freehandPath.push(pt);
+
+        requestAnimationFrame(() => {
+            FreehandAdapter.drawIncrementalStroke(this.context, this.freehandPath!, this.lastFreehandPoint!);
+
+            /* Must only be set after rendering */
+            this.lastFreehandPoint = pt;
+        });
+    }
+
+    private freehandUp(event: PointerEvent): void {
+        if (!this.freehandPath) return;
+
+        // 1. Reduce points (Douglas-Peucker or simple threshold)
+        const compacted = FreehandAdapter.douglasPeucker(this.freehandPath, 1.5); // 1.5px tolerance
+
+        // 2. Tranform into canvas coordinates
+        const transformed = compacted.map(pt => this.getCoordinates().getPoint(pt.x, pt.y, 'ignore_grid'));
+
+        // 3. Append to diagram as a new node
+        const node: INode = {
+            owner: this,
+            id: `freehand-${performance.now()}`,
+            type: 'freehand',
+            points: transformed,
+            strokeStyle: {
+                color: this.freehand.strokeColor,
+                width: this.freehand.lineWidth,
+            },
+        };
+        this.ensureCurrentLayer().nodes.push(node.id);
+        this.upsertNode(node);
+
+        this.context.restore();
+
+        // console.log(node);
+
+        // 2. Smooth (Chaikin's algorithm or cubic spline fit)
+        //   const smoothed = chaikinSmooth(compacted, 2); // 2 iterations
+
+        // 3. Convert to SVG/Canvas path commands
+        //   const pathData = buildPathCommands(smoothed);
+
+        // 4. Store as vector, clear temp array
+        //   diagram.storeFreehandPath(pathData);
+        this.freehandPath = undefined;
+        this.lastFreehandPoint = undefined;
+
+        this.setInteractionHint(undefined);
+    }
+
+    // ==================================================
     // ========== Private creation methods ==========
     // ==================================================
 
@@ -4244,7 +4386,6 @@ export class DiagramEditView extends DiagramView {
             ready: false,
             strokeStyle: { ...this.strokeStyle, ...(templateStrokeStyle || {}) },
             fillStyle: { ...this.fillStyle, ...(templateFillStyle || {}) },
-            // fillStyle: templateFillStyle ?? defaultFillStyle,
             shadowStyle: { ...this.shadowStyle, ...(templateShadowStyle || {}) },
             ...templateRest,
             owner: this,
@@ -4961,8 +5102,8 @@ export class DiagramEditView extends DiagramView {
 
         context.save();
         coordinates.applyViewportTransform(context);
-        context.strokeStyle = DiagramConstants.SELECTION_RECT_STROKESTYLE;
-        context.fillStyle = DiagramConstants.SELECTION_RECT_FILLSTYLE;
+        context.strokeStyle = DiagramConstants.SELECTION_RECT_STROKE_COLOR;
+        context.fillStyle = DiagramConstants.SELECTION_RECT_FILL_COLOR;
         context.lineWidth = 1 / coordinates.zoom;
         context.setLineDash([6, 6]);
         context.lineDashOffset = this.animations.enabled ? this.animations.lineDashOffset : 0;

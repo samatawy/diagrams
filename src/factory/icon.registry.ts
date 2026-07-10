@@ -372,6 +372,13 @@ IconRegistry.registerSymbol('snap-guides', 'snap-guides',
 IconRegistry.registerSymbol('select', 'tool-select',
     sym('tool-select', '<path d="M5 3l14 9-7 1-4 7z"/>'));
 
+// IconRegistry.registerSymbol('freehand', 'tool-freehand',
+//     sym('tool-freehand', '<path d="m23.906,20.208c.161.225.11.537-.114.698-.176.126-4.338,3.094-7.292,3.094-1.165,0-2.242-.436-3.032-1.226-1.632-1.633-1.632-4.289,0-5.922l8.965-8.922c.376-.377.584-.879.584-1.413s-.208-1.036-.585-1.414c-.756-.756-2.073-.756-2.829,0l-14.482,14.5c-1.134,1.133-3.11,1.133-4.243,0-.567-.566-.879-1.32-.879-2.121s.312-1.555.879-2.121L11.916,4.413c.376-.377.584-.879.584-1.413s-.208-1.036-.586-1.414c-.756-.756-2.072-.756-2.828,0L.852,9.729c-.197.194-.513.192-.707-.004-.194-.196-.192-.513.004-.707L8.381.877c1.129-1.129,3.107-1.131,4.24.002,1.169,1.17,1.169,3.072,0,4.242L1.584,16.069c-.376.377-.584.879-.584,1.413s.208,1.036.586,1.414c.756.756,2.072.756,2.828,0l14.482-14.5c1.134-1.133,3.109-1.133,4.243,0,.566.566.878,1.32.878,2.121s-.312,1.555-.878,2.121l-8.965,8.922c-1.241,1.242-1.241,3.264,0,4.507.602.602,1.427.933,2.325.933,2.631,0,6.668-2.877,6.708-2.906.224-.162.536-.109.698.114Z"/>'));
+IconRegistry.registerSymbol('freehand', 'tool-freehand',
+    sym('tool-freehand',
+        '<path d="M3 16C5.2 12.8 7.8 8.2 11.2 8.2C13.5 8.2 14.8 9.8 14.8 11.5C14.8 13.2 13.8 14.5 12.1 15.6L10.3 16.8C9 17.6 8.5 18.4 8.5 19.3C8.5 20.7 9.7 21.7 11.3 21.7C14.1 21.7 17.2 19.8 21 16.8" stroke-width="1.9" fill="none"/>'
+    ));
+
 IconRegistry.registerSymbol('rectangle', 'tool-rectangle',
     sym('tool-rectangle', '<rect x="3" y="5" width="18" height="14" rx="1"/>'));
 
@@ -465,8 +472,11 @@ IconRegistry.registerSymbol('line', 'tool-line',
 IconRegistry.registerSymbol('polyline', 'tool-polyline',
     sym('tool-polyline', '<polyline points="4 19 9 9 14 14 19 5"/>'));
 
-IconRegistry.registerSymbol('manhattan', 'tool-manhattan',
-    sym('tool-manhattan', '<polyline points="4 19 10 19 10 8 19 8"/>'));
+// IconRegistry.registerSymbol('manhattan', 'tool-manhattan',
+//     sym('tool-manhattan', '<polyline points="4 19 10 19 10 8 19 8"/>'));
+
+IconRegistry.registerSymbol('orthogonal', 'tool-orthogonal',
+    sym('tool-orthogonal', '<polyline points="4 19 10 19 10 8 19 8"/>'));
 
 IconRegistry.registerSymbol('polygon', 'tool-polygon',
     sym('tool-polygon', '<polygon points="12 3 20 8 20 16 12 21 4 16 4 8"/>'));

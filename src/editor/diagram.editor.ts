@@ -129,13 +129,18 @@ export class DiagramEditor {
     protected toolbars: DiagramToolBar[] = [];
 
     protected toolboxHost?: HTMLElement;
-    // protected toolbox?: ToolPalette;
     protected toolbox?: DiagramToolbox;
 
     protected inspectorHost?: HTMLElement;
     protected inspector?: DiagramInspector;
     protected statusBar?: DiagramStatusBar;
     protected hintService?: DiagramHintService;
+
+    protected freehandToolbar?: HTMLElement;
+    protected freehandColorHost?: HTMLElement;
+    protected freehandWidthHost?: HTMLElement;
+    protected freehandColorSelect?: ColorSelect;
+    protected freehandWidthSelect?: WidthSelect;
 
     protected textToolbar?: HTMLElement;
     protected fontSelectHost?: HTMLElement;
@@ -260,6 +265,9 @@ export class DiagramEditor {
         this.imageModeSelect?.destroy();
         this.imageAlignSelect?.destroy();
         this.imagePaddingSelect?.destroy();
+
+        this.freehandColorSelect?.destroy();
+        this.freehandWidthSelect?.destroy();
 
         this.host.innerHTML = '';
     }
@@ -464,9 +472,6 @@ export class DiagramEditor {
     public getToolbox(): DiagramToolbox | undefined {
         return this.toolbox;
     }
-    // public getToolbox(): ToolPalette | undefined {
-    //     return this.toolbox;
-    // }
 
     /**
      * Returns the font family selector control when available.
@@ -569,7 +574,6 @@ export class DiagramEditor {
 
         // Tool palette is the left column of the stage grid — must be first child
         this.toolboxHost = document.createElement('div');
-        // setClasses(this.toolboxHost, 'diagram-editor-tool-palette');
         setClasses(this.toolboxHost, 'diagram-editor-toolbox');
         this.stageHost.appendChild(this.toolboxHost);
 
@@ -612,7 +616,6 @@ export class DiagramEditor {
         if (diagram) this.diagram.read(diagram);
 
         // Initialize the tool palette
-        // this.toolbox = new ToolPalette(this.toolboxHost, this.diagram, config.toolPalette || {});
         this.toolbox = new DiagramToolbox(this.toolboxHost, this.diagram, config.toolbox || {});
 
         // Load toolbars or the default toolbar if none are specified
@@ -774,8 +777,16 @@ export class DiagramEditor {
                 layout: [...DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT, '|', ...DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT],
             });
             this.toolbars.push(this.textFormatToolbar, this.textAlignToolbar);
-
         }
+
+        /* Initialize freehand toolbar */
+
+        this.freehandToolbar = this.createToolbar(this.toolbarsHost);
+        this.freehandColorHost = this.createControlHost(this.freehandToolbar, 'diagram-editor-freehand-select');
+        this.freehandColorSelect = new ColorSelect(this.freehandColorHost, config.strokeColor || {});
+
+        this.freehandWidthHost = this.createControlHost(this.freehandToolbar, 'diagram-editor-freehand-width-select');
+        this.freehandWidthSelect = new WidthSelect(this.freehandWidthHost, config.strokeWidth || {});
 
         this.attachListeners();
         this.reflectStyles();
@@ -982,6 +993,23 @@ export class DiagramEditor {
         }
         */
 
+        if (this.freehandColorHost) {
+            this.addManagedListener<string>(this.freehandColorHost, 'colorchange', (color) => {
+                if (this.syncingControls) return;
+                if (color) {
+                    this.diagram.freehandColor = color;
+                }
+            });
+        }
+        if (this.freehandWidthHost) {
+            this.addManagedListener<number>(this.freehandWidthHost, 'widthchange', (width) => {
+                if (this.syncingControls) return;
+                if (Number.isFinite(width) && width > 0) {
+                    this.diagram.freehandLineWidth = width;
+                }
+            });
+        }
+
         this.addManagedEventListener(this.host, DIAGRAM_CHANGED_EVENT, () => {
             this.reflectStyles();
         });
@@ -1107,6 +1135,20 @@ export class DiagramEditor {
                 this.imageAlignSelect.disabled = !alignable;
                 const align = this.diagram.imageAlign;
                 if (align) this.imageAlignSelect.align = align as any;
+            }
+
+            if (this.freehandToolbar) {
+                this.freehandToolbar.style.display = this.diagram.currentTool === 'freehand' ? 'flex' : 'none';
+            }
+            if (this.freehandColorSelect) {
+                const color = this.diagram.freehandColor;
+                this.freehandColorSelect.clearOptions();
+                this.freehandColorSelect.addOptions([color, ...frequent]);
+                this.freehandColorSelect.value = color;
+            }
+
+            if (this.freehandWidthSelect) {
+                this.freehandWidthSelect.value = this.diagram.freehandLineWidth;
             }
 
             /* TODO: image padding reflect — paired with commented-out construction above
