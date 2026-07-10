@@ -138,6 +138,14 @@ export interface INodeAdapter {
     connection_handles: NodeHandle[];
 
     /**
+     * Specifies which resize handles are available for this node type. If not defined, all resize handles are assumed to be supported.
+     * Each handle is represented by a NodeHandle value, which indicates the position or type of the handle on the node.
+     * This property is used to determine where the user can click and drag to resize the node and how the diagram control should render resize handles.
+     * Adapters that support resizing should override this to return the appropriate handles for their node type.
+     */
+    resize_handles?: NodeHandle[];
+
+    /**
      * Additional logic to determine whether a connection can be made to this node from the specified direction and handle.
      * This method is called during connection creation to validate whether a connection is allowed based on the node's state, geometry, or other criteria.
      * Adapters that support connections should override this to implement custom connection rules.
@@ -158,6 +166,12 @@ export interface INodeAdapter {
      * If true, the diagram control may provide rotation handles and allow the user to rotate the node.
      */
     can_rotate?: boolean;
+
+    /**
+     * Indicates whether the adapter supports snapping the node to a grid or guides when moving or resizing.
+     * If true, the diagram control may adjust the node's position and size to align with the grid or guides.
+     */
+    can_snap?: boolean;
 
     /**
      * Updates the draft node's points while the user is dragging during creation.
@@ -252,6 +266,8 @@ export interface INodeAdapter {
      * @returns The visual bounding rect.
      */
     getVisualRect(node: INode, rect: IRect): IRect;
+
+    geometryOptions(node: INode, path: string): SpecificOptions | undefined;
 
     specificOptions(node: INode, path: string): SpecificOptions | undefined;
 

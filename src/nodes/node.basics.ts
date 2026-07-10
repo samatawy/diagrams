@@ -144,6 +144,10 @@ export class NodeBasics {
     public static resizeHandle(node: INode, handle: NodeHandle, byX: number, byY: number, preserveAspect?: boolean): void {
 
         if (isLocked(node)) return;
+        // const adapter = NodeRegistry.adapter(node.type);
+        // const allowed = adapter?.resize_handles;
+        // if (allowed && !allowed?.includes(handle)) return;
+
         preserveAspect = preserveAspect || isAspectLocked(node);
 
         const diagram = node.owner;

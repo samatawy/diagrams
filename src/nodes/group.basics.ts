@@ -1,5 +1,5 @@
 import { isContainer } from "../guards";
-import type { IContainer, INode } from "../interfaces";
+import type { IContainer, IGroup, INode } from "../interfaces";
 import type { Diagram } from "../model/diagram";
 
 /**
@@ -36,5 +36,23 @@ export class GroupBasics {
         }
 
         return ids.map(id => diagram.node(id) as INode).filter(n => !!n);
+    }
+
+    public static ownedGroup(node: INode): IGroup | undefined {
+        if (!isContainer(node)) return undefined;
+        const diagram = node.owner;
+        if (!diagram) return undefined;
+
+        return diagram.groups?.find(group => group.id === node.owns_group);
+    }
+
+    public static nodeGroup(node: INode): IGroup | undefined {
+        const diagram = node.owner;
+        if (!diagram) return undefined;
+
+        const targetNode = diagram.nodes.find(n => n.id === node.id);
+        if (!targetNode) return undefined;
+
+        return diagram.groups?.find(group => group.nodes.includes(targetNode.id));
     }
 }

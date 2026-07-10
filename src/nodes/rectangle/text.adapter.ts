@@ -27,6 +27,25 @@ export class TextAdapter extends RectangleAdapter {
         context.restore();
     }
 
+    renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles'): void {
+        super.renderSelection(node, context, show);
+
+        if (!context) return;
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return;
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(node);
+
+        context.save();
+        RenderBasics.prepareHandles(node, context);
+
+        context.setLineDash([1 / coordinates.zoom, 2 / coordinates.zoom]);
+        context.rect(rect.left, rect.top, rect.width, rect.height);
+        context.stroke();
+
+        context.restore();
+    }
+
     public onCreateDraft(tool: string): Partial<INode> | undefined {
         return {
             type: this.type,

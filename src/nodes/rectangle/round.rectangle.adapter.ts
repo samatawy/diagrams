@@ -6,6 +6,7 @@ import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
+import type { SpecificOptions } from "../../factory/node.adapter";
 
 /**
  * RoundRectangleAdapter is a node adapter responsible for rendering rounded rectangle nodes in the diagram. 
@@ -164,6 +165,16 @@ export class RoundRectangleAdapter extends RectangleAdapter {
             if (!node.geometry) node.geometry = {};
             node.geometry.radius = new_radius;
         }
+    }
+
+    public geometryOptions(node: INode, path: string): SpecificOptions | undefined {
+        if (path === 'geometry.radius' || path === 'radius') {
+            return {
+                label: 'Radius',
+                datatype: 'number',
+            }
+        }
+        return undefined;
     }
 
 }

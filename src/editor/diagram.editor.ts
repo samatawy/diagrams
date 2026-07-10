@@ -50,6 +50,7 @@ import { DiagramToolbox, type DiagramToolBoxConfig } from "./toolbox";
 import { registerBasicAdapters } from "../nodes";
 import { registerBpmnAdapters } from "../nodes/bpmn";
 import { registerC4Adapters } from "../nodes/c4";
+import { registerErdAdapters } from "../nodes/erd";
 
 import DIAGRAM_EDITOR_STYLES from '../css_generated/editor/diagram.editor.css';
 const DIAGRAM_EDITOR_STYLE_ID = 'diagram-editor-layout';
@@ -78,10 +79,12 @@ export type DiagramEditorFileDialogsConfig = {
 export type DiagramEditorConfig = {
     hostClassName?: string;
     showInspector?: boolean;
-    // toolPalette?: ToolPaletteConfig;
+    showInputs?: boolean;
+
+    inspector?: InspectorConfig;
     toolbars?: DiagramToolBarConfig[];
     toolbox?: DiagramToolBoxConfig;
-    prompts?: DiagramEditorPrompts;
+
     fontSelect?: FontSelectConfig;
     fontSizeSelect?: SizeSelectConfig;
     textColor?: ColorSelectConfig;
@@ -96,8 +99,8 @@ export type DiagramEditorConfig = {
     fillColor?: ColorSelectConfig;
     imageSelect?: ImageSelectConfig;
     imagePadding?: IntegerRangeSelectConfig;
-    inspector?: InspectorConfig;
 
+    prompts?: DiagramEditorPrompts;
     fileDialogs?: DiagramEditorFileDialogsConfig;
 }
 
@@ -195,6 +198,7 @@ export class DiagramEditor {
         registerBasicAdapters();
         registerBpmnAdapters();
         registerC4Adapters();
+        registerErdAdapters();
     }
 
     /**
@@ -625,138 +629,153 @@ export class DiagramEditor {
             this.toolbars.push(defaultToolbar);
         }
 
-        // Initialize text toolbar
-        this.textToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-text-toolbar', 'Text');
+        if (config.showInputs !== false) {
+            /* Initialize text toolbar */
 
-        this.fontSelectHost = this.createControlHost(this.textToolbar, 'diagram-editor-font-face-select');
-        this.fontSizeSelectHost = this.createControlHost(this.textToolbar, 'diagram-editor-font-size-select');
-        this.textColorSelectHost = this.createControlHost(this.textToolbar, 'diagram-editor-text-color-select');
+            this.textToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-text-toolbar', 'Text');
 
-        this.fontSelect = new FontSelect(this.fontSelectHost, config.fontSelect || {});
-        this.fontSizeSelect = new SizeSelect(this.fontSizeSelectHost, config.fontSizeSelect || {});
-        this.textColorSelect = new ColorSelect(this.textColorSelectHost, config.textColor || {});
+            this.fontSelectHost = this.createControlHost(this.textToolbar, 'diagram-editor-font-face-select');
+            this.fontSizeSelectHost = this.createControlHost(this.textToolbar, 'diagram-editor-font-size-select');
+            this.textColorSelectHost = this.createControlHost(this.textToolbar, 'diagram-editor-text-color-select');
 
-        const textAlignHost = document.createElement('div');
-        this.textToolbar.appendChild(textAlignHost);
-        this.textAlignToolbar = new DiagramToolBar(textAlignHost, this.diagram, {
-            layout: DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT,
-        });
+            this.fontSelect = new FontSelect(this.fontSelectHost, config.fontSelect || {});
+            this.fontSizeSelect = new SizeSelect(this.fontSizeSelectHost, config.fontSizeSelect || {});
+            this.textColorSelect = new ColorSelect(this.textColorSelectHost, config.textColor || {});
 
-        const textFormatHost = document.createElement('div');
-        this.textToolbar.appendChild(textFormatHost);
-        this.textFormatToolbar = new DiagramToolBar(textFormatHost, this.diagram, {
-            layout: [...DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT, '|', ...DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT],
-        });
+            const textFormatHost = document.createElement('div');
+            this.textToolbar.appendChild(textFormatHost);
+            this.textFormatToolbar = new DiagramToolBar(textFormatHost, this.diagram, {
+                layout: DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT,
+            });
 
-        // Initialize stroke toolbar
-        this.strokeToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-stroke-toolbar', 'Line');
+            const textAlignHost = document.createElement('div');
+            this.textToolbar.appendChild(textAlignHost);
+            this.textAlignToolbar = new DiagramToolBar(textAlignHost, this.diagram, {
+                layout: [...DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT, '|', ...DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT],
+            });
 
-        this.strokeColorSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-color-select');
-        this.strokeWidthSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-width-select');
-        this.dashSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-dash-select');
-        this.arrowDirectionSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
-        this.arrowTypeSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
+            /* Initialize stroke toolbar */
+            this.strokeToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-stroke-toolbar', 'Line');
 
-        this.strokeColorSelect = new ColorSelect(this.strokeColorSelectHost, config.strokeColor || {});
-        this.strokeWidthSelect = new WidthSelect(this.strokeWidthSelectHost, config.strokeWidth || {});
-        this.dashSelect = new DashSelect(this.dashSelectHost, config.dashSelect || {});
-        this.arrowDirectionSelect = new ArrowDirectionSelect(this.arrowDirectionSelectHost, config.arrowDirectionSelect || {});
-        this.arrowTypeSelect = new ArrowTypeSelect(this.arrowTypeSelectHost, config.arrowTypeSelect || {});
+            this.strokeColorSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-color-select');
+            this.strokeWidthSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-width-select');
+            this.dashSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-dash-select');
+            this.arrowDirectionSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
+            this.arrowTypeSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
 
-        // Initialize fill toolbar
-        this.fillToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-fill-toolbar', 'Fill');
+            this.strokeColorSelect = new ColorSelect(this.strokeColorSelectHost, config.strokeColor || {});
+            this.strokeWidthSelect = new WidthSelect(this.strokeWidthSelectHost, config.strokeWidth || {});
+            this.dashSelect = new DashSelect(this.dashSelectHost, config.dashSelect || {});
+            this.arrowDirectionSelect = new ArrowDirectionSelect(this.arrowDirectionSelectHost, config.arrowDirectionSelect || {});
+            this.arrowTypeSelect = new ArrowTypeSelect(this.arrowTypeSelectHost, config.arrowTypeSelect || {});
 
-        this.fillStyleSelectHost = this.createControlHost(this.fillToolbar, 'diagram-editor-fill-color-select');
-        this.fillStyleSelect = new ColorSelect(this.fillStyleSelectHost, config.fillColor || {});
+            // Initialize fill toolbar
+            this.fillToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-fill-toolbar', 'Fill');
 
-        this.imageSelectHost = document.createElement('div');
-        setClasses(this.imageSelectHost, 'diagram-editor-image-select');
-        this.fillToolbar.appendChild(this.imageSelectHost);
-        this.imageSelect = new ImageSelect(this.imageSelectHost, {
-            ...(config.imageSelect || {}),
-            assetStore: this.diagram.assetStore,
-        });
+            this.fillStyleSelectHost = this.createControlHost(this.fillToolbar, 'diagram-editor-fill-color-select');
+            this.fillStyleSelect = new ColorSelect(this.fillStyleSelectHost, config.fillColor || {});
 
-        this.imageModeSelectHost = document.createElement('div');
-        setClasses(this.imageModeSelectHost, 'diagram-editor-image-mode-select');
-        this.fillToolbar.appendChild(this.imageModeSelectHost);
-        this.imageModeSelect = new ImageModeSelect(this.imageModeSelectHost);
+            this.imageSelectHost = document.createElement('div');
+            setClasses(this.imageSelectHost, 'diagram-editor-image-select');
+            this.fillToolbar.appendChild(this.imageSelectHost);
+            this.imageSelect = new ImageSelect(this.imageSelectHost, {
+                ...(config.imageSelect || {}),
+                assetStore: this.diagram.assetStore,
+            });
 
-        this.imageAlignSelectHost = document.createElement('div');
-        setClasses(this.imageAlignSelectHost, 'diagram-editor-image-align-select');
-        this.fillToolbar.appendChild(this.imageAlignSelectHost);
-        this.imageAlignSelect = new ImageAlignSelect(this.imageAlignSelectHost);
+            this.imageModeSelectHost = document.createElement('div');
+            setClasses(this.imageModeSelectHost, 'diagram-editor-image-mode-select');
+            this.fillToolbar.appendChild(this.imageModeSelectHost);
+            this.imageModeSelect = new ImageModeSelect(this.imageModeSelectHost);
 
-        /* TODO: image padding moved to inspector — re-enable if a compact toolbar control is designed
-        this.imagePaddingHost = this.createControlHost(this.fillToolbar, 'diagram-editor-image-padding', 'Pad');
-        this.imagePaddingSelect = new IntegerRangeSelect(this.imagePaddingHost, {
-            min: 0,
-            max: 40,
-            step: 1,
-            ...(config.imagePadding || {}),
-            unit: 'px',
-        });
-        */
+            this.imageAlignSelectHost = document.createElement('div');
+            setClasses(this.imageAlignSelectHost, 'diagram-editor-image-align-select');
+            this.fillToolbar.appendChild(this.imageAlignSelectHost);
+            this.imageAlignSelect = new ImageAlignSelect(this.imageAlignSelectHost);
 
-        // Initialize shadow toolbar
-        // this.shadowToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-shadow-toolbar');
-        this.shadowToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-shadow-toolbar', 'Shadow');
+            /* TODO: image padding moved to inspector — re-enable if a compact toolbar control is designed
+            this.imagePaddingHost = this.createControlHost(this.fillToolbar, 'diagram-editor-image-padding', 'Pad');
+            this.imagePaddingSelect = new IntegerRangeSelect(this.imagePaddingHost, {
+                min: 0,
+                max: 40,
+                step: 1,
+                ...(config.imagePadding || {}),
+                unit: 'px',
+            });
+            */
 
-        this.shadowPresetSelectHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-preset');
-        this.shadowPresetSelect = new ShadowPresetSelect(this.shadowPresetSelectHost);
+            /* Initialize shadow toolbar */
+            // this.shadowToolbar = this.createToolbar(this.toolbarsHost, 'diagram-editor-shadow-toolbar');
+            this.shadowToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-shadow-toolbar', 'Shadow');
 
-        // Shadow enable checkbox — must be the first element in the group
-        // const shadowEnableLabel = document.createElement('label');
-        // setClasses(shadowEnableLabel, 'diagram-editor-shadow-enable-label');
-        // this.shadowEnableCheckbox = document.createElement('input');
-        // this.shadowEnableCheckbox.type = 'checkbox';
-        // const shadowEnableText = document.createElement('span');
-        // shadowEnableText.textContent = 'Shadow';
-        // shadowEnableLabel.appendChild(shadowEnableText);
-        // shadowEnableLabel.appendChild(this.shadowEnableCheckbox);
-        // this.shadowToolbar.appendChild(shadowEnableLabel);
+            this.shadowPresetSelectHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-preset');
+            this.shadowPresetSelect = new ShadowPresetSelect(this.shadowPresetSelectHost);
 
-        /* Halo enable checkbox is currently disabled in the toolbar.
-        // Halo enable checkbox — alongside Shadow
-        const haloEnableLabel = document.createElement('label');
-        setClasses(haloEnableLabel, 'diagram-editor-shadow-enable-label');
-        this.haloEnableCheckbox = document.createElement('input');
-        this.haloEnableCheckbox.type = 'checkbox';
-        const haloEnableText = document.createElement('span');
-        haloEnableText.textContent = 'Halo';
-        haloEnableLabel.appendChild(haloEnableText);
-        haloEnableLabel.appendChild(this.haloEnableCheckbox);
-        this.shadowToolbar.appendChild(haloEnableLabel);
-        */
+            // Shadow enable checkbox — must be the first element in the group
+            // const shadowEnableLabel = document.createElement('label');
+            // setClasses(shadowEnableLabel, 'diagram-editor-shadow-enable-label');
+            // this.shadowEnableCheckbox = document.createElement('input');
+            // this.shadowEnableCheckbox.type = 'checkbox';
+            // const shadowEnableText = document.createElement('span');
+            // shadowEnableText.textContent = 'Shadow';
+            // shadowEnableLabel.appendChild(shadowEnableText);
+            // shadowEnableLabel.appendChild(this.shadowEnableCheckbox);
+            // this.shadowToolbar.appendChild(shadowEnableLabel);
 
-        /* TODO: shadow sliders moved to inspector — re-enable if a compact toolbar control is designed
-        this.shadowOffsetXHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-x', 'X');
-        this.shadowOffsetYHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-y', 'Y');
-        this.shadowBlurHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-blur', 'Blur');
+            /* Halo enable checkbox is currently disabled in the toolbar.
+            // Halo enable checkbox — alongside Shadow
+            const haloEnableLabel = document.createElement('label');
+            setClasses(haloEnableLabel, 'diagram-editor-shadow-enable-label');
+            this.haloEnableCheckbox = document.createElement('input');
+            this.haloEnableCheckbox.type = 'checkbox';
+            const haloEnableText = document.createElement('span');
+            haloEnableText.textContent = 'Halo';
+            haloEnableLabel.appendChild(haloEnableText);
+            haloEnableLabel.appendChild(this.haloEnableCheckbox);
+            this.shadowToolbar.appendChild(haloEnableLabel);
+            */
 
-        this.shadowOffsetXSelect = new IntegerRangeSelect(this.shadowOffsetXHost, {
-            min: -16,
-            max: 16,
-            step: 1,
-            ...(config.shadowOffsetX || {}),
-            unit: 'px',
-        });
-        this.shadowOffsetYSelect = new IntegerRangeSelect(this.shadowOffsetYHost, {
-            min: -16,
-            max: 16,
-            step: 1,
-            ...(config.shadowOffsetY || {}),
-            unit: 'px',
-        });
-        this.shadowBlurSelect = new IntegerRangeSelect(this.shadowBlurHost, {
-            min: 0,
-            max: 32,
-            step: 1,
-            ...(config.shadowBlur || {}),
-            unit: 'px',
-        });
-        */
+            /* TODO: shadow sliders moved to inspector — re-enable if a compact toolbar control is designed
+            this.shadowOffsetXHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-x', 'X');
+            this.shadowOffsetYHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-offset-y', 'Y');
+            this.shadowBlurHost = this.createControlHost(this.shadowToolbar, 'diagram-editor-shadow-blur', 'Blur');
+    
+            this.shadowOffsetXSelect = new IntegerRangeSelect(this.shadowOffsetXHost, {
+                min: -16,
+                max: 16,
+                step: 1,
+                ...(config.shadowOffsetX || {}),
+                unit: 'px',
+            });
+            this.shadowOffsetYSelect = new IntegerRangeSelect(this.shadowOffsetYHost, {
+                min: -16,
+                max: 16,
+                step: 1,
+                ...(config.shadowOffsetY || {}),
+                unit: 'px',
+            });
+            this.shadowBlurSelect = new IntegerRangeSelect(this.shadowBlurHost, {
+                min: 0,
+                max: 32,
+                step: 1,
+                ...(config.shadowBlur || {}),
+                unit: 'px',
+            });
+            */
+        } else {
+            /* No inputs, so show text actions.. */
+            const textHost = document.createElement('div');
+            this.toolbarsHost!.appendChild(textHost);
+            this.textFormatToolbar = new DiagramToolBar(textHost, this.diagram, {
+                layout: DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT,
+            });
 
+            this.textAlignToolbar = new DiagramToolBar(textHost, this.diagram, {
+                layout: [...DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT, '|', ...DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT],
+            });
+            this.toolbars.push(this.textFormatToolbar, this.textAlignToolbar);
+
+        }
 
         this.attachListeners();
         this.reflectStyles();
@@ -766,7 +785,7 @@ export class DiagramEditor {
      * Connects editor controls to the underlying diagram view and change events.
      */
     protected attachListeners(): void {
-        // Following were added to support hint changes
+        /* Following were added to support hint changes */
 
         this.addManagedEventListener(this.host, 'pointerover', (event) => {
             const pointer = event as PointerEvent;
@@ -805,7 +824,7 @@ export class DiagramEditor {
             }
         });
 
-        // End of hint change support
+        /* End of hint change support */
 
         if (this.fontSelectHost) {
             this.addManagedListener<string>(this.fontSelectHost, 'fontchange', (font) => {

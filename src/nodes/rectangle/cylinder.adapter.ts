@@ -6,6 +6,7 @@ import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
+import type { SpecificOptions } from "../../factory/node.adapter";
 
 /**
  * CylinderAdapter is a node adapter responsible for rendering cylinder nodes in the diagram. 
@@ -265,6 +266,16 @@ export class CylinderAdapter extends RectangleAdapter {
         const rect = diagram.getCoordinates().getBoundingRect(node);
         const maxAspect = this.maxAspect(rect);
         node.geometry.aspect = Math.max(-maxAspect, Math.min(maxAspect, node.geometry.aspect));
+    }
+
+    public geometryOptions(node: INode, path: string): SpecificOptions | undefined {
+        if (path === 'geometry.aspect' || path === 'aspect') {
+            return {
+                label: 'Aspect',
+                datatype: 'number',
+            }
+        }
+        return undefined;
     }
 
     public onCreateDraft(tool: string): Partial<INode> | undefined {

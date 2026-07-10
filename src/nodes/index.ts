@@ -18,6 +18,11 @@ import { TrapezoidAdapter } from './rectangle/trapezoid.adapter';
 
 import { VerticalPoolAdapter } from './container/vertical.pool.adapter';
 import { CylinderAdapter } from './rectangle/cylinder.adapter';
+import { TableAdapter } from './erd/table.adapter';
+import { TableRowAdapter } from './erd/table.row.adapter';
+import { One2OneRelationAdapter } from './erd/one2one.relation.adapter';
+import { One2ManyRelationAdapter } from './erd/one2many.relation.adapter';
+import { Many2ManyRelationAdapter } from './erd/many2many.relation.adapter';
 
 export * from './node.basics';
 export * from './connection.basics';
@@ -56,6 +61,12 @@ export function registerBasicAdapters(): void {
     PolygonAdapter.register();
     SvgAdapter.register();
 
+    TableAdapter.register();
+    TableRowAdapter.register();
+    One2OneRelationAdapter.register();
+    One2ManyRelationAdapter.register();
+    Many2ManyRelationAdapter.register();
+
     NodeRegistry.registerTransferables([
         RectangleAdapter.TYPE,
         RoundRectangleAdapter.TYPE,
@@ -75,21 +86,9 @@ export function registerBasicAdapters(): void {
         CurveAdapter.TYPE,
     ]);
 
-    // NodeRegistry.registerTransferables([
-    //     LineAdapter.TYPE,
-    // ]);
-
-    // NodeRegistry.registerTransferables([
-    //     VerticalSwimlaneAdapter.TYPE,
-    // ]);
-
-    // NodeRegistry.registerTransferables([
-    //     PolygonAdapter.TYPE,
-    // ]);
-
-
-    // NodeRegistry.registerTransferables([
-    //     BpmnGatewayAdapter.TYPE,
-    // ]);
-
+    NodeRegistry.registerTransferables([
+        One2OneRelationAdapter.TYPE,
+        One2ManyRelationAdapter.TYPE,
+        Many2ManyRelationAdapter.TYPE,
+    ]);
 }

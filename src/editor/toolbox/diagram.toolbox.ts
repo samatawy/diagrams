@@ -3,7 +3,7 @@ import { injectStyles, setClasses } from "../editor.utils";
 import { BASIC_TOOL_LAYOUT, DiagramToolset, type ToolsetConfig } from "./diagram.toolset";
 import { BPMN_TOOL_LAYOUT } from "../../nodes/bpmn";
 import { C4_TOOL_LAYOUT } from "../../nodes/c4";
-
+import { ERD_TOOL_LAYOUT } from "../../nodes/erd";
 import DEFAULT_STYLES from '../../css_generated/editor/toolbox/diagram.toolbox.css';
 const STYLE_ID = 'toolbox-defaults';
 
@@ -47,6 +47,9 @@ const DEFAULT_CONFIG: Required<DiagramToolBoxConfig> = {
     }, {
         name: 'C4',
         layout: C4_TOOL_LAYOUT,
+    }, {
+        name: 'ERD',
+        layout: ERD_TOOL_LAYOUT,
     }],
     hostClassName: 'toolbox',
     sectionClassName: 'toolbox-section',

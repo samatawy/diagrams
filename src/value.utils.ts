@@ -223,7 +223,7 @@ export function isHollow(node: INode): boolean {
     if (node.hollow !== undefined) {
         return node.hollow;
     } else {
-        return (node.fillStyle === undefined || fillColor(node) === 'transparent') && node.image_id === undefined;
+        return (node.fillStyle === undefined || fillColor(node) === 'transparent') && !node.fillStyle?.gradient && node.image_id === undefined;
         // return (fillStyle(node) === undefined || fillStyle(node) === 'transparent') && imageId(node) === undefined;
     }
 }

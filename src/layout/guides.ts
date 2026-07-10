@@ -288,15 +288,19 @@ export class Guides {
 
         if (input.handle === NodeHandle.MOVE) {
             for (const node of input.nodes) {
-                NodeBasics.moveBy(node, dx, dy, 'ignore_scale');
+                if (NodeRegistry.canSnap(node.type)) {
+                    NodeBasics.moveBy(node, dx, dy, 'ignore_scale');
+                }
             }
             return true;
         }
 
         const zoom = input.diagram.getCoordinates().zoom || 1;
         for (const node of input.nodes) {
-            NodeBasics.resizeHandle(node, input.handle, dx * zoom, dy * zoom, input.preserveAspect);
-            NodeRegistry.afterResize(node, input.handle);
+            if (NodeRegistry.canSnap(node.type)) {
+                NodeBasics.resizeHandle(node, input.handle, dx * zoom, dy * zoom, input.preserveAspect);
+                NodeRegistry.afterResize(node, input.handle);
+            }
         }
         return true;
     }
@@ -730,6 +734,10 @@ export class Guides {
             if (seen.has(node.id)) {
                 return;
             }
+            if (NodeRegistry.canSnap(node.type) === false) {
+                return;
+            }
+
             seen.add(node.id);
 
             if (excludedNodeIds.has(node.id) || linkedNodeIds.has(node.id) || isConnectionNode(node)) {
@@ -755,6 +763,7 @@ export class Guides {
             const layerNodes = layer.nodes
                 .map(nodeId => diagram.node(nodeId))
                 .filter((node): node is INode => !!node);
+            // .filter(node => NodeRegistry.canSnap(node.type));   // Added to filter nodes that can snap
 
             for (const node of layerNodes) {
                 tryAddNode(node);

@@ -106,7 +106,6 @@ export interface INode {
      * The fill style of the node, which can be used to control the color and pattern of the node's interior.
      */
     fillStyle?: FillStyle;
-    // fillStyle?: string;
 
     /**
      * The shadow style of the node, which can be used to apply a shadow effect to the node.
@@ -123,14 +122,31 @@ export interface INode {
      * The rotation angle of the node, which can be used to rotate the node around its center.
      */
     angle?: number;
-    // The following are cached in the diagram's ViewCache
-    // cos?: number;
-    // sin?: number;
 
+    /**
+     * An optional array of child elements that are rendered inside or with the node. 
+     * Child elements can include icons, table rows, markdown elements, or other visual components.
+     */
+    children?: IChildElement[];
+
+    /**
+     * An optional geometry object that can store additional geometric properties of the node, such as width, height, or other custom measurements.
+     * This can be used to extend the node's geometry beyond the basic points and provide more detailed control over its shape and size.
+     * The geometry object is a key-value map where keys are property names and values can be numbers, strings, or booleans.
+     * This allows for flexible storage of various geometric attributes that may be relevant to the node's rendering or interaction.
+     */
     geometry?: Record<string, number | string | boolean>;
 
+    /**
+     * An optional specific object that can store additional properties specific to the node's type, 
+     * allowing for customization and extension of the node's functionality but not related to its geometry.
+     */
     specific?: Record<string, unknown>;
 
+    /**
+     * An optional metadata object for the node, which can be used to store additional information about the node.
+     * This can include custom properties, annotations, or any other relevant data that is not related to the node's appearance.
+     */
     meta?: Record<string, unknown>;
 }
 
@@ -181,6 +197,13 @@ export interface IConnection {
      * The target anchor of the connection, which specifies where the connection ends on the target node. It includes information about the node, handle, and optional offsets.
      */
     to?: IConnectionAnchor;
+}
+
+/**
+ * The IChildElement interface can be implemented by objects that are considered child elements of a node.
+ * Example may include icons, table rows, markdown elements, etc.
+ */
+export interface IChildElement {
 }
 
 /**
@@ -254,11 +277,6 @@ export interface IGrid {
     color: string;
 
     /**
-     * The size of the grid cells in pixels, which determines the spacing of the grid lines and can affect how nodes snap to the grid.
-     */
-    // cell_size: number;
-
-    /**
      * The width of the grid cell in pixels.
      */
     width: number;
@@ -275,14 +293,49 @@ export interface IGrid {
  * The diagram serves as the central data structure that holds all the information about the nodes, layers, and their relationships.
  */
 export interface IDiagram extends Serializable {
+    /**
+     * The unique identifier of the diagram, which is used to reference the diagram within the application and for serialization purposes.
+     */
     id: string;
+
+    /**
+     * An array of nodes that belong to the diagram, which represent the entities and elements that can be connected and manipulated within the diagram.
+     */
     nodes: INode[];
+
+    /**
+     * An optional array of groups that belong to the diagram, which can be used to organize nodes into visual collections.
+     * Grouped nodes maintain their relative positions.
+     */
     groups?: IGroup[];
+
+    /**
+     * An array of layers that belong to the diagram, which can be used to organize nodes into different visual layers.
+     */
     layers: ILayer[];
+
+    /**
+     * An optional identifier for the sheet associated with the diagram, which can be used to apply specific styles and configurations 
+     * to the diagram's nodes and connections.
+     */
     sheet_id?: string;
+
     // sheet: SheetStyles;
+
+    /**
+     * An optional background fill style for the diagram, which can be used to set the background color or gradient of the diagram area.
+     */
     background?: FillStyle;
+
+    /**
+     * An optional metadata object for the diagram, which can be used to store additional information about the diagram that is not part of its core structure.
+     * This can include custom properties, annotations, or any other relevant data that is not related to diagram rendering.
+     */
     meta?: Record<string, unknown>;
+
+    /**
+     * An optional grid configuration for the diagram, which defines the properties of the grid used for aligning and snapping nodes.
+     */
     grid?: IGrid;
 
     node(id: string): INode | undefined;
@@ -292,13 +345,42 @@ export interface IDiagram extends Serializable {
  * Payload for selection change events, which includes the currently selected nodes and their IDs.
  */
 export interface HasSelection {
+    /**
+     * Returns an array of currently selected nodes in the diagram.
+     * @returns An array of INode objects representing the selected nodes.
+     */
     selection(): INode[];
+    /**
+     * Checks if a given node is currently selected in the diagram.
+     * @param node The node to check for selection.
+     * @returns True if the node is selected, false otherwise.
+     */
     isSelected(node: INode): boolean;
+    /**
+     * Selects a given node in the diagram.
+     * @param node The node to select.
+     * @param option The selection option, either 'in_group' or 'isolated'.
+     */
     select(node: INode, option: 'in_group' | 'isolated'): void;
+    /**
+     * Deselects a given node in the diagram.
+     * @param node The node to deselect.
+     * @param option The selection option, either 'in_group' or 'isolated'.
+     */
     deselect(node: INode, option: 'in_group' | 'isolated'): void;
+    /**
+     * Clears the current selection in the diagram.
+     */
     clearSelection(): void;
 }
 
+/**
+ * Interface for objects that have a SheetRepository, which is responsible for managing sheets and their styles in the diagram.
+ */
 export interface HasSheetRepository {
+    /**
+     * The SheetRepository instance associated with the object, which provides methods for managing sheets.
+     * Currently only diagrams have a sheet repository.
+     */
     sheetRepository: SheetRepository;
 }

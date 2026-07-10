@@ -846,10 +846,12 @@ export class RenderBasics {
         const baseline = textBaseline(node);
         switch (baseline) {
             case 'top':
-                startline = textRect.top + (fontSize / 2);
+                // startline = textRect.top + (fontSize / 2);
+                startline = textRect.top;
                 break;
             case 'middle':
-                startline = textRect.top + (fontSize / 4) + (textRect.height / 2) - (lineHeight * (lines.length - 1) / 2);
+                // startline = textRect.top + (fontSize / 4) + (textRect.height / 2) - (lineHeight * (lines.length - 1) / 2);
+                startline = textRect.top + (textRect.height / 2) - (lineHeight * (lines.length - 1) / 2);
                 break;
             case 'bottom':
                 startline = textRect.top + textRect.height - (lineHeight * (lines.length - 1));

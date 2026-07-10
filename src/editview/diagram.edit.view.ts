@@ -1593,6 +1593,7 @@ export class DiagramEditView extends DiagramView {
         if (patch['fillStyle.color'] !== undefined) this.settings.fillColor = String(patch['fillStyle.color']);
         if (patch['fillStyle.gradient'] !== undefined) this.settings.fillGradient = { ...patch['fillStyle.gradient'] } as IGradient;
 
+        if (patch['shadowStyle'] !== undefined) this.setShadowStyle(patch['shadowStyle'] as Partial<ShadowStyle>);
         if (patch['shadowStyle.color'] !== undefined) this.settings.shadowColor = String(patch['shadowStyle.color']);
         if (patch['shadowStyle.blur'] !== undefined) this.settings.shadowBlur = Number(patch['shadowStyle.blur']);
         if (patch['shadowStyle.offset.x'] !== undefined) this.settings.shadowOffsetX = Number(patch['shadowStyle.offset.x']);
@@ -1637,6 +1638,7 @@ export class DiagramEditView extends DiagramView {
             if (patch['fillStyle.color'] !== undefined) nodeStyle.fillStyle!.color = patch['fillStyle.color'] as string;
             if (patch['fillStyle.gradient'] !== undefined) nodeStyle.fillStyle!.gradient = { ...patch['fillStyle.gradient'] } as IGradient;
 
+            if (patch['shadowStyle'] !== undefined) nodeStyle.shadowStyle = { ...(nodeStyle.shadowStyle || {}), ...(patch['shadowStyle'] as Partial<ShadowStyle>) } as ShadowStyle;
             if (patch['shadowStyle.color'] !== undefined) nodeStyle.shadowStyle!.color = patch['shadowStyle.color'] as string;
             if (patch['shadowStyle.blur'] !== undefined) nodeStyle.shadowStyle!.blur = patch['shadowStyle.blur'] as number;
             if (patch['shadowStyle.offset.x'] !== undefined || patch['shadowStyle.offset.y'] !== undefined) {
@@ -1979,60 +1981,7 @@ export class DiagramEditView extends DiagramView {
                 }
 
                 this.addUndo();
-                const pastedNodes: INode[] = [];
-                const layer = this.ensureCurrentLayer();
-
-                /* First pass: assign new IDs so connection anchors within this
-                    paste batch can be remapped before any node is inserted. 
-                */
-                const idMap = new Map<string, string>();
-                for (const node of envelope.nodes) {
-                    const newId = `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-                    idMap.set(node.id, newId);
-                }
-
-                const remapAnchor = (anchor: IConnectionAnchor | undefined): IConnectionAnchor | undefined => {
-                    if (!anchor) return undefined;
-                    const oldId = typeof anchor.node === 'string' ? anchor.node : anchor.node.id;
-                    const newId = idMap.get(oldId);
-                    return newId ? { ...anchor, node: newId } : { ...anchor };
-                };
-
-                /* Second pass: remap group memberships
-                    creating new cloned groups if there was a container node in the paste batch.
-                */
-                const groupMap: Map<string, IGroup> = new Map();
-                for (let node of envelope.nodes) {
-                    const group_id = (node as IContainer & INode)?.owns_group;
-                    if (group_id) {
-                        const group = this.group(group_id);
-                        if (group) {
-                            /* create a clone group from selected nodes */
-                            let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-                            let new_members = group.nodes.filter(id => idMap.has(id));
-                            new_members = new_members.map(id => idMap.get(id)!);
-                            const new_group = { id: cloned_group_id, nodes: new_members };
-                            groupMap.set(group.id, new_group);
-
-                            this.upsertGroup(new_group);
-                        }
-                    }
-                }
-
-                /* Finally, clone the nodes into the diagram. */
-                for (let node of envelope.nodes) {
-                    const clone = this.cloneNode(node, idMap.get(node.id));
-                    const conn = clone as INode & IConnection;
-                    conn.from = remapAnchor(conn.from);
-                    conn.to = remapAnchor(conn.to);
-                    if ((node as any).owns_group) (node as any).owns_group = groupMap.get((node as any).owns_group)?.id;
-                    this.upsertNode(clone);
-                    layer.nodes.push(clone.id);
-
-                    NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
-                    this.select(clone, 'isolated');
-                    pastedNodes.push(clone);
-                }
+                const pastedNodes = this.cloneNodes(envelope.nodes);
 
                 this.can_paste = true;
                 this.emitClipboardChange('paste', pastedNodes);
@@ -2396,17 +2345,9 @@ export class DiagramEditView extends DiagramView {
     public async cloneSelected(): Promise<void> {
         this.addUndo();
 
-        const layer = this.ensureCurrentLayer();
-        for (let node of this.selection()) {
-            const clone = this.cloneNode(node);
+        const cloned = this.cloneNodes(this.selection());
+        this.setSelection(cloned);
 
-            NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
-            this.nodes.push(clone);
-            layer.nodes.push(clone.id);
-
-            this.deselect(node, 'isolated');
-            this.select(clone, 'isolated');
-        }
         this.render('all');
         this.renderPreview();
     }
@@ -2429,6 +2370,70 @@ export class DiagramEditView extends DiagramView {
             ...(node.geometry && { geometry: deepClone(node.geometry) }),
             ...(node.meta && { meta: deepClone(node.meta) }),
         } as INode;
+    }
+
+    /**
+     * Handles clone nodes, including id remapping, reconnecting anchors, and handling groups.
+     * @param nodes The nodes to clone.
+     * @returns The cloned nodes, already inserted into the current layer.
+     */
+    protected cloneNodes(nodes: INode[] | ISerializedNode[]): INode[] {
+        const layer = this.ensureCurrentLayer();
+        const cloned: INode[] = [];
+
+        /* First pass: assign new IDs so connection anchors within this
+                            paste batch can be remapped before any node is inserted. 
+                        */
+        const idMap = new Map<string, string>();
+        for (const node of nodes) {
+            const newId = `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+            idMap.set(node.id, newId);
+        }
+
+        const remapAnchor = (anchor: IConnectionAnchor | undefined): IConnectionAnchor | undefined => {
+            if (!anchor) return undefined;
+            const oldId = typeof anchor.node === 'string' ? anchor.node : anchor.node.id;
+            const newId = idMap.get(oldId);
+            return newId ? { ...anchor, node: newId } : { ...anchor };
+        };
+
+        /* Second pass: remap group memberships
+            creating new cloned groups if there was a container node in the paste batch.
+        */
+        const groupMap: Map<string, IGroup> = new Map();
+        for (let node of nodes) {
+            const group_id = (node as IContainer & INode)?.owns_group;
+            if (group_id) {
+                const group = this.group(group_id);
+                if (group) {
+                    /* create a clone group from selected nodes */
+                    let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                    let new_members = group.nodes.filter(id => idMap.has(id));
+                    new_members = new_members.map(id => idMap.get(id)!);
+                    const new_group = { id: cloned_group_id, nodes: new_members };
+                    groupMap.set(group.id, new_group);
+
+                    this.upsertGroup(new_group);
+                }
+            }
+        }
+
+        /* Finally, clone the nodes into the diagram. */
+        for (let node of nodes) {
+            const clone = this.cloneNode(node, idMap.get(node.id));
+            const conn = clone as INode & IConnection;
+            conn.from = remapAnchor(conn.from);
+            conn.to = remapAnchor(conn.to);
+            if ((clone as any).owns_group) (clone as any).owns_group = groupMap.get((clone as any).owns_group)?.id;
+            this.upsertNode(clone);
+            layer.nodes.push(clone.id);
+
+            NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
+            this.select(clone, 'isolated');
+            cloned.push(clone);
+        }
+
+        return cloned;
     }
 
     /**
@@ -3279,6 +3284,12 @@ export class DiagramEditView extends DiagramView {
                 case NodeHandle.NW:
                 case NodeHandle.SE:
                 case NodeHandle.SW: {
+
+                    const allowed = this.downShape ? NodeRegistry.adapter(this.downShape.type)?.resize_handles : undefined;
+                    if (allowed && !allowed.includes(this.downHandle!)) {
+                        break;
+                    }
+
                     let movePos = { x: event.offsetX, y: event.offsetY }
 
                     let preserveAspect = event.shiftKey;
@@ -3501,12 +3512,29 @@ export class DiagramEditView extends DiagramView {
 
         /* Handle groups (containers) */
         if (this.downHandle === NodeHandle.MOVE) {
+            const moved_containers = this.selection()
+                .filter(node => isContainer(node))
+                .map(node => node.owns_group);
+
+            const moved_non_containers = this.selection()
+                .filter(node => !isContainer(node));
+
             const overlaying = this.hitNodes(event.offsetX, event.offsetY)
                 .filter(node => node.id !== this.downShape?.id);
+
             for (const one of overlaying) {
                 if (isContainer(one)) {
-                    for (const shape of this.selection()) {
+                    if (moved_containers.includes(one.owns_group)) continue;
+
+                    for (const shape of moved_non_containers) {
+                        /* Don't move nodes moved within their container onto another container
+                            We can allow this if we want to support copying the contents of one container into another, 
+                            but for now we don't want to do that. */
+                        const group = this.nodeGroup(shape);
+                        if (group && moved_containers.includes(group.id)) continue;
+
                         this.setNodeGroup(shape, one.owns_group);
+                        NodeRegistry.afterResize(one, NodeHandle.NONE);
                     }
                     break;
                 }
@@ -3666,6 +3694,7 @@ export class DiagramEditView extends DiagramView {
             for (const one of overlaying) {
                 if (isContainer(one)) {
                     this.setNodeGroup(this.current.draft, one.owns_group);
+                    NodeRegistry.afterResize(one, NodeHandle.NONE);
                     break;
                 }
             }
@@ -3705,8 +3734,6 @@ export class DiagramEditView extends DiagramView {
              */
             let from_handle = pointerAnchor?.handle ?? NodeHandle.NONE;
             let from_point = pointerHit?.point ?? this.coordinates.getPointFromEvent(event, this.grid);
-            let to_handle = NodeHandle.MOVE;
-            let to_point = from_point;
 
             /* The dragged node is over another node.
              * Position the dragged node relative to the connector's end point.
@@ -3720,18 +3747,21 @@ export class DiagramEditView extends DiagramView {
                     from_point = from_nearest.point;
                 }
             }
-            this.positionDraftConnectedTo(this.dragCreateDraft, from_point, from_handle);
-            const to_nearest = NodeBasics.nearestConnectionHandle(this.dragCreateDraft, from_point, false);
-            if (to_nearest) {
-                to_handle = to_nearest.handle;
-                to_point = to_nearest.point;
-            }
 
-            if (from_handle === NodeHandle.N || from_handle === NodeHandle.S ||
+            /* Check if the dragged node has any connectable handle before repositioning it.
+             * If to_nearest is undefined the dragged node cannot connect (e.g. table_row),
+             * so we must not call positionDraftConnectedTo — that would cause visible flickering. */
+            const to_nearest = NodeBasics.nearestConnectionHandle(this.dragCreateDraft, from_point, false);
+
+            if (to_nearest && (from_handle === NodeHandle.N || from_handle === NodeHandle.S ||
                 from_handle === NodeHandle.E || from_handle === NodeHandle.W ||
                 from_handle === NodeHandle.NE || from_handle === NodeHandle.NW ||
                 from_handle === NodeHandle.SE || from_handle === NodeHandle.SW ||
-                from_handle === NodeHandle.POINT) {
+                from_handle === NodeHandle.POINT)) {
+
+                this.positionDraftConnectedTo(this.dragCreateDraft, from_point, from_handle);
+                const to_handle = to_nearest.handle;
+                const to_point = to_nearest.point;
 
                 this.canvas.style.cursor = 'copy';  // indicate Adding to existing node
 
@@ -3747,12 +3777,27 @@ export class DiagramEditView extends DiagramView {
                 this.setInteractionHint(`Drop to connect to ${target_label}`);
 
                 return;
-            } else {
-                // Should this be handled?
-                // console.warn('Drag over node with no anchor handle?', overlaying, from_handle);
+            }
+
+            /* Overlaying node exists but cannot auto-connect (e.g. container drop).
+             * Stop any stale animation, reset the connector, and fall through to
+             * the centered-follow-cursor path below. */
+            this.stopAnimation('auto_connect');
+            if (this.dragDraftConnector) {
+                this.dragDraftConnector.invisible = true;
+                this.dragDraftConnector.ready = false;
             }
         } else {
             this.stopAnimation('auto_connect');
+
+            // if (isContainer(overlaying)) {
+            //     this.animateLineDash('add_child', () => {
+            //         this.render('all');
+
+            //         /* Provide visual feedback indicating potential anchor points. */
+            //         this.renderConnectionHandles(overlaying);
+            //     });
+            // }
         }
 
         /* The dragged node is not over another node. */
@@ -3768,7 +3813,14 @@ export class DiagramEditView extends DiagramView {
             this.dragDraftConnector.ready = false;
         }
 
-        if (overlaying) {
+        if (isContainer(overlaying)) {
+            this.animateLineDash('add_child', () => {
+                this.render('all');
+
+                /* Provide visual feedback indicating potential anchor points. */
+                this.renderConnectionHandles(overlaying);
+            });
+        } else if (overlaying) {
             this.renderConnectionHandles(overlaying);
         }
     }
@@ -3810,8 +3862,6 @@ export class DiagramEditView extends DiagramView {
             }
             let from_handle = pointerAnchor?.handle ?? NodeHandle.NONE;
             let from_point = pointerHit?.point ?? this.coordinates.getPointFromEvent(event, this.grid);
-            let to_handle = NodeHandle.MOVE;
-            let to_point = from_point;
 
             if (overlaying && (from_handle === NodeHandle.MOVE || from_handle === NodeHandle.NONE)) {
                 const is_inside = from_handle === NodeHandle.MOVE;
@@ -3821,34 +3871,39 @@ export class DiagramEditView extends DiagramView {
                     from_point = from_nearest.point;
                 }
             }
-            this.positionDraftConnectedTo(created, from_point, from_handle);
+
             const to_nearest = NodeBasics.nearestConnectionHandle(created, from_point, false);
-            if (to_nearest) {
-                to_handle = to_nearest.handle;
-                to_point = to_nearest.point;
+            if (!to_nearest) {
+                /* Dragged node cannot connect — treat as plain container drop, no auto-connector. */
+                this.animations.animateNodeCenter(created, point, () => { });
+            } else {
+                const to_handle = to_nearest.handle;
+                const to_point = to_nearest.point;
+
+                this.positionDraftConnectedTo(created, from_point, from_handle);
+
+                /* Insert the connector into the diagram.
+                   Shallow spread keeps `owner` as a live reference — deepClone must NOT be used here
+                   because it would serialise/break the DiagramEditView `owner` reference. */
+                const connector = {
+                    ...this.dragDraftConnector,
+                    points: (this.dragDraftConnector?.points || []).map(pt => ({ ...pt })),
+                    from: { node: overlaying?.id, handle: from_handle },
+                    to: { node: created.id, handle: to_handle },
+                    id: `auto-line-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+                } as INode & IConnection;
+
+                const adapter = NodeRegistry.adapter(connector.type);
+                adapter?.afterConnect?.(connector, 'from', { node: overlaying!.id, handle: from_handle });
+                adapter?.afterConnect?.(connector, 'to', { node: created.id, handle: to_handle });
+
+                this.upsertNode(connector);
+                this.current.layer?.nodes.push(connector.id);
+
+                /* and place it as expected */
+                this.positionDraftConnectedTo(created, from_point, from_handle);
+                connected_to = overlaying?.id;
             }
-
-            /* Insert the connector into the diagram.
-               Shallow spread keeps `owner` as a live reference — deepClone must NOT be used here
-               because it would serialise/break the DiagramEditView `owner` reference. */
-            const connector = {
-                ...this.dragDraftConnector,
-                points: (this.dragDraftConnector?.points || []).map(pt => ({ ...pt })),
-                from: { node: overlaying?.id, handle: from_handle },
-                to: { node: created.id, handle: to_handle },
-                id: `auto-line-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-            } as INode & IConnection;
-
-            const adapter = NodeRegistry.adapter(connector.type);
-            adapter?.afterConnect?.(connector, 'from', { node: overlaying!.id, handle: from_handle });
-            adapter?.afterConnect?.(connector, 'to', { node: created.id, handle: to_handle });
-
-            this.upsertNode(connector);
-            this.current.layer?.nodes.push(connector.id);
-
-            /* and place it as expected */
-            this.positionDraftConnectedTo(created, from_point, from_handle);
-            connected_to = overlaying?.id;
 
         } else {
             /* The created node is not over another node. */
@@ -3870,12 +3925,18 @@ export class DiagramEditView extends DiagramView {
             }
 
             if (isContainer(one)) {
+                this.animations.stopAnimation(created.id);
                 this.setNodeGroup(created, one.owns_group);
+                NodeRegistry.afterResize(one, NodeHandle.NONE);
                 break;
             }
         }
 
-        NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid, NodeHandle.MOVE);
+        const adapter = NodeRegistry.adapter(created.type);
+        if (adapter?.can_snap) {
+            adapter.snapToGrid(created, this.grid, NodeHandle.MOVE);
+        }
+        // NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid, NodeHandle.MOVE);
 
         this.clearSelection();
         this.select(created, 'isolated');
@@ -4237,7 +4298,11 @@ export class DiagramEditView extends DiagramView {
 
         const created = this.current.draft;
 
-        NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid, NodeHandle.MOVE);
+        const adapter = NodeRegistry.adapter(created.type);
+        if (adapter?.can_snap) {
+            adapter.snapToGrid(created, this.grid, NodeHandle.MOVE);
+        }
+        // NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid, NodeHandle.MOVE);
 
         this.clearSelection();
         this.select(created, 'isolated');
@@ -4498,19 +4563,25 @@ export class DiagramEditView extends DiagramView {
             const lineCount = Math.max(1, wrapped.length);
             const textBlockHeight = lineCount * scaledLineHeight;
 
-            const startline = baseline === 'top'
-                ? layoutRect.top + (scaledFontSize / 2)
-                : baseline === 'bottom'
-                    ? layoutRect.top + layoutRect.height - (scaledLineHeight * (lineCount - 1))
-                    : layoutRect.top + (scaledFontSize / 4) + (layoutRect.height / 2) - (scaledLineHeight * (lineCount - 1) / 2);
+            // const startline = baseline === 'top'
+            //     ? layoutRect.top + (scaledFontSize / 2)
+            //     : baseline === 'bottom'
+            //         ? layoutRect.top + layoutRect.height - (scaledLineHeight * (lineCount - 1))
+            //         : layoutRect.top + (scaledFontSize / 4) + (layoutRect.height / 2) - (scaledLineHeight * (lineCount - 1) / 2);
 
-            const firstLineTop = baseline === 'top'
-                ? startline
-                : baseline === 'bottom'
-                    ? startline - scaledLineHeight
-                    : startline - (scaledLineHeight / 2);
+            // const firstLineTop = baseline === 'top'
+            //     ? startline
+            //     : baseline === 'bottom'
+            //         ? startline - scaledLineHeight
+            //         : startline - (scaledLineHeight / 2);
 
             editorHeight = Math.max(scaledLineHeight, textBlockHeight);
+            const halfLeading = (scaledLineHeight - scaledFontSize) / 2;
+            const firstLineTop = baseline === 'top'
+                ? layoutRect.top - halfLeading
+                : baseline === 'bottom'
+                    ? layoutRect.top + layoutRect.height - editorHeight + halfLeading
+                    : layoutRect.top + layoutRect.height / 2 - editorHeight / 2;
             top = firstLineTop;
 
             if (orientation === 'vertical') {
@@ -4647,11 +4718,14 @@ export class DiagramEditView extends DiagramView {
             textarea.style.height = `${nextHeight}px`;
 
             if (baseline === 'top') {
-                textarea.style.top = `${layoutRect.top + (scaledFontSize / 2)}px`;
+                // textarea.style.top = `${layoutRect.top + (scaledFontSize / 2)}px`;
+                textarea.style.top = `${layoutRect.top - (scaledLineHeight - scaledFontSize) / 2}px`;
             } else if (baseline === 'bottom') {
-                textarea.style.top = `${layoutRect.top + layoutRect.height - nextHeight}px`;
+                // textarea.style.top = `${layoutRect.top + layoutRect.height - nextHeight}px`;
+                textarea.style.top = `${layoutRect.top + layoutRect.height - nextHeight + (scaledLineHeight - scaledFontSize) / 2}px`;
             } else {
-                textarea.style.top = `${layoutRect.top + (scaledFontSize / 4) + (layoutRect.height / 2) - (nextHeight / 2)}px`;
+                // textarea.style.top = `${layoutRect.top + (scaledFontSize / 4) + (layoutRect.height / 2) - (nextHeight / 2)}px`;
+                textarea.style.top = `${layoutRect.top + layoutRect.height / 2 - nextHeight / 2}px`;
             }
 
             if (orientation === 'vertical' && rotateCenter) {
@@ -5209,7 +5283,7 @@ export class DiagramEditView extends DiagramView {
         const snappedOwners = new Set<string>();
         for (const shape of nodes) {
             const adapter = NodeRegistry.adapter(shape.type);
-            if (!adapter?.snapToGrid) {
+            if (!adapter?.can_snap || !adapter?.snapToGrid) {
                 continue;
             }
 

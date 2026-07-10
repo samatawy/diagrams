@@ -6,7 +6,10 @@ registerAdapters();
 const host = document.getElementById('diagram-editor-host');
 if (!host) throw new Error('Host element not found');
 
-const editor = new DiagramEditor(host);
+const editor = new DiagramEditor(host, {
+    showInputs: false,
+    showInspector: true,
+});
 
 const view = editor.getDiagramView();
 view.loadDiagram(normalizeDemoDiagram({

@@ -1,3 +1,4 @@
+import type { SpecificOptions } from "../../factory/node.adapter";
 import type { INode } from "../../interfaces";
 import type { ArrowDirection, ArrowType } from "../../types";
 import { PolylineAdapter } from "../polyline/polyline.adapter";

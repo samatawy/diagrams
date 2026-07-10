@@ -17,8 +17,8 @@ export class VerticalPoolAdapter extends RectangleAdapter {
 
     public static TYPE = 'vertical_pool';
 
-    public is_container = true;
-    public can_rotate = false;
+    is_container = true;
+    can_rotate = false;
     text_baselines = ['top'] as ITextBaseline[];
     text_overflow = 'hidden' as TextOverflowMode;
     text_orientations = ['horizontal'] as ITextOrientation[];

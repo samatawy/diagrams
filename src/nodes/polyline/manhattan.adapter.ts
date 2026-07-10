@@ -242,7 +242,7 @@ export class ManhattanAdapter extends PolylineAdapter {
                 }, valid_options[0]!);
                 return best_option[0]!;
             }
-            console.log('No path valid from ', options);
+            // console.log('No path valid from ', options);
         }
 
         // If no to_direction, things are simpler.

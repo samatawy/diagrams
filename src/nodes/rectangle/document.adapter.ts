@@ -6,6 +6,7 @@ import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
+import type { SpecificOptions } from "../../factory/node.adapter";
 
 /**
  * DocumentAdapter is a node adapter responsible for rendering document nodes in the diagram. 
@@ -215,4 +216,13 @@ export class DocumentAdapter extends RectangleAdapter {
         node.geometry.waveheight = Math.max(0, Math.min(maxWaveheight, node.geometry.waveheight));
     }
 
+    public geometryOptions(node: INode, path: string): SpecificOptions | undefined {
+        if (path === 'geometry.waveheight' || path === 'waveheight') {
+            return {
+                label: 'Wave Height',
+                datatype: 'number',
+            }
+        }
+        return undefined;
+    }
 }

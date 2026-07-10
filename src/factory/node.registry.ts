@@ -157,6 +157,16 @@ export class NodeRegistry {
     }
 
     /**
+     * Checks if the node type can snap to a grid or guides.
+     * @param type The type of the node.
+     * @returns True if the node type can snap to a grid or guides, false otherwise.
+     */
+    public static canSnap(type: string): boolean {
+        const handler = this._nodes.get(type);
+        return handler ? handler.can_snap ?? false : false;
+    }
+
+    /**
      * Checks if the specified node can connect from/to the given handle.
      * @param node The node instance.
      * @param direction The direction of the connection ('from' or 'to').

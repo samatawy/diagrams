@@ -6,6 +6,7 @@ import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
+import type { SpecificOptions } from "../../factory/node.adapter";
 
 /**
  * TrapezoidAdapter is a node adapter responsible for rendering trapezoid nodes in the diagram. 
@@ -205,4 +206,13 @@ export class TrapezoidAdapter extends RectangleAdapter {
         node.geometry.skew = Math.max(-maxSkew, Math.min(maxSkew, node.geometry.skew));
     }
 
+    public geometryOptions(node: INode, path: string): SpecificOptions | undefined {
+        if (path === 'geometry.skew' || path === 'skew') {
+            return {
+                label: 'Skew',
+                datatype: 'number',
+            }
+        }
+        return undefined;
+    }
 }

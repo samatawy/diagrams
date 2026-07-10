@@ -4,6 +4,7 @@ export * from './types';
 export * from './interfaces';
 export * from './style.interfaces';
 export * from './animation.types';
+export * from './color.types';
 export * from './guards';
 export * from './value.utils';
 

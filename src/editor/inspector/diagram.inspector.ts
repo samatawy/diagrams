@@ -30,7 +30,8 @@ import type { NumberInputAdapterConfig } from "./native/number.input.adapter";
 import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./native/meta.kv.adapters";
 import { ClassActionsAdapter, type ClassActionsAdapterConfig } from "./adapters/class.actions.adapter";
 import { GradientPickerAdapter } from "./adapters/gradient.picker.adapter";
-import type { ArrowTypeSelectConfig } from "../inputs";
+import { type ArrowTypeSelectConfig } from "../inputs/arrow.type.select";
+import { ShadowPresetSelectAdapter } from "./adapters/shadow.preset.select.adapter";
 
 export type DiagramInspectorConfig = InspectorConfig & {
     colorSelect?: ColorSelectConfig;
@@ -62,6 +63,7 @@ export class DiagramInspector extends Inspector {
     private metaGrid?: HTMLElement;
     private diagramMetaGrid?: HTMLElement;
     private pendingMetaValueFocusPath?: string;
+    private pendingFocusPath?: string;
 
     /**
      * Creates a DiagramInspector bound to the given diagram view.
@@ -116,6 +118,7 @@ export class DiagramInspector extends Inspector {
         Inspector.registerAdapter('MetaAdd', MetaAddAdapter);
         Inspector.registerAdapter('ClassActions', ClassActionsAdapter);
         Inspector.registerAdapter('GradientPicker', GradientPickerAdapter);
+        Inspector.registerAdapter('ShadowPresetSelect', ShadowPresetSelectAdapter);
     }
 
     /**
@@ -128,6 +131,7 @@ export class DiagramInspector extends Inspector {
         const noSelection = () => selected().length === 0;
         const hasConnections = () => selected().some((node) => isConnection(node));
         const hasNonConnections = () => selected().some((node) => !isConnection(node));
+        const canRotate = () => selected().some(n => NodeRegistry.canRotate(n.type));
 
         // ---- Diagram section (visible only when nothing is selected) ----
         const { grid: diagramGrid } = this.buildSection('Diagram', 'expanded');
@@ -290,7 +294,7 @@ export class DiagramInspector extends Inspector {
         this.addRow(geometry, {
             key: 'angle', label: 'Angle', type: 'number',
             editor: 'AngleEditor', editorOptions: { precision: 4 },
-            readonly: readonly, isVisible: hasSelected,
+            readonly: readonly, isVisible: canRotate,
         });
 
         const { grid: text } = this.buildSection('Text', 'collapsed');
@@ -435,6 +439,13 @@ export class DiagramInspector extends Inspector {
         this.addRow(fill, { key: 'image_padding', label: 'Padding', type: 'number', readonly: readonly, isVisible: hasNonConnections });
 
         const { grid: shadow } = this.buildSection('Shadow', 'collapsed');
+        this.addRow(shadow, {
+            key: 'shadowStyle', label: 'Preset',
+            type: 'string', editor: 'ShadowPresetSelect',
+            editorOptions: {},
+            readonly: readonly, isVisible: hasSelected
+        });
+
         this.addRow(shadow, {
             key: 'shadowStyle.color',
             label: 'Color',
@@ -581,7 +592,8 @@ export class DiagramInspector extends Inspector {
             }
 
             this.syncRowVisibility();
-            this.schedulePendingMetaValueFocus();
+            this.schedulePendingFocus();
+            // this.schedulePendingMetaValueFocus();
         } finally {
             this.syncingAdapters = false;
         }
@@ -682,18 +694,29 @@ export class DiagramInspector extends Inspector {
      * @returns An array of volatile property definitions for geometry rows.
      */
     private buildGeometryRowDefinitions(selected: INode[]): InspectorPropertyDefinition[] {
-        const keys = this.collectFlatRecordKeys(selected, 'geometry');
-        return keys.map((key) => {
-            const type = this.resolveFlatValueType(selected, 'geometry', key);
-            return {
-                key: `geometry.${key}`,
-                label: key.length ? `${key[0]!.toUpperCase()}${key.slice(1)}` : key,
-                type,
-                editorOptions: type === 'number' ? { precision: 4 } : undefined,
-                readonly: this.readonly,
-                volatile: true,
-            };
-        });
+        const keys = this.collectFlatRecordKeys(selected, 'geometry', false);
+        const defs: InspectorPropertyDefinition[] = [];
+
+        for (const key of keys) {
+            const def = this.buildCustomRowDefinition(selected, key, 'geometry');
+            if (def) {
+                defs.push(def);
+            }
+        }
+
+        return defs;
+        // const keys = this.collectFlatRecordKeys(selected, 'geometry');
+        // return keys.map((key) => {
+        //     const type = this.resolveFlatValueType(selected, 'geometry', key);
+        //     return {
+        //         key: `geometry.${key}`,
+        //         label: key.length ? `${key[0]!.toUpperCase()}${key.slice(1)}` : key,
+        //         type,
+        //         editorOptions: type === 'number' ? { precision: 4 } : undefined,
+        //         readonly: this.readonly,
+        //         volatile: true,
+        //     };
+        // });
     }
 
     /**
@@ -707,7 +730,8 @@ export class DiagramInspector extends Inspector {
         const defs: InspectorPropertyDefinition[] = [];
 
         for (const key of keys) {
-            const def = this.buildSpecificRowDefinition(selected, key);
+            const def = this.buildCustomRowDefinition(selected, key, 'specific');
+            // const def = this.buildSpecificRowDefinition(selected, key);
             if (def) {
                 defs.push(def);
             }
@@ -716,12 +740,90 @@ export class DiagramInspector extends Inspector {
         return defs;
     }
 
+    // /**
+    //  * Builds one property definition for a specific.* path after aggregating schema hints across the selection.
+    //  * Returns undefined when any selected node does not support the key or exposes conflicting editor types.
+    //  */
+    // private buildSpecificRowDefinition(selected: INode[], key: string): InspectorPropertyDefinition | undefined {
+    //     const path = `specific.${key}`;
+    //     let rowLabel: string | undefined;
+    //     let hasLabelMismatch = false;
+    //     let datatype: 'string' | 'number' | 'boolean' | 'enum' | undefined;
+    //     let isReadonly = this.readonly;
+    //     const optionMaps: Array<Record<string, { label: string; value: unknown }>> = [];
+
+    //     for (const node of selected) {
+    //         const adapter = NodeRegistry.adapter(node.type);
+    //         const config = adapter?.specificOptions(node, path);
+    //         if (!config) {
+    //             return undefined;
+    //         }
+
+    //         isReadonly = isReadonly || config.readonly === true;
+
+    //         if (rowLabel === undefined) {
+    //             rowLabel = config.label;
+    //         } else if (rowLabel !== config.label) {
+    //             hasLabelMismatch = true;
+    //         }
+
+    //         const nextDatatype = this.resolveSpecificDatatype(config);
+    //         if (!datatype) {
+    //             datatype = nextDatatype;
+    //         } else if (datatype !== nextDatatype) {
+    //             return undefined;
+    //         }
+
+    //         if (nextDatatype !== 'enum') {
+    //             continue;
+    //         }
+
+    //         const resolvedOptions = this.resolveSpecificOptionMap(config, node);
+    //         if (!resolvedOptions) {
+    //             return undefined;
+    //         }
+    //         optionMaps.push(resolvedOptions);
+    //     }
+
+    //     const resolvedLabel = hasLabelMismatch ? 'Multiple' : (rowLabel ?? key);
+    //     const resolvedDatatype = datatype ?? 'string';
+    //     const def: InspectorPropertyDefinition = {
+    //         key: path,
+    //         label: resolvedLabel,
+    //         type: resolvedDatatype === 'enum' ? 'select' : resolvedDatatype,
+    //         readonly: isReadonly,
+    //         volatile: true,
+    //     };
+
+    //     if (resolvedDatatype !== 'enum') {
+    //         return def;
+    //     }
+
+    //     const options = this.intersectSpecificOptionMaps(optionMaps);
+    //     if (!options.length) {
+    //         return undefined;
+    //     }
+
+    //     def.editor = 'EnumSelect';
+    //     def.editorOptions = { options } as EnumSelectAdapterConfig;
+    //     return def;
+    // }
+
     /**
-     * Builds one property definition for a specific.* path after aggregating schema hints across the selection.
-     * Returns undefined when any selected node does not support the key or exposes conflicting editor types.
-     */
-    private buildSpecificRowDefinition(selected: INode[], key: string): InspectorPropertyDefinition | undefined {
-        const path = `specific.${key}`;
+ * Builds one property definition for a geometry.* OR specific.* path after aggregating schema hints across the selection.
+ * Returns undefined when any selected node does not support the key or exposes conflicting editor types.
+ */
+    private buildCustomRowDefinition(selected: INode[], key: string, prefix: string): InspectorPropertyDefinition | undefined {
+        const path = `${prefix}.${key}`;
+        let config_function: string;
+        if (prefix === 'geometry') {
+            config_function = 'geometryOptions';
+        } else if (prefix === 'specific') {
+            config_function = 'specificOptions';
+        } else {
+            return undefined;
+        }
+
         let rowLabel: string | undefined;
         let hasLabelMismatch = false;
         let datatype: 'string' | 'number' | 'boolean' | 'enum' | undefined;
@@ -730,7 +832,7 @@ export class DiagramInspector extends Inspector {
 
         for (const node of selected) {
             const adapter = NodeRegistry.adapter(node.type);
-            const config = adapter?.specificOptions(node, path);
+            const config = (adapter as any)?.[config_function](node, path);
             if (!config) {
                 return undefined;
             }
@@ -771,6 +873,11 @@ export class DiagramInspector extends Inspector {
             volatile: true,
         };
 
+        if (resolvedDatatype === 'number') {
+            // def.editor = 'NumberInput';
+            def.editorOptions = { precision: 2 } as NumberInputAdapterConfig;
+        }
+
         if (resolvedDatatype !== 'enum') {
             return def;
         }
@@ -798,10 +905,7 @@ export class DiagramInspector extends Inspector {
     /**
      * Resolves a specific field's option record for a concrete node.
      */
-    private resolveSpecificOptionMap(
-        config: SpecificOptions,
-        node: INode,
-    ): Record<string, { label: string; value: unknown }> | undefined {
+    private resolveSpecificOptionMap(config: SpecificOptions, node: INode): Record<string, { label: string; value: unknown }> | undefined {
         if (!config.options) {
             return undefined;
         }
@@ -847,9 +951,7 @@ export class DiagramInspector extends Inspector {
     /**
      * Indexes a specific option record by stable value token.
      */
-    private mapSpecificOptionsByToken(
-        options: Record<string, { label: string; value: unknown }>,
-    ): Map<string, { label: string; value: unknown }> {
+    private mapSpecificOptionsByToken(options: Record<string, { label: string; value: unknown }>): Map<string, { label: string; value: unknown }> {
         const map = new Map<string, { label: string; value: unknown }>();
 
         for (const option of Object.values(options)) {
@@ -1035,6 +1137,8 @@ export class DiagramInspector extends Inspector {
         // For DiagramEditView supporting patches
         if (typeof edit.applyNodePatch === 'function') {
             edit.applyNodePatch(patch ?? {}, sourceKey);
+
+            this.captureFocus();
             this.syncDynamicRows(this.diagram.selection());
             this.refresh();
             return;
@@ -1050,6 +1154,8 @@ export class DiagramInspector extends Inspector {
         edit.render('all');
         edit.renderPreview();
         this.emitInspectorChanged(sourceKey);
+
+        this.captureFocus();
         this.syncDynamicRows(this.diagram.selection());
         this.refresh();
     }
@@ -1065,6 +1171,8 @@ export class DiagramInspector extends Inspector {
         // For DiagramEditView supporting patches
         if (typeof edit.applyDiagramPatch === 'function') {
             edit.applyDiagramPatch(patch ?? {}, sourceKey);
+
+            this.captureFocus();
             this.syncDynamicRows(this.diagram.selection());
             this.refresh();
             return;
@@ -1079,6 +1187,8 @@ export class DiagramInspector extends Inspector {
         edit.render('all');
         edit.renderPreview();
         this.emitInspectorChanged(sourceKey);
+
+        this.captureFocus();
         this.syncDynamicRows(this.diagram.selection());
         this.refresh();
     }
@@ -1112,35 +1222,71 @@ export class DiagramInspector extends Inspector {
         nodes.forEach((node) => grid.appendChild(node));
     }
 
-    /**
-     * Schedules focus for the value input of a newly added metadata row after DOM updates settle.
-     */
-    private schedulePendingMetaValueFocus(): void {
-        if (!this.pendingMetaValueFocusPath) {
-            return;
+    private captureFocus(): void {
+        const focused = document.activeElement as HTMLElement | null;
+        if (!focused) return;
+        const row = focused.closest<HTMLElement>('[data-row-key]');
+        if (!row) return;
+        const key = row.dataset['rowKey'];
+        if (!key) return;
+        // Only capture volatile rows — static rows manage their own focus
+        if (this.definitions[key]?.volatile) {
+            this.pendingFocusPath = key;
         }
+    }
 
-        const path = this.pendingMetaValueFocusPath;
+    private schedulePendingFocus(): void {
+        const path = this.pendingFocusPath ?? this.pendingMetaValueFocusPath;
+        this.pendingFocusPath = undefined;
         this.pendingMetaValueFocusPath = undefined;
+        if (!path) return;
 
-        const tryFocus = (remainingAttempts: number): void => {
+        const tryFocus = (remaining: number): void => {
             const cell = this.cells.get(path);
-            const input = cell?.querySelector<HTMLInputElement>('input[type="text"]');
+            const input = cell?.querySelector<HTMLElement>('input, textarea, select');
             if (input) {
                 input.focus();
-                input.select();
+                if (input instanceof HTMLInputElement && input.type === 'text') {
+                    const len = input.value.length;
+                    input.setSelectionRange(len, len);
+                }
                 return;
             }
-
-            if (remainingAttempts <= 0) {
-                return;
-            }
-
-            window.setTimeout(() => tryFocus(remainingAttempts - 1), 16);
+            if (remaining > 0) window.setTimeout(() => tryFocus(remaining - 1), 16);
         };
 
-        window.setTimeout(() => tryFocus(1), 0);
+        window.setTimeout(() => tryFocus(2), 0);
     }
+
+    // /**
+    //  * Schedules focus for the value input of a newly added metadata row after DOM updates settle.
+    //  */
+    // private schedulePendingMetaValueFocus(): void {
+    //     if (!this.pendingMetaValueFocusPath) {
+    //         return;
+    //     }
+
+    //     const path = this.pendingMetaValueFocusPath;
+    //     this.pendingMetaValueFocusPath = undefined;
+
+    //     const tryFocus = (remainingAttempts: number): void => {
+    //         const cell = this.cells.get(path);
+    //         const input = cell?.querySelector<HTMLInputElement>('input[type="text"]');
+    //         if (input) {
+    //             input.focus();
+    //             input.select();
+    //             return;
+    //         }
+
+    //         if (remainingAttempts <= 0) {
+    //             return;
+    //         }
+
+    //         window.setTimeout(() => tryFocus(remainingAttempts - 1), 16);
+    //     };
+
+    //     window.setTimeout(() => tryFocus(1), 0);
+    // }
 
     /**
      * Writes a value at a dot-separated path inside a target object, creating intermediate objects as needed.

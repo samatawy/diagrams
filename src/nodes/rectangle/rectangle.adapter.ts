@@ -22,8 +22,8 @@ export class RectangleAdapter implements INodeAdapter {
     }
 
     hollow_mode: HollowMode = 'if_transparent';
-    min_width: number = 24;
-    min_height: number = 16;
+    protected min_width: number = 24;
+    protected min_height: number = 16;
 
     is_connector = false;
     multistep_create = false;
@@ -35,6 +35,7 @@ export class RectangleAdapter implements INodeAdapter {
     text_baselines: ITextBaseline[] = ['top', 'middle', 'bottom'];
     connection_handles: NodeHandle[] = [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW];
     can_rotate = true;
+    can_snap = true;
 
     /**
      * Registers the RectangleAdapter with the NodeRegistry.
@@ -383,6 +384,10 @@ export class RectangleAdapter implements INodeAdapter {
 
     public getVisualRect(_node: INode, rect: IRect): IRect {
         return rect;
+    }
+
+    public geometryOptions(node: INode, path: string): SpecificOptions | undefined {
+        return undefined;
     }
 
     public specificOptions(node: INode, path: string): SpecificOptions | undefined {

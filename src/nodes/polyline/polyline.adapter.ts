@@ -31,6 +31,7 @@ export class PolylineAdapter implements INodeAdapter {
     // protected readonly hitStrokePadding = DiagramConstants.SELECTION_LINE_PADDING;
 
     hollow_mode: HollowMode = 'always';
+    can_rotate = false;
 
     is_connector = true;
     multistep_create = true;
@@ -179,6 +180,10 @@ export class PolylineAdapter implements INodeAdapter {
 
     public getVisualRect(_node: INode, rect: IRect): IRect {
         return rect;
+    }
+
+    public geometryOptions(node: INode, path: string): SpecificOptions | undefined {
+        return undefined;
     }
 
     public specificOptions(node: INode, path: string): SpecificOptions | undefined {
