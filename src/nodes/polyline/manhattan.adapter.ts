@@ -18,6 +18,10 @@ type DirectedPoint = IPoint & { direction?: CardinalDirection };
  * It extends the PolylineAdapter to leverage basic polyline rendering capabilities while adding specific logic 
  * for handling Manhattan-style routing and hit testing.
  * Registers with the NodeRegistry under the name 'manhattan'.
+ * 
+ * N.B. This is currently deprecated in favor of the OrthogonalAdapter, which provides similar functionality with improved routing and rendering.
+ * The difference is that this adapter allows user-managed routing through waypoint handles, 
+ * while the OrthogonalAdapter automatically computes the best path based on the node's points and handles.
  */
 export class ManhattanAdapter extends PolylineAdapter {
 

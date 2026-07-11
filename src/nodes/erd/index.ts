@@ -7,11 +7,11 @@ import { Many2ManyRelationAdapter } from './many2many.relation.adapter';
 import { One2ManyRelationAdapter } from './one2many.relation.adapter';
 import { One2OneRelationAdapter } from './one2one.relation.adapter';
 import { TableAdapter } from './table.adapter';
-import { TableRowAdapter } from './table.row.adapter';
+import { FieldAdapter } from './field.adapter';
 
 export function registerErdAdapters(): void {
     TableAdapter.register();
-    TableRowAdapter.register();
+    FieldAdapter.register();
     One2OneRelationAdapter.register();
     One2ManyRelationAdapter.register();
     Many2ManyRelationAdapter.register();
@@ -25,7 +25,7 @@ export function registerErdAdapters(): void {
 
 export const ERD_TOOL_LAYOUT = [
     'table',
-    'table_row',
+    'field',
     'erd_one_to_one',
     'erd_one_to_many',
     'erd_many_to_many',

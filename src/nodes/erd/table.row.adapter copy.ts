@@ -7,7 +7,7 @@ import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 
-export class TableRowAdapter extends RectangleAdapter {
+export class TableRow2Adapter extends RectangleAdapter {
 
     public static TYPE = 'table_row';
 

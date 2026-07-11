@@ -8,3 +8,5 @@ export * from './svg.adapter';
 export * from './trapezoid.adapter';
 export * from './document.adapter';
 export * from './cylinder.adapter';
+
+export * from './speech.bubble.adapter';

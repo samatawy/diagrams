@@ -23,6 +23,7 @@ This page is for end users of applications built with the diagrams editor.
 - Shift + left click shape: additive selection.
 - Ctrl/Cmd + left click shape: toggle selection.
 - Ctrl/Cmd + click through overlapping shapes: cycles to the next hit candidate.
+- Double-click to select one shape (regardless of group/container) PLUS start editing shape text.
 - Right click: open editor context menu.
 
 ### Pan and navigation by pointer

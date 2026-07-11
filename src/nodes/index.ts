@@ -1,29 +1,25 @@
 import { NodeRegistry } from '../factory';
 import { CurveAdapter } from './polyline/curve.adapter';
 import { LineAdapter } from './polyline/line.adapter';
-// import { ManhattanAdapter } from './polyline/manhattan.adapter';
 import { OrthogonalAdapter } from './polyline/orthogonal.adapter';
 import { PolygonAdapter } from './polyline/polygon.adapter';
 import { PolylineAdapter } from './polyline/polyline.adapter';
-import { HorizontalPoolAdapter } from './container/horizontal.pool.adapter';
 import { DocumentAdapter } from './rectangle/document.adapter';
 import { EllipseAdapter } from './rectangle/ellipse.adapter';
 import { CircleAdapter } from './rectangle/circle.adapter';
 import { ParallelogramAdapter } from './rectangle/parallelogram.adapter';
 import { RectangleAdapter } from './rectangle/rectangle.adapter';
+import { SpeechBubbleAdapter } from './rectangle/speech.bubble.adapter';
 import { RhombusAdapter } from './rectangle/rhombus.adapter';
 import { RoundRectangleAdapter } from './rectangle/round.rectangle.adapter';
-import { SvgAdapter } from './rectangle/svg.adapter';
 import { TextAdapter } from './rectangle/text.adapter';
 import { TrapezoidAdapter } from './rectangle/trapezoid.adapter';
-
-import { VerticalPoolAdapter } from './container/vertical.pool.adapter';
 import { CylinderAdapter } from './rectangle/cylinder.adapter';
-import { TableAdapter } from './erd/table.adapter';
-import { TableRowAdapter } from './erd/table.row.adapter';
-import { One2OneRelationAdapter } from './erd/one2one.relation.adapter';
-import { One2ManyRelationAdapter } from './erd/one2many.relation.adapter';
-import { Many2ManyRelationAdapter } from './erd/many2many.relation.adapter';
+
+import { HorizontalPoolAdapter } from './container/horizontal.pool.adapter';
+import { VerticalPoolAdapter } from './container/vertical.pool.adapter';
+
+import { SvgAdapter } from './rectangle/svg.adapter';
 import { FreehandAdapter } from './free/freehand.adapter';
 
 export * from './node.basics';
@@ -38,6 +34,8 @@ export * from './rectangle/index';
 export * from './polyline/index';
 
 export * from './bpmn/index';
+export * from './c4/index';
+export * from './erd/index';
 
 export function registerBasicAdapters(): void {
 
@@ -48,10 +46,10 @@ export function registerBasicAdapters(): void {
     EllipseAdapter.register();
     CircleAdapter.register();
     TextAdapter.register();
+    SpeechBubbleAdapter.register();
 
     LineAdapter.register();
     PolylineAdapter.register();
-    // ManhattanAdapter.register();
     OrthogonalAdapter.register();
     CurveAdapter.register();
 
@@ -67,12 +65,6 @@ export function registerBasicAdapters(): void {
     PolygonAdapter.register();
     SvgAdapter.register();
 
-    TableAdapter.register();
-    TableRowAdapter.register();
-    One2OneRelationAdapter.register();
-    One2ManyRelationAdapter.register();
-    Many2ManyRelationAdapter.register();
-
     NodeRegistry.registerTransferables([
         RectangleAdapter.TYPE,
         RoundRectangleAdapter.TYPE,
@@ -84,18 +76,12 @@ export function registerBasicAdapters(): void {
         TrapezoidAdapter.TYPE,
         DocumentAdapter.TYPE,
         CylinderAdapter.TYPE,
+        SpeechBubbleAdapter.TYPE,
     ]);
 
     NodeRegistry.registerTransferables([
         PolylineAdapter.TYPE,
         OrthogonalAdapter.TYPE,
-        // ManhattanAdapter.TYPE,
         CurveAdapter.TYPE,
-    ]);
-
-    NodeRegistry.registerTransferables([
-        One2OneRelationAdapter.TYPE,
-        One2ManyRelationAdapter.TYPE,
-        Many2ManyRelationAdapter.TYPE,
     ]);
 }

@@ -215,16 +215,14 @@ export class TableAdapter extends VerticalPoolAdapter {
         /* Find the group members that are rows */
         let rows = group.nodes
             .map(id => diagram.node(id))
-            .filter(row => row && row.type === 'table_row');
+            .filter(row => row && row.type === 'field');
 
         this.ensureIndices(rows as INode[]);
         let sorted = rows.sort((a, b) => +(a?.geometry?.index || 0) - +(b?.geometry?.index || 0));
-        const row_height = 24;  //Math.min(table_height / group.nodes.length, 16); // Ensure a minimum row height of 16
+        const row_height = 24;
 
         let r = 0;
         sorted.forEach(row => {
-            // const row = diagram.node(id);
-            // if (!row || row.type !== 'table_row') return;
 
             row!.points = [
                 {

@@ -60,6 +60,7 @@ export const BASIC_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'ellipse',
     'circle',
     'text',
+    'speech_bubble',
     'line',
     'polyline',
     'orthogonal',

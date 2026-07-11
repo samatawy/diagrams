@@ -463,6 +463,10 @@ IconRegistry.registerSymbol('bpmn_data_association', 'tool-bpmn-data-association
 IconRegistry.registerSymbol('text', 'tool-text',
     sym('tool-text', '<line x1="4" y1="6" x2="20" y2="6"/><line x1="12" y1="6" x2="12" y2="20"/>'));
 
+IconRegistry.registerSymbol('speech_bubble', 'tool-speech-bubble',
+    sym('tool-speech-bubble',
+        '<path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-3 2-1-2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>'));
+
 IconRegistry.registerSymbol('svg', 'tool-svg',
     sym('tool-svg', '<path d="M4 14.5S4 18 8 18s4-7 8-7 4 3.5 4 3.5"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/>'));
 
@@ -554,6 +558,11 @@ IconRegistry.registerSymbol('table', 'tool-table',
     <line x1="3" y1="9" x2="21" y2="9"/>
     <line x1="3" y1="13" x2="21" y2="13"/>
     <line x1="9" y1="9" x2="9" y2="20"/>`));
+
+IconRegistry.registerSymbol('field', 'tool-field',
+    sym('tool-field', `<rect x="3" y="8" width="18" height="8" rx="1.5"/>
+    <line x1="8" y1="8" x2="8" y2="16"/>
+    <line x1="12" y1="8" x2="12" y2="16"/>`));
 
 IconRegistry.registerSymbol('table_row', 'tool-table-row',
     sym('tool-table-row', `<rect x="3" y="8" width="18" height="8" rx="1.5"/>

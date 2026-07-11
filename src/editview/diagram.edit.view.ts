@@ -2922,6 +2922,8 @@ export class DiagramEditView extends DiagramView {
     protected override dblClick(event: MouseEvent): void {
         if (this.current.tool === 'select') {
             const hit = this.hitNode(event.offsetX, event.offsetY);
+            this.setSelection(hit ? [hit] : []);
+
             if (this.double_click_listener) {
                 this.double_click_listener(hit ?? undefined, event as unknown as PointerEvent);
             } else if (hit && NodeRegistry.hasText(hit.type)) {
