@@ -2,7 +2,7 @@ import type { TextOverflowMode } from "../../factory";
 import { isDiagramViewLike } from "../../guards";
 import type { INode } from "../../interfaces";
 import { DiagramConstants } from "../../model/diagram.constants";
-import { NodeHandle, type IPoint, type ITextBaseline, type ITextOrientation } from "../../types";
+import { NodeHandle, type AnchorScope, type IPoint, type ITextBaseline, type ITextOrientation } from "../../types";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
 import { RenderBasics } from "../render.basics";
@@ -59,7 +59,7 @@ export class TableRow2Adapter extends RectangleAdapter {
         }
     }
 
-    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
+    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: AnchorScope): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -102,7 +102,7 @@ export class TableRow2Adapter extends RectangleAdapter {
         return NodeHandle.NONE;
     }
 
-    public override canConnect(node: INode, direction: "from" | "to", handle: NodeHandle, point: IPoint): boolean {
+    public override canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
         if (!this.connection_handles.includes(handle)) return false;
         return node.ready === true;
     }

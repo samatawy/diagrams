@@ -8,6 +8,7 @@ import { One2ManyRelationAdapter } from './one2many.relation.adapter';
 import { One2OneRelationAdapter } from './one2one.relation.adapter';
 import { TableAdapter } from './table.adapter';
 import { FieldAdapter } from './field.adapter';
+import { registerErdIcons } from './icons';
 
 export function registerErdAdapters(): void {
     TableAdapter.register();
@@ -15,6 +16,8 @@ export function registerErdAdapters(): void {
     One2OneRelationAdapter.register();
     One2ManyRelationAdapter.register();
     Many2ManyRelationAdapter.register();
+
+    registerErdIcons();
 
     NodeRegistry.registerTransferables([
         One2OneRelationAdapter.TYPE,

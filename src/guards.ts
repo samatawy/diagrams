@@ -36,7 +36,8 @@ export function isConnection(value: unknown): value is IConnection {
  * @param value The value to check.
  * @returns True if the value is an INode and an IConnection, false otherwise.
  */
-export function isConnectionNode(value: unknown): value is INode & IConnection {
+// export function isConnectionNode(value: unknown): value is INode & IConnection {
+export function isConnectionNode(value: unknown): value is IConnection {
     return isNode(value) && isConnection(value);
 }
 

@@ -1,6 +1,6 @@
 import { NodeRegistry } from "../../factory/node.registry";
 import { type IConnectionAnchor, type INode } from "../../interfaces";
-import { type ITextOrientation, type IPoint, NodeHandle } from "../../types";
+import { type ITextOrientation, type IPoint, NodeHandle, type AnchorScope } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { ConnectionBasics } from "../connection.basics";
@@ -108,7 +108,7 @@ export class CurveAdapter extends PolylineAdapter {
         }
     }
 
-    renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles'): void {
+    renderSelection(node: INode, context: CanvasRenderingContext2D, show: AnchorScope): void {
         super.renderSelection(node, context, show);
 
         if (!context || node.points.length <= 2) return;
@@ -187,7 +187,7 @@ export class CurveAdapter extends PolylineAdapter {
         );
     }
 
-    public override canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point: IPoint): boolean {
+    public override canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
         if (handle !== NodeHandle.POINT) return false;
         if (point) {
             return point == node.points[0] || point == node.points[node.points.length - 1];

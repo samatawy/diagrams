@@ -1,0 +1,90 @@
+import type { IHandlePoint, INode } from "../../interfaces";
+import { NodeHandle, type AnchorScope, type IRect } from "../../types";
+import { isDiagramViewLike } from "../../guards";
+import { AbstractGateAdapter } from "./abstract.gate.adapter";
+
+/**
+ * LogicDFlipFlopAdapter is a node adapter responsible for rendering D flip-flop nodes in the diagram.
+ * It extends the AbstractGateAdapter to leverage basic rectangle rendering capabilities while adding specific logic for handling D flip-flop shapes and hit testing.
+ * Registers with the NodeRegistry under the name 'd_flipflop'.
+ */
+export class LogicDFlipFlopAdapter extends AbstractGateAdapter {
+
+    public static TYPE = 'logic_d_flipflop';
+
+    protected renderGateShape(node: INode, rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): Path2D {
+        // 1. Draw the main rectangular body
+        const bodyPath = new Path2D();
+        bodyPath.rect(rect.left, rect.top, rect.width, rect.height);
+
+        // 2. Draw the clock wedge (small triangle on CLK input)
+        // The wedge points inward from the left edge
+        const wedgeSize = Math.min(rect.width, rect.height) * 0.12;
+        const clkY = rect.top + rect.height * (2 / 3); // CLK position
+
+        const wedgePath = new Path2D();
+        wedgePath.moveTo(rect.left, clkY - wedgeSize);           // Top of wedge
+        wedgePath.lineTo(rect.left + wedgeSize, clkY);           // Point (inside)
+        wedgePath.lineTo(rect.left, clkY + wedgeSize);           // Bottom of wedge
+        wedgePath.closePath();
+
+        const path = new Path2D();
+        path.addPath(bodyPath);
+        path.addPath(wedgePath);
+
+        // 3. Draw the pin labels
+        context.save();
+        context.fillStyle = '#000000';
+        context.font = `${Math.min(rect.width, rect.height) * 0.18}px system-ui`;
+        context.textAlign = 'left';
+        context.textBaseline = 'middle';
+
+        // Left side labels (inputs)
+        context.fillText('D', rect.left + wedgeSize * 1.5, rect.top + rect.height * (1 / 3));
+        context.fillText('CLK', rect.left + wedgeSize * 1.5, clkY);
+
+        // Right side labels (outputs)
+        context.textAlign = 'right';
+        context.fillText('Q', rect.left + rect.width - wedgeSize, rect.top + rect.height * (1 / 3));
+        context.fillText('Q̄', rect.left + rect.width - wedgeSize, rect.top + rect.height * (2 / 3));
+
+        context.restore();
+
+        return path;
+    }
+
+    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
+        const inherited = super.getAnchors(node, show);
+        if (show === 'selection_handles') {
+            return inherited;
+        }
+
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return [];
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(node);
+
+        const connectionHandles = [
+            { handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height / 3 } }, // Left higher (D)
+            { handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height * 2 / 3 } }, // Left lower (CLK)
+
+            { handle: NodeHandle.E, point: { x: rect.left + rect.width, y: rect.top + rect.height / 3 } }, // right higher (Q)
+            { handle: NodeHandle.E, point: { x: rect.left + rect.width, y: rect.top + rect.height * 2 / 3 } }, // right lower (Q̄)
+        ];
+
+        if (show === 'all_handles') {
+            return [...inherited, ...connectionHandles];
+        } else {
+            return connectionHandles.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+        }
+    }
+
+    public override onCreateDraft(tool: string): Partial<INode> | undefined {
+        const draft = super.onCreateDraft(tool);
+        return {
+            ...draft,
+            locked_aspect: false,
+        };
+    }
+
+}

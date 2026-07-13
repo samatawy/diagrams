@@ -28,6 +28,8 @@
   },
   "scripts": {
     "css:embed": "node scripts/css-to-ts.mjs",
+    "icons:embed-tabler": "node scripts/import-icons.mjs ../node_modules/@tabler/icons/icons/outline icons_generated/tabler.icons.ts",
+    "icons:embed-flag": "node scripts/import-icons.mjs ../node_modules/flag-icons/flags/4x3 icons_generated/flag.icons.ts",
     "clean": "rimraf dist docs",
     "build": "npm run css:embed && tsup src/index.ts --format esm,cjs --dts --clean --platform browser",
     "dev": "npm run css:embed && tsup src/index.ts --format esm,cjs --dts --watch --platform browser",
@@ -67,7 +69,9 @@
     "tsup": "^8.5.0",
     "typedoc": "^0.28.14",
     "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@tabler/icons": "^3.44.0",
+    "flag-icons": "^7.5.0"
   },
   "dependencies": {
     "uuid": "^14.0.0"

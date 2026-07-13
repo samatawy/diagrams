@@ -4,7 +4,7 @@ import { NodeBasics } from "../nodes/node.basics";
 import { NodeHandle } from "../types";
 import type { IRect } from "../types";
 import type { DiagramView } from "../view/diagram.view";
-import { isConnectionNode } from "../guards";
+import { isConnection } from "../guards";
 
 
 /**
@@ -231,7 +231,7 @@ export class Guides {
      * @returns Only non-connection nodes.
      */
     private static filterNonConnectionNodes(nodes: INode[]): INode[] {
-        return nodes.filter(node => !isConnectionNode(node));
+        return nodes.filter(node => !isConnection(node));
     }
 
     /**
@@ -740,7 +740,7 @@ export class Guides {
 
             seen.add(node.id);
 
-            if (excludedNodeIds.has(node.id) || linkedNodeIds.has(node.id) || isConnectionNode(node)) {
+            if (excludedNodeIds.has(node.id) || linkedNodeIds.has(node.id) || isConnection(node)) {
                 return;
             }
 

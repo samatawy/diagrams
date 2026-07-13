@@ -127,16 +127,16 @@ const editor = mountEditor('editor-components-demo', {
 
         const edges = [
             makeLine(view, 'service-queue', [{ x: 260, y: 172 }, { x: 340, y: 172 }], {
-                from: { node: 'service', handle: NodeHandle.E },
-                to: { node: 'queue', handle: NodeHandle.W },
+                from: { node: 'service', handle: NodeHandle.E, relative: { x: 0, y: 0 } },
+                to: { node: 'queue', handle: NodeHandle.W, relative: { x: 0, y: 0 } },
             }),
             makeLine(view, 'queue-worker', [{ x: 520, y: 172 }, { x: 620, y: 172 }], {
-                from: { node: 'queue', handle: NodeHandle.E },
-                to: { node: 'worker', handle: NodeHandle.W },
+                from: { node: 'queue', handle: NodeHandle.E, relative: { x: 0, y: 0 } },
+                to: { node: 'worker', handle: NodeHandle.W, relative: { x: 0, y: 0 } },
             }),
             makeLine(view, 'worker-note', [{ x: 700, y: 214 }, { x: 700, y: 320 }, { x: 580, y: 336 }], {
-                from: { node: 'worker', handle: NodeHandle.S },
-                to: { node: 'note', handle: NodeHandle.E },
+                from: { node: 'worker', handle: NodeHandle.S, relative: { x: 0, y: 0 } },
+                to: { node: 'note', handle: NodeHandle.E, relative: { x: 0, y: 0 } },
             }),
         ];
 

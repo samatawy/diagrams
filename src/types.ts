@@ -108,6 +108,8 @@ export type ArrowType = 'solid_triangle' | 'hollow_triangle'
     | 'solid_circle' | 'hollow_circle'
     /* | 'open' */ | 'none';
 
+export type AnchorScope = 'all_handles' | 'selection_handles' | 'connection_handles';
+
 /**
  * NodeHandle represents the different types of handles that can be used for manipulating nodes in the diagram.
  * - MOVE: A handle for moving the entire node.

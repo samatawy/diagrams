@@ -1,5 +1,6 @@
 import type { INode } from "../../interfaces";
 import { isDiagramViewLike } from "../../guards";
+import type { AnchorScope } from "../../types";
 import { RectangleAdapter } from "./rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import type { HollowMode, TextOverflowMode } from "../../factory/node.adapter";
@@ -27,7 +28,7 @@ export class TextAdapter extends RectangleAdapter {
         context.restore();
     }
 
-    renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles'): void {
+    renderSelection(node: INode, context: CanvasRenderingContext2D, show: AnchorScope): void {
         super.renderSelection(node, context, show);
 
         if (!context) return;

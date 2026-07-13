@@ -1,4 +1,4 @@
-import { isConnection, isConnectionNode } from "../guards";
+import { isConnection } from "../guards";
 import type { INode } from "../interfaces";
 import type { Diagram } from "../model/diagram";
 import { isHollow, isInvisible, lineWidth, nodeId } from "../value.utils";

@@ -1,5 +1,5 @@
 import { NodeRegistry } from "../factory/node.registry";
-import type { HasSelection, IDiagram, IGrid, ILayer, INode } from "../interfaces";
+import type { HasSelection, IDiagram, IGrid, IHandlePoint, ILayer, INode } from "../interfaces";
 import { createCanvas2D, downloadBlob, isBrowserRuntime } from "../io/browser.support";
 import type { ImageSaveOptions, ImageSerializer, ImageWriteOptions } from "../io/export.types";
 import { isNodeRuntime, writeBinaryFile } from "../io/node.support";
@@ -31,7 +31,7 @@ import { GroupBasics } from "../nodes/group.basics";
 import type { AnimationChannelType, AnimationLineDash, AnimationMode } from "../animation.types";
 import { DiagramAnimations } from "../layout/animations";
 import { deepClone } from "../value.utils";
-import { RenderBasics } from "../nodes";
+import { ConnectionBasics, RenderBasics } from "../nodes";
 
 export type RenderMode = 'view' | 'editing';
 
@@ -700,7 +700,7 @@ export class DiagramView extends Diagram implements HasSelection {
                 /* and render selection anchors on top. */
                 if (what === 'selection' || what === 'all') {
                     if (this.isSelected(node)) {
-                        handler?.renderSelection(node, this.context, 'all_handles');
+                        handler?.renderSelection(node, this.context, 'selection_handles');
                     }
                 }
             }
@@ -1177,9 +1177,9 @@ export class DiagramView extends Diagram implements HasSelection {
      * @param x The x-coordinate to test.
      * @param y The y-coordinate to test.
      * @param target The target node to test, if any.
-     * @returns The connection-enabled handle at the specified coordinates, or `NodeHandle.NONE` if none is found.
+     * @returns The connection-enabled handle at the specified coordinates, or `{ handle: NodeHandle.NONE, point: { x: 0, y: 0 } }` if none is found.
      */
-    protected hitConnectionHandle(x: number, y: number, target?: INode): NodeHandle {
+    protected hitConnectionHandle(x: number, y: number, target?: INode): IHandlePoint {
         const nodes = target ? [target] : this.hitNodes(x, y);
 
         for (let i = 0; i < nodes.length; i++) {
@@ -1190,7 +1190,11 @@ export class DiagramView extends Diagram implements HasSelection {
             const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
             const isAllowed = handler?.canConnect(node, 'to', handle, { x, y }) ?? false;
             if (handle !== NodeHandle.NONE && isAllowed) {
-                return handle;
+
+                const given = { handle, point: this.coordinates.getPoint(x, y, 'ignore_grid') };
+                const connection_point = ConnectionBasics.resolveConnectionPoint(node, given);
+                return { handle, point: connection_point.point };
+                // return { handle, point: { x, y } };
             }
 
             // if (handle !== NodeHandle.NONE && allowed.includes(handle)) {
@@ -1198,8 +1202,37 @@ export class DiagramView extends Diagram implements HasSelection {
             // }
         }
 
-        return NodeHandle.NONE;
+        return { handle: NodeHandle.NONE, point: { x: 0, y: 0 } };
     }
+
+    // /**
+    //  * Returns the connection-enabled handle at the specified coordinates, if any.
+    //  * Each node type can define its own connection handles, which may differ from the standard resize/move handles.
+    //  * @param x The x-coordinate to test.
+    //  * @param y The y-coordinate to test.
+    //  * @param target The target node to test, if any.
+    //  * @returns The connection-enabled handle at the specified coordinates, or `NodeHandle.NONE` if none is found.
+    //  */
+    // protected hitConnectionHandle(x: number, y: number, target?: INode): NodeHandle {
+    //     const nodes = target ? [target] : this.hitNodes(x, y);
+
+    //     for (let i = 0; i < nodes.length; i++) {
+    //         let node = nodes[i]!;
+    //         const handler = NodeRegistry.adapter(node.type);
+
+    //         const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
+    //         const isAllowed = handler?.canConnect(node, 'to', handle, { x, y }) ?? false;
+    //         if (handle !== NodeHandle.NONE && isAllowed) {
+    //             return handle;
+    //         }
+
+    //         // if (handle !== NodeHandle.NONE && allowed.includes(handle)) {
+    //         //     return handle;
+    //         // }
+    //     }
+
+    //     return NodeHandle.NONE;
+    // }
 
     /**
      * Select the cursor style reflecting a node handle.

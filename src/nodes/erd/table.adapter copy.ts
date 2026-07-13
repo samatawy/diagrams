@@ -80,7 +80,6 @@ export class Table2Adapter extends RectangleAdapter {
                 rows: 2,
                 columns: 2,
             },
-            children: []
         }
     }
 }

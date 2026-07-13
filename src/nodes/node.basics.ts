@@ -1,4 +1,4 @@
-import type { INode } from "../interfaces";
+import type { IHandlePoint, INode } from "../interfaces";
 import { NodeHandle, type IPoint, type IRect } from "../types";
 import { isConnectionNode, isDiagramViewLike, isNode } from "../guards";
 import type { INodeCached } from "../view/view.cache";
@@ -411,7 +411,7 @@ export class NodeBasics {
      * @param tolerance Interior distance threshold.
      * @returns Nearest handle and snapped point, or undefined when no candidate is found.
      */
-    public static nearestHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): { handle: NodeHandle, point: IPoint } | undefined {
+    public static nearestHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): IHandlePoint | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
         const coordinates = diagram.getCoordinates();
@@ -489,7 +489,7 @@ export class NodeBasics {
      * @param tolerance Interior distance threshold.
      * @returns Nearest connection handle and snapped point, or undefined when no candidate is found.
      */
-    public static nearestConnectionHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): { handle: NodeHandle, point: IPoint } | undefined {
+    public static nearestConnectionHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): IHandlePoint | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
         const coordinates = diagram.getCoordinates();
@@ -511,7 +511,8 @@ export class NodeBasics {
             return { handle: fallbackHandle, point: { ...point } };
         }
 
-        const candidates = this.getConnectionHandleCandidates(node, rect);  //, allowed_handles);
+        // const candidates = this.getConnectionHandleCandidates(node, rect);
+        const candidates = NodeRegistry.adapter(node.type)?.getAnchors(node, 'connection_handles') ?? []; // Get connection handle candidates
 
         let nearestHandle: NodeHandle = fallbackHandle;
         let nearestPoint: IPoint = { x: 0, y: 0 };
@@ -540,7 +541,7 @@ export class NodeBasics {
      * @param tolerance Maximum distance for a handle hit.
      * @returns Matching handle and snapped point, or undefined when no candidate matches.
      */
-    public static connectionHandleAtPoint(node: INode, point: IPoint, tolerance: number = DiagramConstants.HANDLE_HIT_EPSILON): { handle: NodeHandle, point: IPoint } | undefined {
+    public static connectionHandleAtPoint(node: INode, point: IPoint, tolerance: number = DiagramConstants.HANDLE_HIT_EPSILON): IHandlePoint | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
         const coordinates = diagram.getCoordinates();
@@ -548,9 +549,10 @@ export class NodeBasics {
         if (!rect) return undefined;
 
         // const allowed_handles = NodeRegistry.connectionHandles(node.type);
-        const candidates = this.getConnectionHandleCandidates(node, rect);  //, allowed_handles);
+        // const candidates = this.getConnectionHandleCandidates(node, rect);  //, allowed_handles);
+        const candidates = NodeRegistry.adapter(node.type)?.getAnchors(node, 'connection_handles') ?? []; // Get connection handle candidates
 
-        let exact: { handle: NodeHandle, point: IPoint } | undefined;
+        let exact: IHandlePoint | undefined;
         let minDistance = Infinity;
 
         for (const candidate of candidates) {
@@ -584,8 +586,8 @@ export class NodeBasics {
      * @param allowed_handles Handles allowed by the adapter.
      * @returns Candidate handle positions in world coordinates.
      */
-    private static getConnectionHandleCandidates(node: INode, rect: IRect): Array<{ handle: NodeHandle, point: IPoint }> {
-        const candidates: Array<{ handle: NodeHandle, point: IPoint }> = [];
+    private static getConnectionHandleCandidates(node: INode, rect: IRect): Array<IHandlePoint> {
+        const candidates: Array<IHandlePoint> = [];
 
         const adapter = NodeRegistry.adapter(node.type);
         if (!adapter) return candidates;

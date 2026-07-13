@@ -1,6 +1,6 @@
 import { NodeRegistry } from "../../factory/node.registry";
-import type { IGrid, INode } from "../../interfaces";
-import { NodeHandle, type IPoint, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
+import type { IGrid, IHandlePoint, INode } from "../../interfaces";
+import { NodeHandle, type AnchorScope, type IPoint, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RenderBasics } from "../render.basics";
@@ -69,15 +69,23 @@ export class RectangleAdapter implements INodeAdapter {
             let x = pt.x!;
             let y = pt.y!;
 
-            if (Math.abs(rect.left - x) <= epsilon && Math.abs(rect.top - y) <= epsilon) return NodeHandle.NW;
-            if (Math.abs(rect.left - x) <= epsilon && Math.abs(rect.top + rect.height - y) <= epsilon) return NodeHandle.SW;
-            if (Math.abs(rect.left + rect.width - x) <= epsilon && Math.abs(rect.top - y) <= epsilon) return NodeHandle.NE;
-            if (Math.abs(rect.left + rect.width - x) <= epsilon && Math.abs(rect.top + rect.height - y) <= epsilon) return NodeHandle.SE;
+            const anchors = this.getAnchors(node, 'all_handles');
 
-            if (Math.abs(rect.left + rect.width / 2 - x) <= epsilon && Math.abs(rect.top - y) <= epsilon) return NodeHandle.N;
-            if (Math.abs(rect.left + rect.width / 2 - x) <= epsilon && Math.abs(rect.top + rect.height - y) <= epsilon) return NodeHandle.S;
-            if (Math.abs(rect.left - x) <= epsilon && Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.W;
-            if (Math.abs(rect.left + rect.width - x) <= epsilon && Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.E;
+            for (const anchor of anchors) {
+                if (Math.abs(anchor.point.x - x) <= epsilon && Math.abs(anchor.point.y - y) <= epsilon) {
+                    return anchor.handle;
+                }
+            }
+
+            // if (Math.abs(rect.left - x) <= epsilon && Math.abs(rect.top - y) <= epsilon) return NodeHandle.NW;
+            // if (Math.abs(rect.left - x) <= epsilon && Math.abs(rect.top + rect.height - y) <= epsilon) return NodeHandle.SW;
+            // if (Math.abs(rect.left + rect.width - x) <= epsilon && Math.abs(rect.top - y) <= epsilon) return NodeHandle.NE;
+            // if (Math.abs(rect.left + rect.width - x) <= epsilon && Math.abs(rect.top + rect.height - y) <= epsilon) return NodeHandle.SE;
+
+            // if (Math.abs(rect.left + rect.width / 2 - x) <= epsilon && Math.abs(rect.top - y) <= epsilon) return NodeHandle.N;
+            // if (Math.abs(rect.left + rect.width / 2 - x) <= epsilon && Math.abs(rect.top + rect.height - y) <= epsilon) return NodeHandle.S;
+            // if (Math.abs(rect.left - x) <= epsilon && Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.W;
+            // if (Math.abs(rect.left + rect.width - x) <= epsilon && Math.abs(rect.top + rect.height / 2 - y) <= epsilon) return NodeHandle.E;
 
             if (NodeRegistry.canRotate(node.type)) {
                 if (Math.abs(rect.left + rect.width + 8 + epsilon - x) <= epsilon &&
@@ -154,7 +162,56 @@ export class RectangleAdapter implements INodeAdapter {
         }
     }
 
-    public canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point: IPoint): boolean {
+    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return [];
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(node);
+
+        const anchors: IHandlePoint[] = [];
+
+        const handles = (show === 'all_handles' || show === 'selection_handles') ? [
+            NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W,
+            NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW
+        ] : this.connection_handles;
+
+        for (const handle of handles) {
+            switch (handle) {
+                case NodeHandle.N:
+                    anchors.push({ handle, point: { x: rect.left + rect.width / 2, y: rect.top } });
+                    break;
+                case NodeHandle.S:
+                    anchors.push({ handle, point: { x: rect.left + rect.width / 2, y: rect.top + rect.height } });
+                    break;
+                case NodeHandle.E:
+                    anchors.push({ handle, point: { x: rect.left + rect.width, y: rect.top + rect.height / 2 } });
+                    break;
+                case NodeHandle.W:
+                    anchors.push({ handle, point: { x: rect.left, y: rect.top + rect.height / 2 } });
+                    break;
+                case NodeHandle.NE:
+                    anchors.push({ handle, point: { x: rect.left + rect.width, y: rect.top } });
+                    break;
+                case NodeHandle.NW:
+                    anchors.push({ handle, point: { x: rect.left, y: rect.top } });
+                    break;
+                case NodeHandle.SE:
+                    anchors.push({ handle, point: { x: rect.left + rect.width, y: rect.top + rect.height } });
+                    break;
+                case NodeHandle.SW:
+                    anchors.push({ handle, point: { x: rect.left, y: rect.top + rect.height } });
+                    break;
+            }
+        }
+
+        if (show === 'connection_handles') {
+            return anchors.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+        } else {
+            return anchors;
+        }
+    }
+
+    public canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
         return this.connection_handles.includes(handle);
     }
 
@@ -200,7 +257,6 @@ export class RectangleAdapter implements INodeAdapter {
                     let point = node.points[i]!;
                     point.x += dx;
                     point.y += dy;
-                    // node.points[i] = coordinates.getGridPoint(point!.x, point!.y, grid);
                 }
                 break;
             case NodeHandle.N:
@@ -294,7 +350,7 @@ export class RectangleAdapter implements INodeAdapter {
         }
     }
 
-    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
+    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: AnchorScope) {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -303,56 +359,74 @@ export class RectangleAdapter implements INodeAdapter {
         if (node.points.length > 1) {
             const rect = coordinates.getBoundingRect(node);
             const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
-            const allowed = (show === 'connection_handles') ?
-                this.connection_handles :
-                [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE, NodeHandle.ALTER];
+            // const allowed = (show === 'connection_handles') ?
+            //     this.connection_handles :
+            //     [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE, NodeHandle.ALTER];
 
             context.save();
             RenderBasics.prepareHandles(node, context);
 
             const handles = new Path2D();
 
-            // NW
-            if (allowed.includes(NodeHandle.NW)) {
-                RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
+            const anchors = NodeRegistry.adapter(node.type)?.getAnchors(node, show) ?? [];
+            for (const anchor of anchors) {
+                // switch (anchor.handle) {
+                // case NodeHandle.ALTER:
+                //     this.renderAlterHandle(node, context, rect);
+                //     break;
+                // case NodeHandle.ROTATE:
+                //     if (NodeRegistry.canRotate(node.type)) {
+                //         RenderBasics.renderRotateHandle(node, anchor.point, handles, context);
+                //     }
+                //     break;
+                //     default:
+                RenderBasics.renderHandle(node, anchor.point, handles, context);
+                // break;
+                // }
             }
 
-            // SW
-            if (allowed.includes(NodeHandle.SW)) {
-                RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height }, handles, context);
-            }
+            // // NW
+            // if (allowed.includes(NodeHandle.NW)) {
+            //     RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
+            // }
 
-            // NE
-            if (allowed.includes(NodeHandle.NE)) {
-                RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top }, handles, context);
-            }
+            // // SW
+            // if (allowed.includes(NodeHandle.SW)) {
+            //     RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height }, handles, context);
+            // }
 
-            // SE
-            if (allowed.includes(NodeHandle.SE)) {
-                RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height }, handles, context);
-            }
+            // // NE
+            // if (allowed.includes(NodeHandle.NE)) {
+            //     RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top }, handles, context);
+            // }
 
-            // N
-            if (allowed.includes(NodeHandle.N)) {
-                RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top }, handles, context);
-            }
+            // // SE
+            // if (allowed.includes(NodeHandle.SE)) {
+            //     RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height }, handles, context);
+            // }
 
-            // S
-            if (allowed.includes(NodeHandle.S)) {
-                RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top + rect.height }, handles, context);
-            }
+            // // N
+            // if (allowed.includes(NodeHandle.N)) {
+            //     RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top }, handles, context);
+            // }
 
-            // E
-            if (allowed.includes(NodeHandle.E)) {
-                RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
-            }
+            // // S
+            // if (allowed.includes(NodeHandle.S)) {
+            //     RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top + rect.height }, handles, context);
+            // }
 
-            // W
-            if (allowed.includes(NodeHandle.W)) {
-                RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
-            }
+            // // E
+            // if (allowed.includes(NodeHandle.E)) {
+            //     RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
+            // }
 
-            if (NodeRegistry.canRotate(node.type) && allowed.includes(NodeHandle.ROTATE)) {
+            // // W
+            // if (allowed.includes(NodeHandle.W)) {
+            //     RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
+            // }
+
+            // if (NodeRegistry.canRotate(node.type) && allowed.includes(NodeHandle.ROTATE)) {
+            if ((show === 'all_handles' || show === 'selection_handles') && NodeRegistry.canRotate(node.type)) {
                 RenderBasics.renderRotateHandle(node, {
                     x: rect.left + rect.width + 8 + epsilon,
                     y: rect.top + rect.height / 2
@@ -362,7 +436,8 @@ export class RectangleAdapter implements INodeAdapter {
             context.fill(handles);
             context.stroke(handles);
 
-            if (allowed.includes(NodeHandle.ALTER)) {
+            // if (allowed.includes(NodeHandle.ALTER)) {
+            if (show === 'all_handles' || show === 'selection_handles') {
                 this.renderAlterHandle(node, context, rect);
             }
 

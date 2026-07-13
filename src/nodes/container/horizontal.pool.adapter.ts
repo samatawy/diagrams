@@ -1,5 +1,5 @@
 import type { INode, IContainer } from "../../interfaces";
-import { NodeHandle, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
+import { NodeHandle, type AnchorScope, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
@@ -7,6 +7,7 @@ import { RenderBasics } from "../render.basics";
 import { isHollow } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 import type { TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
+import { NodeRegistry } from "../../factory/node.registry";
 
 /**
  * HorizontalPoolAdapter is a node adapter responsible for rendering horizontal pool nodes in the diagram. 
@@ -101,7 +102,7 @@ export class HorizontalPoolAdapter extends RectangleAdapter {
         return radius;
     }
 
-    public override renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
+    public override renderSelection(node: INode, context: CanvasRenderingContext2D, show: AnchorScope) {
         // super.renderSelection(node, context);
 
         if (!context) return;
@@ -115,38 +116,47 @@ export class HorizontalPoolAdapter extends RectangleAdapter {
 
             // Not needed in this node type as all visible points are known to be connection-ready.
             // EXCEPT ALTER for descendants?
-            const allowed = (show === 'connection_handles') ?
-                this.connection_handles :
-                [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE];
+            // const allowed = (show === 'connection_handles') ?
+            //     this.connection_handles :
+            //     [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE];
 
             context.save();
             RenderBasics.prepareHandles(node, context);
 
             const handles = new Path2D();
 
-            // NW            
-            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
+            const anchors = NodeRegistry.adapter(node.type)?.getAnchors(node, show) ?? [];
+            for (const anchor of anchors) {
+                //     if (anchor.handle === NodeHandle.ALTER) {
+                //         this.renderAlterHandle(node, context, rect);
+                //     } else {
+                RenderBasics.renderHandle(node, anchor.point, handles, context);
+                // }
+            }
 
-            // SW
-            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height }, handles, context);
+            // // NW            
+            // RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
 
-            // NE
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top }, handles, context);
+            // // SW
+            // RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height }, handles, context);
 
-            // SE
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height }, handles, context);
+            // // NE
+            // RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top }, handles, context);
 
-            // N
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top }, handles, context);
+            // // SE
+            // RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height }, handles, context);
 
-            // S
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top + rect.height }, handles, context);
+            // // N
+            // RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top }, handles, context);
 
-            // E
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
+            // // S
+            // RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top + rect.height }, handles, context);
 
-            // W
-            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
+            // // E
+            // RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
+
+            // // W
+            // RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
 
             context.fill(handles);
             context.stroke(handles);
@@ -161,7 +171,8 @@ export class HorizontalPoolAdapter extends RectangleAdapter {
 
             context.stroke(holder);
 
-            if (allowed.includes(NodeHandle.ALTER)) {
+            // if (allowed.includes(NodeHandle.ALTER)) {
+            if (show === 'all_handles' || show === 'selection_handles') {
                 this.renderAlterHandle(node, context, rect);
             }
 

@@ -1,6 +1,6 @@
 import { NodeRegistry } from "../../factory/node.registry";
-import { type IGrid, type INode } from "../../interfaces";
-import { NodeHandle, type IPoint, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
+import { type IGrid, type IHandlePoint, type INode } from "../../interfaces";
+import { NodeHandle, type AnchorScope, type IPoint, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { ConnectionBasics } from "../connection.basics";
@@ -93,7 +93,22 @@ export class PolylineAdapter implements INodeAdapter {
         return NodeHandle.NONE;
     }
 
-    public canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point?: IPoint): boolean {
+    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return [];
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(node);
+
+        const anchors: IHandlePoint[] = node.points.map(point => ({ handle: NodeHandle.POINT, point: { ...point } }));
+
+        if (show === 'connection_handles') {
+            return anchors.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+        } else {
+            return anchors;
+        }
+    }
+
+    public canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point?: IPoint): boolean {
         return handle === NodeHandle.POINT;
     }
 
@@ -105,7 +120,7 @@ export class PolylineAdapter implements INodeAdapter {
         if (grid && grid.forced) {
             for (let i = 0; i < node.points.length; i++) {
                 let point = node.points[i]!;
-                node.points[i] = coordinates.getGridPoint(point!.x, point!.y, grid);
+                node.points[i] = coordinates.getGridPoint(point.x, point.y, grid);
             }
         }
     }
@@ -149,7 +164,7 @@ export class PolylineAdapter implements INodeAdapter {
         }
     }
 
-    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles'): void {
+    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: AnchorScope): void {
         if (!context) return;
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
@@ -159,7 +174,9 @@ export class PolylineAdapter implements INodeAdapter {
             RenderBasics.prepareHandles(node, context);
 
             const handles = new Path2D();
-            const allowed_points = (show === 'all_handles') ? node.points : node.points.slice(1, node.points.length - 1);
+            const allowed_points = (show === 'connection_handles')
+                ? node.points.slice(1, node.points.length - 1)
+                : node.points;
 
             for (const point of allowed_points) {
                 RenderBasics.renderHandle(node, point, handles, context);

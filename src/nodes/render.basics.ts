@@ -49,6 +49,7 @@ export class RenderBasics {
 
         context.lineCap = 'round';
         context.lineJoin = 'round';
+        context.miterLimit = 4;
         context.globalAlpha = nodeOpacity(node);
         context.lineWidth = lineWidth(node);
         context.setLineDash(lineDashArray(node));
@@ -175,6 +176,9 @@ export class RenderBasics {
         const coordinates = diagram.getCoordinates();
 
         context.lineWidth = 1;
+        context.lineCap = 'round';
+        context.lineJoin = 'round';
+        context.miterLimit = 4;
         context.strokeStyle = DiagramConstants.SELECTION_ANCHOR_STROKE_COLOR;
         context.fillStyle = DiagramConstants.SELECTION_ANCHOR_FILL_COLOR;
 

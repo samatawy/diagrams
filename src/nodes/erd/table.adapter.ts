@@ -4,9 +4,10 @@ import { isHollow } from "../../value.utils";
 import type { INodeCached } from "../../view/view.cache";
 import { VerticalPoolAdapter } from "../container/vertical.pool.adapter";
 import { RenderBasics } from "../render.basics";
-import { NodeHandle, type IPoint } from "../../types";
+import { NodeHandle, type AnchorScope, type IPoint } from "../../types";
 import { GroupBasics } from "../group.basics";
 import { DiagramConstants } from "../../model/diagram.constants";
+import { NodeRegistry } from "../../factory/node.registry";
 
 export class TableAdapter extends VerticalPoolAdapter {
 
@@ -78,7 +79,7 @@ export class TableAdapter extends VerticalPoolAdapter {
         }
     }
 
-    public override renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
+    public override renderSelection(node: INode, context: CanvasRenderingContext2D, show: AnchorScope) {
         // super.renderSelection(node, context);
 
         if (!context) return;
@@ -92,32 +93,39 @@ export class TableAdapter extends VerticalPoolAdapter {
 
             // Not needed in this node type as all visible points are known to be connection-ready.
             // EXCEPT ALTER for descendants?
-            const allowed = (show === 'connection_handles') ?
-                this.connection_handles :
-                [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE];
+            // const allowed = (show === 'connection_handles') ?
+            //     this.connection_handles :
+            //     [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE];
 
             context.save();
             RenderBasics.prepareHandles(node, context);
 
             const handles = new Path2D();
 
-            // NW            
-            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
 
-            // SW
-            RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height }, handles, context);
+            const anchors = NodeRegistry.adapter(node.type)?.getAnchors(node, show) ?? [];
+            for (const anchor of anchors) {
+                RenderBasics.renderHandle(node, anchor.point, handles, context);
+                break;
+            }
 
-            // NE
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top }, handles, context);
+            // // NW            
+            // RenderBasics.renderHandle(node, { x: rect.left, y: rect.top }, handles, context);
 
-            // SE
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height }, handles, context);
+            // // SW
+            // RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height }, handles, context);
 
-            // N
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top }, handles, context);
+            // // NE
+            // RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top }, handles, context);
 
-            // S
-            RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top + rect.height }, handles, context);
+            // // SE
+            // RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height }, handles, context);
+
+            // // N
+            // RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top }, handles, context);
+
+            // // S
+            // RenderBasics.renderHandle(node, { x: rect.left + rect.width / 2, y: rect.top + rect.height }, handles, context);
 
             // E
             // RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
@@ -138,7 +146,8 @@ export class TableAdapter extends VerticalPoolAdapter {
 
             context.stroke(holder);
 
-            if (allowed.includes(NodeHandle.ALTER)) {
+            // if (allowed.includes(NodeHandle.ALTER)) {
+            if (show === 'all_handles' || show === 'selection_handles') {
                 this.renderAlterHandle(node, context, rect);
             }
 

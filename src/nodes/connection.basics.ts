@@ -1,17 +1,19 @@
-import type { IConnection, IConnectionAnchor, INode } from "../interfaces";
+import type { IConnection, IConnectionAnchor, IHandlePoint, INode } from "../interfaces";
 import { NodeHandle, type IPoint, type IRect } from "../types";
-import { isConnectionNode, isDiagramViewLike } from "../guards";
+import { isConnection, isDiagramViewLike } from "../guards";
 import type { CoordinateSystem } from "../view/coordinate.system";
 import { NodeRegistry } from "../factory/node.registry";
 import { NodeBasics } from "./node.basics";
 import { DiagramConstants } from "../model/diagram.constants";
 import { SelectionBasics } from "./selection.basics";
+import { absoluteToRelative, relativeToAbsolute } from "../value.utils";
 
 type InteractiveDiagram = INode['owner'] & {
     getCoordinates(): CoordinateSystem;
     hitNodes(x: number, y: number): INode[];
     hitHandle(x: number, y: number, target?: INode): NodeHandle;
-    hitConnectionHandle(x: number, y: number, target?: INode): NodeHandle;
+    // hitConnectionHandle(x: number, y: number, target?: INode): NodeHandle;
+    hitConnectionHandle(x: number, y: number, target?: INode): IHandlePoint;
 };
 
 /**
@@ -83,6 +85,45 @@ export class ConnectionBasics {
                 }
             }
         }
+
+        // if (node.points.length > 0) {
+        //     const point = node.points[0]!;
+        //     if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
+        //         let fromAnchor = this.getPointerConnectionAnchor(node, x, y);
+        //         if (!fromAnchor || fromAnchor?.handle === NodeHandle.MOVE) {
+        //             const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
+        //             fromAnchor = this.getNearestSupportedAnchor(target!, hit);
+        //         }
+        //         const toAnchor = node.to;
+
+        //         if (fromAnchor && !this.isSameAnchor(fromAnchor, toAnchor)) {
+        //             node.from = fromAnchor;
+        //             adapter?.afterConnect?.(node, 'from', fromAnchor ?? null);
+
+        //         } else {
+        //             node.from = undefined;
+        //         }
+        //     }
+        // }
+
+        // if (node.points.length > 1) {
+        //     const point = node.points[node.points.length - 1]!;
+        //     if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
+        //         const fromAnchor = node.from;
+        //         let toAnchor = this.getPointerConnectionAnchor(node, x, y);
+        //         if (!toAnchor || toAnchor?.handle === NodeHandle.MOVE) {
+        //             const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
+        //             toAnchor = this.getNearestSupportedAnchor(target!, hit);
+        //         }
+
+        //         if (toAnchor && (!this.isSameAnchor(toAnchor, fromAnchor))) {
+        //             node.to = toAnchor;
+        //             adapter?.afterConnect?.(node, 'to', toAnchor ?? null);
+        //         } else {
+        //             node.to = undefined;
+        //         }
+        //     }
+        // }
     }
 
     /**
@@ -96,7 +137,7 @@ export class ConnectionBasics {
         if (!anchorA && anchorB) return false;
         if (anchorA?.node !== anchorB?.node) return false;
         if (anchorA?.handle !== anchorB?.handle) return false;
-        if (anchorA?.point !== anchorB?.point) return false;
+        if (anchorA?.index !== anchorB?.index) return false;
         return true;
     }
 
@@ -229,15 +270,19 @@ export class ConnectionBasics {
         const rect = coordinates.getBoundingRect(target, false);
 
         let point: IPoint | undefined;
-        if (anchor.handle === NodeHandle.POINT && typeof anchor.point === 'number' && anchor.point >= 0) {
-            point = target.points[anchor.point];
+        if (anchor.handle === NodeHandle.POINT && typeof anchor.index === 'number' && anchor.index >= 0) {
+            point = target.points[anchor.index];
         } else if (anchor.handle === NodeHandle.MOVE) {
             point = {
-                x: rect.left + ((anchor.xOffset ?? 0.5) * rect.width),
-                y: rect.top + ((anchor.yOffset ?? 0.5) * rect.height),
+                x: rect.left + ((anchor.relative.x ?? 0.5) * rect.width),
+                y: rect.top + ((anchor.relative.y ?? 0.5) * rect.height),
             };
+            // point = {
+            //     x: rect.left + ((anchor.xOffset ?? 0.5) * rect.width),
+            //     y: rect.top + ((anchor.yOffset ?? 0.5) * rect.height),
+            // };
         } else {
-            point = this.handlePoint(rect, anchor.handle);
+            point = relativeToAbsolute(anchor.relative, rect);  // ?? this.handlePoint(rect, anchor.handle);
         }
 
         if (!point) return undefined;
@@ -320,17 +365,22 @@ export class ConnectionBasics {
         const next: IConnectionAnchor = {
             node: target,
             handle: nearest.handle,
+            relative: absoluteToRelative(nearest.point, rect),
         };
 
         const localPoint = coordinates.getHitPoint({ x: nearest.point.x, y: nearest.point.y }, rect, target.angle || 0);
         if (nearest.handle === NodeHandle.POINT) {
-            next.point = this.getPointIndex(target, localPoint.x, localPoint.y);
+            next.index = this.getPointIndex(target, localPoint.x, localPoint.y);
         }
 
-        if (nearest.handle === NodeHandle.MOVE) {
-            next.xOffset = rect.width ? (localPoint.x - rect.left) / rect.width : 0.5;
-            next.yOffset = rect.height ? (localPoint.y - rect.top) / rect.height : 0.5;
-        }
+        // if (nearest.handle === NodeHandle.MOVE) {
+        //     next.offset = {
+        //         x: rect.width ? (localPoint.x - rect.left) / rect.width : 0.5,
+        //         y: rect.height ? (localPoint.y - rect.top) / rect.height : 0.5,
+        //     };
+        //     // next.xOffset = rect.width ? (localPoint.x - rect.left) / rect.width : 0.5;
+        //     // next.yOffset = rect.height ? (localPoint.y - rect.top) / rect.height : 0.5;
+        // }
 
         return next;
     }
@@ -406,6 +456,7 @@ export class ConnectionBasics {
         const anchor: IConnectionAnchor = {
             node: source,
             handle,
+            relative: absoluteToRelative(localPoint, rect),
         };
 
         if (handle === NodeHandle.POINT) {
@@ -414,15 +465,15 @@ export class ConnectionBasics {
                 // Don't allow connecting to the first or last point of a connection.
                 return undefined;
             }
-            anchor.point = pointIndex;
+            anchor.index = pointIndex;
             return anchor;
         }
 
-        if (handle === NodeHandle.MOVE) {
-            anchor.xOffset = rect.width ? (localPoint.x - rect.left) / rect.width : 0.5;
-            anchor.yOffset = rect.height ? (localPoint.y - rect.top) / rect.height : 0.5;
-            return anchor;
-        }
+        // if (handle === NodeHandle.MOVE) {
+        //     anchor.xOffset = rect.width ? (localPoint.x - rect.left) / rect.width : 0.5;
+        //     anchor.yOffset = rect.height ? (localPoint.y - rect.top) / rect.height : 0.5;
+        //     return anchor;
+        // }
 
         return anchor;
     }
@@ -440,7 +491,7 @@ export class ConnectionBasics {
 
         const coordinates = diagram.getCoordinates();
         let atPoint = diagram.hitNodes(x, y);
-        const nonConnections = atPoint.filter(n => !isConnectionNode(n));
+        const nonConnections = atPoint.filter(n => !isConnection(n));
         if (nonConnections.length > 0) {
             atPoint = nonConnections;
         }
@@ -451,14 +502,18 @@ export class ConnectionBasics {
         for (const source of atPoint) {
             if (source.id === node.id) continue;
 
-            const handle = diagram.hitConnectionHandle(x, y, source);
-            if (handle === NodeHandle.ROTATE) continue;
+            const handlePoint = diagram.hitConnectionHandle(x, y, source);
+            if (handlePoint.handle === NodeHandle.ROTATE) continue;
+            // const handle = diagram.hitConnectionHandle(x, y, source);
+            // if (handle === NodeHandle.ROTATE) continue;
 
             // Anchor capture must use node-local coordinates so rotation does not skew
             // point indices and normalized MOVE offsets.
             const rect = coordinates.getBoundingRect(source, false);
-            const point = coordinates.getHitPoint({ x, y }, rect, source.angle || 0);
-            const anchor = this.buildConnectableAnchor(source, handle, point, rect);
+            // const point = coordinates.getHitPoint({ x, y }, rect, source.angle || 0);
+            // const anchor = this.buildConnectableAnchor(source, handle, point, rect);
+
+            const anchor = this.buildConnectableAnchor(source, handlePoint.handle, handlePoint.point, rect);
 
             if (!anchor) {
                 continue;
@@ -493,33 +548,50 @@ export class ConnectionBasics {
         return -1;
     }
 
-    /**
-     * Maps a handle to its point on the provided rectangle.
-     * @param rect Bounding rectangle.
-     * @param handle Handle to map.
-     * @returns Handle point in world coordinates, or undefined when the handle has no geometric point mapping.
-     */
-    private static handlePoint(rect: IRect, handle: NodeHandle): IPoint | undefined {
-        switch (handle) {
-            case NodeHandle.NW:
-                return { x: rect.left, y: rect.top };
-            case NodeHandle.NE:
-                return { x: rect.left + rect.width, y: rect.top };
-            case NodeHandle.SW:
-                return { x: rect.left, y: rect.top + rect.height };
-            case NodeHandle.SE:
-                return { x: rect.left + rect.width, y: rect.top + rect.height };
-            case NodeHandle.N:
-                return { x: rect.left + rect.width / 2, y: rect.top };
-            case NodeHandle.S:
-                return { x: rect.left + rect.width / 2, y: rect.top + rect.height };
-            case NodeHandle.W:
-                return { x: rect.left, y: rect.top + rect.height / 2 };
-            case NodeHandle.E:
-                return { x: rect.left + rect.width, y: rect.top + rect.height / 2 };
-            default:
-                return undefined;
+    public static resolveConnectionPoint(node: INode, given: IHandlePoint): IHandlePoint {
+        const adapter = NodeRegistry.adapter(node.type);
+        if (!adapter) {
+            return given;
         }
+
+        const anchors = adapter.getAnchors(node, 'connection_handles');
+        const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
+        for (const anchor of anchors) {
+            if (anchor.handle !== given.handle) continue;
+            if (Math.abs(anchor.point.x - given.point.x) <= epsilon && Math.abs(anchor.point.y - given.point.y) <= epsilon) {
+                return anchor;
+            }
+        }
+        return given;
     }
+
+    // /**
+    //  * Maps a handle to its point on the provided rectangle.
+    //  * @param rect Bounding rectangle.
+    //  * @param handle Handle to map.
+    //  * @returns Handle point in world coordinates, or undefined when the handle has no geometric point mapping.
+    //  */
+    // private static handlePoint(rect: IRect, handle: NodeHandle): IPoint | undefined {
+    //     switch (handle) {
+    //         case NodeHandle.NW:
+    //             return { x: rect.left, y: rect.top };
+    //         case NodeHandle.NE:
+    //             return { x: rect.left + rect.width, y: rect.top };
+    //         case NodeHandle.SW:
+    //             return { x: rect.left, y: rect.top + rect.height };
+    //         case NodeHandle.SE:
+    //             return { x: rect.left + rect.width, y: rect.top + rect.height };
+    //         case NodeHandle.N:
+    //             return { x: rect.left + rect.width / 2, y: rect.top };
+    //         case NodeHandle.S:
+    //             return { x: rect.left + rect.width / 2, y: rect.top + rect.height };
+    //         case NodeHandle.W:
+    //             return { x: rect.left, y: rect.top + rect.height / 2 };
+    //         case NodeHandle.E:
+    //             return { x: rect.left + rect.width, y: rect.top + rect.height / 2 };
+    //         default:
+    //             return undefined;
+    //     }
+    // }
 
 }

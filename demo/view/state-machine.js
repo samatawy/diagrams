@@ -28,24 +28,24 @@ mountView('state-machine-demo', {
 
         const edges = [
             makeLine(view, 'idle-running', [{ x: 220, y: 130 }, { x: 310, y: 130 }], {
-                from: { node: 'idle', handle: NodeHandle.E },
-                to: { node: 'running', handle: NodeHandle.W },
+                from: { node: 'idle', handle: NodeHandle.E, relative: { x: 0, y: 0 } },
+                to: { node: 'running', handle: NodeHandle.W, relative: { x: 0, y: 0 } },
             }),
             makeLine(view, 'running-waiting', [{ x: 490, y: 130 }, { x: 560, y: 130 }], {
-                from: { node: 'running', handle: NodeHandle.E },
-                to: { node: 'waiting', handle: NodeHandle.W },
+                from: { node: 'running', handle: NodeHandle.E, relative: { x: 0, y: 0 } },
+                to: { node: 'waiting', handle: NodeHandle.W, relative: { x: 0, y: 0 } },
             }),
             makeLine(view, 'waiting-running', [{ x: 650, y: 180 }, { x: 520, y: 245 }, { x: 400, y: 180 }], {
-                from: { node: 'waiting', handle: NodeHandle.S },
-                to: { node: 'running', handle: NodeHandle.S },
+                from: { node: 'waiting', handle: NodeHandle.S, relative: { x: 0, y: 0 } },
+                to: { node: 'running', handle: NodeHandle.S, relative: { x: 0, y: 0 } },
             }),
             makeLine(view, 'running-failed', [{ x: 400, y: 174 }, { x: 400, y: 260 }], {
-                from: { node: 'running', handle: NodeHandle.S },
-                to: { node: 'failed', handle: NodeHandle.N },
+                from: { node: 'running', handle: NodeHandle.S, relative: { x: 0, y: 0 } },
+                to: { node: 'failed', handle: NodeHandle.N, relative: { x: 0, y: 0 } },
             }),
             makeLine(view, 'failed-idle', [{ x: 310, y: 300 }, { x: 180, y: 245 }, { x: 140, y: 174 }], {
-                from: { node: 'failed', handle: NodeHandle.W },
-                to: { node: 'idle', handle: NodeHandle.S },
+                from: { node: 'failed', handle: NodeHandle.W, relative: { x: 0, y: 0 } },
+                to: { node: 'idle', handle: NodeHandle.S, relative: { x: 0, y: 0 } },
             }),
         ];
 

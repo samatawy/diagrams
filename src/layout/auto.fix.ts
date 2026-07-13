@@ -3,6 +3,7 @@ import { isConnection } from "../guards";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeHandle, type IRect } from "../types";
 import type { DiagramEditView } from "../editview/diagram.edit.view";
+import { absoluteToRelative } from "../value.utils";
 
 export interface AutoFixReport {
     connectionsFixed: number;
@@ -117,6 +118,7 @@ export class AutoFixLayout {
         return {
             node: winner.node.id,
             handle: this.closestSideHandle(x, y, winner.rect),
+            relative: absoluteToRelative({ x, y }, winner.rect),
         };
     }
 

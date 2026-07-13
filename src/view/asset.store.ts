@@ -1,3 +1,6 @@
+import { IconRegistry } from "../factory";
+import { svgToDataUri } from "../value.utils";
+
 /**
  * Stores image asset sources and stable asset identifiers for diagram nodes.
  *
@@ -48,6 +51,24 @@ export class AssetStore {
     public resolve(imageId?: string): string | undefined {
         if (!imageId) {
             return undefined;
+        }
+
+        /* Here is where we lazy-load icons from the library.
+        The store should only hold icons that have been requested.
+        */
+        if (imageId.startsWith('svg:')) {
+            const found = this.assetsById.get(imageId);
+            if (found) {
+                return found;
+            } else {
+                // Attempt to load it..
+                const source = IconRegistry.get(imageId);
+                if (source?.type === 'svg') {
+                    const data_uri = svgToDataUri(source.markup);
+                    this.assetsById.set(imageId, data_uri);
+                    // Now it is part of the store
+                }
+            }
         }
 
         return this.assetsById.get(imageId);

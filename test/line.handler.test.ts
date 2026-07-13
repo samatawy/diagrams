@@ -110,7 +110,7 @@ describe('LineHandler', () => {
         const line = createNode(owner, {
             id: 'line',
             points: [{ x: 0, y: 0 }, { x: 40, y: 10 }, { x: 80, y: 40 }, { x: 120, y: 80 }],
-            from: { node: 'target', handle: NodeHandle.E, xOffset: 1, yOffset: 0.5 },
+            from: { node: 'target', handle: NodeHandle.E, relative: { x: 1, y: 0.5 } },
             arrow: 'end',
             strokeStyle: { color: '#111827' },
         });

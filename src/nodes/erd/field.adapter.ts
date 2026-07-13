@@ -1,9 +1,7 @@
 import type { SpecificOptions, TextOverflowMode } from "../../factory";
 import { isDiagramViewLike } from "../../guards";
-import type { INode } from "../../interfaces";
-import { DiagramConstants } from "../../model/diagram.constants";
-import { NodeHandle, type IPoint, type ITextBaseline, type ITextOrientation } from "../../types";
-import { humanize } from "../../value.utils";
+import type { IHandlePoint, INode } from "../../interfaces";
+import { NodeHandle, type AnchorScope, type IPoint, type ITextBaseline, type ITextOrientation } from "../../types";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
 import { RenderBasics } from "../render.basics";
@@ -86,50 +84,79 @@ export class FieldAdapter extends RectangleAdapter {
         }
     }
 
-    public renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
-        if (!context) return;
+    // public renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
+    //     if (!context) return;
+    //     const diagram = node.owner;
+    //     if (!isDiagramViewLike(diagram)) return;
+    //     const coordinates = diagram.getCoordinates();
+
+    //     if (node.points.length > 1) {
+    //         const rect = coordinates.getBoundingRect(node);
+    //         // const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
+    //         const allowed = (show === 'connection_handles') ?
+    //             this.connection_handles :
+    //             [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE, NodeHandle.ALTER];
+
+    //         context.save();
+    //         RenderBasics.prepareHandles(node, context);
+
+    //         const handles = new Path2D();
+
+    //         // E
+    //         if (allowed.includes(NodeHandle.E)) {
+    //             RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
+    //         }
+
+    //         // W
+    //         if (allowed.includes(NodeHandle.W)) {
+    //             RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
+    //         }
+
+    //         context.fill(handles);
+    //         context.stroke(handles);
+    //         context.restore();
+    //     }
+    // }
+
+    // public override hitTest(node: INode, point: IPoint): NodeHandle {
+    //     const result = super.hitTest(node, point);
+    //     // Allow only MOVE (body), E and W (connection anchors). All resize handles are suppressed.
+    //     if (result === NodeHandle.MOVE || result === NodeHandle.E || result === NodeHandle.W) {
+    //         return result;
+    //     }
+    //     return NodeHandle.NONE;
+    // }
+
+    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
+        const anchors: IHandlePoint[] = [];
         const diagram = node.owner;
-        if (!isDiagramViewLike(diagram)) return;
+        if (!isDiagramViewLike(diagram)) return anchors;
         const coordinates = diagram.getCoordinates();
 
         if (node.points.length > 1) {
             const rect = coordinates.getBoundingRect(node);
-            // const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
-            const allowed = (show === 'connection_handles') ?
-                this.connection_handles :
-                [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE, NodeHandle.ALTER];
 
-            context.save();
-            RenderBasics.prepareHandles(node, context);
+            // E anchor
+            anchors.push({
+                handle: NodeHandle.E,
+                point: { x: rect.left + rect.width, y: rect.top + rect.height / 2 }
+            });
 
-            const handles = new Path2D();
+            // W anchor
+            anchors.push({
+                handle: NodeHandle.W,
+                point: { x: rect.left, y: rect.top + rect.height / 2 }
+            });
+        }
 
-            // E
-            if (allowed.includes(NodeHandle.E)) {
-                RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
-            }
-
-            // W
-            if (allowed.includes(NodeHandle.W)) {
-                RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
-            }
-
-            context.fill(handles);
-            context.stroke(handles);
-            context.restore();
+        if (show === 'connection_handles') {
+            return anchors.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+        } else {
+            return anchors;
         }
     }
 
-    public override hitTest(node: INode, point: IPoint): NodeHandle {
-        const result = super.hitTest(node, point);
-        // Allow only MOVE (body), E and W (connection anchors). All resize handles are suppressed.
-        if (result === NodeHandle.MOVE || result === NodeHandle.E || result === NodeHandle.W) {
-            return result;
-        }
-        return NodeHandle.NONE;
-    }
-
-    public override canConnect(node: INode, direction: "from" | "to", handle: NodeHandle, point: IPoint): boolean {
+    public override canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
         if (!this.connection_handles.includes(handle)) return false;
         return node.ready === true;
     }
@@ -189,9 +216,14 @@ export class FieldAdapter extends RectangleAdapter {
                 default: null,
             },
             textStyle: {
+                color: '#000000',
                 size: 10,
                 align: 'left',
                 baseline: 'middle',
+            },
+            strokeStyle: {
+                color: '#00000020',
+                width: 1,
             },
             geometry: {
                 index: -1

@@ -9,7 +9,8 @@ import {
     type ArrowDirection,
     type ImageMode, type ImageAlign,
     type IFontWeight,
-    type ArrowType
+    type ArrowType,
+    type AnchorScope
 } from "../types";
 import { HistoryStack } from "./history";
 import { NORMAL_FONT_WEIGHT, type FillStyle, type ShadowStyle, type StrokeStyle, type TextStyle } from "../style.interfaces";
@@ -54,7 +55,7 @@ import {
     deepClone,
     fillColor,
     fillStyle, humanize, isHollow, isInvisible, isLocked, lineDash, lineWidth,
-    nodeAngle, nodeFontFace, nodeFontSize, nodeOpacity, nodeText, strokeColor,
+    nodeAngle, nodeFontFace, nodeFontSize, nodeOpacity, nodeText, absoluteToRelative, strokeColor,
     textAlign, textBaseline, textColor, textHaloColor, textItalic, textOrientation, textWeight
 } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
@@ -1172,8 +1173,8 @@ export class DiagramEditView extends DiagramView {
             hollow: true,
             invisible: true,
             ready: false,
-            to: { node: draft },
-        } as any as INode & IConnection;
+            // to: { node: draft },
+        } as IConnection;   // any as INode & IConnection;
     }
 
     /**
@@ -2746,8 +2747,9 @@ export class DiagramEditView extends DiagramView {
     /**
      * Renders the selection markers for the specified node or all selected nodes if no node is specified.
      * @param node The node to render selection markers for. If not provided, all selected nodes are rendered.
+     * @param show The scope of anchors to show ('selection_handles' or 'connection_handles'). Defaults to 'selection_handles'.
      */
-    public renderSelection(node?: INode): void {
+    public renderSelection(node?: INode, show: AnchorScope = 'selection_handles'): void {
         if (!this.context) return;
 
         const coordinates = this.getCoordinates();
@@ -2757,15 +2759,15 @@ export class DiagramEditView extends DiagramView {
 
         if (node) {
             /* render just this node */
-            NodeRegistry.adapter(node.type)?.renderSelection(node, this.context, 'all_handles');
+            NodeRegistry.adapter(node.type)?.renderSelection(node, this.context, show);
         } else {
             /* render all selections.. */
             for (const node of this.selection()) {
-                NodeRegistry.adapter(node.type)?.renderSelection(node, this.context, 'all_handles');
+                NodeRegistry.adapter(node.type)?.renderSelection(node, this.context, show);
             }
 
             if (this.current.draft) {
-                NodeRegistry.adapter(this.current.draft.type)?.renderSelection(this.current.draft, this.context, 'all_handles');
+                NodeRegistry.adapter(this.current.draft.type)?.renderSelection(this.current.draft, this.context, show);
             }
         }
         this.context.restore();
@@ -3320,7 +3322,7 @@ export class DiagramEditView extends DiagramView {
                             for (const container of containers) {
                                 if (!isInvisible(container)) {
                                     this.render('all');
-                                    this.renderSelection(container);
+                                    this.renderSelection(container, 'selection_handles');
                                 }
                             }
                         });
@@ -3462,7 +3464,7 @@ export class DiagramEditView extends DiagramView {
                             /* const included = SelectionBasics.nodesForRect(this.selectionAdapter(), moveRect, this.selectionOptions.rect_mode); */
                             for (const node of included) {
                                 if (!this.isSelected(node)) {
-                                    this.renderSelection(node);
+                                    this.renderSelection(node, 'selection_handles');
                                 }
                             }
 
@@ -3999,7 +4001,7 @@ export class DiagramEditView extends DiagramView {
              * so we can find the nearest anchor
              */
             let overlaying = this.hitNode(event.offsetX, event.offsetY);
-            const pointerHit = this.getPointerConnectionAnchorAndPoint(this.dragDraftConnector as INode & IConnection, event.offsetX, event.offsetY);
+            const pointerHit = this.getPointerConnectionAnchorAndPoint(this.dragDraftConnector as IConnection, event.offsetX, event.offsetY);
             const pointerAnchor = pointerHit?.anchor;
             if (pointerAnchor && typeof pointerAnchor.node !== 'string') {
                 overlaying = pointerAnchor.node;
@@ -4032,14 +4034,31 @@ export class DiagramEditView extends DiagramView {
                 const connector = {
                     ...this.dragDraftConnector,
                     points: (this.dragDraftConnector?.points || []).map(pt => ({ ...pt })),
-                    from: { node: overlaying?.id, handle: from_handle },
-                    to: { node: created.id, handle: to_handle },
+                    from: {
+                        node: overlaying?.id,
+                        handle: from_handle,
+                        relative: absoluteToRelative(from_point, this.coordinates.getBoundingRect(overlaying!))
+                    },
+                    to: {
+                        node: created.id,
+                        handle: to_handle,
+                        relative: absoluteToRelative(to_point, this.coordinates.getBoundingRect(created))
+                    },
                     id: `auto-line-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
                 } as INode & IConnection;
 
+                const created_rect = this.coordinates.getBoundingRect(created);
                 const adapter = NodeRegistry.adapter(connector.type);
-                adapter?.afterConnect?.(connector, 'from', { node: overlaying!.id, handle: from_handle });
-                adapter?.afterConnect?.(connector, 'to', { node: created.id, handle: to_handle });
+                adapter?.afterConnect?.(connector, 'from', {
+                    node: overlaying!.id,
+                    handle: from_handle,
+                    relative: absoluteToRelative(from_point, created_rect),
+                });
+                adapter?.afterConnect?.(connector, 'to', {
+                    node: created.id,
+                    handle: to_handle,
+                    relative: absoluteToRelative(to_point, created_rect),
+                });
 
                 this.upsertNode(connector);
                 this.current.layer?.nodes.push(connector.id);
@@ -4254,8 +4273,8 @@ export class DiagramEditView extends DiagramView {
             if (!at || at.handle === NodeHandle.ROTATE) continue;
 
             const rect = this.coordinates.getBoundingRect(source, false);
-            const point = this.coordinates.getHitPoint({ x: canvasX, y: canvasY }, rect, source.angle || 0);
-            const anchor = ConnectionBasics.buildConnectableAnchor(source, at.handle, point, rect);
+            // const point = this.coordinates.getHitPoint({ x: canvasX, y: canvasY }, rect, source.angle || 0);
+            const anchor = ConnectionBasics.buildConnectableAnchor(source, at.handle, at.point, rect);
             if (!anchor) {
                 continue;
             }
@@ -5760,7 +5779,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         const nodeId = typeof anchor.node === 'string' ? anchor.node : anchor.node.id;
-        return [nodeId, anchor.handle, anchor.point ?? '', anchor.xOffset ?? '', anchor.yOffset ?? ''].join(':');
+        return [nodeId, anchor.handle, anchor.index ?? '', anchor.relative.x ?? '', anchor.relative.y ?? ''].join(':');
     }
 
     /**

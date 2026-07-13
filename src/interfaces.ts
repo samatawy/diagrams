@@ -123,11 +123,11 @@ export interface INode {
      */
     angle?: number;
 
-    /**
-     * An optional array of child elements that are rendered inside or with the node. 
-     * Child elements can include icons, table rows, markdown elements, or other visual components.
-     */
-    children?: IChildElement[];
+    // /**
+    //  * An optional array of child elements that are rendered inside or with the node. 
+    //  * Child elements can include icons, table rows, markdown elements, or other visual components.
+    //  */
+    // children?: IChildElement[];
 
     /**
      * An optional geometry object that can store additional geometric properties of the node, such as width, height, or other custom measurements.
@@ -151,6 +151,24 @@ export interface INode {
 }
 
 /**
+ * IAnchorCandidate defines a candidate anchor point for a connection on a node, including the handle of the node and an optional index for a specific point on the node's geometry.
+ * This interface is used to determine potential anchor points for connections when establishing relationships between nodes in the diagram.
+ * It allows for flexible connection points based on the node's geometry and the desired connection style.
+ */
+export interface IHandlePoint {
+    /**
+     * The handle of the nodethat should be used (e.g., 'n', 's', 'e', 'w', etc.) 
+     * For example, indicating where a connection should attach.
+     */
+    handle: NodeHandle;
+
+    /**
+     * The point on the node's geometry where the handle is located.
+     */
+    point: IPoint;
+}
+
+/**
  * IConnectionAnchor defines the properties of an anchor point for a connection, including the node it is attached to, the handle of the node, 
  * and optional properties for specifying the exact point on the node where the connection should attach (such as a specific point index or offsets).
  * This interface is used to determine how connections are anchored to nodes in the diagram, 
@@ -170,24 +188,26 @@ export interface IConnectionAnchor {
     /**
      * An optional index specifying a particular point on the node's geometry to anchor to, allowing for more precise connection points beyond just the handles.
      */
-    point?: number;
+    index?: number;
 
-    /**
-     * Optional pixel offsets that can be applied to the anchor point, providing additional control over the exact position of the connection attachment on the node.
-     */
-    xOffset?: number;
+    relative: IPoint;
 
-    /**
-     * Optional pixel offsets that can be applied to the anchor point, providing additional control over the exact position of the connection attachment on the node.
-     */
-    yOffset?: number;
+    // /**
+    //  * Optional pixel offsets that can be applied to the anchor point, providing additional control over the exact position of the connection attachment on the node.
+    //  */
+    // xOffset?: number;
+
+    // /**
+    //  * Optional pixel offsets that can be applied to the anchor point, providing additional control over the exact position of the connection attachment on the node.
+    //  */
+    // yOffset?: number;
 }
 
 /**
  * The IConnection interface defines the properties of a connection between nodes in the diagram, including the source and target anchors, arrow styles, and readiness state.
  * It represents the relationships between nodes and is used to determine how nodes are connected and rendered in the diagram.
  */
-export interface IConnection {
+export interface IConnection extends INode {
     /**
      * The source anchor of the connection, which specifies where the connection starts on the source node. It includes information about the node, handle, and optional offsets.
      */
@@ -199,12 +219,12 @@ export interface IConnection {
     to?: IConnectionAnchor;
 }
 
-/**
- * The IChildElement interface can be implemented by objects that are considered child elements of a node.
- * Example may include icons, table rows, markdown elements, etc.
- */
-export interface IChildElement {
-}
+// /**
+//  * The IChildElement interface can be implemented by objects that are considered child elements of a node.
+//  * Example may include icons, table rows, markdown elements, etc.
+//  */
+// export interface IChildElement {
+// }
 
 /**
  * The IContainer interface defines the properties of a container node in the diagram, which can own a group of nodes.

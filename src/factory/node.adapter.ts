@@ -1,5 +1,5 @@
-import type { IConnectionAnchor, IGrid, INode } from "../interfaces";
-import type { ITextOrientation, IPoint, IRect, NodeHandle, ITextBaseline } from "../types";
+import type { IConnectionAnchor, IGrid, IHandlePoint, INode } from "../interfaces";
+import type { ITextOrientation, IPoint, IRect, NodeHandle, ITextBaseline, AnchorScope } from "../types";
 import type { IconSource } from "./icon.registry";
 
 export type { IconSource };
@@ -154,7 +154,7 @@ export interface INodeAdapter {
      * @param handle The connection handle on the node.
      * @param point The world-space coordinates of the connection point, if available.
      */
-    canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle, point?: IPoint): boolean;
+    canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point?: IPoint): boolean;
 
     /**
      * Indicates whether the adapter supports owning a group of other nodes.
@@ -243,7 +243,7 @@ export interface INodeAdapter {
      * @param ctx The canvas rendering context to draw on.
      * @param show Specifies whether to show all handles or connection handles.
      */
-    renderSelection(node: INode, ctx: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles'): void;
+    renderSelection(node: INode, ctx: CanvasRenderingContext2D, show: AnchorScope): void;
 
     /**
      * Where to place the text for this node, if it has any. This is used for rendering and in-place editing.
@@ -266,6 +266,8 @@ export interface INodeAdapter {
      * @returns The visual bounding rect.
      */
     getVisualRect(node: INode, rect: IRect): IRect;
+
+    getAnchors(node: INode, show: AnchorScope): IHandlePoint[];
 
     geometryOptions(node: INode, path: string): SpecificOptions | undefined;
 

@@ -51,6 +51,7 @@ import { registerBasicAdapters } from "../nodes";
 import { registerBpmnAdapters } from "../nodes/bpmn";
 import { registerC4Adapters } from "../nodes/c4";
 import { registerErdAdapters } from "../nodes/erd";
+import { registerLogicAdapters } from "../nodes/logic";
 
 import DIAGRAM_EDITOR_STYLES from '../css_generated/editor/diagram.editor.css';
 const DIAGRAM_EDITOR_STYLE_ID = 'diagram-editor-layout';
@@ -204,6 +205,7 @@ export class DiagramEditor {
         registerBpmnAdapters();
         registerC4Adapters();
         registerErdAdapters();
+        registerLogicAdapters();
     }
 
     /**

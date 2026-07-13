@@ -173,7 +173,7 @@ export class NodeRegistry {
      * @param handle The connection handle.
      * @returns True if the node can connect from/to the handle, false otherwise.
      */
-    public static canConnect(node: INode, direction: 'from' | 'to', handle: NodeHandle): boolean {
+    public static canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle): boolean {
         const handler = this._nodes.get(node.type);
         return handler ? handler.canConnect(node, direction, handle, { x: 0, y: 0 }) : false;
     }

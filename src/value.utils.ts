@@ -1,6 +1,6 @@
 import type { INode } from "./interfaces";
 import { BOLD_FONT_WEIGHT, NORMAL_FONT_WEIGHT, type FillStyle, type ShadowStyle, type TextStyle } from "./style.interfaces";
-import type { ArrowDirection, ArrowType, IFontWeight, ImageMode, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
+import type { ArrowDirection, ArrowType, IFontWeight, ImageMode, IPoint, IRect, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 import { DiagramConstants } from "./model/diagram.constants";
 import { NodeRegistry } from "./factory/node.registry";
 
@@ -25,6 +25,18 @@ export function deepClone(obj: any): any {
         }
     }
     return cloned;
+}
+
+export function absoluteToRelative(point: IPoint, rect: IRect): IPoint {
+    const x = rect.width ? (point.x - rect.left) / rect.width : 0.5;
+    const y = rect.height ? (point.y - rect.top) / rect.height : 0.5;
+    return { x, y };
+}
+
+export function relativeToAbsolute(relative: IPoint, rect: IRect): IPoint {
+    const x = rect.left + (relative.x * rect.width);
+    const y = rect.top + (relative.y * rect.height);
+    return { x, y };
 }
 
 export function nodeId(node: INode | string): string {
@@ -159,6 +171,14 @@ export function hexLuminance(color: string): number {
     }
     const lin = (c: number) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
     return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+}
+
+export function svgToDataUri(svgString: string): string {
+    // encodeURIComponent handles special chars safely
+    const encoded = encodeURIComponent(svgString);
+    return `data:image/svg+xml;charset=utf-8,${encoded}`;
+    // OR use base64 if you prefer:
+    // return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svgString)))}`;
 }
 
 export function lineWidth(node: INode): number {
