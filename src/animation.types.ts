@@ -1,10 +1,10 @@
-import type { IPoint } from "./types";
+import type { IPoint, IRect } from "./types";
 
 export type AnimationMode = 'instant' | 'animate';
 
 export type AnimationState = 'idle' | 'running';
 
-export type AnimationChannelType = 'linedash' | 'node' | 'viewport' | 'other';
+export type AnimationChannelType = 'linedash' | 'node' | 'shutter' | 'viewport' | 'other';
 
 export interface AnimationConfig {
     enabled: boolean;
@@ -20,17 +20,18 @@ export interface AnimationChannel {
 
 export interface AnimationLineDash extends AnimationChannel {
     type: 'linedash';
-    // enabled: boolean;
-    // animate: boolean;
-    // fps: number;
     dashOffset: number;
-    // lastFrame?: number;
-    // lastTimestamp?: number;
 }
 
 export interface AnimationNodeCenter extends AnimationChannel {
     type: 'node';
     target: IPoint;
+}
+
+export interface AnimationNodeShutter extends AnimationChannel {
+    type: 'shutter';
+    node: string;
+    cutout?: IRect;
 }
 
 export interface AnimationViewport extends AnimationChannel {

@@ -9,7 +9,7 @@ import { LOGIC_TOOL_LAYOUT } from "../../nodes/logic";
 import DEFAULT_STYLES from '../../css_generated/editor/toolbox/diagram.toolbox.css';
 // import { loadTablerIcons } from "../../factory/svg.tool.loader";
 import { loadFlagIcons } from "../../factory/svg.tool.loader";
-import { ICON_NAMES as TABLER_ICON_NAMES } from "../../icons_generated/tabler.icons";
+// import { ICON_NAMES as TABLER_ICON_NAMES } from "../../icons_generated/tabler.icons";
 import { ICON_NAMES as FLAG_ICON_NAMES } from "../../icons_generated/flag.icons";
 const STYLE_ID = 'toolbox-defaults';
 

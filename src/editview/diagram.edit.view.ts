@@ -2802,6 +2802,8 @@ export class DiagramEditView extends DiagramView {
     protected override pointerDown(event: PointerEvent): void {
         if (!this.canvas) return;
 
+        this.stopAnimations('shutter');
+
         if (event.button === 0) {
             this.canvas.setPointerCapture?.(event.pointerId);
         }
@@ -2928,9 +2930,15 @@ export class DiagramEditView extends DiagramView {
 
             if (this.double_click_listener) {
                 this.double_click_listener(hit ?? undefined, event as unknown as PointerEvent);
+                if (hit) this.animateNodeShutter(hit, () => { });
+
             } else if (hit && NodeRegistry.hasText(hit.type)) {
                 this.editText(hit);
             }
+
+            // if (hit) {
+            //     this.animateNodeShutter(hit, () => { });
+            // }
         }
     }
 
@@ -4591,6 +4599,8 @@ export class DiagramEditView extends DiagramView {
         this.guides = [];
         this.pendingGuideSnap = undefined;
 
+        this.stopAnimations('shutter');
+
         /* End drawing polylines. */
         if (this.current.draft && !this.current.draft.ready) {
             this.current.draft.ready = true;
@@ -4645,6 +4655,8 @@ export class DiagramEditView extends DiagramView {
 
         this.closeTextEditor(true);
         this.setInteractionHint('Editing text');
+
+        this.animateNodeShutter(node, () => { });
 
         /* Prepare shortcuts and required data for all cases: */
 

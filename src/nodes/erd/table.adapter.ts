@@ -1,6 +1,6 @@
 import { isContainer, isDiagramViewLike } from "../../guards";
 import type { IContainer, INode } from "../../interfaces";
-import { isHollow } from "../../value.utils";
+import { isHollow, lineWidth } from "../../value.utils";
 import type { INodeCached } from "../../view/view.cache";
 import { VerticalPoolAdapter } from "../container/vertical.pool.adapter";
 import { RenderBasics } from "../render.basics";
@@ -219,7 +219,8 @@ export class TableAdapter extends VerticalPoolAdapter {
 
         const rect = coordinates.getBoundingRect(node);
         const top_padding = (node.textStyle?.size || 12) * 1.4 + 4; /* 1.4; */
-        const table_height = rect.height - top_padding;
+        const side_padding = lineWidth(node);
+        // const table_height = rect.height - top_padding;
 
         /* Find the group members that are rows */
         let rows = group.nodes
@@ -235,12 +236,12 @@ export class TableAdapter extends VerticalPoolAdapter {
 
             row!.points = [
                 {
-                    x: rect.left,
-                    y: rect.top + top_padding + (r * row_height)
+                    x: rect.left + side_padding,
+                    y: rect.top + top_padding + (r * row_height) - side_padding
                 },
                 {
-                    x: rect.left + rect.width,
-                    y: rect.top + top_padding + ((r + 1) * row_height)
+                    x: rect.left + rect.width - side_padding,
+                    y: rect.top + top_padding + ((r + 1) * row_height) - side_padding
                 }
             ];
             cache.deleteNode(row!); // Clear cached path for the child row

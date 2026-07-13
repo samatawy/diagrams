@@ -994,6 +994,10 @@ export class DiagramView extends Diagram implements HasSelection {
         this.animations.animateLineDash(id, func);
     }
 
+    public animateNodeShutter(node: INode, func: () => void): void {
+        this.animations.animateNodeShutter(node, func);
+    }
+
     public animateViewport(target: { zoom?: number, pan?: { x: number, y: number } }, func?: () => void): void {
         this.animations.animateViewport(target, func);
         // () => {

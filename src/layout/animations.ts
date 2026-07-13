@@ -1,5 +1,6 @@
-import type { AnimationConfig, AnimationChannel, AnimationLineDash, AnimationChannelType, AnimationViewport, AnimationNodeCenter } from "../animation.types";
+import type { AnimationConfig, AnimationChannel, AnimationLineDash, AnimationChannelType, AnimationViewport, AnimationNodeCenter, AnimationNodeShutter } from "../animation.types";
 import type { INode } from "../interfaces";
+import { DiagramConstants } from "../model";
 import { NodeBasics } from "../nodes";
 import type { IPoint, IRect } from "../types";
 import { deepClone } from "../value.utils";
@@ -67,6 +68,9 @@ export class DiagramAnimations {
             case 'node':
                 throw new Error('Node animation should be started using animateNode() method.');
 
+            case 'shutter':
+                throw new Error('Shutter animation should be started using animateNodeShutter() method.');
+
             case 'viewport':
                 throw new Error('Viewport animation should be started using animateViewport() method.');
 
@@ -116,6 +120,16 @@ export class DiagramAnimations {
         channel.target = target;
 
         this.doAnimateNodeCenter(channel, node, target, func);
+    }
+
+    public animateNodeShutter(node: INode, func: () => void): void {
+        let channel = this.map.get(`shutter-${node.id}`) as AnimationNodeShutter | undefined;
+        if (!channel) {
+            channel = this.newAnimation('shutter', `shutter-${node.id}`) as AnimationNodeShutter;
+        }
+        channel.node = node.id;
+
+        this.doAnimateNodeShutter(channel, node, func);
     }
 
     public animateViewport(target: { zoom?: number, pan?: { x: number, y: number } }, func?: () => void): void {
@@ -249,6 +263,136 @@ export class DiagramAnimations {
             const step = 0.2; /* Adjust this value for smoother or faster animation */
 
             NodeBasics.moveBy(node, dx * step, dy * step);
+            func();
+
+            channel.lastFrame = requestAnimationFrame(animate);
+        };
+        animate();
+    }
+
+    private doAnimateNodeShutter(channel: AnimationNodeShutter, node: INode, func: () => void): void {
+        if (!this.config.enabled) {
+            // node.points[0] = deepClone(target);
+            func();
+            return;
+        }
+        channel.cutout = undefined;
+
+        this.stopAnimation(`shutter-${node.id}`);
+
+        const animate = () => {
+            const canvas = this.diagram.getCanvas();
+            const context = canvas.getContext('2d');
+            if (!context) return;
+
+            const shutterCanvas = document.createElement('canvas');
+            const shutterContext = shutterCanvas.getContext('2d');
+            if (!shutterContext) return;
+
+            shutterCanvas.width = canvas.width;
+            shutterCanvas.height = canvas.height;
+
+            const coordinates = this.diagram.getCoordinates();
+
+            const canvasFullRect: IRect = {
+                left: 0,
+                top: 0,
+                width: canvas.width,
+                height: canvas.height
+            };
+
+            const nodeRect = coordinates.getBoundingRect(node, true);
+            // Transform nodeRect to canvas coordinates so we can draw with identity transform
+            nodeRect.left = (nodeRect.left * coordinates.zoom - coordinates.pan.x) * coordinates.pixelRatio;
+            nodeRect.top = (nodeRect.top * coordinates.zoom - coordinates.pan.y) * coordinates.pixelRatio;
+            nodeRect.width = nodeRect.width * coordinates.zoom * coordinates.pixelRatio;
+            nodeRect.height = nodeRect.height * coordinates.zoom * coordinates.pixelRatio;
+
+            if (!channel.cutout) {
+                channel.cutout = deepClone(canvasFullRect);
+            }
+            const cutout = channel.cutout!;
+
+            const dLeft = nodeRect.left - channel.cutout!.left;
+            const dTop = nodeRect.top - channel.cutout!.top;
+            const dWidth = nodeRect.width - channel.cutout!.width;
+            const dHeight = nodeRect.height - channel.cutout!.height;
+
+            const attainedLeft = Math.abs(dLeft) < 0.5;
+            const attainedTop = Math.abs(dTop) < 0.5;
+            const attainedWidth = Math.abs(dWidth) < 0.5;
+            const attainedHeight = Math.abs(dHeight) < 0.5;
+
+            if (attainedLeft && attainedTop && attainedWidth && attainedHeight) {
+                channel.lastFrame = undefined;
+                channel.cutout = deepClone(nodeRect);
+                func();
+                return;
+            }
+
+            const step = 0.2; /* Adjust this value for smoother or faster animation */
+
+            cutout.left += dLeft * step;
+            cutout.top += dTop * step;
+            cutout.width += dWidth * step;
+            cutout.height += dHeight * step;
+
+            this.diagram.render('all');
+
+            // shutterContext.save();
+            // Draw with identity tranform since we already transformed the cutout to canvas coordinates
+            shutterContext.transform(1, 0, 0, 1, 0, 0); // Reset any existing transformations
+            // context.transform(coordinates.zoom * coordinates.pixelRatio, 0, 0, coordinates.zoom * coordinates.pixelRatio, -coordinates.pan.x * coordinates.zoom * coordinates.pixelRatio, -coordinates.pan.y * coordinates.zoom * coordinates.pixelRatio);
+
+            shutterContext.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            shutterContext.clearRect(canvasFullRect.left, canvasFullRect.top, canvasFullRect.width, canvasFullRect.height);
+            shutterContext.fillRect(canvasFullRect.left, canvasFullRect.top, canvasFullRect.width, canvasFullRect.height);
+
+            // 3. Punch hole for the shape
+            shutterContext.globalCompositeOperation = 'destination-out';
+            shutterContext.fillStyle = 'rgba(0, 0, 0, 1)';
+
+            // Use bounding box (fast)
+            const shrink = DiagramConstants.HANDLE_HIT_EPSILON * coordinates.pixelRatio;
+            shutterContext.fillRect(
+                cutout.left - shrink,
+                cutout.top - shrink,
+                cutout.width + 2 * shrink,
+                cutout.height + 2 * shrink
+            );
+
+            // context.fillRect(channel.cutout.left, channel.cutout.top, channel.cutout.width, channel.cutout.height);
+
+            shutterContext.globalCompositeOperation = 'source-over';
+
+            shutterContext.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+            shutterContext.lineWidth = shrink;
+            shutterContext.setLineDash([shrink, shrink]);
+            shutterContext.strokeRect(
+                cutout.left - shrink,
+                cutout.top - shrink,
+                cutout.width + 2 * shrink,
+                cutout.height + 2 * shrink
+            );
+
+            // shutterContext.restore();
+
+            context.save();
+            context.transform(1, 0, 0, 1, 0, 0); // Reset any existing transformations
+            context.drawImage(shutterCanvas, 0, 0);
+            context.restore();
+
+            shutterCanvas.remove();
+
+            // if (context) {
+            //     context.save();
+            //     context.beginPath();
+            //     context.rect(channel.cutout.left, channel.cutout.top, channel.cutout.width, channel.cutout.height);
+            //     context.clip();
+            //     this.diagram.render('all');
+            //     context.restore();
+            // }
+
             func();
 
             channel.lastFrame = requestAnimationFrame(animate);
