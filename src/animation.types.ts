@@ -32,6 +32,8 @@ export interface AnimationNodeShutter extends AnimationChannel {
     type: 'shutter';
     node: string;
     cutout?: IRect;
+    fillStyle?: string;
+    strokeStyle?: string;
 }
 
 export interface AnimationViewport extends AnimationChannel {

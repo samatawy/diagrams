@@ -1,10 +1,11 @@
 import type { AnimationConfig, AnimationChannel, AnimationLineDash, AnimationChannelType, AnimationViewport, AnimationNodeCenter, AnimationNodeShutter } from "../animation.types";
+import { NodeRegistry } from "../factory";
 import type { INode } from "../interfaces";
 import { DiagramConstants } from "../model";
-import { NodeBasics } from "../nodes";
+import { NodeBasics, RenderBasics } from "../nodes";
 import type { IPoint, IRect } from "../types";
-import { deepClone } from "../value.utils";
-import type { DiagramView } from "../view";
+import { deepClone, nodeFontSize } from "../value.utils";
+import type { CoordinateSystem, DiagramView } from "../view";
 
 export class DiagramAnimations {
 
@@ -128,6 +129,8 @@ export class DiagramAnimations {
             channel = this.newAnimation('shutter', `shutter-${node.id}`) as AnimationNodeShutter;
         }
         channel.node = node.id;
+        channel.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        channel.strokeStyle = 'rgba(0, 0, 0, 0.25)';
 
         this.doAnimateNodeShutter(channel, node, func);
     }
@@ -301,7 +304,8 @@ export class DiagramAnimations {
                 height: canvas.height
             };
 
-            const nodeRect = coordinates.getBoundingRect(node, true);
+            let nodeRect = this.getShutterRect(node, coordinates);
+
             // Transform nodeRect to canvas coordinates so we can draw with identity transform
             nodeRect.left = (nodeRect.left * coordinates.zoom - coordinates.pan.x) * coordinates.pixelRatio;
             nodeRect.top = (nodeRect.top * coordinates.zoom - coordinates.pan.y) * coordinates.pixelRatio;
@@ -330,7 +334,7 @@ export class DiagramAnimations {
                 return;
             }
 
-            const step = 0.2; /* Adjust this value for smoother or faster animation */
+            const step = 0.15; /* Adjust this value for smoother or faster animation */
 
             cutout.left += dLeft * step;
             cutout.top += dTop * step;
@@ -339,43 +343,58 @@ export class DiagramAnimations {
 
             this.diagram.render('all');
 
-            // shutterContext.save();
             // Draw with identity tranform since we already transformed the cutout to canvas coordinates
             shutterContext.transform(1, 0, 0, 1, 0, 0); // Reset any existing transformations
             // context.transform(coordinates.zoom * coordinates.pixelRatio, 0, 0, coordinates.zoom * coordinates.pixelRatio, -coordinates.pan.x * coordinates.zoom * coordinates.pixelRatio, -coordinates.pan.y * coordinates.zoom * coordinates.pixelRatio);
 
-            shutterContext.fillStyle = 'rgba(0, 0, 0, 0.15)';
-            shutterContext.clearRect(canvasFullRect.left, canvasFullRect.top, canvasFullRect.width, canvasFullRect.height);
-            shutterContext.fillRect(canvasFullRect.left, canvasFullRect.top, canvasFullRect.width, canvasFullRect.height);
+            const padding = DiagramConstants.HANDLE_HIT_EPSILON * 2 * coordinates.pixelRatio;
 
-            // 3. Punch hole for the shape
-            shutterContext.globalCompositeOperation = 'destination-out';
-            shutterContext.fillStyle = 'rgba(0, 0, 0, 1)';
+            if (channel.fillStyle) {
+                shutterContext.save();
+                // First, fill the entire canvas
+                shutterContext.fillStyle = channel.fillStyle;   // 'rgba(0, 0, 0, 0.05)';
+                shutterContext.clearRect(canvasFullRect.left, canvasFullRect.top, canvasFullRect.width, canvasFullRect.height);
+                shutterContext.fillRect(canvasFullRect.left, canvasFullRect.top, canvasFullRect.width, canvasFullRect.height);
 
-            // Use bounding box (fast)
-            const shrink = DiagramConstants.HANDLE_HIT_EPSILON * coordinates.pixelRatio;
-            shutterContext.fillRect(
-                cutout.left - shrink,
-                cutout.top - shrink,
-                cutout.width + 2 * shrink,
-                cutout.height + 2 * shrink
-            );
+                // Punch hole for the shape
+                shutterContext.globalCompositeOperation = 'destination-out';
+                shutterContext.fillStyle = 'rgba(0, 0, 0, 1)';
+
+                // Use bounding box (fast)
+                const path = new Path2D();
+                path.roundRect(
+                    cutout.left - padding,
+                    cutout.top - padding,
+                    cutout.width + 2 * padding,
+                    cutout.height + 2 * padding,
+                    padding * 2
+                );
+                shutterContext.fill(path);
+                shutterContext.restore();
+            }
 
             // context.fillRect(channel.cutout.left, channel.cutout.top, channel.cutout.width, channel.cutout.height);
 
-            shutterContext.globalCompositeOperation = 'source-over';
+            // shutterContext.globalCompositeOperation = 'source-over';
 
-            shutterContext.strokeStyle = 'rgba(0, 0, 0, 0.25)';
-            shutterContext.lineWidth = shrink;
-            shutterContext.setLineDash([shrink, shrink]);
-            shutterContext.strokeRect(
-                cutout.left - shrink,
-                cutout.top - shrink,
-                cutout.width + 2 * shrink,
-                cutout.height + 2 * shrink
-            );
-
-            // shutterContext.restore();
+            if (channel.strokeStyle) {
+                shutterContext.save();
+                shutterContext.strokeStyle = channel.strokeStyle;       // 'rgba(0, 0, 0, 0.25)';
+                // shutterContext.fillStyle = 'rgba(0, 0, 0, 0)';
+                // shutterContext.lineJoin = 'round';
+                shutterContext.lineWidth = 2 * coordinates.pixelRatio;  // * shrink;
+                // shutterContext.setLineDash([shrink, shrink]);
+                const path = new Path2D();
+                path.roundRect(
+                    cutout.left - padding,
+                    cutout.top - padding,
+                    cutout.width + 2 * padding,
+                    cutout.height + 2 * padding,
+                    padding * 2
+                );
+                shutterContext.stroke(path);
+                shutterContext.restore();
+            }
 
             context.save();
             context.transform(1, 0, 0, 1, 0, 0); // Reset any existing transformations
@@ -398,6 +417,47 @@ export class DiagramAnimations {
             channel.lastFrame = requestAnimationFrame(animate);
         };
         animate();
+    }
+
+    private getShutterRect(node: INode, coordinates: CoordinateSystem): IRect {
+        const minHeight = nodeFontSize(node) * 1.2;
+        const minWidth = 10 * minHeight;
+        let nodeRect = coordinates.getBoundingRect(node, true);
+
+        let textPlacement = NodeRegistry.adapter(node.type)?.textPlacement(node);
+        if (textPlacement?.segment) {
+
+            const segmentWidth = Math.abs(textPlacement.segment.to.x - textPlacement.segment.from.x);
+            const segmentHeight = Math.abs(textPlacement.segment.to.y - textPlacement.segment.from.y);
+            nodeRect = {
+                left: Math.min(textPlacement.segment.from.x, textPlacement.segment.to.x),
+                top: Math.min(textPlacement.segment.from.y, textPlacement.segment.to.y),
+                width: Math.max(minWidth, segmentWidth),
+                height: Math.max(minHeight, segmentHeight)
+            }
+            if (segmentWidth < minWidth) {
+                nodeRect.left = nodeRect.left - (minWidth - segmentWidth) / 2;
+            }
+            if (segmentHeight < minHeight) {
+                nodeRect.top = nodeRect.top - (minHeight - segmentHeight) / 2;
+            }
+        }
+
+        if (textPlacement?.rect) {
+            // Get the default rect for the node type, which may include additional padding or adjustments
+            nodeRect = NodeRegistry.adapter(node.type)?.getVisualRect(node, nodeRect) ?? nodeRect;
+
+            // Constrain to minimum editable text size
+            if (nodeRect.width < minWidth) {
+                nodeRect.left = nodeRect.left - (minWidth - nodeRect.width) / 2;
+                nodeRect.width = minWidth;
+            }
+            if (nodeRect.height < minHeight) {
+                nodeRect.top = nodeRect.top - (minHeight - nodeRect.height) / 2;
+                nodeRect.height = minHeight;
+            }
+        }
+        return nodeRect;
     }
 
     private doAnimateCoordinates(channel: AnimationViewport, target: { zoom?: number, pan?: { x: number, y: number } }, func?: () => void): void {

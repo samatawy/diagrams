@@ -2930,7 +2930,7 @@ export class DiagramEditView extends DiagramView {
 
             if (this.double_click_listener) {
                 this.double_click_listener(hit ?? undefined, event as unknown as PointerEvent);
-                if (hit) this.animateNodeShutter(hit, () => { });
+                // if (hit) this.animateNodeShutter(hit, () => { });
 
             } else if (hit && NodeRegistry.hasText(hit.type)) {
                 this.editText(hit);
