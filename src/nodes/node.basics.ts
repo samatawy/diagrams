@@ -401,95 +401,98 @@ export class NodeBasics {
         return from.y > to.y;
     }
 
+    // /**
+    //  * Finds the nearest generic node handle for a point.
+    //  * That handle may not be valid for connection purposes, but it is the closest handle to the point.
+    //  * @param node Target node.
+    //  * @param point Lookup point in world coordinates.
+    //  * @param is_inside Whether inside hits should resolve to MOVE fallback.
+    //  * @param tolerance Interior distance threshold.
+    //  * @returns Nearest handle and snapped point, or undefined when no candidate is found.
+    //  */
+    // public static nearestHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): IHandlePoint | undefined {
+    //     const diagram = node.owner;
+    //     if (!isDiagramViewLike(diagram)) return undefined;
+    //     const coordinates = diagram.getCoordinates();
+    //     const rect = coordinates.getBoundingRect(node, true);
 
-    /**
-     * Finds the nearest generic node handle for a point.
-     * That handle may not be valid for connection purposes, but it is the closest handle to the point.
-     * @param node Target node.
-     * @param point Lookup point in world coordinates.
-     * @param is_inside Whether inside hits should resolve to MOVE fallback.
-     * @param tolerance Interior distance threshold.
-     * @returns Nearest handle and snapped point, or undefined when no candidate is found.
-     */
-    public static nearestHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): IHandlePoint | undefined {
-        const diagram = node.owner;
-        if (!isDiagramViewLike(diagram)) return undefined;
-        const coordinates = diagram.getCoordinates();
-        const rect = coordinates.getBoundingRect(node, true);
+    //     if (!rect) return undefined;
 
-        if (!rect) return undefined;
+    //     const fallbackHandle = is_inside ? NodeHandle.MOVE : NodeHandle.NONE;
+    //     tolerance = tolerance ?? 24; // Default tolerance if not provided
 
-        const fallbackHandle = is_inside ? NodeHandle.MOVE : NodeHandle.NONE;
-        tolerance = tolerance ?? 24; // Default tolerance if not provided
+    //     // Return MOVE only when the point is genuinely inside the node rect
+    //     // AND far from every edge.
+    //     if (point.x > rect.left + tolerance &&
+    //         point.x < rect.left + rect.width - tolerance &&
+    //         point.y > rect.top + tolerance &&
+    //         point.y < rect.top + rect.height - tolerance) {
+    //         return { handle: fallbackHandle, point: { ...point } };
+    //     }
 
-        // Return MOVE only when the point is genuinely inside the node rect
-        // AND far from every edge.
-        if (point.x > rect.left + tolerance &&
-            point.x < rect.left + rect.width - tolerance &&
-            point.y > rect.top + tolerance &&
-            point.y < rect.top + rect.height - tolerance) {
-            return { handle: fallbackHandle, point: { ...point } };
-        }
+    //     // const supportsPointHandle = NodeRegistry
+    //     //     .connectionHandles(node.type)
+    //     //     .includes(NodeHandle.POINT);
+    //     // const isAllowed = NodeRegistry.canConnect(node, 'to', NodeHandle.POINT);
+    //     const isAllowed = NodeRegistry.canConnectTo(node, NodeHandle.POINT, 'to');
 
-        // const supportsPointHandle = NodeRegistry
-        //     .connectionHandles(node.type)
-        //     .includes(NodeHandle.POINT);
-        const isAllowed = NodeRegistry.canConnect(node, 'to', NodeHandle.POINT);
+    //     const handlePoints: Record<string, IPoint> = !isAllowed // supportsPointHandle
+    //         ? {
+    //             [NodeHandle.N]: { x: rect.left + rect.width / 2, y: rect.top },
+    //             [NodeHandle.S]: { x: rect.left + rect.width / 2, y: rect.top + rect.height },
+    //             [NodeHandle.E]: { x: rect.left + rect.width, y: rect.top + rect.height / 2 },
+    //             [NodeHandle.W]: { x: rect.left, y: rect.top + rect.height / 2 },
+    //             [NodeHandle.NE]: { x: rect.left + rect.width, y: rect.top },
+    //             [NodeHandle.NW]: { x: rect.left, y: rect.top },
+    //             [NodeHandle.SE]: { x: rect.left + rect.width, y: rect.top + rect.height },
+    //             [NodeHandle.SW]: { x: rect.left, y: rect.top + rect.height },
+    //         }
+    //         : {};
 
-        const handlePoints: Record<string, IPoint> = !isAllowed // supportsPointHandle
-            ? {
-                [NodeHandle.N]: { x: rect.left + rect.width / 2, y: rect.top },
-                [NodeHandle.S]: { x: rect.left + rect.width / 2, y: rect.top + rect.height },
-                [NodeHandle.E]: { x: rect.left + rect.width, y: rect.top + rect.height / 2 },
-                [NodeHandle.W]: { x: rect.left, y: rect.top + rect.height / 2 },
-                [NodeHandle.NE]: { x: rect.left + rect.width, y: rect.top },
-                [NodeHandle.NW]: { x: rect.left, y: rect.top },
-                [NodeHandle.SE]: { x: rect.left + rect.width, y: rect.top + rect.height },
-                [NodeHandle.SW]: { x: rect.left, y: rect.top + rect.height },
-            }
-            : {};
+    //     let nearestHandle: NodeHandle = fallbackHandle;
+    //     let nearestPoint: IPoint = { x: 0, y: 0 };
+    //     let minDistance = Infinity;
 
-        let nearestHandle: NodeHandle = fallbackHandle;
-        let nearestPoint: IPoint = { x: 0, y: 0 };
-        let minDistance = Infinity;
+    //     for (const [handle, handlePoint] of Object.entries(handlePoints)) {
+    //         const distance = Math.sqrt((point.x - handlePoint.x) ** 2 + (point.y - handlePoint.y) ** 2);
+    //         if (distance < minDistance) {
+    //             minDistance = distance;
+    //             nearestHandle = handle as NodeHandle;
+    //             nearestPoint = { ...handlePoint };
+    //         }
+    //     }
 
-        for (const [handle, handlePoint] of Object.entries(handlePoints)) {
-            const distance = Math.sqrt((point.x - handlePoint.x) ** 2 + (point.y - handlePoint.y) ** 2);
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearestHandle = handle as NodeHandle;
-                nearestPoint = { ...handlePoint };
-            }
-        }
+    //     if (isAllowed) {            // supportsPointHandle) {
+    //         for (const handlePoint of node.points) {
+    //             const distance = Math.sqrt((point.x - handlePoint.x) ** 2 + (point.y - handlePoint.y) ** 2);
+    //             if (distance < minDistance) {
+    //                 minDistance = distance;
+    //                 nearestHandle = NodeHandle.POINT;
+    //                 nearestPoint = { ...handlePoint };
+    //             }
+    //         }
+    //     }
 
-        if (isAllowed) {            // supportsPointHandle) {
-            for (const handlePoint of node.points) {
-                const distance = Math.sqrt((point.x - handlePoint.x) ** 2 + (point.y - handlePoint.y) ** 2);
-                if (distance < minDistance) {
-                    minDistance = distance;
-                    nearestHandle = NodeHandle.POINT;
-                    nearestPoint = { ...handlePoint };
-                }
-            }
-        }
-
-        if (minDistance === Infinity) {
-            // No nearest handle found, return undefined
-            return undefined;
-        }
-        return { handle: nearestHandle, point: nearestPoint };
-    }
+    //     if (minDistance === Infinity) {
+    //         // No nearest handle found, return undefined
+    //         return undefined;
+    //     }
+    //     return { handle: nearestHandle, point: nearestPoint };
+    // }
 
     /**
      * Finds the nearest allowed connection handle for a point.
+     * The result belongs to the 'node' argumewnt and can connect to the 'target' argument in the specified direction.
      * The returned handle is guaranteed to be valid for connection purposes, or MOVE if the point is inside the node and MOVE is allowed.
      * @param node Target node.
+     * @param direction Connection direction, either 'from' or 'to'.
+     * @param target Optional target node for connection validation.
      * @param point Lookup point in world coordinates.
      * @param is_inside Whether inside hits should resolve to MOVE fallback when supported.
      * @param tolerance Interior distance threshold.
      * @returns Nearest connection handle and snapped point, or undefined when no candidate is found.
      */
-    public static nearestConnectionHandle(node: INode, point: IPoint, is_inside: boolean, tolerance?: number): IHandlePoint | undefined {
+    public static nearestConnectionHandle(node: INode, direction: 'from' | 'to', target: INode | undefined, point: IPoint, is_inside: boolean, tolerance?: number): IHandlePoint | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
         const coordinates = diagram.getCoordinates();
@@ -499,7 +502,7 @@ export class NodeBasics {
 
         // const allowed_handles = NodeRegistry.connectionHandles(node.type);
         // const fallbackHandle = (is_inside && allowed_handles.includes(NodeHandle.MOVE)) ? NodeHandle.MOVE : NodeHandle.NONE;
-        const fallbackHandle = (is_inside && NodeRegistry.canConnect(node, 'to', NodeHandle.MOVE)) ? NodeHandle.MOVE : NodeHandle.NONE;
+        const fallbackHandle = (is_inside && NodeRegistry.canConnectTo(node, NodeHandle.MOVE, direction, target)) ? NodeHandle.MOVE : NodeHandle.NONE;
         tolerance = tolerance ?? 24; // Default tolerance if not provided
 
         // Return MOVE only when the point is genuinely inside the node rect
@@ -512,13 +515,17 @@ export class NodeBasics {
         }
 
         // const candidates = this.getConnectionHandleCandidates(node, rect);
-        const candidates = NodeRegistry.adapter(node.type)?.getAnchors(node, 'connection_handles') ?? []; // Get connection handle candidates
+        const candidates = NodeRegistry.adapter(node.type)?.getAnchors(node, 'connection_handles', direction) ?? []; // Get connection handle candidates
 
         let nearestHandle: NodeHandle = fallbackHandle;
         let nearestPoint: IPoint = { x: 0, y: 0 };
         let minDistance = Infinity;
 
         for (const candidate of candidates) {
+            if (!NodeRegistry.canConnectTo(node, candidate.handle, direction, target)) {
+                continue; // Skip handles that cannot connect to the target node
+            }
+
             const distance = Math.sqrt((point.x - candidate.point.x) ** 2 + (point.y - candidate.point.y) ** 2);
             if (distance < minDistance) {
                 minDistance = distance;
@@ -541,7 +548,7 @@ export class NodeBasics {
      * @param tolerance Maximum distance for a handle hit.
      * @returns Matching handle and snapped point, or undefined when no candidate matches.
      */
-    public static connectionHandleAtPoint(node: INode, point: IPoint, tolerance: number = DiagramConstants.HANDLE_HIT_EPSILON): IHandlePoint | undefined {
+    public static connectionHandleAtPoint(node: INode, point: IPoint, direction: 'from' | 'to' | 'any' = 'any', target: Partial<INode>, tolerance: number = DiagramConstants.HANDLE_HIT_EPSILON): IHandlePoint | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
         const coordinates = diagram.getCoordinates();
@@ -550,12 +557,16 @@ export class NodeBasics {
 
         // const allowed_handles = NodeRegistry.connectionHandles(node.type);
         // const candidates = this.getConnectionHandleCandidates(node, rect);  //, allowed_handles);
-        const candidates = NodeRegistry.adapter(node.type)?.getAnchors(node, 'connection_handles') ?? []; // Get connection handle candidates
+        const candidates = NodeRegistry.adapter(node.type)?.getAnchors(node, 'connection_handles', direction) ?? []; // Get connection handle candidates
 
         let exact: IHandlePoint | undefined;
         let minDistance = Infinity;
 
         for (const candidate of candidates) {
+            if (!NodeRegistry.canConnectTo(node, candidate.handle, direction, target)) {
+                continue; // Skip handles that cannot connect to the target node
+            }
+
             const distance = Math.sqrt((point.x - candidate.point.x) ** 2 + (point.y - candidate.point.y) ** 2);
             if (distance <= tolerance && distance < minDistance) {
                 minDistance = distance;
@@ -568,7 +579,7 @@ export class NodeBasics {
         }
 
         // if (allowed_handles.includes(NodeHandle.MOVE)
-        if (NodeRegistry.canConnect(node, 'to', NodeHandle.MOVE)
+        if (NodeRegistry.canConnectTo(node, NodeHandle.MOVE, direction, target)
             && point.x >= rect.left
             && point.x <= rect.left + rect.width
             && point.y >= rect.top
@@ -579,39 +590,49 @@ export class NodeBasics {
         return undefined;
     }
 
-    /**
-     * Builds geometric candidates for connection-handle matching.
-     * @param node Target node.
-     * @param rect Node bounding rectangle.
-     * @param allowed_handles Handles allowed by the adapter.
-     * @returns Candidate handle positions in world coordinates.
-     */
-    private static getConnectionHandleCandidates(node: INode, rect: IRect): Array<IHandlePoint> {
-        const candidates: Array<IHandlePoint> = [];
+    // /**
+    //  * Builds geometric candidates for connection-handle matching.
+    //  * @param node Target node.
+    //  * @param rect Node bounding rectangle.
+    //  * @param allowed_handles Handles allowed by the adapter.
+    //  * @returns Candidate handle positions in world coordinates.
+    //  */
+    // private static getConnectionHandleCandidates(node: INode, rect: IRect): Array<IHandlePoint> {
+    //     const candidates: Array<IHandlePoint> = [];
 
-        const adapter = NodeRegistry.adapter(node.type);
-        if (!adapter) return candidates;
-        if (adapter.canConnect(node, 'to', NodeHandle.N)) candidates.push({ handle: NodeHandle.N, point: { x: rect.left + rect.width / 2, y: rect.top } });
-        if (adapter.canConnect(node, 'to', NodeHandle.S)) candidates.push({ handle: NodeHandle.S, point: { x: rect.left + rect.width / 2, y: rect.top + rect.height } });
-        if (adapter.canConnect(node, 'to', NodeHandle.E)) candidates.push({ handle: NodeHandle.E, point: { x: rect.left + rect.width, y: rect.top + rect.height / 2 } });
-        if (adapter.canConnect(node, 'to', NodeHandle.W)) candidates.push({ handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height / 2 } });
-        if (adapter.canConnect(node, 'to', NodeHandle.NE)) candidates.push({ handle: NodeHandle.NE, point: { x: rect.left + rect.width, y: rect.top } });
-        if (adapter.canConnect(node, 'to', NodeHandle.NW)) candidates.push({ handle: NodeHandle.NW, point: { x: rect.left, y: rect.top } });
-        if (adapter.canConnect(node, 'to', NodeHandle.SE)) candidates.push({ handle: NodeHandle.SE, point: { x: rect.left + rect.width, y: rect.top + rect.height } });
-        if (adapter.canConnect(node, 'to', NodeHandle.SW)) candidates.push({ handle: NodeHandle.SW, point: { x: rect.left, y: rect.top + rect.height } });
+    //     const adapter = NodeRegistry.adapter(node.type);
+    //     if (!adapter) return candidates;
+    //     // if (adapter.canConnect(node, 'to', NodeHandle.N)) candidates.push({ handle: NodeHandle.N, point: { x: rect.left + rect.width / 2, y: rect.top } });
+    //     // if (adapter.canConnect(node, 'to', NodeHandle.S)) candidates.push({ handle: NodeHandle.S, point: { x: rect.left + rect.width / 2, y: rect.top + rect.height } });
+    //     // if (adapter.canConnect(node, 'to', NodeHandle.E)) candidates.push({ handle: NodeHandle.E, point: { x: rect.left + rect.width, y: rect.top + rect.height / 2 } });
+    //     // if (adapter.canConnect(node, 'to', NodeHandle.W)) candidates.push({ handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height / 2 } });
+    //     // if (adapter.canConnect(node, 'to', NodeHandle.NE)) candidates.push({ handle: NodeHandle.NE, point: { x: rect.left + rect.width, y: rect.top } });
+    //     // if (adapter.canConnect(node, 'to', NodeHandle.NW)) candidates.push({ handle: NodeHandle.NW, point: { x: rect.left, y: rect.top } });
+    //     // if (adapter.canConnect(node, 'to', NodeHandle.SE)) candidates.push({ handle: NodeHandle.SE, point: { x: rect.left + rect.width, y: rect.top + rect.height } });
+    //     // if (adapter.canConnect(node, 'to', NodeHandle.SW)) candidates.push({ handle: NodeHandle.SW, point: { x: rect.left, y: rect.top + rect.height } });
 
-        // POINT is connection-specific: for polylines/curves use only inner points,
-        // never first/last endpoints, so drag-connect cannot snap to connection ends.
-        // if (adapter.canConnect(node, 'to', NodeHandle.POINT, point) && node.points.length > 2) {
-        for (let i = 1; i < node.points.length - 1; i++) {
-            const p = node.points[i]!;
-            if (adapter.canConnect(node, 'to', NodeHandle.POINT, p)) {
-                candidates.push({ handle: NodeHandle.POINT, point: { ...p } });
-            }
-        }
+    //     if (adapter.canConnectTo(node, NodeHandle.N, 'to')) candidates.push({ handle: NodeHandle.N, point: { x: rect.left + rect.width / 2, y: rect.top } });
+    //     if (adapter.canConnectTo(node, NodeHandle.S, 'to')) candidates.push({ handle: NodeHandle.S, point: { x: rect.left + rect.width / 2, y: rect.top + rect.height } });
+    //     if (adapter.canConnectTo(node, NodeHandle.E, 'to')) candidates.push({ handle: NodeHandle.E, point: { x: rect.left + rect.width, y: rect.top + rect.height / 2 } });
+    //     if (adapter.canConnectTo(node, NodeHandle.W, 'to')) candidates.push({ handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height / 2 } });
+    //     if (adapter.canConnectTo(node, NodeHandle.NE, 'to')) candidates.push({ handle: NodeHandle.NE, point: { x: rect.left + rect.width, y: rect.top } });
+    //     if (adapter.canConnectTo(node, NodeHandle.NW, 'to')) candidates.push({ handle: NodeHandle.NW, point: { x: rect.left, y: rect.top } });
+    //     if (adapter.canConnectTo(node, NodeHandle.SE, 'to')) candidates.push({ handle: NodeHandle.SE, point: { x: rect.left + rect.width, y: rect.top + rect.height } });
+    //     if (adapter.canConnectTo(node, NodeHandle.SW, 'to')) candidates.push({ handle: NodeHandle.SW, point: { x: rect.left, y: rect.top + rect.height } });
 
-        return candidates;
-    }
+    //     // POINT is connection-specific: for polylines/curves use only inner points,
+    //     // never first/last endpoints, so drag-connect cannot snap to connection ends.
+    //     // if (adapter.canConnect(node, 'to', NodeHandle.POINT, point) && node.points.length > 2) {
+    //     for (let i = 1; i < node.points.length - 1; i++) {
+    //         const p = node.points[i]!;
+    //         if (adapter.canConnectTo(node, NodeHandle.POINT, 'to', undefined, p)) {
+    //             candidates.push({ handle: NodeHandle.POINT, point: { ...p } });
+    //         }
+    //     }
+
+    //     return candidates;
+    // }
+
     // private static getConnectionHandleCandidates(node: INode, rect: IRect, allowed_handles: NodeHandle[]): Array<{ handle: NodeHandle, point: IPoint }> {
     //     const candidates: Array<{ handle: NodeHandle, point: IPoint }> = [];
 

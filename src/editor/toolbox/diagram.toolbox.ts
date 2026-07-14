@@ -4,6 +4,7 @@ import { BASIC_TOOL_LAYOUT, DiagramToolset, type ToolsetConfig } from "./diagram
 import { BPMN_TOOL_LAYOUT } from "../../nodes/bpmn";
 import { C4_TOOL_LAYOUT } from "../../nodes/c4";
 import { ERD_TOOL_LAYOUT } from "../../nodes/erd";
+import { UML_TOOL_LAYOUT } from "../../nodes/uml";
 import { LOGIC_TOOL_LAYOUT } from "../../nodes/logic";
 
 import DEFAULT_STYLES from '../../css_generated/editor/toolbox/diagram.toolbox.css';
@@ -11,6 +12,7 @@ import DEFAULT_STYLES from '../../css_generated/editor/toolbox/diagram.toolbox.c
 import { loadFlagIcons } from "../../factory/svg.tool.loader";
 // import { ICON_NAMES as TABLER_ICON_NAMES } from "../../icons_generated/tabler.icons";
 import { ICON_NAMES as FLAG_ICON_NAMES } from "../../icons_generated/flag.icons";
+
 const STYLE_ID = 'toolbox-defaults';
 
 function ensureDefaultStyles(): void {
@@ -56,6 +58,9 @@ const DEFAULT_CONFIG: Required<DiagramToolBoxConfig> = {
     }, {
         name: 'ERD',
         layout: ERD_TOOL_LAYOUT,
+    }, {
+        name: 'UML',
+        layout: UML_TOOL_LAYOUT,
     }, {
         name: 'Logic',
         layout: LOGIC_TOOL_LAYOUT,

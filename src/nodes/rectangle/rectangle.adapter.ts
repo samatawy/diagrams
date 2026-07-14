@@ -1,5 +1,5 @@
 import { NodeRegistry } from "../../factory/node.registry";
-import type { IGrid, IHandlePoint, INode } from "../../interfaces";
+import type { IConnection, IGrid, IHandlePoint, INode } from "../../interfaces";
 import { NodeHandle, type AnchorScope, type IPoint, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
@@ -69,7 +69,7 @@ export class RectangleAdapter implements INodeAdapter {
             let x = pt.x!;
             let y = pt.y!;
 
-            const anchors = this.getAnchors(node, 'all_handles');
+            const anchors = this.getAnchors(node, 'all_handles', 'any');
 
             for (const anchor of anchors) {
                 if (Math.abs(anchor.point.x - x) <= epsilon && Math.abs(anchor.point.y - y) <= epsilon) {
@@ -137,6 +137,10 @@ export class RectangleAdapter implements INodeAdapter {
     protected renderAlterHandle(node: INode, context: CanvasRenderingContext2D, rect: IRect): void {    //}, angle: number, cos: number, sin: number): void {
     }
 
+    public defaultConnection(): Partial<IConnection> | null {
+        return NodeRegistry.createDraft('orthogonal') as Partial<IConnection> | null;
+    }
+
     public onCreateDraft(tool: string): Partial<INode> | undefined {
         return {
             type: this.type,
@@ -162,7 +166,7 @@ export class RectangleAdapter implements INodeAdapter {
         }
     }
 
-    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
+    public getAnchors(node: INode, show: AnchorScope, direction?: 'from' | 'to' | 'any'): IHandlePoint[] {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return [];
         const coordinates = diagram.getCoordinates();
@@ -205,13 +209,17 @@ export class RectangleAdapter implements INodeAdapter {
         }
 
         if (show === 'connection_handles') {
-            return anchors.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+            return anchors.filter(anchor => this.canConnectTo(node, anchor.handle, direction ?? 'any', undefined, anchor.point));
+            // return anchors.filter(anchor => this.canConnect(node, direction ?? 'any', anchor.handle, anchor.point));
         } else {
             return anchors;
         }
     }
 
-    public canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
+    // public canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
+    //     return this.connection_handles.includes(handle);
+    // }
+    public canConnectTo(node: INode, handle: NodeHandle, direction: 'from' | 'to' | 'any', target?: Partial<INode>, point?: IPoint): boolean {
         return this.connection_handles.includes(handle);
     }
 
@@ -368,7 +376,7 @@ export class RectangleAdapter implements INodeAdapter {
 
             const handles = new Path2D();
 
-            const anchors = NodeRegistry.adapter(node.type)?.getAnchors(node, show) ?? [];
+            const anchors = NodeRegistry.adapter(node.type)?.getAnchors(node, show, 'any') ?? [];
             for (const anchor of anchors) {
                 // switch (anchor.handle) {
                 // case NodeHandle.ALTER:

@@ -18,6 +18,9 @@ export class VerticalPoolAdapter extends RectangleAdapter {
 
     public static TYPE = 'vertical_pool';
 
+    min_width: number = 80;
+    min_height: number = 80;
+
     is_container = true;
     can_rotate = false;
     text_baselines = ['top'] as ITextBaseline[];
@@ -125,7 +128,7 @@ export class VerticalPoolAdapter extends RectangleAdapter {
 
             const handles = new Path2D();
 
-            const anchors = NodeRegistry.adapter(node.type)?.getAnchors(node, show) ?? [];
+            const anchors = NodeRegistry.adapter(node.type)?.getAnchors(node, show, 'any') ?? [];
             for (const anchor of anchors) {
                 // if (anchor.handle === NodeHandle.ALTER) {
                 //     this.renderAlterHandle(node, context, rect);

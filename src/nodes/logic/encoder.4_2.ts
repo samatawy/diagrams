@@ -1,7 +1,8 @@
 import type { IHandlePoint, INode } from "../../interfaces";
-import { NodeHandle, type AnchorScope, type IRect } from "../../types";
+import { NodeHandle, type AnchorScope, type IPoint, type IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import { AbstractGateAdapter } from "./abstract.gate.adapter";
+import { textColor } from "../../value.utils";
 
 /**
  * LogicEncoder_4_2Adapter is a node adapter responsible for rendering 4-to-2 encoder nodes in the diagram.
@@ -13,6 +14,9 @@ export class LogicEncoder_4_2Adapter extends AbstractGateAdapter {
     public static TYPE = 'logic_encoder_4_2';
 
     connection_handles: NodeHandle[] = [NodeHandle.W, NodeHandle.E, NodeHandle.S];
+
+    input_handles: NodeHandle[] = [NodeHandle.W, NodeHandle.S];
+    output_handles: NodeHandle[] = [NodeHandle.E];
 
     aspect_ratio = 1.0 / 2.12; // Four inputs on the left, two outputs on the right, and one enable input at the bottom
 
@@ -34,7 +38,7 @@ export class LogicEncoder_4_2Adapter extends AbstractGateAdapter {
 
         // 3. Draw the pin labels
         context.save();
-        context.fillStyle = '#000000';
+        context.fillStyle = textColor(node);    // '#000000';
         context.font = `${Math.min(rect.width, bodyHeight) * 0.16}px sans-serif`;
         context.textBaseline = 'middle';
 
@@ -63,8 +67,8 @@ export class LogicEncoder_4_2Adapter extends AbstractGateAdapter {
         return path;
     }
 
-    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
-        const inherited = super.getAnchors(node, show);
+    public getAnchors(node: INode, show: AnchorScope, direction: 'from' | 'to' | 'any' = 'any'): IHandlePoint[] {
+        const inherited = super.getAnchors(node, show, direction);
         if (show === 'selection_handles') {
             return inherited;
         }
@@ -75,13 +79,13 @@ export class LogicEncoder_4_2Adapter extends AbstractGateAdapter {
         const rect = coordinates.getBoundingRect(node);
 
         const connectionHandles = [
-            { handle: NodeHandle.W, point: { x: rect.left + rect.width, y: rect.top + rect.height * 0.176 } }, // left (I0)
-            { handle: NodeHandle.W, point: { x: rect.left + rect.width, y: rect.top + rect.height * 0.352 } }, // left (I1)
-            { handle: NodeHandle.W, point: { x: rect.left + rect.width, y: rect.top + rect.height * 0.528 } }, // left (I2)
-            { handle: NodeHandle.W, point: { x: rect.left + rect.width, y: rect.top + rect.height * 0.704 } }, // left (I3)
+            { handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height * 0.176 } }, // left (I0)
+            { handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height * 0.352 } }, // left (I1)
+            { handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height * 0.528 } }, // left (I2)
+            { handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height * 0.704 } }, // left (I3)
 
-            { handle: NodeHandle.E, point: { x: rect.left, y: rect.top + rect.height * 0.289 } }, // right higher (A0)
-            { handle: NodeHandle.E, point: { x: rect.left, y: rect.top + rect.height * 0.568 } }, // right lower (A1)
+            { handle: NodeHandle.E, point: { x: rect.left + rect.width, y: rect.top + rect.height * 0.289 } }, // right higher (A0)
+            { handle: NodeHandle.E, point: { x: rect.left + rect.width, y: rect.top + rect.height * 0.568 } }, // right lower (A1)
 
             { handle: NodeHandle.S, point: { x: rect.left + rect.width * 0.5, y: rect.top + rect.height } }, // bottom center (E)
         ];
@@ -89,7 +93,8 @@ export class LogicEncoder_4_2Adapter extends AbstractGateAdapter {
         if (show === 'all_handles') {
             return [...inherited, ...connectionHandles];
         } else {
-            return connectionHandles.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+            return connectionHandles.filter(anchor => this.canConnectTo(node, anchor.handle, direction, undefined, anchor.point));
+            // return connectionHandles.filter(anchor => this.canConnect(node, direction, anchor.handle, anchor.point));
         }
     }
 

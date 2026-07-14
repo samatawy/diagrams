@@ -1,10 +1,11 @@
-import type { IConnectionAnchor, IHandlePoint, INode } from "../../interfaces";
+import type { IConnection, IConnectionAnchor, IHandlePoint, INode } from "../../interfaces";
 import { NodeHandle, type AnchorScope, type IPoint, type IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
 import { RenderBasics } from "../render.basics";
 import { isHollow } from "../../value.utils";
+import { NodeRegistry } from "../../factory";
 
 /**
  * AbstractGateAdapter is a node adapter responsible for rendering generic logic gate nodes in the diagram. 
@@ -19,11 +20,61 @@ export abstract class AbstractGateAdapter extends RectangleAdapter {
 
     connection_handles: NodeHandle[] = [NodeHandle.E, NodeHandle.W];
 
+    protected input_handles: NodeHandle[] = [NodeHandle.W];
+    protected output_handles: NodeHandle[] = [NodeHandle.E];
+
     protected aspect_ratio = 1;
 
-    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
-        return super.getAnchors(node, show);
+    public getAnchors(node: INode, show: AnchorScope, direction?: 'from' | 'to' | 'any'): IHandlePoint[] {
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return [];
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(node);
+
+        const anchors: IHandlePoint[] = [];
+
+        const handles = (show === 'all_handles' || show === 'selection_handles') ? [
+            NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W,
+            NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW
+        ] : this.connection_handles;
+
+        for (const handle of handles) {
+            switch (handle) {
+                // case NodeHandle.N:
+                //     anchors.push({ handle, point: { x: rect.left + rect.width / 2, y: rect.top } });
+                //     break;
+                // case NodeHandle.S:
+                //     anchors.push({ handle, point: { x: rect.left + rect.width / 2, y: rect.top + rect.height } });
+                //     break;
+                // case NodeHandle.E:
+                //     anchors.push({ handle, point: { x: rect.left + rect.width, y: rect.top + rect.height / 2 } });
+                //     break;
+                // case NodeHandle.W:
+                //     anchors.push({ handle, point: { x: rect.left, y: rect.top + rect.height / 2 } });
+                //     break;
+                case NodeHandle.NE:
+                    anchors.push({ handle, point: { x: rect.left + rect.width, y: rect.top } });
+                    break;
+                case NodeHandle.NW:
+                    anchors.push({ handle, point: { x: rect.left, y: rect.top } });
+                    break;
+                case NodeHandle.SE:
+                    anchors.push({ handle, point: { x: rect.left + rect.width, y: rect.top + rect.height } });
+                    break;
+                case NodeHandle.SW:
+                    anchors.push({ handle, point: { x: rect.left, y: rect.top + rect.height } });
+                    break;
+            }
+        }
+
+        // if (show === 'connection_handles') {
+        //     return anchors.filter(anchor => this.canConnect(node, direction ?? 'any', anchor.handle, anchor.point));
+        // } else {
+        return anchors;
+        // }
     }
+    //         return super.getAnchors(node, show, direction);
+    // }
 
     protected abstract renderGateShape(node: INode, rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): Path2D;
 
@@ -67,6 +118,28 @@ export abstract class AbstractGateAdapter extends RectangleAdapter {
         }
     }
 
+    public override canConnectTo(node: INode, handle: NodeHandle, direction: 'from' | 'to' | 'any', target?: Partial<INode>, point?: IPoint): boolean {
+        if (target && !target.type?.startsWith('logic')) {
+            return false;
+        }
+        return true;
+    }
+
+    public defaultConnection(): Partial<IConnection> | null {
+        return NodeRegistry.createDraft('logic_connection') as Partial<IConnection> | null;
+    }
+
+    // public override canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
+    //     switch (direction) {
+    //         case 'from':
+    //             return this.output_handles.includes(handle);
+    //         case 'to':
+    //             return this.input_handles.includes(handle);
+    //         case 'any':
+    //             return this.input_handles.includes(handle) || this.output_handles.includes(handle);
+    //     }
+    // }
+
     public onCreateDraft(tool: string): Partial<INode> | undefined {
         let width = 40, height = 40;
         if (this.aspect_ratio > 1) {
@@ -79,11 +152,19 @@ export abstract class AbstractGateAdapter extends RectangleAdapter {
             type: this.type,
             locked_aspect: true,
             points: [{ x: 0, y: 0 }, { x: width, y: height }],
+            textStyle: {
+                color: '#000000',
+                fontFace: 'system-ui',
+                size: 9,
+            },
             strokeStyle: {
                 color: '#000000',
                 width: 1,
             },
-        }
+            fillStyle: {
+                color: '#FFFFFF64',
+            },
+        };
     }
 
 }

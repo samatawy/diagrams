@@ -1,4 +1,4 @@
-import type { INode } from "../../interfaces";
+import type { IConnection, INode } from "../../interfaces";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RenderBasics } from "../render.basics";
@@ -7,6 +7,7 @@ import { NodeHandle, type ITextOrientation, type ITextBaseline, type IRect, type
 import type { SpecificOptions, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
 import { RhombusAdapter } from "../rectangle/rhombus.adapter";
 import { BpmnBasics, GATEWAY_FILL_STYLE } from "./Bpmn.Basics";
+import { NodeRegistry } from "../../factory/node.registry";
 
 type BpmnGatewayType = 'exclusive' | 'inclusive' | 'parallel' | 'complex' | 'event_based';
 
@@ -96,6 +97,25 @@ export class BpmnGatewayAdapter extends RhombusAdapter {
             };
         }
         return {};
+    }
+
+    public override getVisualRect(node: INode, rect: IRect): IRect {
+        const visualRect = super.getVisualRect(node, rect);
+        const textPlacement = this.textPlacement(node);
+        if (textPlacement.rect) {
+            const textRect = textPlacement.rect;
+            visualRect.left = Math.min(visualRect.left, textRect.left);
+            visualRect.top = Math.min(visualRect.top, textRect.top);
+            visualRect.width = Math.max(visualRect.width, textRect.width);
+            visualRect.height = visualRect.height + textRect.height;
+            // visualRect.width = Math.max(visualRect.width, textRect.left + textRect.width - visualRect.left);
+            // visualRect.height = Math.max(visualRect.height, textRect.top + textRect.height - visualRect.top);
+        }
+        return visualRect;
+    }
+
+    public override defaultConnection(): Partial<IConnection> | null {
+        return NodeRegistry.createDraft('bpmn_sequence_flow') as Partial<IConnection> | null;
     }
 
     public override onCreateDraft(tool: string): Partial<INode> | undefined {

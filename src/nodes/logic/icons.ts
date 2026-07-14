@@ -4,6 +4,9 @@ import { IconRegistry } from "../../factory/icon.registry";
 import { sym } from "../../factory/icon.registry";
 
 export function registerLogicIcons(): void {
+    IconRegistry.registerSymbol('logic_connection', 'tool-logic-connection',
+        sym('tool-logic-connection', `<polyline points="4 19 10 19 10 8 19 8"/>`));
+
     IconRegistry.registerSymbol('logic_and_gate', 'tool-logic-and',
         sym('tool-logic-and', `
         <path d="M5 5h6a8 7 0 0 1 0 14H5Z"/>

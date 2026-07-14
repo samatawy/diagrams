@@ -1,7 +1,8 @@
 import type { IHandlePoint, INode } from "../../interfaces";
-import { NodeHandle, type AnchorScope, type IRect } from "../../types";
+import { NodeHandle, type AnchorScope, type IPoint, type IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import { AbstractGateAdapter } from "./abstract.gate.adapter";
+import { textColor } from "../../value.utils";
 
 /**
  * LogicMultiplexer_2_1Adapter is a node adapter responsible for rendering 2-to-1 multiplexer nodes in the diagram.
@@ -13,6 +14,9 @@ export class LogicMultiplexer_2_1Adapter extends AbstractGateAdapter {
     public static TYPE = 'logic_multiplexer_2_1';
 
     connection_handles: NodeHandle[] = [NodeHandle.W, NodeHandle.E, NodeHandle.S];
+
+    input_handles: NodeHandle[] = [NodeHandle.W, NodeHandle.S];
+    output_handles: NodeHandle[] = [NodeHandle.E];
 
     aspect_ratio = 1 / 1.15;
 
@@ -40,7 +44,7 @@ export class LogicMultiplexer_2_1Adapter extends AbstractGateAdapter {
 
         // 3. Draw the pin labels
         context.save();
-        context.fillStyle = '#000000';
+        context.fillStyle = textColor(node);
         context.font = `${Math.min(rect.width, bodyHeight) * 0.2}px sans-serif`;
         context.textBaseline = 'middle';
 
@@ -67,8 +71,8 @@ export class LogicMultiplexer_2_1Adapter extends AbstractGateAdapter {
         return path;
     }
 
-    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
-        const inherited = super.getAnchors(node, show);
+    public getAnchors(node: INode, show: AnchorScope, direction: 'from' | 'to' | 'any' = 'any'): IHandlePoint[] {
+        const inherited = super.getAnchors(node, show, direction);
         if (show === 'selection_handles') {
             return inherited;
         }
@@ -83,13 +87,15 @@ export class LogicMultiplexer_2_1Adapter extends AbstractGateAdapter {
             { handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height * 0.567 } }, // Left lower (D1)
 
             { handle: NodeHandle.E, point: { x: rect.left + rect.width, y: rect.top + rect.height * 0.423 } }, // right middle (Y)
+
             { handle: NodeHandle.S, point: { x: rect.left + rect.width * 0.5, y: rect.top + rect.height } }, // bottom center (S)
         ];
 
         if (show === 'all_handles') {
             return [...inherited, ...connectionHandles];
         } else {
-            return connectionHandles.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+            return connectionHandles.filter(anchor => this.canConnectTo(node, anchor.handle, direction, undefined, anchor.point));
+            // return connectionHandles.filter(anchor => this.canConnect(node, direction, anchor.handle, anchor.point));
         }
     }
 

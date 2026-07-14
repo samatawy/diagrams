@@ -1,7 +1,8 @@
 import type { IHandlePoint, INode } from "../../interfaces";
-import { NodeHandle, type AnchorScope, type IRect } from "../../types";
+import { NodeHandle, type AnchorScope, type IPoint, type IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import { AbstractGateAdapter } from "./abstract.gate.adapter";
+import { textColor } from "../../value.utils";
 
 /**
  * LogicDLatchAdapter is a node adapter responsible for rendering D latch nodes in the diagram.
@@ -21,14 +22,15 @@ export class LogicDLatchAdapter extends AbstractGateAdapter {
 
         // 3. Draw the pin labels
         context.save();
-        context.fillStyle = '#000000';
+        context.fillStyle = textColor(node);
         context.font = `${Math.min(rect.width, rect.height) * 0.18}px system-ui`;
-        context.textAlign = 'left';
         context.textBaseline = 'middle';
+
+        const labelInset = rect.width * 0.08;
 
         // Left side labels (inputs)
         // Use a small inset so labels don't overlap the border
-        const labelInset = rect.width * 0.08;
+        context.textAlign = 'left';
         context.fillText('D', rect.left + labelInset, rect.top + rect.height * (1 / 3));
         context.fillText('E', rect.left + labelInset, rect.top + rect.height * (2 / 3)); // "E" for Enable, not "CLK"
 
@@ -41,8 +43,8 @@ export class LogicDLatchAdapter extends AbstractGateAdapter {
         return bodyPath;
     }
 
-    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
-        const inherited = super.getAnchors(node, show);
+    public getAnchors(node: INode, show: AnchorScope, direction: 'from' | 'to' | 'any' = 'any'): IHandlePoint[] {
+        const inherited = super.getAnchors(node, show, direction);
         if (show === 'selection_handles') {
             return inherited;
         }
@@ -63,7 +65,8 @@ export class LogicDLatchAdapter extends AbstractGateAdapter {
         if (show === 'all_handles') {
             return [...inherited, ...connectionHandles];
         } else {
-            return connectionHandles.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+            return connectionHandles.filter(anchor => this.canConnectTo(node, anchor.handle, direction, undefined, anchor.point));
+            // return connectionHandles.filter(anchor => this.canConnect(node, direction, anchor.handle, anchor.point));
         }
     }
 

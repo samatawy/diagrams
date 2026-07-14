@@ -9,6 +9,7 @@ import type { ImageMode } from "../types";
 import { SheetRepository } from "../sheets/sheet.repository";
 import { deepClone } from "../value.utils";
 import type { FillStyle } from "../style.interfaces";
+import { isContainerNode } from "../guards";
 
 
 /**
@@ -235,9 +236,23 @@ export class Diagram implements IDiagram, HasSheetRepository {
         }
 
         this.nodes = this.nodes.filter(node => node.id !== nodeId);
+
+        /* Remove from layers */
         this.layers.forEach(layer => {
             layer.nodes = layer.nodes.filter(id => id !== nodeId);
         });
+
+        /* Remove from groups where it is a member */
+        this.groups.forEach(group => {
+            group.nodes = group.nodes.filter(id => id !== nodeId);
+        });
+
+        /* If the node owns a group, delete that group as well */
+        const targetNode = this.resolveNode(nodeId);
+        if (targetNode && isContainerNode(targetNode) && targetNode.owns_group) {
+            this.groups = this.groups.filter(group => group.id !== targetNode.owns_group);
+        }
+
         // this.layers = this.layers.map(layer => this.createLayer(
         //     layer.id,
         //     layer.name,

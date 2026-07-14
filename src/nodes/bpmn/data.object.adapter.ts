@@ -1,11 +1,12 @@
-import type { INode } from "../../interfaces";
+import type { IConnection, INode } from "../../interfaces";
 import { isDiagramViewLike } from "../../guards";
 import { RenderBasics } from "../render.basics";
 import { isHollow } from "../../value.utils";
-import { NodeHandle } from "../../types";
+import { NodeHandle, type IPoint } from "../../types";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
 import { DATA_FILL_STYLE } from "./Bpmn.Basics";
 import type { INodeCached } from "../../view/view.cache";
+import { NodeRegistry } from "../../factory/node.registry";
 
 export class BpmnDataObjectAdapter extends RectangleAdapter {
 
@@ -65,6 +66,17 @@ export class BpmnDataObjectAdapter extends RectangleAdapter {
 
             context.restore();
         }
+    }
+
+    public override canConnectTo(node: INode, handle: NodeHandle, direction: "from" | "to" | "any", target?: Partial<INode>, point?: IPoint): boolean {
+        if (target && !target.type?.startsWith('bpmn')) {
+            return false;
+        }
+        return true;
+    }
+
+    public override defaultConnection(): Partial<IConnection> | null {
+        return NodeRegistry.createDraft('bpmn_data_association') as Partial<IConnection> | null;
     }
 
     public onCreateDraft(tool: string): Partial<INode> | undefined {

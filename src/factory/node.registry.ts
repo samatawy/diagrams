@@ -106,6 +106,14 @@ export class NodeRegistry {
         return handler ? handler.is_container === true : false;
     }
 
+    public static createDraft(type: string): Partial<INode> | undefined {
+        const handler = this._nodes.get(type);
+        if (handler) {
+            return handler.onCreateDraft?.(type);
+        }
+        return undefined;
+    }
+
     /**
      * Checks if the node type has text.
      * @param type The type of the node.
@@ -173,9 +181,14 @@ export class NodeRegistry {
      * @param handle The connection handle.
      * @returns True if the node can connect from/to the handle, false otherwise.
      */
-    public static canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle): boolean {
+    // public static canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle): boolean {
+    //     const handler = this._nodes.get(node.type);
+    //     return handler ? handler.canConnect(node, direction, handle, { x: 0, y: 0 }) : false;
+    // }
+
+    public static canConnectTo(node: INode, handle: NodeHandle, direction: 'from' | 'to' | 'any', target?: Partial<INode>): boolean {
         const handler = this._nodes.get(node.type);
-        return handler ? handler.canConnect(node, direction, handle, { x: 0, y: 0 }) : false;
+        return handler ? handler.canConnectTo(node, handle, direction, target, { x: 0, y: 0 }) : false;
     }
 
     /**

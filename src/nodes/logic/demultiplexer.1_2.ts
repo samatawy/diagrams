@@ -1,7 +1,8 @@
 import type { IHandlePoint, INode } from "../../interfaces";
-import { NodeHandle, type AnchorScope, type IRect } from "../../types";
+import { NodeHandle, type AnchorScope, type IPoint, type IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import { AbstractGateAdapter } from "./abstract.gate.adapter";
+import { textColor } from "../../value.utils";
 
 /**
  * LogicDemultiplexer_1_2Adapter is a node adapter responsible for rendering 1-to-2 demultiplexer nodes in the diagram.
@@ -13,6 +14,9 @@ export class LogicDemultiplexer_1_2Adapter extends AbstractGateAdapter {
     public static TYPE = 'logic_demultiplexer_1_2';
 
     connection_handles: NodeHandle[] = [NodeHandle.W, NodeHandle.E, NodeHandle.S];
+
+    input_handles: NodeHandle[] = [NodeHandle.W, NodeHandle.S];
+    output_handles: NodeHandle[] = [NodeHandle.E];
 
     aspect_ratio = 1.0 / 1.15; // enable input at the bottom
 
@@ -40,7 +44,7 @@ export class LogicDemultiplexer_1_2Adapter extends AbstractGateAdapter {
 
         // 3. Draw the pin labels
         context.save();
-        context.fillStyle = '#000000';
+        context.fillStyle = textColor(node);    // '#000000';
         context.font = `${Math.min(rect.width, bodyHeight) * 0.2}px sans-serif`;
         context.textBaseline = 'middle';
 
@@ -67,8 +71,8 @@ export class LogicDemultiplexer_1_2Adapter extends AbstractGateAdapter {
         return path;
     }
 
-    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
-        const inherited = super.getAnchors(node, show);
+    public getAnchors(node: INode, show: AnchorScope, direction: 'from' | 'to' | 'any' = 'any'): IHandlePoint[] {
+        const inherited = super.getAnchors(node, show, direction);
         if (show === 'selection_handles') {
             return inherited;
         }
@@ -90,7 +94,8 @@ export class LogicDemultiplexer_1_2Adapter extends AbstractGateAdapter {
         if (show === 'all_handles') {
             return [...inherited, ...connectionHandles];
         } else {
-            return connectionHandles.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+            return connectionHandles.filter(anchor => this.canConnectTo(node, anchor.handle, direction, undefined, anchor.point));
+            // return connectionHandles.filter(anchor => this.canConnect(node, direction, anchor.handle, anchor.point));
         }
     }
 

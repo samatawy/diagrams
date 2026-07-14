@@ -25,7 +25,7 @@ export class C4AsyncRelationshipAdapter extends PolylineAdapter {
             textStyle: {
                 color: '#1f77b4',
                 halo: 'inherit',
-                size: 12,
+                size: 10,
                 fontFace: 'system-ui',
                 baseline: 'bottom',
             },

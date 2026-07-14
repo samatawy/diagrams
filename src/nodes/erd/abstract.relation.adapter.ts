@@ -29,6 +29,13 @@ export abstract class AbstractRelationAdapter extends LineAdapter {
     hollow_mode: HollowMode = 'always';
     has_text = false;
 
+    public override canConnectTo(node: INode, handle: NodeHandle, direction: "from" | "to" | "any", target?: Partial<INode>, point?: IPoint): boolean {
+        if (target && !target.type?.startsWith('erd')) {
+            return false;
+        }
+        return true;
+    }
+
     afterConnect(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor | null): void {
         if (direction === 'from' && anchor) {
             node.geometry = node.geometry || {} as any;

@@ -15,7 +15,7 @@ import {
 import { HistoryStack } from "./history";
 import { NORMAL_FONT_WEIGHT, type FillStyle, type ShadowStyle, type StrokeStyle, type TextStyle } from "../style.interfaces";
 
-import { isConnection, isContainer, isNode } from "../guards";
+import { isConnection, isConnectionNode, isContainer, isNode } from "../guards";
 
 import { NodeBasics } from "../nodes/node.basics";
 import { ConnectionBasics } from "../nodes/connection.basics";
@@ -1154,15 +1154,15 @@ export class DiagramEditView extends DiagramView {
      * @returns Nothing.
      */
     private createDragDraftConnector(draft: Partial<INode>): void {
-        if (!draft || !draft.type || draft.type === 'select' || !NodeRegistry.adapter(draft.type)) {
+        if (!draft || !draft.type || draft.type === 'select') { //} || !NodeRegistry.adapter(draft.type)) {
             return;
         }
 
+        const connection = NodeRegistry.adapter(draft.type)?.defaultConnection();
+        if (!connection) return;
+
         this.dragDraftConnector = {
-            owner: this,
-            id: 'drag-draft-connector',
-            type: 'polyline',
-            points: [],
+            /* Start with current settings */
             strokeStyle: {
                 color: this.settings.strokeColor,
                 width: this.settings.lineWidth,
@@ -1170,11 +1170,19 @@ export class DiagramEditView extends DiagramView {
                 arrow_at: this.settings.arrow_at,
                 arrow_type: this.settings.arrow_type,
             },
-            hollow: true,
+
+            /* Override with defined properties from the adapter */
+            ...connection,
+
+            /* Supply missing properties that must exist on drafts */
+            owner: this,
+            id: 'drag-draft-connector',
+            points: [],
+            // hollow: true,
             invisible: true,
             ready: false,
             // to: { node: draft },
-        } as IConnection;   // any as INode & IConnection;
+        } as IConnection;
     }
 
     /**
@@ -2541,12 +2549,14 @@ export class DiagramEditView extends DiagramView {
             const connections: (INode & IConnection)[] = this.nodes.filter(n => isConnection(n)) as (INode & IConnection)[];
             for (let conn of connections) {
                 if ((conn.from?.node === _node.id || conn.from?.node === _node) &&
-                    conn.from?.handle !== undefined && !NodeRegistry.canConnect(_node, 'from', conn.from.handle)) {
+                    conn.from?.handle !== undefined && !NodeRegistry.canConnectTo(_node, conn.from.handle, 'from')) {
+                    // conn.from?.handle !== undefined && !NodeRegistry.canConnect(_node, 'from', conn.from.handle)) {
                     ConnectionBasics.reconnectToBestHandle(conn, 'from');
                     ConnectionBasics.syncEndpoints(conn);
                 }
                 if ((conn.to?.node === _node.id || conn.to?.node === _node) &&
-                    conn.to?.handle !== undefined && !NodeRegistry.canConnect(_node, 'to', conn.to.handle)) {
+                    conn.to?.handle !== undefined && !NodeRegistry.canConnectTo(_node, conn.to.handle, 'to')) {
+                    // conn.to?.handle !== undefined && !NodeRegistry.canConnect(_node, 'to', conn.to.handle)) {
                     ConnectionBasics.reconnectToBestHandle(conn, 'to');
                     ConnectionBasics.syncEndpoints(conn);
                 }
@@ -2863,9 +2873,10 @@ export class DiagramEditView extends DiagramView {
 
         if (!this.current.draft && this.hasCreateTool() && NodeRegistry.isConnection(this.current.tool!)) {
             /* Just preview connector targets while creating a new connection */
-            this.previewConnectorTargets(event.offsetX, event.offsetY);
+            this.previewConnectorTargets(event.offsetX, event.offsetY, undefined, { type: this.current.tool });
+            // this.previewConnectorTargets(event.offsetX, event.offsetY);
             return;
-        }
+        } ``
 
         if (this.current.draft) {
             this.createMove(event);
@@ -2935,10 +2946,6 @@ export class DiagramEditView extends DiagramView {
             } else if (hit && NodeRegistry.hasText(hit.type)) {
                 this.editText(hit);
             }
-
-            // if (hit) {
-            //     this.animateNodeShutter(hit, () => { });
-            // }
         }
     }
 
@@ -3874,7 +3881,14 @@ export class DiagramEditView extends DiagramView {
 
         let overlaying = this.hitNode(event.offsetX, event.offsetY);
         const pointerHit = this.dragDraftConnector
-            ? this.getPointerConnectionAnchorAndPoint(this.dragDraftConnector as INode & IConnection, event.offsetX, event.offsetY)
+            ? this.getPointerConnectionAnchorAndPoint(this.dragDraftConnector as INode & IConnection,
+                event.offsetX, event.offsetY,
+                'from',
+                this.dragCreateDraft)
+            // ? this.getPointerConnectionAnchorAndPoint(this.dragCreateDraft,
+            //     event.offsetX, event.offsetY,
+            //     'from',
+            //     this.dragDraftConnector as INode & IConnection)
             : undefined;
         const pointerAnchor = pointerHit?.anchor;
         if (pointerAnchor && typeof pointerAnchor.node !== 'string') {
@@ -3895,7 +3909,8 @@ export class DiagramEditView extends DiagramView {
             if (overlaying && (from_handle === NodeHandle.MOVE || from_handle === NodeHandle.NONE)) {
                 /* Try to find a better anchor */
                 const is_inside = from_handle === NodeHandle.MOVE;
-                const from_nearest = NodeBasics.nearestConnectionHandle(overlaying, from_point, is_inside);
+                const from_nearest = NodeBasics.nearestConnectionHandle(overlaying, 'from', this.dragCreateDraft, from_point, is_inside);
+                // if (from_nearest && NodeRegistry.canConnect(overlaying, 'from', from_nearest.handle)) {
                 if (from_nearest) {
                     from_handle = from_nearest.handle;
                     from_point = from_nearest.point;
@@ -3905,7 +3920,11 @@ export class DiagramEditView extends DiagramView {
             /* Check if the dragged node has any connectable handle before repositioning it.
              * If to_nearest is undefined the dragged node cannot connect (e.g. table_row),
              * so we must not call positionDraftConnectedTo — that would cause visible flickering. */
-            const to_nearest = NodeBasics.nearestConnectionHandle(this.dragCreateDraft, from_point, false);
+            let to_nearest = NodeBasics.nearestConnectionHandle(this.dragCreateDraft, 'to', overlaying, from_point, false);
+
+            // if (to_nearest && !NodeRegistry.canConnect(this.dragCreateDraft, 'to', to_nearest.handle)) {
+            //     to_nearest = undefined;
+            // }
 
             if (to_nearest && (from_handle === NodeHandle.N || from_handle === NodeHandle.S ||
                 from_handle === NodeHandle.E || from_handle === NodeHandle.W ||
@@ -4009,7 +4028,12 @@ export class DiagramEditView extends DiagramView {
              * so we can find the nearest anchor
              */
             let overlaying = this.hitNode(event.offsetX, event.offsetY);
-            const pointerHit = this.getPointerConnectionAnchorAndPoint(this.dragDraftConnector as IConnection, event.offsetX, event.offsetY);
+            const pointerHit = this.getPointerConnectionAnchorAndPoint(
+                this.dragDraftConnector as IConnection,
+                event.offsetX, event.offsetY,
+                'from',
+                created
+            );
             const pointerAnchor = pointerHit?.anchor;
             if (pointerAnchor && typeof pointerAnchor.node !== 'string') {
                 overlaying = pointerAnchor.node;
@@ -4019,14 +4043,14 @@ export class DiagramEditView extends DiagramView {
 
             if (overlaying && (from_handle === NodeHandle.MOVE || from_handle === NodeHandle.NONE)) {
                 const is_inside = from_handle === NodeHandle.MOVE;
-                const from_nearest = NodeBasics.nearestConnectionHandle(overlaying, from_point, is_inside);
+                const from_nearest = NodeBasics.nearestConnectionHandle(overlaying, 'from', this.dragCreateDraft, from_point, is_inside);
                 if (from_nearest) {
                     from_handle = from_nearest.handle;
                     from_point = from_nearest.point;
                 }
             }
 
-            const to_nearest = NodeBasics.nearestConnectionHandle(created, from_point, false);
+            const to_nearest = NodeBasics.nearestConnectionHandle(created, 'to', overlaying, from_point, false);
             if (!to_nearest) {
                 /* Dragged node cannot connect — treat as plain container drop, no auto-connector. */
                 this.animations.animateNodeCenter(created, point, () => { });
@@ -4261,7 +4285,11 @@ export class DiagramEditView extends DiagramView {
      * @param canvasY Pointer y-coordinate in canvas space.
      * @returns The resolved value, or undefined when it cannot be resolved.
      */
-    private getPointerConnectionAnchorAndPoint(connector: INode & IConnection, canvasX: number, canvasY: number): { anchor: IConnectionAnchor, point: IPoint } | undefined {
+    private getPointerConnectionAnchorAndPoint(connector: INode & IConnection,
+        canvasX: number, canvasY: number,
+        direction: 'from' | 'to' | 'any', target: Partial<INode>
+    ): { anchor: IConnectionAnchor, point: IPoint } | undefined {
+
         let atPoint = this.hitNodes(canvasX, canvasY);
         const nonConnections = atPoint.filter(n => !isConnection(n));
         if (nonConnections.length > 0) {
@@ -4277,7 +4305,7 @@ export class DiagramEditView extends DiagramView {
             if (source.id === connector.id) continue;
 
             const pointer = this.coordinates.getPoint(canvasX, canvasY, 'ignore_grid');
-            const at = NodeBasics.connectionHandleAtPoint(source, pointer);
+            const at = NodeBasics.connectionHandleAtPoint(source, pointer, direction, target);
             if (!at || at.handle === NodeHandle.ROTATE) continue;
 
             const rect = this.coordinates.getBoundingRect(source, false);
@@ -4329,7 +4357,13 @@ export class DiagramEditView extends DiagramView {
                 targets.set(hover.id, hover);
             }
             /* Cursor should reflect actual connectability, not just raw hit-test handle. */
-            if (this.getPointerConnectionAnchorAndPoint(node, canvasX, canvasY)) {
+            // TODO: Fix this; currently any point can connect when connections are being created or points are moving.
+            // const point = this.coordinates.getPoint(canvasX, canvasY, 'ignore_grid');
+            // const direction = ConnectionBasics.guessConnectionDirection(node, point.x, point.y);
+
+            // if (this.getPointerConnectionAnchorAndPoint(node, canvasX, canvasY, 'any')) {
+            // TODO: Should this be inverted?
+            if (this.getPointerConnectionAnchorAndPoint(node, canvasX, canvasY, 'any', hover)) {
                 this.canvas!.style.cursor = 'pointer';
             }
         }
@@ -4344,7 +4378,7 @@ export class DiagramEditView extends DiagramView {
      * @param canvasX Pointer x-coordinate in canvas space.
      * @param canvasY Pointer y-coordinate in canvas space.
      */
-    private previewConnectorTargets(canvasX: number, canvasY: number): void {
+    private previewConnectorTargets(canvasX: number, canvasY: number, direction: 'from' | 'to' | 'any' = 'any', target: Partial<INode>): void {
         this.render('all');
 
         /* Start with the cursor for creating. */
@@ -4360,7 +4394,7 @@ export class DiagramEditView extends DiagramView {
                 type: this.current.tool || 'polyline',
                 points: [],
             } as INode & IConnection;
-            if (this.getPointerConnectionAnchorAndPoint(probe, canvasX, canvasY)) {
+            if (this.getPointerConnectionAnchorAndPoint(probe, canvasX, canvasY, direction, target)) {
                 this.canvas!.style.cursor = 'pointer';
             }
         }
@@ -4838,7 +4872,7 @@ export class DiagramEditView extends DiagramView {
         textarea.style.overflow = 'hidden';
         textarea.style.whiteSpace = singleLine ? 'nowrap' : 'pre-wrap';
         textarea.style.background = 'transparent';
-        textarea.style.color = strokeColor(node);
+        textarea.style.color = textColor(node);
         textarea.style.caretColor = 'currentColor';
         textarea.style.font = [fontItalic, fontWeight, `${scaledFontSize}px`, fontFace].filter(Boolean).join(' ');
         textarea.style.lineHeight = `${scaledLineHeight}px`;

@@ -24,7 +24,11 @@ export class FreehandAdapter extends PolylineAdapter {
     connection_handles: NodeHandle[] = [];
     can_rotate = false;
 
-    public canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point?: IPoint): boolean {
+    // public canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point?: IPoint): boolean {
+    //     return false;
+    // }
+
+    public override canConnectTo(node: INode, handle: NodeHandle, direction: "from" | "to" | "any", target?: Partial<INode>, point?: IPoint): boolean {
         return false;
     }
 

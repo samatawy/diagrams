@@ -14,6 +14,9 @@ export class LogicTristateBufferAdapter extends AbstractGateAdapter {
 
     connection_handles: NodeHandle[] = [NodeHandle.W, NodeHandle.E, NodeHandle.S];
 
+    input_handles: NodeHandle[] = [NodeHandle.W, NodeHandle.S];
+    output_handles: NodeHandle[] = [NodeHandle.E];
+
     aspect_ratio = 1.0 / 1.2; // Slightly taller than wide to accommodate the enable input
 
     protected renderGateShape(node: INode, rect: IRect, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): Path2D {
@@ -44,8 +47,8 @@ export class LogicTristateBufferAdapter extends AbstractGateAdapter {
         return path;
     }
 
-    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
-        const inherited = super.getAnchors(node, show);
+    public getAnchors(node: INode, show: AnchorScope, direction: 'from' | 'to' | 'any' = 'any'): IHandlePoint[] {
+        const inherited = super.getAnchors(node, show, direction);
         if (show === 'selection_handles') {
             return inherited;
         }
@@ -57,14 +60,17 @@ export class LogicTristateBufferAdapter extends AbstractGateAdapter {
 
         const connectionHandles = [
             { handle: NodeHandle.W, point: { x: rect.left, y: rect.top + rect.height * 0.4 } }, // Left above middle
+
             { handle: NodeHandle.E, point: { x: rect.left + rect.width, y: rect.top + rect.height * 0.4 } }, // Right above middle
+
             { handle: NodeHandle.S, point: { x: rect.left + rect.width * 0.15, y: rect.top + rect.height } }, // Enable: Left bottom
         ];
 
         if (show === 'all_handles') {
             return [...inherited, ...connectionHandles];
         } else {
-            return connectionHandles.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+            return connectionHandles.filter(anchor => this.canConnectTo(node, anchor.handle, direction, undefined, anchor.point));
+            // return connectionHandles.filter(anchor => this.canConnect(node, direction, anchor.handle, anchor.point));
         }
     }
 

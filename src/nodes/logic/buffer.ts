@@ -1,5 +1,5 @@
 import type { IHandlePoint, INode } from "../../interfaces";
-import { NodeHandle, type AnchorScope, type IRect } from "../../types";
+import { NodeHandle, type AnchorScope, type IPoint, type IRect } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import { AbstractGateAdapter } from "./abstract.gate.adapter";
 
@@ -44,7 +44,8 @@ export class LogicBufferAdapter extends AbstractGateAdapter {
         if (show === 'all_handles') {
             return [...inherited, ...connectionHandles];
         } else {
-            return connectionHandles.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+            return connectionHandles.filter(anchor => this.canConnectTo(node, anchor.handle, 'any', undefined, anchor.point));
+            // return connectionHandles.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
         }
     }
 

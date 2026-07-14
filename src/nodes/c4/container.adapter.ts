@@ -111,7 +111,7 @@ export class C4ContainerAdapter extends RoundRectangleAdapter {
             textStyle: {
                 color: 'white',
                 halo: 'inherit',
-                size: 12,
+                size: 10,
                 fontFace: 'system-ui',
                 baseline: 'bottom',
             },

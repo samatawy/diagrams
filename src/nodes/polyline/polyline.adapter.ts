@@ -1,5 +1,5 @@
 import { NodeRegistry } from "../../factory/node.registry";
-import { type IGrid, type IHandlePoint, type INode } from "../../interfaces";
+import { type IConnection, type IGrid, type IHandlePoint, type INode } from "../../interfaces";
 import { NodeHandle, type AnchorScope, type IPoint, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
@@ -93,7 +93,7 @@ export class PolylineAdapter implements INodeAdapter {
         return NodeHandle.NONE;
     }
 
-    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
+    public getAnchors(node: INode, show: AnchorScope, direction?: 'from' | 'to' | 'any'): IHandlePoint[] {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return [];
         const coordinates = diagram.getCoordinates();
@@ -102,14 +102,22 @@ export class PolylineAdapter implements INodeAdapter {
         const anchors: IHandlePoint[] = node.points.map(point => ({ handle: NodeHandle.POINT, point: { ...point } }));
 
         if (show === 'connection_handles') {
-            return anchors.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+            // return anchors.filter(anchor => this.canConnect(node, direction ?? 'any', anchor.handle, anchor.point));
+            return anchors.filter(anchor => this.canConnectTo(node, anchor.handle, direction ?? 'any', undefined, anchor.point));
         } else {
             return anchors;
         }
     }
 
-    public canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point?: IPoint): boolean {
+    // public canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point?: IPoint): boolean {
+    //     return handle === NodeHandle.POINT;
+    // }
+    public canConnectTo(node: INode, handle: NodeHandle, direction: 'from' | 'to' | 'any', target?: Partial<INode>, point?: IPoint): boolean {
         return handle === NodeHandle.POINT;
+    }
+
+    public defaultConnection(): Partial<IConnection> | null {
+        return null;
     }
 
     public snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void {

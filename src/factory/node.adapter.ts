@@ -1,4 +1,4 @@
-import type { IConnectionAnchor, IGrid, IHandlePoint, INode } from "../interfaces";
+import type { IConnection, IConnectionAnchor, IGrid, IHandlePoint, INode } from "../interfaces";
 import type { ITextOrientation, IPoint, IRect, NodeHandle, ITextBaseline, AnchorScope } from "../types";
 import type { IconSource } from "./icon.registry";
 
@@ -148,13 +148,24 @@ export interface INodeAdapter {
     /**
      * Additional logic to determine whether a connection can be made to this node from the specified direction and handle.
      * This method is called during connection creation to validate whether a connection is allowed based on the node's state, geometry, or other criteria.
+     * The target can also be used to decide whether a connection can be made. The target can be the connection iteself or the node that is being connected to. 
+     * The point parameter can be used to determine the world-space coordinates of the connection point, if available.
      * Adapters that support connections should override this to implement custom connection rules.
      * @param node The node to which the connection is being made.
-     * @param direction The direction of the connection, either 'from' (outgoing) or 'to' (incoming).
      * @param handle The connection handle on the node.
+     * @param direction The direction of the connection, either 'from' (outgoing) or 'to' (incoming).
+     * @param target The target node or connection that is being connected to, if available. This can be used to determine whether the connection is allowed based on the target's type or state.
      * @param point The world-space coordinates of the connection point, if available.
      */
-    canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point?: IPoint): boolean;
+    canConnectTo(node: INode, handle: NodeHandle, direction: 'from' | 'to' | 'any', target?: Partial<INode>, point?: IPoint): boolean;
+
+    // canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point?: IPoint): boolean;
+
+    /**
+     * Returns a default connection object for this node type, which can be used to create a new connection when the user 
+     * initiates a connection to this node.
+     */
+    defaultConnection(): Partial<IConnection> | null;
 
     /**
      * Indicates whether the adapter supports owning a group of other nodes.
@@ -267,7 +278,7 @@ export interface INodeAdapter {
      */
     getVisualRect(node: INode, rect: IRect): IRect;
 
-    getAnchors(node: INode, show: AnchorScope): IHandlePoint[];
+    getAnchors(node: INode, show: AnchorScope, direction?: 'from' | 'to' | 'any'): IHandlePoint[];
 
     geometryOptions(node: INode, path: string): SpecificOptions | undefined;
 

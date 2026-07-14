@@ -9,9 +9,9 @@ import { GroupBasics } from "../group.basics";
 import { DiagramConstants } from "../../model/diagram.constants";
 import { NodeRegistry } from "../../factory/node.registry";
 
-export class TableAdapter extends VerticalPoolAdapter {
+export class UmlClassAdapter extends VerticalPoolAdapter {
 
-    public static TYPE = 'table';
+    public static TYPE = 'uml_class';
 
     connection_handles = [NodeHandle.N, NodeHandle.S];
 
@@ -88,15 +88,6 @@ export class TableAdapter extends VerticalPoolAdapter {
                 }
             }
 
-            // if (node.text && show !== 'quick') {
-            //     if (node.specific?.rows && node.specific?.columns) {
-            //         node.textStyle = node.textStyle || {};
-            //         node.textStyle.baseline = 'top';
-            //         node.textStyle.orientation = 'horizontal';
-            //         node.textStyle.size = Math.max(Math.min(node.textStyle.size || 0, 12), 8);
-            //     }
-            //     RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
-            // }
 
             cached.path = path;
             cache.setNode(node, cached);
@@ -167,22 +158,27 @@ export class TableAdapter extends VerticalPoolAdapter {
 
         const rect = coordinates.getBoundingRect(node);
         const line_width = lineWidth(node);
-        const top_padding = (node.textStyle?.size || 12) * 1.4 + 4; // 4px padding + line width for the top of the table
+        const top_padding = (node.textStyle?.size || 12) * 1.4 + 4; /* 4px padding + line width for the top of the table */
         const side_padding = line_width / 2;
+        // const table_height = rect.height - top_padding;
 
         /* Find the group members that are rows */
         let rows = group.nodes
             .map(id => diagram.node(id))
-            .filter(row => row && row.type === 'field');
+            .filter(row => row && (row.type === 'uml_property' || row.type === 'uml_method')) as INode[];
 
         this.ensureIndices(rows as INode[]);
         let sorted = rows.sort((a, b) => +(a?.geometry?.index || 0) - +(b?.geometry?.index || 0));
         const row_height = 24;
-        const row_start = rect.top + top_padding + line_width;
+        let row_start = rect.top + top_padding + line_width;
 
         let r = 0;
+        let row_type = '';
         sorted.forEach(row => {
-
+            if (row_type !== row!.type) {
+                row_type = row!.type;
+                row_start += line_width; // Add a separator line between different row types
+            }
             row!.points = [
                 {
                     x: rect.left + side_padding,
@@ -204,21 +200,41 @@ export class TableAdapter extends VerticalPoolAdapter {
 
     /* Ensure an index for each row to preserve ordering */
     private ensureIndices(rows: INode[]): void {
-        const indexed = new Set<number>();
+        const indexed_properties = new Set<number>();
+        const indexed_methods = new Set<number>();
+
         for (const row of rows) {
             if (row.geometry?.index !== undefined && +row.geometry?.index >= 0) {
-                indexed.add(+row.geometry.index);
+                if (row.type === 'uml_property') {
+                    indexed_properties.add(+row.geometry.index);
+                } else if (row.type === 'uml_method') {
+                    indexed_methods.add(+row.geometry.index);
+                }
             }
         }
 
-        let index = indexed.size > 0 ? Math.max(...indexed) + 1 : 0;
-        for (const row of rows) {
+        let index = indexed_properties.size > 0 ? Math.max(...indexed_properties) + 1 : 0;
+        for (const row of rows.filter(r => r.type === 'uml_property')) {
             if (row.geometry?.index === undefined || +row.geometry?.index < 0) {
                 row!.geometry = row!.geometry || {};
                 row!.geometry.index = index;
 
-                if (!row.text || row.text.trim().toLowerCase() === 'field') {
-                    row.text = `field_${index + 1}`;
+                if (!row.text || row.text.trim().toLowerCase() === 'property') {
+                    row.text = `property_${index + 1}`;
+                }
+                index++;
+            }
+        }
+
+        // Start method indices at 1000 to keep them separate from property indices
+        index = indexed_methods.size > 0 ? Math.max(...indexed_methods) + 1 : 1000;
+        for (const row of rows.filter(r => r.type === 'uml_method')) {
+            if (row.geometry?.index === undefined || +row.geometry?.index < 0) {
+                row!.geometry = row!.geometry || {};
+                row!.geometry.index = index;
+
+                if (!row.text || row.text.trim().toLowerCase() === 'method()') {
+                    row.text = `method_${index - 1000 + 1}()`;
                 }
                 index++;
             }
@@ -228,16 +244,19 @@ export class TableAdapter extends VerticalPoolAdapter {
     public onCreateDraft(tool: string): Partial<INode & IContainer> | undefined {
         return {
             type: this.type,
-            points: [{ x: 0, y: 0 }, { x: 104, y: 80 }],
-            text: 'Table',
+            points: [{ x: 0, y: 0 }, { x: 140, y: 80 }],
+            text: 'Class',
+            specific: {
+                abstract: false,
+            },
             textStyle: {
                 size: 10,
                 align: 'center',
                 baseline: 'top',
             },
-            geometry: { radius: 8 },    // DiagramConstants.HANDLE_HIT_EPSILON },
+            geometry: { radius: 0 },    // DiagramConstants.HANDLE_HIT_EPSILON },
 
-            owns_group: `table-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            owns_group: `class-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         }
     }
 }

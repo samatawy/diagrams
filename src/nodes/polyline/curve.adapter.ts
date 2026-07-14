@@ -187,7 +187,16 @@ export class CurveAdapter extends PolylineAdapter {
         );
     }
 
-    public override canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
+    // public override canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
+    //     if (handle !== NodeHandle.POINT) return false;
+    //     if (point) {
+    //         return point == node.points[0] || point == node.points[node.points.length - 1];
+    //     } else {
+    //         return true;
+    //     }
+    // }
+
+    public override canConnectTo(node: INode, handle: NodeHandle, direction: "from" | "to" | "any", target?: Partial<INode>, point?: IPoint): boolean {
         if (handle !== NodeHandle.POINT) return false;
         if (point) {
             return point == node.points[0] || point == node.points[node.points.length - 1];
@@ -195,4 +204,5 @@ export class CurveAdapter extends PolylineAdapter {
             return true;
         }
     }
+
 }

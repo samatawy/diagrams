@@ -146,7 +146,7 @@ export class C4StoreAdapter extends CylinderAdapter {
             textStyle: {
                 color: 'white',
                 halo: 'inherit',
-                size: 12,
+                size: 10,
                 fontFace: 'system-ui',
                 baseline: 'middle',
             },

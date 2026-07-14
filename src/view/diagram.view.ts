@@ -1192,7 +1192,8 @@ export class DiagramView extends Diagram implements HasSelection {
             // const allowed = handler?.connection_handles || [];
             // if (allowed.length === 0) continue;
             const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
-            const isAllowed = handler?.canConnect(node, 'to', handle, { x, y }) ?? false;
+            // const isAllowed = handler?.canConnect(node, 'to', handle, { x, y }) ?? false;
+            const isAllowed = handler?.canConnectTo(node, handle, 'to', undefined, { x, y }) ?? false;
             if (handle !== NodeHandle.NONE && isAllowed) {
 
                 const given = { handle, point: this.coordinates.getPoint(x, y, 'ignore_grid') };

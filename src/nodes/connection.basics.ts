@@ -6,7 +6,7 @@ import { NodeRegistry } from "../factory/node.registry";
 import { NodeBasics } from "./node.basics";
 import { DiagramConstants } from "../model/diagram.constants";
 import { SelectionBasics } from "./selection.basics";
-import { absoluteToRelative, relativeToAbsolute } from "../value.utils";
+import { absoluteToRelative, arrowAt, relativeToAbsolute } from "../value.utils";
 
 type InteractiveDiagram = INode['owner'] & {
     getCoordinates(): CoordinateSystem;
@@ -50,10 +50,17 @@ export class ConnectionBasics {
         if (node.points.length > 0) {
             const point = node.points[0]!;
             if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
+                const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
                 let fromAnchor = this.getPointerConnectionAnchor(node, x, y);
+                if (fromAnchor) {
+                    if (!NodeRegistry.canConnectTo(node, NodeHandle.MOVE, 'from', target)) {
+                        fromAnchor = undefined;
+                    }
+                }
+
                 if (!fromAnchor || fromAnchor?.handle === NodeHandle.MOVE) {
-                    const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
-                    fromAnchor = this.getNearestSupportedAnchor(target!, hit);
+                    // const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
+                    fromAnchor = this.getNearestSupportedAnchor(target!, 'from', node, hit);
                 }
                 const toAnchor = node.to;
 
@@ -70,11 +77,18 @@ export class ConnectionBasics {
         if (node.points.length > 1) {
             const point = node.points[node.points.length - 1]!;
             if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
+                const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
                 const fromAnchor = node.from;
                 let toAnchor = this.getPointerConnectionAnchor(node, x, y);
+                if (toAnchor) {
+                    if (!NodeRegistry.canConnectTo(node, NodeHandle.MOVE, 'to', target)) {
+                        toAnchor = undefined;
+                    }
+                }
+
                 if (!toAnchor || toAnchor?.handle === NodeHandle.MOVE) {
                     const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
-                    toAnchor = this.getNearestSupportedAnchor(target!, hit);
+                    toAnchor = this.getNearestSupportedAnchor(target!, 'to', node, hit);
                 }
 
                 if (toAnchor && (!this.isSameAnchor(toAnchor, fromAnchor))) {
@@ -163,6 +177,25 @@ export class ConnectionBasics {
         if (toTarget?.id === target.id) {
             node.to = undefined;
         }
+    }
+
+    public static guessConnectionDirection(node: INode & IConnection, x: number, y: number): 'from' | 'to' | 'any' {
+        const arrow = arrowAt(node);
+        const forward = arrow === 'end';
+        const backward = arrow === 'start';
+
+        if (node.points.length < 2) return (forward) ? 'from' : (backward) ? 'to' : 'any';
+
+        if (Math.abs(node.points[0]!.x - x) <= DiagramConstants.HANDLE_HIT_EPSILON
+            && Math.abs(node.points[0]!.y - y) <= DiagramConstants.HANDLE_HIT_EPSILON) {
+            return (forward) ? 'from' : (backward) ? 'to' : 'any';
+        }
+
+        if (Math.abs(node.points[node.points.length - 1]!.x - x) <= DiagramConstants.HANDLE_HIT_EPSILON
+            && Math.abs(node.points[node.points.length - 1]!.y - y) <= DiagramConstants.HANDLE_HIT_EPSILON) {
+            return (backward) ? 'to' : (forward) ? 'from' : 'any';
+        }
+        return 'any';
     }
 
     /**
@@ -327,7 +360,7 @@ export class ConnectionBasics {
             return undefined;
         }
 
-        const next = this.getNearestSupportedAnchor(target, referencePoint, tolerance);
+        const next = this.getNearestSupportedAnchor(target, endpoint, node, referencePoint, tolerance);
         if (!next) {
             return undefined;
         }
@@ -349,7 +382,7 @@ export class ConnectionBasics {
      * @param tolerance Maximum distance used while selecting a handle.
      * @returns A normalized anchor for the target, or undefined when no supported handle is found.
      */
-    private static getNearestSupportedAnchor(target: INode, nearPoint: IPoint, tolerance: number = 24): IConnectionAnchor | undefined {
+    private static getNearestSupportedAnchor(target: INode, direction: 'from' | 'to', origin: INode, nearPoint: IPoint, tolerance: number = 24): IConnectionAnchor | undefined {
         const diagram = target?.owner;
         if (!isDiagramViewLike(diagram)) {
             return undefined;
@@ -357,7 +390,7 @@ export class ConnectionBasics {
 
         const coordinates = diagram.getCoordinates();
         const rect = coordinates.getBoundingRect(target, false);
-        const nearest = NodeBasics.nearestConnectionHandle(target, nearPoint, true, tolerance);
+        const nearest = NodeBasics.nearestConnectionHandle(target, direction, origin, nearPoint, true, tolerance);
         if (!nearest || nearest.handle === NodeHandle.NONE) {
             return undefined;
         }
@@ -554,7 +587,7 @@ export class ConnectionBasics {
             return given;
         }
 
-        const anchors = adapter.getAnchors(node, 'connection_handles');
+        const anchors = adapter.getAnchors(node, 'connection_handles', 'any');
         const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
         for (const anchor of anchors) {
             if (anchor.handle !== given.handle) continue;

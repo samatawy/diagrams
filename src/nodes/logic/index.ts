@@ -24,6 +24,7 @@ import { LogicEncoder_4_2Adapter } from "./encoder.4_2";
 import { LogicHalfAdderAdapter } from "./half.adder";
 import { LogicFullAdderAdapter } from "./full.adder";
 import { registerLogicIcons } from "./icons";
+import { LogicConnectionAdapter } from "./connection.adapter";
 
 /**
  * Registers all logic gate adapters with the NodeRegistry.
@@ -31,6 +32,8 @@ import { registerLogicIcons } from "./icons";
  */
 
 export function registerLogicAdapters(): void {
+    NodeRegistry.register('logic_connection', new LogicConnectionAdapter());
+
     NodeRegistry.register('logic_and_gate', new LogicAndGateAdapter());
     NodeRegistry.register('logic_or_gate', new LogicOrGateAdapter());
     NodeRegistry.register('logic_not_gate', new LogicNotGateAdapter());
@@ -112,6 +115,7 @@ export function registerLogicAdapters(): void {
 }
 
 export const LOGIC_TOOL_LAYOUT = [
+    'logic_connection',
     'logic_and_gate',
     'logic_or_gate',
     'logic_not_gate',

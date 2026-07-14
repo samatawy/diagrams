@@ -1,4 +1,5 @@
 import type { AnimationConfig, AnimationChannel, AnimationLineDash, AnimationChannelType, AnimationViewport, AnimationNodeCenter, AnimationNodeShutter } from "../animation.types";
+import { withAlpha } from "../editor/gradient/color.utils";
 import { NodeRegistry } from "../factory";
 import type { INode } from "../interfaces";
 import { DiagramConstants } from "../model";
@@ -129,7 +130,12 @@ export class DiagramAnimations {
             channel = this.newAnimation('shutter', `shutter-${node.id}`) as AnimationNodeShutter;
         }
         channel.node = node.id;
-        channel.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        if (node.owner.background?.color) {
+            channel.fillStyle = withAlpha(node.owner.background.color, 0.65);
+            // channel.fillStyle = 'rgba(0, 0, 0, 0.05)';
+        } else {
+            channel.fillStyle = withAlpha(DiagramConstants.CANVAS_BACKGROUND_COLOR, 0.65);
+        }
         channel.strokeStyle = 'rgba(0, 0, 0, 0.25)';
 
         this.doAnimateNodeShutter(channel, node, func);
@@ -369,6 +375,7 @@ export class DiagramAnimations {
                     cutout.height + 2 * padding,
                     padding * 2
                 );
+                shutterContext.filter = 'blur(8px)';
                 shutterContext.fill(path);
                 shutterContext.restore();
             }

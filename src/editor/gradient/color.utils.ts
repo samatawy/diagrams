@@ -88,6 +88,51 @@ export function hslToRgba(hsl: HSL, a = 1): RGBA {
     };
 }
 
+function sharedOffScreenCanvas() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    return canvas.getContext('2d')!;
+}
+const _ctx = sharedOffScreenCanvas();
+
+function sharedOffScreenDiv() {
+    const div = document.createElement('div');
+    return div;
+}
+const _div = sharedOffScreenDiv();
+
+export function withAlpha(color: string, alpha: number): string {
+    if (color === 'transparent') return `rgba(0, 0, 0, ${alpha})`;
+
+    _div.style.color = color;
+    const nums = _div.style.color.match(/[\d.]+/g);
+
+    if (!nums || nums.length < 3) return color; // Fallback for invalid strings
+
+    const [r, g, b] = nums.map(Number);
+    // const currentAlpha = nums.length === 4 ? Number(nums[3]) : 1;
+    // const newAlpha = Math.max(0, Math.min(1, currentAlpha * factor));
+
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+export function withOpacity(color: string, factor: number): string {
+    if (color === 'transparent') return `rgba(0, 0, 0, ${factor})`;
+
+    _ctx.fillStyle = color;
+    const normalized = _ctx.fillStyle; // Browser standardizes to rgb() or rgba()
+    const nums = normalized.match(/[\d.]+/g);
+
+    if (!nums || nums.length < 3) return color; // Fallback for invalid strings
+
+    const [r, g, b] = nums.map(Number);
+    const currentAlpha = nums.length === 4 ? Number(nums[3]) : 1;
+    const newAlpha = Math.max(0, Math.min(1, currentAlpha * factor));
+
+    return `rgba(${r}, ${g}, ${b}, ${newAlpha})`;
+}
+
 // ---- Gradient CSS generator --------------------------------------------
 
 export function buildGradientCss(v: IGradient): string {

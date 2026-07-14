@@ -2,6 +2,7 @@ import type { SpecificOptions, TextOverflowMode } from "../../factory";
 import { isDiagramViewLike } from "../../guards";
 import type { IHandlePoint, INode } from "../../interfaces";
 import { NodeHandle, type AnchorScope, type IPoint, type ITextBaseline, type ITextOrientation } from "../../types";
+import { textColor } from "../../value.utils";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
 import { RenderBasics } from "../render.basics";
@@ -69,10 +70,11 @@ export class FieldAdapter extends RectangleAdapter {
                     context.save();
                     const textX = rect.left + rect.width - 4; // Padding from the right edge
                     const textY = rect.top + rect.height / 2; // Vertically centered
-                    context.font = 'normal 100 8px system-ui, sans-serif';
+                    context.font = '100 8px system-ui, sans-serif';
+                    context.fillStyle = textColor(node);
                     context.textAlign = 'right';
                     context.textBaseline = 'middle';
-                    context.strokeText(rightText, textX, textY);
+                    context.fillText(rightText, textX, textY);
                     context.restore();
                 }
             }
@@ -127,7 +129,7 @@ export class FieldAdapter extends RectangleAdapter {
     //     return NodeHandle.NONE;
     // }
 
-    public getAnchors(node: INode, show: AnchorScope): IHandlePoint[] {
+    public getAnchors(node: INode, show: AnchorScope, direction: 'from' | 'to' | 'any' = 'any'): IHandlePoint[] {
         const anchors: IHandlePoint[] = [];
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return anchors;
@@ -150,14 +152,21 @@ export class FieldAdapter extends RectangleAdapter {
         }
 
         if (show === 'connection_handles') {
-            return anchors.filter(anchor => this.canConnect(node, 'any', anchor.handle, anchor.point));
+            return anchors.filter(anchor => this.canConnectTo(node, anchor.handle, direction, undefined, anchor.point));
+            // return anchors.filter(anchor => this.canConnect(node, direction, anchor.handle, anchor.point));
         } else {
             return anchors;
         }
     }
 
-    public override canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
+    // public override canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
+    //     if (!this.connection_handles.includes(handle)) return false;
+    //     return node.ready === true;
+    // }
+
+    public override canConnectTo(node: INode, handle: NodeHandle, direction: 'from' | 'to' | 'any', target?: Partial<INode>, point?: IPoint): boolean {
         if (!this.connection_handles.includes(handle)) return false;
+        if (target && !target.type?.startsWith('erd')) return false;
         return node.ready === true;
     }
 
@@ -205,7 +214,7 @@ export class FieldAdapter extends RectangleAdapter {
         return {
             type: this.type,
             points: [{ x: 0, y: 0 }, { x: 104, y: 16 }],
-            text: 'Field',
+            text: 'field',
             specific: {
                 datatype: 'string',
                 primary_key: false,
@@ -217,7 +226,7 @@ export class FieldAdapter extends RectangleAdapter {
             },
             textStyle: {
                 color: '#000000',
-                size: 10,
+                size: 9,
                 align: 'left',
                 baseline: 'middle',
             },
