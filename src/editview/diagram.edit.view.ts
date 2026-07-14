@@ -49,6 +49,7 @@ import type { ISerializedNode } from "../io";
 
 interface DiagramClipboardEnvelope {
     nodes: ISerializedNode[];
+    groups: IGroup[];
     image_assets?: Record<string, string>;
 }
 import {
@@ -259,6 +260,7 @@ export class DiagramEditView extends DiagramView {
         this.color_palette.refresh();
         this.modified = false;
 
+        this.groups = [];
         this.ensureCurrentLayer();
 
         this.render('all');
@@ -1990,6 +1992,12 @@ export class DiagramEditView extends DiagramView {
 
         const serialized = nodes.map(node => this.serializeNode(node));
 
+        /* Collect only groups with selected members */
+        const groups = this.groups.filter(group => group.nodes.some(id => nodes.some(node => node.id === id)));
+        for (const group of groups) {
+            group.nodes = group.nodes.filter(id => nodes.some(node => node.id === id));
+        }
+
         /* Collect only the assets referenced by the copied nodes. */
         const allAssets = this.assetStore.snapshot();
         let image_assets: Record<string, string> | undefined;
@@ -2002,7 +2010,7 @@ export class DiagramEditView extends DiagramView {
             }
         }
 
-        const envelope: DiagramClipboardEnvelope = { nodes: serialized, image_assets };
+        const envelope: DiagramClipboardEnvelope = { nodes: serialized, groups, image_assets };
 
         this.can_paste = true;
         this.emitClipboardChange(operation, nodes);
@@ -2023,6 +2031,14 @@ export class DiagramEditView extends DiagramView {
                     return;
                 }
 
+                /* Merge referenced groups into this diagram before hydrating. */
+                if (envelope.groups?.length) {
+                    for (const group of envelope.groups) {
+                        /* We only need the groups, members will be cloned into them */
+                        this.groups.push(group);    // { id: group.id, nodes: [] });
+                    }
+                }
+
                 /* Merge referenced assets into this diagram's store before hydrating. */
                 if (envelope.image_assets) {
                     this.assetStore.merge(envelope.image_assets);
@@ -2030,6 +2046,7 @@ export class DiagramEditView extends DiagramView {
 
                 this.addUndo();
                 const pastedNodes = this.cloneNodes(envelope.nodes);
+                this.setSelection(pastedNodes);
 
                 this.can_paste = true;
                 this.emitClipboardChange('paste', pastedNodes);
@@ -2121,8 +2138,8 @@ export class DiagramEditView extends DiagramView {
             if (payload && typeof payload === 'object' && !Array.isArray(payload) && Array.isArray(payload.nodes)) {
                 return payload as DiagramClipboardEnvelope;
             }
-            if (Array.isArray(payload)) {
-                return { nodes: payload as ISerializedNode[] };
+            if (Array.isArray(payload)) {   // May not be required, but for backward compatibility, we allow a raw array of nodes to be pasted.
+                return { nodes: payload as ISerializedNode[], groups: [], image_assets: {} };
             }
         } catch {
             /* ignore parse errors */
@@ -2449,7 +2466,7 @@ export class DiagramEditView extends DiagramView {
             creating new cloned groups if there was a container node in the paste batch.
         */
         const groupMap: Map<string, IGroup> = new Map();
-        for (let node of nodes) {
+        for (let node of nodes) {       // }.filter(n => (n as IContainer & INode)?.owns_group)) {
             const group_id = (node as IContainer & INode)?.owns_group;
             if (group_id) {
                 const group = this.group(group_id);
@@ -2463,6 +2480,14 @@ export class DiagramEditView extends DiagramView {
 
                     this.upsertGroup(new_group);
                 }
+                // } else {
+                //     /* Create a new group for the cloned node to own */
+                //     let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                //     const new_group = { id: cloned_group_id, nodes: [idMap.get(node.id)!] };
+                //     groupMap.set(group_id, new_group);
+
+                //     this.upsertGroup(new_group);
+                //     (node as any).owns_group = cloned_group_id;
             }
         }
 
@@ -2477,9 +2502,12 @@ export class DiagramEditView extends DiagramView {
             layer.nodes.push(clone.id);
 
             NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
-            this.select(clone, 'isolated');
+            // this.select(clone, 'isolated');
             cloned.push(clone);
         }
+
+        /* Select cloned nodes */
+        // cloned.forEach(clone => this.select(clone, 'isolated'));
 
         return cloned;
     }
@@ -3585,7 +3613,7 @@ export class DiagramEditView extends DiagramView {
         this.pendingGuideSnap = undefined;
 
         /* Handle groups (containers) */
-        if (this.downHandle === NodeHandle.MOVE) {
+        if (this.downHandle === NodeHandle.MOVE && !event.metaKey && !event.ctrlKey) {
             const moved_containers = this.selection()
                 .filter(node => isContainer(node))
                 .map(node => node.owns_group);

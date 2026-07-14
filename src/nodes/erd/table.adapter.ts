@@ -178,9 +178,10 @@ export class TableAdapter extends VerticalPoolAdapter {
         this.ensureIndices(rows as INode[]);
         let sorted = rows.sort((a, b) => +(a?.geometry?.index || 0) - +(b?.geometry?.index || 0));
         const row_height = 24;
-        const row_start = rect.top + top_padding + line_width;
+        let row_start = rect.top + top_padding + line_width;
 
         let r = 0;
+        row_start += line_width;    // To match UmlClassAdapter
         sorted.forEach(row => {
 
             row!.points = [

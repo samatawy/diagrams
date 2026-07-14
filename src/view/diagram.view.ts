@@ -565,13 +565,13 @@ export class DiagramView extends Diagram implements HasSelection {
 
     public override upsertNode(node: INode): INode {
         const updated = super.upsertNode(node);
-        this.render();
+        // this.render();
         return updated;
     }
 
     public override upsertLayer(layer: string | ILayer): ILayer {
         const updated = super.upsertLayer(layer);
-        this.render();
+        // this.render();
         return updated;
     }
 
@@ -581,12 +581,12 @@ export class DiagramView extends Diagram implements HasSelection {
             this.selected_nodes = this.selected_nodes.filter(node => node.id !== nodeId);
             this.emitSelectionChange();
         }
-        this.render();
+        // this.render();
     }
 
     public override deleteLayer(layerId: string): void {
         super.deleteLayer(layerId);
-        this.render();
+        // this.render();
     }
 
     public override setNodeImageSource(node: string | INode, imageSrc: string, mode: ImageMode = 'contain', imageId?: string): INode | undefined {
@@ -596,7 +596,7 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         this.cache.deleteNode(updated);
-        this.render('all');
+        // this.render('all');
         return updated;
     }
 
@@ -607,7 +607,7 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         this.cache.deleteNode(updated);
-        this.render('all');
+        // this.render('all');
         return updated;
     }
 
@@ -618,7 +618,7 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         this.cache.deleteNode(updated);
-        this.render('all');
+        // this.render('all');
         return updated;
     }
 
