@@ -88,7 +88,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected canvasBackgroundColor: string = DiagramConstants.CANVAS_BACKGROUND_COLOR;
 
-    protected readonly eventDispatcher: EventDispatcher;
+    protected readonly event_dispatcher: EventDispatcher;
 
     protected resizeObserver?: ResizeObserver;
 
@@ -168,7 +168,7 @@ export class DiagramView extends Diagram implements HasSelection {
         this.ownsCanvas = !(target instanceof HTMLCanvasElement);
         this.canvas = target instanceof HTMLCanvasElement ? target : this.createCanvas(target);
         this.context = this.canvas.getContext('2d')!;
-        this.eventDispatcher = new EventDispatcher(this.host);
+        this.event_dispatcher = new EventDispatcher(this.host);
         this.coordinates = new CoordinateSystem(this.context);
         this.coordinates.attach(this);
         this.cache = new ViewCache();
@@ -285,6 +285,10 @@ export class DiagramView extends Diagram implements HasSelection {
      */
     public getCanvas(): HTMLCanvasElement {
         return this.canvas;
+    }
+
+    public get eventDispatcher(): EventDispatcher {
+        return this.event_dispatcher;
     }
 
     // ===============================================
@@ -771,7 +775,7 @@ export class DiagramView extends Diagram implements HasSelection {
     public updateGrid(json: Partial<IGrid>): void {
         Object.assign(this.grid, json);
         this.render('all');
-        this.eventDispatcher.styleChanged('update-grid');
+        this.event_dispatcher.styleChanged('update-grid');
     }
 
     /**
@@ -781,7 +785,7 @@ export class DiagramView extends Diagram implements HasSelection {
     public updateGuides(options: Partial<DiagramGuideOptions>): void {
         Object.assign(this.guideOptions, options);
         this.render('all');
-        this.eventDispatcher.styleChanged('update-guides');
+        this.event_dispatcher.styleChanged('update-guides');
     }
 
     public setGuides(guides: DiagramGuide[]): void {
@@ -1282,7 +1286,7 @@ export class DiagramView extends Diagram implements HasSelection {
             return;
         }
 
-        this.eventDispatcher.hintChanged({
+        this.event_dispatcher.hintChanged({
             source: 'diagram-interaction',
             hint: isDown ? activeHint : '',
             active: isDown,
@@ -1554,7 +1558,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     private emitSelectionChange(): void {
         const selectedNodes = this.selection();
-        this.eventDispatcher.selectionChanged({
+        this.event_dispatcher.selectionChanged({
             node: selectedNodes[0],
             nodeId: selectedNodes[0]?.id,
             nodes: selectedNodes,
@@ -1564,7 +1568,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     private emitNodeClick(node: INode): void {
         const selectedNodes = this.selection();
-        this.eventDispatcher.nodeClicked({
+        this.event_dispatcher.nodeClicked({
             node,
             nodeId: node.id,
             nodes: selectedNodes,
@@ -1573,7 +1577,7 @@ export class DiagramView extends Diagram implements HasSelection {
     }
 
     private emitBackgroundClick(x: number, y: number): void {
-        this.eventDispatcher.backgroundClicked({
+        this.event_dispatcher.backgroundClicked({
             canvas: { x, y },
             world: this.coordinates.getPoint(x, y, 'ignore_grid'),
         });
@@ -1590,7 +1594,7 @@ export class DiagramView extends Diagram implements HasSelection {
             zoom: this.coordinates.zoom,
         } satisfies DiagramViewportChange;
 
-        this.eventDispatcher.viewportChanged(detail);
+        this.event_dispatcher.viewportChanged(detail);
     }
 
     // ==================================================

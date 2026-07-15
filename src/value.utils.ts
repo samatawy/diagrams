@@ -44,7 +44,7 @@ export function nodeId(node: INode | string): string {
 }
 
 export function nodeClass(node: INode): string | undefined {
-    return node.class_name;
+    return node.style_class;
 }
 
 export function isLocked(node: INode): boolean {

@@ -28,7 +28,7 @@ import { PointAdapter } from "./native/point.adapter";
 import { ImageSelectAdapter } from "./adapters/image.select.adapter";
 import type { NumberInputAdapterConfig } from "./native/number.input.adapter";
 import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./native/meta.kv.adapters";
-import { ClassActionsAdapter, type ClassActionsAdapterConfig } from "./adapters/class.actions.adapter";
+import { StyleClassActionsAdapter, type StyleClassActionsAdapterConfig } from "./adapters/style.class.actions.adapter";
 import { GradientPickerAdapter } from "./adapters/gradient.picker.adapter";
 import { type ArrowTypeSelectConfig } from "../inputs/arrow.type.select";
 import { ShadowPresetSelectAdapter } from "./adapters/shadow.preset.select.adapter";
@@ -116,7 +116,7 @@ export class DiagramInspector extends Inspector {
         Inspector.registerAdapter('ImageSelect', ImageSelectAdapter);
         Inspector.registerAdapter('MetaValue', MetaValueAdapter);
         Inspector.registerAdapter('MetaAdd', MetaAddAdapter);
-        Inspector.registerAdapter('ClassActions', ClassActionsAdapter);
+        Inspector.registerAdapter('ClassActions', StyleClassActionsAdapter);
         Inspector.registerAdapter('GradientPicker', GradientPickerAdapter);
         Inspector.registerAdapter('ShadowPresetSelect', ShadowPresetSelectAdapter);
     }
@@ -252,8 +252,8 @@ export class DiagramInspector extends Inspector {
             isVisible: () => selected().length === 1,
         });
         this.addRow(identity, {
-            key: 'class_name',
-            label: 'Class',
+            key: 'style_class',
+            label: 'Style',
             type: 'select',
             editor: 'EnumSelect',
             editorOptions: {
@@ -274,11 +274,11 @@ export class DiagramInspector extends Inspector {
             isVisible: () => selected().length >= 1,
         });
         this.addRow(identity, {
-            key: 'class_name.__actions',
+            key: 'style_class.__actions',
             label: '',
             type: 'string',
             editor: 'ClassActions',
-            editorOptions: { diagram: this.diagram } as ClassActionsAdapterConfig,
+            editorOptions: { diagram: this.diagram } as StyleClassActionsAdapterConfig,
             readonly: readonly,
             isVisible: () => !readonly && selected().length >= 1,
         });

@@ -5,7 +5,7 @@ export * from './adapters/angle.adapter';
 export * from './adapters/arrow.direction.select.adapter';
 export * from './adapters/arrow.type.select.adapter';
 export * from './native/checkbox.adapter';
-export * from './adapters/class.actions.adapter';
+export * from './adapters/style.class.actions.adapter';
 export * from './adapters/color.select.adapter';
 export * from './adapters/dash.select.adapter';
 export * from './adapters/enum.select.adapter';

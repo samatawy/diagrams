@@ -38,7 +38,7 @@ export interface INode {
     /**
      * The optional class name of the node, which can be used to apply specific styles or behaviors to the node based on its class.
      */
-    class_name?: string;
+    style_class?: string;
 
     /**
      * The text style properties of the node, which can be used to control the appearance of the node's text, 

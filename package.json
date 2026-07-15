@@ -50,6 +50,10 @@
     "illustration",
     "block",
     "flow",
+    "bpmn",
+    "c4",
+    "erd",
+    "uml",
     "canvas"
   ],
   "author": "Sam Atawy <sam.atawy@gmail.com>",

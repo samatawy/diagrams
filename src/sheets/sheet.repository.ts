@@ -322,17 +322,17 @@ export class SheetRepository {
 
     /**
      * Inserts or updates a class style in a sheet.
-     * @param class_name Class key.
+     * @param style_class Style class key.
      * @param style Style payload.
      * @param sheet_id Target sheet identifier.
      */
-    public upsertClassStyle(class_name: string, style: NodeStyle, sheet_id: string): void {
+    public upsertClassStyle(style_class: string, style: NodeStyle, sheet_id: string): void {
         const sheet = this.sheet(sheet_id);
         if (!sheet) {
             throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
         }
 
-        sheet.classes[class_name] = this.cloneNodeStyle(style);
+        sheet.classes[style_class] = this.cloneNodeStyle(style);
     }
 
     /**

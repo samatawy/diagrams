@@ -15,7 +15,7 @@ import {
 import { HistoryStack } from "./history";
 import { NORMAL_FONT_WEIGHT, type FillStyle, type ShadowStyle, type StrokeStyle, type TextStyle } from "../style.interfaces";
 
-import { isConnection, isConnectionNode, isContainer, isNode } from "../guards";
+import { isConnection, isContainer, isNode } from "../guards";
 
 import { NodeBasics } from "../nodes/node.basics";
 import { ConnectionBasics } from "../nodes/connection.basics";
@@ -43,19 +43,13 @@ import {
     type DiagramDeleteRequest,
     type DiagramClipboardOperation,
     type DiagramEditContextMenu,
-    type DiagramSheetLoaded,
 } from "../events/diagram.events";
 import type { ISerializedNode } from "../io";
 
-interface DiagramClipboardEnvelope {
-    nodes: ISerializedNode[];
-    groups: IGroup[];
-    image_assets?: Record<string, string>;
-}
 import {
     deepClone,
     fillColor,
-    fillStyle, humanize, isHollow, isInvisible, isLocked, lineDash, lineWidth,
+    humanize, isInvisible, isLocked, lineDash, lineWidth,
     nodeAngle, nodeFontFace, nodeFontSize, nodeOpacity, nodeText, absoluteToRelative, strokeColor,
     textAlign, textBaseline, textColor, textHaloColor, textItalic, textOrientation, textWeight
 } from "../value.utils";
@@ -66,8 +60,8 @@ import type { SheetRepository } from "../sheets/sheet.repository";
 import type { NodeStyle, SpecSheet } from "../sheets/spec.sheet";
 import type { AnimationMode } from "../animation.types";
 import type { IGradient } from "../color.types";
-import { GradientPicker } from "../editor/gradient/gradient.picker";
 import { FreehandAdapter } from "../nodes/free/freehand.adapter";
+import { DiagramClipboard } from "./diagram.clipboard";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -97,6 +91,12 @@ export class DiagramEditView extends DiagramView {
     private color_palette: ColorPalette;
 
     private editKeyboard: DiagramEditViewKeyboard;
+
+    private clipboard: DiagramClipboard;
+
+    public fileDialogs?: DiagramFileDialogs;
+
+    public prompts?: DiagramEditViewPrompts;
 
     protected declare keyboardFlags: EditKeyboardFlags;
 
@@ -184,8 +184,6 @@ export class DiagramEditView extends DiagramView {
 
     protected can_paste_styles: boolean = false;
 
-    private clipboardSnapshot: string = '';
-
     private movedNodes = new Set<INode>();
 
     private resizedNodes = new Set<INode>();
@@ -211,10 +209,6 @@ export class DiagramEditView extends DiagramView {
 
     private dragDraftConnector?: INode;
 
-    public fileDialogs?: DiagramFileDialogs;
-
-    public prompts?: DiagramEditViewPrompts;
-
     /**
      * Creates an instance of DiagramEditView.
      * @param id The unique identifier for the diagram.
@@ -234,6 +228,7 @@ export class DiagramEditView extends DiagramView {
         this.zOrder = new ZOrder(this);
         this.color_palette = new ColorPalette(this);
         this.editKeyboard = new DiagramEditViewKeyboard();
+        this.clipboard = new DiagramClipboard(this);
     }
 
     /**
@@ -763,16 +758,16 @@ export class DiagramEditView extends DiagramView {
      * @param sources Selected nodes that originated the style change.
      * @param change Style delta to merge into class definitions.
      */
-    private applyClassChange(sources: INode[], change: Partial<NodeStyle>): void {
+    public applyClassChange(sources: INode[], change: Partial<NodeStyle>): void {
         this.ensureCustomSheet();
 
         if (!this.current.sheet) return;
         if (sources.length === 0) return;
 
-        const class_names = new Set<string>(sources.map(node => node.class_name).filter(name => !!name) as string[]);
-        if (class_names.size === 0) return;
+        const style_classes = new Set<string>(sources.map(node => node.style_class).filter(name => !!name) as string[]);
+        if (style_classes.size === 0) return;
 
-        for (const name of class_names) {
+        for (const name of style_classes) {
             const class_style = this.current.sheet.classes[name];
             if (!class_style) continue;
 
@@ -794,7 +789,7 @@ export class DiagramEditView extends DiagramView {
             this.sheetRepository.upsertClassStyle(name, merged, this.current.sheet.id);
         }
 
-        const target_nodes = this.nodes.filter(node => class_names.has(node.class_name ?? ''))
+        const target_nodes = this.nodes.filter(node => style_classes.has(node.style_class ?? ''))
             .filter(node => !sources.includes(node));
         if (target_nodes.length === 0) return;
 
@@ -1089,7 +1084,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (previousTool !== nextTool) {
-            this.eventDispatcher.toolChanged({
+            this.event_dispatcher.toolChanged({
                 tool: nextTool,
                 previousTool,
             });
@@ -1210,7 +1205,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-stroke-color');
+        this.event_dispatcher.styleChanged('set-stroke-color');
     }
 
     /**
@@ -1227,7 +1222,6 @@ export class DiagramEditView extends DiagramView {
 
         for (let node of selected) {
             node.fillStyle = { ...node.fillStyle, color };
-            // node.fillStyle = color;
             if (NodeRegistry.adapter(node.type)?.hollow_mode === 'if_transparent') {
                 node.hollow = color === 'transparent';
             }
@@ -1238,7 +1232,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-fill-color');
+        this.event_dispatcher.styleChanged('set-fill-color');
     }
 
     /**
@@ -1293,7 +1287,7 @@ export class DiagramEditView extends DiagramView {
         this.background = { ...this.background ?? {}, color };
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-background');
+        this.event_dispatcher.styleChanged('set-background');
     }
 
     /**
@@ -1306,7 +1300,7 @@ export class DiagramEditView extends DiagramView {
         this.background = { ...this.background ?? {}, ...style };
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-background');
+        this.event_dispatcher.styleChanged('set-background');
     }
 
     /**
@@ -1325,7 +1319,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-image-id');
+        this.event_dispatcher.styleChanged('set-image-id');
     }
 
     /**
@@ -1343,7 +1337,7 @@ export class DiagramEditView extends DiagramView {
         }
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-opacity');
+        this.event_dispatcher.styleChanged('set-opacity');
     }
 
     /**
@@ -1366,7 +1360,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-line-width');
+        this.event_dispatcher.styleChanged('set-line-width');
     }
 
     /**
@@ -1389,7 +1383,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-line-dash');
+        this.event_dispatcher.styleChanged('set-line-dash');
     }
 
     /**
@@ -1412,7 +1406,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-arrow-at');
+        this.event_dispatcher.styleChanged('set-arrow-at');
     }
 
     /**
@@ -1435,7 +1429,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-arrow-type');
+        this.event_dispatcher.styleChanged('set-arrow-type');
     }
 
     /**
@@ -1469,7 +1463,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-stroke-style');
+        this.event_dispatcher.styleChanged('set-stroke-style');
     }
 
     /**
@@ -1497,7 +1491,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-fill-style');
+        this.event_dispatcher.styleChanged('set-fill-style');
     }
 
     /**
@@ -1531,7 +1525,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-shadow-style');
+        this.event_dispatcher.styleChanged('set-shadow-style');
     }
 
     /**
@@ -1589,7 +1583,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged('set-text-style');
+        this.event_dispatcher.styleChanged('set-text-style');
     }
 
     /**
@@ -1600,7 +1594,7 @@ export class DiagramEditView extends DiagramView {
         this.settings.nodeText = text;
 
         this.applyText(this.settings.nodeText);
-        this.eventDispatcher.styleChanged('set-node-text');
+        this.event_dispatcher.styleChanged('set-node-text');
     }
 
     /**
@@ -1702,7 +1696,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged(sourceKey as any);
+        this.event_dispatcher.styleChanged(sourceKey as any);
     }
 
     /**
@@ -1739,7 +1733,7 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.renderPreview();
-        this.eventDispatcher.styleChanged(sourceKey as any);
+        this.event_dispatcher.styleChanged(sourceKey as any);
     }
 
     /**
@@ -1763,8 +1757,8 @@ export class DiagramEditView extends DiagramView {
                 (target as any)['shadowStyle'] = DiagramEditView.normalizeShadowStyle(cur);
             }
 
-            if (segments[0] === 'class_name' && !!this.current.sheet) {
-                target.class_name = value;
+            if (segments[0] === 'style_class' && !!this.current.sheet) {
+                target.style_class = value;
                 this.sheetRepository.applyToNode(target as any as INode, this.current.sheet.id);
             }
 
@@ -1827,7 +1821,7 @@ export class DiagramEditView extends DiagramView {
      * This should be called before making any changes to the diagram that should be undoable. 
      * After calling this method, the `canUndo` property will return true, indicating that there is now an action in the undo stack that can be undone.
      */
-    protected addUndo(): void {
+    public addUndo(): void {
         this.history?.addUndo();
 
         this.modified = true;
@@ -1886,25 +1880,7 @@ export class DiagramEditView extends DiagramView {
      * @returns Nothing.
      */
     public copyStyles(): void {
-        const selected = this.selection();
-        if (selected.length !== 1) return;
-
-        const style = selected[0]!;
-        const serialized = {
-            opacity: style.opacity,
-            strokeStyle: style.strokeStyle,
-            fillStyle: style.fillStyle,
-            textStyle: style.textStyle,
-            shadowStyle: style.shadowStyle,
-            image_id: isNode(style) ? style.image_id : undefined,
-            image_mode: isNode(style) ? style.image_mode : undefined,
-            image_align: isNode(style) ? style.image_align : undefined,
-            image_padding: isNode(style) ? style.image_padding : undefined,
-        };
-
-        this.can_paste_styles = true;
-
-        void this.writeClipboardText(jsonSerializer.write(serialized));
+        this.clipboard.copyStyles();
     }
 
     /**
@@ -1912,70 +1888,39 @@ export class DiagramEditView extends DiagramView {
      * @returns Nothing.
      */
     public pasteStyles(): void {
-        const selected = this.selection();
-        if (selected.length === 0) return;
+        this.clipboard.pasteStyles()
+            .then(affectedNodes => {
+                if (affectedNodes.length > 0) {
+                    this.render('all');
+                    this.renderPreview();
 
-        void this.readClipboardText()
-            .then(async (json) => {
-                const style = JSON.parse(json);
-                if (!style || typeof style !== 'object') return;
-
-                this.addUndo();
-
-                for (const node of selected) {
-                    if (style.opacity !== undefined) node.opacity = style.opacity;
-                    if (style.strokeStyle) node.strokeStyle = style.strokeStyle;
-                    if (style.fillStyle) node.fillStyle = style.fillStyle;
-                    if (style.textStyle) node.textStyle = style.textStyle;
-                    if (style.shadowStyle) node.shadowStyle = style.shadowStyle;
-
-                    if (style.image_id !== undefined) node.image_id = style.image_id;
-                    if (style.image_mode !== undefined) node.image_mode = style.image_mode;
-                    if (style.image_align !== undefined) node.image_align = style.image_align;
-                    if (style.image_padding !== undefined) node.image_padding = style.image_padding;
-
-                    node.hollow = undefined; node.hollow = isHollow(node);
+                    this.event_dispatcher.styleChanged('paste-styles');
                 }
-
-                this.applyClassChange(selected, {
-                    fillStyle: style.fillStyle,
-                    strokeStyle: style.strokeStyle,
-                    textStyle: style.textStyle,
-                    shadowStyle: style.shadowStyle,
-                });
-
-                this.render('all');
-                this.renderPreview();
-                this.eventDispatcher.styleChanged('paste-styles');
-            })
+            });
     }
 
-    /**
-     * Checks if the clipboard contains styles that can be pasted into selected nodes.
-     */
-    public clipboardHasStyles(): void {
-        void this.readClipboardText()
-            .then(async (json) => {
-                this.can_paste_styles = false;
-
-                const style = JSON.parse(json);
-                if (!style || typeof style !== 'object') return;
-
-                if (style.strokeStyle || style.fillStyle || style.textColor || style.lineWidth || style.lineDash
-                    || style.fontFace || style.fontSize || style.textAlign || style.textBaseline
-                    || style.shadowStyle
-                    || style.image_id || style.image_mode || style.image_align || style.image_padding) {
-                    this.can_paste_styles = true;
-                }
-            })
-    }
+    // /**
+    //  * Checks if the clipboard contains styles that can be pasted into selected nodes.
+    //  */
+    // private clipboardHasStyles(): void {
+    //     this.clipboard.clipboardHasStyles()
+    //         .then((hasStyles) => {
+    //             this.can_paste_styles = hasStyles;
+    //         });
+    // }
 
     /**
      * Cuts the selected nodes, copying them to the clipboard and then deleting them from the diagram.
      */
     public cutSelected(): void {
-        this.copySelected('cut');
+        const nodes = this.selection();
+        if (nodes.length === 0) return;
+
+        this.clipboard.copySelected();
         this.deleteSelected();
+        /* Rendering already handled by delete */
+
+        this.emitClipboardChange('cut', nodes);
     }
 
     /**
@@ -1986,128 +1931,39 @@ export class DiagramEditView extends DiagramView {
      */
     public copySelected(operation: DiagramClipboardOperation = 'copy'): void {
         const nodes = this.selection();
-        if (!nodes.length) {
-            return;
-        }
+        if (nodes.length === 0) return;
 
-        const serialized = nodes.map(node => this.serializeNode(node));
-
-        /* Collect only groups with selected members */
-        const groups = this.groups.filter(group => group.nodes.some(id => nodes.some(node => node.id === id)));
-        for (const group of groups) {
-            group.nodes = group.nodes.filter(id => nodes.some(node => node.id === id));
-        }
-
-        /* Collect only the assets referenced by the copied nodes. */
-        const allAssets = this.assetStore.snapshot();
-        let image_assets: Record<string, string> | undefined;
-        if (allAssets) {
-            for (const node of serialized) {
-                if (node.image_id && allAssets[node.image_id]) {
-                    image_assets ??= {};
-                    image_assets[node.image_id] = allAssets[node.image_id]!;
-                }
-            }
-        }
-
-        const envelope: DiagramClipboardEnvelope = { nodes: serialized, groups, image_assets };
-
+        this.clipboard.copySelected();
         this.can_paste = true;
-        this.emitClipboardChange(operation, nodes);
 
-        void this.writeClipboardText(jsonSerializer.write(envelope));
+        this.emitClipboardChange(operation, nodes);
     }
 
     /**
      * Pastes nodes from the clipboard into the diagram.
      */
     public pasteNodes(): void {
-        void this.readClipboardText()
-            .then(async (json) => {
-                const envelope = this.parseClipboardEnvelope(json)
-                    || this.parseClipboardEnvelope(this.clipboardSnapshot);
-
-                if (!envelope || !envelope.nodes.length) {
-                    return;
-                }
-
-                /* Merge referenced groups into this diagram before hydrating. */
-                if (envelope.groups?.length) {
-                    for (const group of envelope.groups) {
-                        /* We only need the groups, members will be cloned into them */
-                        this.groups.push(group);    // { id: group.id, nodes: [] });
-                    }
-                }
-
-                /* Merge referenced assets into this diagram's store before hydrating. */
-                if (envelope.image_assets) {
-                    this.assetStore.merge(envelope.image_assets);
-                }
-
-                this.addUndo();
-                const pastedNodes = this.cloneNodes(envelope.nodes);
+        this.clipboard.pasteNodes()
+            .then((pastedNodes) => {
                 this.setSelection(pastedNodes);
-
-                this.can_paste = true;
-                this.emitClipboardChange('paste', pastedNodes);
+                this.can_paste = pastedNodes.length > 0;
 
                 this.render('all');
                 this.renderPreview();
-            })
+
+                this.emitClipboardChange('paste', pastedNodes);
+            });
     }
 
-    /**
-     * Checks if the clipboard contains nodes that can be pasted into the diagram.
-     */
-    public clipboardHasNodes(): void {
-        void this.readClipboardText()
-            .then(async (json) => {
-                this.can_paste = false;
-
-                const envelope = this.parseClipboardEnvelope(json)
-                    || this.parseClipboardEnvelope(this.clipboardSnapshot);
-
-                if (envelope?.nodes.length) {
-                    this.can_paste = true;
-                }
-            })
-    }
-
-    /**
-     * Writes clipboard text.
-     * @param value The value value.
-     * @returns The computed result.
-     */
-    private async writeClipboardText(value: string): Promise<void> {
-        this.clipboardSnapshot = value;
-
-        try {
-            if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-                await navigator.clipboard.writeText(value);
-            }
-        } catch (e) {
-            console.error('Failed to write clipboard text', e);
-        }
-    }
-
-    /**
-     * Reads clipboard text.
-     * @returns The computed result.
-     */
-    private async readClipboardText(): Promise<string> {
-        try {
-            if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
-                const value = await navigator.clipboard.readText();
-                if (typeof value === 'string' && value.length) {
-                    return value;
-                }
-            }
-        } catch (e) {
-            console.error('Failed to read clipboard text', e);
-        }
-
-        return this.clipboardSnapshot || '';
-    }
+    // /**
+    //  * Checks if the clipboard contains nodes that can be pasted into the diagram.
+    //  */
+    // private clipboardHasNodes(): void {
+    //     this.clipboard.clipboardHasNodes()
+    //         .then((hasNodes) => {
+    //             this.can_paste = hasNodes;
+    //         });
+    // }
 
     /**
      * Emits clipboard change.
@@ -2116,7 +1972,7 @@ export class DiagramEditView extends DiagramView {
      * @returns Nothing.
      */
     private emitClipboardChange(operation: DiagramClipboardOperation, nodes: INode[] = []): void {
-        this.eventDispatcher.clipboardChanged({
+        this.event_dispatcher.clipboardChanged({
             operation,
             canPaste: this.can_paste,
             node: nodes[0],
@@ -2124,27 +1980,6 @@ export class DiagramEditView extends DiagramView {
             nodes,
             nodeIds: nodes.map(node => node.id),
         });
-    }
-
-    /**
-     * Parses clipboard envelope.
-     * @param json JSON payload to parse.
-     * @returns The resolved value, or undefined when it cannot be resolved.
-     */
-    private parseClipboardEnvelope(json: string): DiagramClipboardEnvelope | undefined {
-        if (!json?.length) return undefined;
-        try {
-            const payload = JSON.parse(json);
-            if (payload && typeof payload === 'object' && !Array.isArray(payload) && Array.isArray(payload.nodes)) {
-                return payload as DiagramClipboardEnvelope;
-            }
-            if (Array.isArray(payload)) {   // May not be required, but for backward compatibility, we allow a raw array of nodes to be pasted.
-                return { nodes: payload as ISerializedNode[], groups: [], image_assets: {} };
-            }
-        } catch {
-            /* ignore parse errors */
-        }
-        return undefined;
     }
 
     // ================================================
@@ -2376,7 +2211,7 @@ export class DiagramEditView extends DiagramView {
             nodeIds: selected.map(node => node.id),
         } satisfies DiagramDeleteRequest;
 
-        if (!this.eventDispatcher.deleteRequested(request)) {
+        if (!this.event_dispatcher.deleteRequested(request)) {
             return;
         }
 
@@ -3096,7 +2931,7 @@ export class DiagramEditView extends DiagramView {
             this.selectDown(event);
         }
 
-        this.eventDispatcher.editContextMenu({
+        this.event_dispatcher.editContextMenu({
             event,
             canvas: { x: event.offsetX, y: event.offsetY },
             world: this.getCoordinates().getPoint(event.offsetX, event.offsetY, 'ignore_grid'),
@@ -4618,7 +4453,7 @@ export class DiagramEditView extends DiagramView {
      * Ensures a current layer, creating one if necessary.
      * @returns The current layer.
      */
-    private ensureCurrentLayer(): ILayer {
+    public ensureCurrentLayer(): ILayer {
         const active = this.current.layer ? this.layer(this.current.layer.id) : undefined;
 
         if (!active) {
@@ -5122,7 +4957,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         this.interactionHint = hint;
-        this.eventDispatcher.hintChanged({
+        this.event_dispatcher.hintChanged({
             source: 'diagram-interaction',
             hint,
             active: !!hint,
@@ -5688,7 +5523,7 @@ export class DiagramEditView extends DiagramView {
      * @param node The target node.
      */
     private emitNodeAdded(node: INode): void {
-        this.eventDispatcher.nodeAdded({
+        this.event_dispatcher.nodeAdded({
             node,
             nodeId: node.id,
         });
@@ -5699,7 +5534,7 @@ export class DiagramEditView extends DiagramView {
      * @param node The target node.
      */
     private emitNodeDeleted(node: INode): void {
-        this.eventDispatcher.nodeDeleted({
+        this.event_dispatcher.nodeDeleted({
             node,
             nodeId: node.id,
         });
@@ -5710,7 +5545,7 @@ export class DiagramEditView extends DiagramView {
      * @param node The target node.
      */
     private emitNodeTypeChanged(node: INode): void {
-        this.eventDispatcher.nodeTypeChanged({
+        this.event_dispatcher.nodeTypeChanged({
             node,
             nodeId: node.id,
         });
@@ -5721,7 +5556,7 @@ export class DiagramEditView extends DiagramView {
      * @param node The target node.
      */
     private emitNodeMoved(node: INode): void {
-        this.eventDispatcher.nodeMoved({
+        this.event_dispatcher.nodeMoved({
             node,
             nodeId: node.id,
         });
@@ -5732,7 +5567,7 @@ export class DiagramEditView extends DiagramView {
      * @param node The target node.
      */
     private emitNodeResized(node: INode): void {
-        this.eventDispatcher.nodeResized({
+        this.event_dispatcher.nodeResized({
             node,
             nodeId: node.id,
         });
@@ -5743,7 +5578,7 @@ export class DiagramEditView extends DiagramView {
      * @param node The target node.
      */
     private emitNodeGeometryAltered(node: INode): void {
-        this.eventDispatcher.nodeGeometryAltered({
+        this.event_dispatcher.nodeGeometryAltered({
             node,
             nodeId: node.id,
         });
@@ -5754,7 +5589,7 @@ export class DiagramEditView extends DiagramView {
      * @param node The target node.
      */
     private emitNodePointsChanged(node: INode): void {
-        this.eventDispatcher.nodePointsChanged({
+        this.event_dispatcher.nodePointsChanged({
             node,
             nodeId: node.id,
         });
@@ -5765,7 +5600,7 @@ export class DiagramEditView extends DiagramView {
      * @param node The target node.
      */
     private emitConnectionConnected(node: INode & IConnection): void {
-        this.eventDispatcher.connectionConnected({
+        this.event_dispatcher.connectionConnected({
             node,
             nodeId: node.id,
             from: node.from,
@@ -5778,7 +5613,7 @@ export class DiagramEditView extends DiagramView {
      * @param node The target node.
      */
     private emitConnectionDisconnected(node: INode & IConnection): void {
-        this.eventDispatcher.connectionDisconnected({
+        this.event_dispatcher.connectionDisconnected({
             node,
             nodeId: node.id,
             from: node.from,
@@ -5836,7 +5671,7 @@ export class DiagramEditView extends DiagramView {
     private emitSheetLoaded(): void {
         const sheetId = this.current.sheet?.id || '';
         const sheetNames = this.sheetRepository.sheetNames || [];
-        this.eventDispatcher.sheetLoaded({
+        this.event_dispatcher.sheetLoaded({
             sheetId,
             sheetNames,
         });

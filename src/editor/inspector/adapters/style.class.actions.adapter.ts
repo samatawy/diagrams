@@ -12,11 +12,11 @@ function ensureDefaultStyles(): void {
     injectStyles(STYLE_ID, DEFAULT_STYLES);
 }
 
-export interface ClassActionsAdapterConfig {
+export interface StyleClassActionsAdapterConfig {
     diagram: DiagramEditView;
 }
 
-export class ClassActionsAdapter extends InspectorAdapter {
+export class StyleClassActionsAdapter extends InspectorAdapter {
 
     private readonly wrap: HTMLDivElement;
     private readonly addBtn: HTMLButtonElement;
@@ -33,7 +33,7 @@ export class ClassActionsAdapter extends InspectorAdapter {
         super(cell, mixedClassName);
         ensureDefaultStyles();
 
-        const config = initial.def.editorOptions as ClassActionsAdapterConfig;
+        const config = initial.def.editorOptions as StyleClassActionsAdapterConfig;
         this.diagram = config.diagram;
 
         this.wrap = document.createElement('div');
@@ -42,23 +42,23 @@ export class ClassActionsAdapter extends InspectorAdapter {
         // ── Add button ────────────────────────────────────────────────────
         this.addBtn = document.createElement('button');
         this.addBtn.type = 'button';
-        this.addBtn.title = 'Add a new class';
-        this.addBtn.setAttribute('aria-label', 'Add class');
+        this.addBtn.title = 'Add a new style';
+        this.addBtn.setAttribute('aria-label', 'Add style');
         this.addBtn.disabled = initial.readonly;
         this.addBtn.innerHTML = '<span aria-hidden="true">+</span><span>Add</span>';
 
         // ── Rename button ─────────────────────────────────────────────────
         this.renameBtn = document.createElement('button');
         this.renameBtn.type = 'button';
-        this.renameBtn.title = 'Rename current class';
-        this.renameBtn.setAttribute('aria-label', 'Rename class');
+        this.renameBtn.title = 'Rename current style';
+        this.renameBtn.setAttribute('aria-label', 'Rename style');
         this.renameBtn.disabled = true;
         this.renameBtn.innerHTML = '<span aria-hidden="true">✎</span><span>Rename</span>';
 
         // ── Inline input ──────────────────────────────────────────────────
         this.input = document.createElement('input');
         this.input.type = 'text';
-        this.input.placeholder = 'Class name…';
+        this.input.placeholder = 'Style name…';
 
         // ── Confirm / cancel ──────────────────────────────────────────────
         this.confirmBtn = document.createElement('button');
@@ -94,7 +94,7 @@ export class ClassActionsAdapter extends InspectorAdapter {
     private startAdding(): void {
         this.mode = 'adding';
         this.input.value = '';
-        this.input.placeholder = 'New class name…';
+        this.input.placeholder = 'New style name…';
         this.renderEditing();
         this.input.focus();
     }
@@ -103,7 +103,7 @@ export class ClassActionsAdapter extends InspectorAdapter {
         if (!this.currentClassName) return;
         this.mode = 'renaming';
         this.input.value = this.currentClassName;
-        this.input.placeholder = 'New name…';
+        this.input.placeholder = 'New style name…';
         this.renderEditing();
         this.input.select();
     }
@@ -142,7 +142,7 @@ export class ClassActionsAdapter extends InspectorAdapter {
 
     // ── Class operations ──────────────────────────────────────────────────
 
-    private addClass(className: string): void {
+    private addClass(styleClass: string): void {
         this.diagram.ensureCustomSheet();
         const sheet = this.diagram.currentSheet;
         const repo = this.diagram.sheetRepository;
@@ -151,11 +151,11 @@ export class ClassActionsAdapter extends InspectorAdapter {
         }
 
         const style = this.captureStyle();
-        repo.upsertClassStyle(className, style, sheet.id);
+        repo.upsertClassStyle(styleClass, style, sheet.id);
 
         const edit = this.diagram as any;
         if (typeof edit.applyNodePatch === 'function') {
-            edit.applyNodePatch({ class_name: className }, 'class_name');
+            edit.applyNodePatch({ style_class: styleClass }, 'style_class');
         }
         this.emitChanged('class-add');
     }
@@ -171,8 +171,8 @@ export class ClassActionsAdapter extends InspectorAdapter {
         repo.renameClass(oldName, newName, sheet.id);
 
         for (const node of this.diagram.nodes) {
-            if (node.class_name === oldName) {
-                node.class_name = newName;
+            if (node.style_class === oldName) {
+                node.style_class = newName;
             }
         }
 
@@ -237,10 +237,10 @@ export class ClassActionsAdapter extends InspectorAdapter {
 
     public override showValue(_editable: EditableRecord): void {
         // Read class name directly from selection — passed value is always undefined
-        // because 'class_name.__actions' is not a real node path.
+        // because 'style_class.__actions' is not a real node path.
         const selected = this.diagram.selection();
         const first = selected[0];
-        this.currentClassName = first?.class_name ?? undefined;
+        this.currentClassName = first?.style_class ?? undefined;
 
         if (this.mode === 'idle') {
             this.renameBtn.disabled = !this.currentClassName;

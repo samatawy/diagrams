@@ -197,7 +197,7 @@ export class VerticalPoolAdapter extends RectangleAdapter {
             return {
                 rect: {
                     left: rect.left,
-                    top: rect.top,
+                    top: rect.top + 4,
                     width: rect.width,
                     height: textHeight
                 }

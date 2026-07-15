@@ -8,6 +8,7 @@ import { NodeHandle, type AnchorScope, type IPoint } from "../../types";
 import { GroupBasics } from "../group.basics";
 import { DiagramConstants } from "../../model/diagram.constants";
 import { NodeRegistry } from "../../factory/node.registry";
+import type { SpecificOptions, TextPlacement } from "../../factory/node.adapter";
 
 export class UmlClassAdapter extends VerticalPoolAdapter {
 
@@ -63,12 +64,23 @@ export class UmlClassAdapter extends VerticalPoolAdapter {
             context.stroke(path);
 
             if (node.text && show !== 'quick') {
-                // if (node.specific?.rows && node.specific?.columns) {
-                //     node.textStyle = node.textStyle || {};
-                //     node.textStyle.baseline = 'top';
-                //     node.textStyle.orientation = 'horizontal';
-                //     node.textStyle.size = Math.max(Math.min(node.textStyle.size || 0, 12), 8);
-                // }
+                if (node.specific?.modifier === 'abstract') {
+                    node.textStyle = { ...node.textStyle, italic: true };
+                } else {
+                    node.textStyle = { ...node.textStyle, italic: false };
+                }
+
+                const stereotype = this.stereotype(node);
+                if (stereotype) {
+                    context.save();
+                    context.font = `${node.textStyle?.size || 8}px system-ui`;
+                    context.textAlign = 'center';
+                    context.textBaseline = 'top';
+                    context.fillStyle = node.textStyle?.color || '#000000';
+                    context.fillText(stereotype, rect.left + rect.width / 2, rect.top + 8, rect.width);
+                    context.restore();
+                }
+
                 RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
             }
 
@@ -158,7 +170,7 @@ export class UmlClassAdapter extends VerticalPoolAdapter {
 
         const rect = coordinates.getBoundingRect(node);
         const line_width = lineWidth(node);
-        const top_padding = (node.textStyle?.size || 12) * 1.4 + 4; /* 4px padding + line width for the top of the table */
+        const top_padding = this.lineHeight(node) + 8 + 2; /* 8px above and 2px below (padding) + line height for the top of the table */
         const side_padding = line_width / 2;
         // const table_height = rect.height - top_padding;
 
@@ -171,6 +183,10 @@ export class UmlClassAdapter extends VerticalPoolAdapter {
         let sorted = rows.sort((a, b) => +(a?.geometry?.index || 0) - +(b?.geometry?.index || 0));
         const row_height = 24;
         let row_start = rect.top + top_padding + line_width;
+
+        if (this.stereotype(node)) {
+            row_start += this.lineHeight(node) + 2; // Add extra space for the interface/enum label
+        }
 
         let r = 0;
         let row_type = '';
@@ -241,20 +257,59 @@ export class UmlClassAdapter extends VerticalPoolAdapter {
         }
     }
 
+    public override textPlacement(node: INode): TextPlacement {
+        const rect = super.textPlacement(node).rect!;
+        if (this.stereotype(node)) {
+            /* Add specific handling for interface or enum nodes here */
+            rect.top += this.lineHeight(node); // Adjust for an extra line on top
+        }
+        return { rect };
+    }
+
+
+    private stereotype(node: INode): string | undefined {
+        const modifier = node.specific?.modifier;
+        if (modifier === 'interface') return '<<interface>>';
+        if (modifier === 'enum') return '<<enumeration>>';
+        if (modifier === 'abstract') return '<<abstract>>';
+        return undefined;
+    }
+
+    private lineHeight(node: INode): number {
+        return (node.textStyle?.size || 12) * 1.4;
+    }
+
+    public override specificOptions(node: INode, path: string): SpecificOptions | undefined {
+        if (path === 'modifier' || path === 'specific.modifier') {
+            return {
+                label: 'Modifier',
+                datatype: 'enum',
+                options: {
+                    class: { label: 'Class', value: 'class' },
+                    interface: { label: 'Interface', value: 'interface' },
+                    abstract: { label: 'Abstract', value: 'abstract' },
+                    enum: { label: 'Enumuration', value: 'enum' },
+                }
+            }
+        }
+    }
+
     public onCreateDraft(tool: string): Partial<INode & IContainer> | undefined {
         return {
             type: this.type,
             points: [{ x: 0, y: 0 }, { x: 140, y: 80 }],
             text: 'Class',
             specific: {
-                abstract: false,
+                modifier: 'class',
             },
             textStyle: {
                 size: 10,
                 align: 'center',
                 baseline: 'top',
+                weight: 700,
+                italic: false,
             },
-            geometry: { radius: 0 },    // DiagramConstants.HANDLE_HIT_EPSILON },
+            geometry: { radius: 0 },
 
             owns_group: `class-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         }

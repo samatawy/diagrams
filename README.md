@@ -102,6 +102,7 @@ You can tailor the editor for your own product:
 
 - Since version `0.6.0`
   - Added gradient support
+  - Added fuller support for standard diagrams
   - Improved pointer interaction and keyboard shortcuts
   - Fixed major issue with high-resolution screens.
 - Since version `0.5.5`

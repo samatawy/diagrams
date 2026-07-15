@@ -195,7 +195,7 @@ export class HorizontalPoolAdapter extends RectangleAdapter {
             const textHeight = Math.max(rect.height * 0.9, 44);
             return {
                 rect: {
-                    left: rect.left,
+                    left: rect.left + 4,
                     top: rect.top,
                     width: textHeight,
                     height: rect.height

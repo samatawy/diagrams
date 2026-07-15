@@ -153,6 +153,10 @@ export class TableAdapter extends VerticalPoolAdapter {
         }
     }
 
+    private lineHeight(node: INode): number {
+        return (node.textStyle?.size || 12) * 1.4;
+    }
+
     private layoutRows(node: INode): void {
         if (!isContainer(node)) return;
 
@@ -167,7 +171,7 @@ export class TableAdapter extends VerticalPoolAdapter {
 
         const rect = coordinates.getBoundingRect(node);
         const line_width = lineWidth(node);
-        const top_padding = (node.textStyle?.size || 12) * 1.4 + 4; // 4px padding + line width for the top of the table
+        const top_padding = this.lineHeight(node) + 8 + 2; // 8px above and 2px below (padding) + line height for the top of the table
         const side_padding = line_width / 2;
 
         /* Find the group members that are rows */
@@ -235,6 +239,7 @@ export class TableAdapter extends VerticalPoolAdapter {
                 size: 10,
                 align: 'center',
                 baseline: 'top',
+                weight: 700,
             },
             geometry: { radius: 8 },    // DiagramConstants.HANDLE_HIT_EPSILON },
 
