@@ -3,7 +3,7 @@ import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { LineAdapter } from "../polyline/line.adapter";
 import { RenderBasics } from "../render.basics";
-import type { HollowMode, SpecificOptions, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
+import type { HollowMode, SpecificOptions, TextPlacement } from "../../factory/node.adapter";
 import { ConnectionBasics } from "../connection.basics";
 import { NodeBasics } from "../node.basics";
 import { type IPoint, NodeHandle } from "../../types";
@@ -15,8 +15,6 @@ type CardinalDirection = 'east' | 'west' | 'north' | 'south';
 type DirectedPoint = IPoint & { direction?: CardinalDirection };
 
 const STUB_SIZE = 16;
-const LANE_SPACING = 12;
-const MAX_LANE_TRIES = 3;
 
 /**
  * One2OneAdapter is a node adapter responsible for rendering one-to-one connections in the diagram. 

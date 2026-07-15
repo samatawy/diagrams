@@ -1,22 +1,59 @@
 import { NodeRegistry } from '../../factory/node.registry';
-// import { Many2ManyRelationAdapter } from './many2many.relation.adapter';
-// import { One2ManyRelationAdapter } from './one2many.relation.adapter';
-// import { One2OneRelationAdapter } from './one2one.relation.adapter';
 import { UmlClassAdapter } from './class.adapter';
 import { UmlPropertyAdapter } from './property.adapter';
 import { UmlMethodAdapter } from './method.adapter';
-// import { registerErdIcons } from './icons';
+
+import { UmlAssociationAdapter } from './association.adapter';
+import { UmlAggregationAdapter } from './aggregation.adapter';
+import { UmlCompositionAdapter } from './composition.adapter';
+import { UmlDependencyAdapter } from './dependency.adapter';
+import { UmlUsageDependencyAdapter } from './usage.dependency.adapter';
+import { UmlTemplateBindingAdapter } from './template.binding.adapter';
+import { UmlRealizationAdapter } from './realization.adapter';
+import { UmlGeneralizationAdapter } from './generalization.adapter';
+
+import { registerUmlIcons } from './icons';
 
 export function registerUmlAdapters(): void {
     UmlClassAdapter.register();
     UmlPropertyAdapter.register();
     UmlMethodAdapter.register();
 
-    // registerUmlIcons();
+    UmlAssociationAdapter.register();
+    UmlAggregationAdapter.register();
+    UmlCompositionAdapter.register();
+    UmlDependencyAdapter.register();
+    UmlUsageDependencyAdapter.register();
+    UmlTemplateBindingAdapter.register();
+    UmlRealizationAdapter.register();
+    UmlGeneralizationAdapter.register();
+
+    registerUmlIcons();
+
+    NodeRegistry.registerTransferables([
+        UmlAssociationAdapter.TYPE,
+        UmlAggregationAdapter.TYPE,
+        UmlCompositionAdapter.TYPE,
+        UmlDependencyAdapter.TYPE,
+        UmlUsageDependencyAdapter.TYPE,
+        UmlTemplateBindingAdapter.TYPE,
+        UmlRealizationAdapter.TYPE,
+        UmlGeneralizationAdapter.TYPE,
+    ]);
 }
 
 export const UML_TOOL_LAYOUT = [
     'uml_class',
     'uml_property',
     'uml_method',
+
+    'uml_association',
+    'uml_generalization',
+    'uml_realization',
+    'uml_aggregation',
+    'uml_composition',
+
+    'uml_dependency',
+    'uml_usage_dependency',
+    'uml_template_binding',
 ];
