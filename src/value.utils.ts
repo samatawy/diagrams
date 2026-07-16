@@ -242,6 +242,12 @@ export function isInvisible(node: INode): boolean {
 export function isHollow(node: INode): boolean {
     if (node.hollow !== undefined) {
         return node.hollow;
+    }
+    const adapter = NodeRegistry.adapter(node.type);
+    if (adapter?.hollow_mode === 'always') {
+        return true;
+    } else if (adapter?.hollow_mode === 'never') {
+        return false;
     } else {
         return (node.fillStyle === undefined || fillColor(node) === 'transparent') && !node.fillStyle?.gradient && node.image_id === undefined;
         // return (fillStyle(node) === undefined || fillStyle(node) === 'transparent') && imageId(node) === undefined;

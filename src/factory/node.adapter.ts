@@ -231,7 +231,7 @@ export interface INodeAdapter {
      * @param point The point to test against the node.
      * @returns The handle of the node that was hit, or NodeHandle.NONE if no hit occurred.
      */
-    hitTest(node: INode, point: IPoint): NodeHandle;
+    hitTest(node: INode, point: IPoint, point_as: 'pointer' | 'diagram'): NodeHandle;
 
     /**
      * Snaps the given node to the specified grid by modifying its points.

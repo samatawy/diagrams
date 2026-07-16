@@ -259,48 +259,84 @@ export class NodeBasics {
         let rect = coordinates.getBoundingRect(node, true);
         if (!rect) return false;
 
+        /* Quickly exclude distant nodes */
         if (rect.left > target.left + target.width) return false;
         if (rect.top > target.top + target.height) return false;
         if (target.left > rect.left + rect.width) return false;
         if (target.top > rect.top + rect.height) return false;
 
-        if (isConnectionNode(node)) {
-            // TODO: Add logic for checking overlap with polyline connections; bounding rect is too wide.
-        }
+        const grid_width = DiagramConstants.GRID_CELL_WIDTH;        // node.owner.grid?.width
+        const grid_height = DiagramConstants.GRID_CELL_HEIGHT;      // node.owner.grid?.height
 
-        if (!node.angle) return true;   // No further calculation required..
-
-        if (node.angle) {
-            const grid_width = node.owner.grid?.width || 0;
-            const grid_height = node.owner.grid?.height || 0;
-
-            for (let x = 0; x < target.width; x = Math.min(x + grid_width, target.width)) {
-                for (let y = 0; y < target.height; y = Math.min(y + grid_height, target.height)) {
-
-                    // let check = this.owner.getHitPoint({x: target.left + x, y: target.top + y}, rect, this.angle, this.cos, this.sin);
-                    let check = { x: target.left + x, y: target.top + y };
-                    // let tx = pt.x; y = pt.y;
-
-                    for (let pt of node.points) {
-                        if (Math.abs(pt.x - check.x) <= 4 && Math.abs(pt.y - check.y) <= 4)
-                            return true;
-                    }
-
-                    let inpath: boolean = false;
-                    if (cached.path && coordinates) {
-                        inpath = isHollow(node) ?
-                            coordinates.isPointInStroke(cached.path, x, y) :
-                            coordinates.isPointInPath(cached.path, x, y);
-                    }
-
-                    if (inpath) return true;
+        for (let x = 0; x < target.width; x = Math.min(x + grid_width, target.width)) {
+            for (let y = 0; y < target.height; y = Math.min(y + grid_height, target.height)) {
+                const hitPoint = {
+                    x: target.left + x,
+                    y: target.top + y
+                };
+                const handle = NodeRegistry.adapter(node.type)?.hitTest(node, hitPoint, 'diagram');
+                if (handle !== NodeHandle.NONE) {
+                    return true;
                 }
             }
-            return false;
-        } else {
-            return true;
         }
+        return false;
     }
+
+    // public static overlaps(node: INode, target: IRect | INode): boolean {
+    //     const diagram = node.owner;
+    //     if (!isDiagramViewLike(diagram)) return false;
+    //     const coordinates = diagram.getCoordinates();
+    //     const cache = diagram.getCache();
+    //     const cached = cache.getNode(node) || {} as INodeCached;
+
+    //     if (!target) return false;
+    //     target = isNode(target) ? coordinates.getBoundingRect(target as INode, true) : target;
+    //     let rect = coordinates.getBoundingRect(node, true);
+    //     if (!rect) return false;
+
+    //     if (rect.left > target.left + target.width) return false;
+    //     if (rect.top > target.top + target.height) return false;
+    //     if (target.left > rect.left + rect.width) return false;
+    //     if (target.top > rect.top + rect.height) return false;
+
+    //     if (isConnectionNode(node)) {
+    //         // TODO: Add logic for checking overlap with polyline connections; bounding rect is too wide.
+    //     }
+
+    //     if (!node.angle) return true;   // No further calculation required..
+
+    //     if (node.angle) {
+    //         const grid_width = node.owner.grid?.width || 0;
+    //         const grid_height = node.owner.grid?.height || 0;
+
+    //         for (let x = 0; x < target.width; x = Math.min(x + grid_width, target.width)) {
+    //             for (let y = 0; y < target.height; y = Math.min(y + grid_height, target.height)) {
+
+    //                 // let check = this.owner.getHitPoint({x: target.left + x, y: target.top + y}, rect, this.angle, this.cos, this.sin);
+    //                 let check = { x: target.left + x, y: target.top + y };
+    //                 // let tx = pt.x; y = pt.y;
+
+    //                 for (let pt of node.points) {
+    //                     if (Math.abs(pt.x - check.x) <= 4 && Math.abs(pt.y - check.y) <= 4)
+    //                         return true;
+    //                 }
+
+    //                 let inpath: boolean = false;
+    //                 if (cached.path && coordinates) {
+    //                     inpath = isHollow(node) ?
+    //                         coordinates.isPointInStroke(cached.path, x, y) :
+    //                         coordinates.isPointInPath(cached.path, x, y);
+    //                 }
+
+    //                 if (inpath) return true;
+    //             }
+    //         }
+    //         return false;
+    //     } else {
+    //         return true;
+    //     }
+    // }
 
     /**
      * Checks if a node is fully inside a target rectangle or another node's bounding rectangle.

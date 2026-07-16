@@ -86,49 +86,6 @@ export class FieldAdapter extends RectangleAdapter {
         }
     }
 
-    // public renderSelection(node: INode, context: CanvasRenderingContext2D, show: 'all_handles' | 'connection_handles') {
-    //     if (!context) return;
-    //     const diagram = node.owner;
-    //     if (!isDiagramViewLike(diagram)) return;
-    //     const coordinates = diagram.getCoordinates();
-
-    //     if (node.points.length > 1) {
-    //         const rect = coordinates.getBoundingRect(node);
-    //         // const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
-    //         const allowed = (show === 'connection_handles') ?
-    //             this.connection_handles :
-    //             [NodeHandle.N, NodeHandle.S, NodeHandle.E, NodeHandle.W, NodeHandle.NE, NodeHandle.NW, NodeHandle.SE, NodeHandle.SW, NodeHandle.ROTATE, NodeHandle.ALTER];
-
-    //         context.save();
-    //         RenderBasics.prepareHandles(node, context);
-
-    //         const handles = new Path2D();
-
-    //         // E
-    //         if (allowed.includes(NodeHandle.E)) {
-    //             RenderBasics.renderHandle(node, { x: rect.left + rect.width, y: rect.top + rect.height / 2 }, handles, context);
-    //         }
-
-    //         // W
-    //         if (allowed.includes(NodeHandle.W)) {
-    //             RenderBasics.renderHandle(node, { x: rect.left, y: rect.top + rect.height / 2 }, handles, context);
-    //         }
-
-    //         context.fill(handles);
-    //         context.stroke(handles);
-    //         context.restore();
-    //     }
-    // }
-
-    // public override hitTest(node: INode, point: IPoint): NodeHandle {
-    //     const result = super.hitTest(node, point);
-    //     // Allow only MOVE (body), E and W (connection anchors). All resize handles are suppressed.
-    //     if (result === NodeHandle.MOVE || result === NodeHandle.E || result === NodeHandle.W) {
-    //         return result;
-    //     }
-    //     return NodeHandle.NONE;
-    // }
-
     public getAnchors(node: INode, show: AnchorScope, direction: 'from' | 'to' | 'any' = 'any'): IHandlePoint[] {
         const anchors: IHandlePoint[] = [];
         const diagram = node.owner;
@@ -158,11 +115,6 @@ export class FieldAdapter extends RectangleAdapter {
             return anchors;
         }
     }
-
-    // public override canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
-    //     if (!this.connection_handles.includes(handle)) return false;
-    //     return node.ready === true;
-    // }
 
     public override canConnectTo(node: INode, handle: NodeHandle, direction: 'from' | 'to' | 'any', target?: Partial<INode>, point?: IPoint): boolean {
         if (!this.connection_handles.includes(handle)) return false;

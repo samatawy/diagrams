@@ -55,7 +55,7 @@ export class PolylineAdapter implements INodeAdapter {
         NodeRegistry.register(this.type, this);
     }
 
-    public hitTest(node: INode, point: IPoint): NodeHandle {
+    public hitTest(node: INode, point: IPoint, point_as: 'pointer' | 'diagram'): NodeHandle {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return NodeHandle.NONE;
         const coordinates = diagram.getCoordinates();
@@ -63,18 +63,25 @@ export class PolylineAdapter implements INodeAdapter {
         const cached = cache.getNode(node) || {} as INodeCached;
 
         if (node.points.length > 1) {
-            const angle = nodeAngle(node);
             const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
-
             const rect = coordinates.getBoundingRect(node, false);
-            const cos = cached.cos || Math.cos(angle);
-            const sin = cached.sin || Math.sin(angle);
-            const hitPoint = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, angle, cos, sin);
+
+            let hitPoint = point;
+            if (point_as === 'pointer') {
+                const angle = nodeAngle(node);
+                let cos = cached?.cos || Math.cos(angle);
+                let sin = cached?.sin || Math.sin(angle);
+                hitPoint = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, angle, cos, sin);
+            }
 
             for (const sourcePoint of node.points) {
                 if (Math.abs(sourcePoint.x - hitPoint.x) <= epsilon && Math.abs(sourcePoint.y - hitPoint.y) <= epsilon) {
                     return NodeHandle.POINT;
                 }
+            }
+
+            if (this.hitTestAlter(node, rect, { x: hitPoint.x, y: hitPoint.y })) {
+                return NodeHandle.ALTER;
             }
 
             if (cached?.text_path && coordinates.isPointInPath(cached.text_path, hitPoint.x, hitPoint.y)) {
@@ -189,12 +196,30 @@ export class PolylineAdapter implements INodeAdapter {
             for (const point of allowed_points) {
                 RenderBasics.renderHandle(node, point, handles, context);
             }
+
             context.fill(handles);
             context.stroke(handles);
+
+
+            if (show === 'all_handles' || show === 'selection_handles') {
+                const rect = diagram.getCoordinates().getBoundingRect(node);
+                this.renderAlterHandle(node, context, rect);
+            }
 
             context.restore();
         }
     }
+
+    protected hitTestAlter(node: INode, rect: IRect, point: IPoint): boolean {
+        return false;
+    }
+
+    protected renderAlterHandle(node: INode, context: CanvasRenderingContext2D, rect: IRect): void {
+    }
+
+    public onAlterMove(node: INode, point: IPoint): void {
+    }
+
 
     public textPlacement(node: INode): TextPlacement {
         const { from, to } = NodeBasics.longestSegment(node.points) || { from: node.points[0]!, to: node.points[1]! };

@@ -131,12 +131,12 @@ export class DiagramAnimations {
         }
         channel.node = node.id;
         if (node.owner.background?.color) {
-            channel.fillStyle = withAlpha(node.owner.background.color, 0.65);
-            // channel.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            channel.fillStyle = withAlpha(node.owner.background.color, 0.75);
         } else {
-            channel.fillStyle = withAlpha(DiagramConstants.CANVAS_BACKGROUND_COLOR, 0.65);
+            channel.fillStyle = withAlpha(DiagramConstants.CANVAS_BACKGROUND_COLOR, 0.75);
         }
-        channel.strokeStyle = 'rgba(0, 0, 0, 0.25)';
+        // channel.strokeStyle = withAlpha('rgba(0, 0, 0, 0.25)', 0.25);
+        channel.strokeStyle = withAlpha(DiagramConstants.GUIDE_STROKE_COLOR, 0.75);
 
         this.doAnimateNodeShutter(channel, node, func);
     }
@@ -281,7 +281,6 @@ export class DiagramAnimations {
 
     private doAnimateNodeShutter(channel: AnimationNodeShutter, node: INode, func: () => void): void {
         if (!this.config.enabled) {
-            // node.points[0] = deepClone(target);
             func();
             return;
         }
@@ -375,7 +374,6 @@ export class DiagramAnimations {
                     cutout.height + 2 * padding,
                     padding * 2
                 );
-                shutterContext.filter = 'blur(8px)';
                 shutterContext.fill(path);
                 shutterContext.restore();
             }
@@ -386,10 +384,13 @@ export class DiagramAnimations {
 
             if (channel.strokeStyle) {
                 shutterContext.save();
-                shutterContext.strokeStyle = channel.strokeStyle;       // 'rgba(0, 0, 0, 0.25)';
+                shutterContext.strokeStyle = channel.strokeStyle;
                 // shutterContext.fillStyle = 'rgba(0, 0, 0, 0)';
                 // shutterContext.lineJoin = 'round';
-                shutterContext.lineWidth = 2 * coordinates.pixelRatio;  // * shrink;
+                shutterContext.lineWidth = 1 * coordinates.pixelRatio;
+                shutterContext.setLineDash([6 / coordinates.zoom, 4 / coordinates.zoom]);
+                // shutterContext.filter = 'blur(3px)';
+                // shutterContext.lineWidth = 2 * coordinates.pixelRatio;  // * shrink;
                 // shutterContext.setLineDash([shrink, shrink]);
                 const path = new Path2D();
                 path.roundRect(

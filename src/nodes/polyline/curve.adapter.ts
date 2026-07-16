@@ -24,7 +24,7 @@ export class CurveAdapter extends PolylineAdapter {
     has_text = true;
     text_orientations: ITextOrientation[] = ['horizontal'];
 
-    public hitTest(node: INode, point: IPoint): NodeHandle {
+    public hitTest(node: INode, point: IPoint, point_as: 'pointer' | 'diagram'): NodeHandle {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return NodeHandle.NONE;
         const coordinates = diagram.getCoordinates();
@@ -32,13 +32,16 @@ export class CurveAdapter extends PolylineAdapter {
         const cached = cache.getNode(node) || {} as INodeCached;
 
         if (node.points.length > 1) {
-            const angle = nodeAngle(node);
             const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
-
             const rect = coordinates.getBoundingRect(node, false);
-            const cos = cached.cos || Math.cos(angle);
-            const sin = cached.sin || Math.sin(angle);
-            const hitPoint = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, angle, cos, sin);
+
+            let hitPoint = point;
+            if (point_as === 'pointer') {
+                const angle = nodeAngle(node);
+                let cos = cached?.cos || Math.cos(angle);
+                let sin = cached?.sin || Math.sin(angle);
+                hitPoint = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, angle, cos, sin);
+            }
 
             /* Check if the hit point is near the start or end points of the curve */
             // for (const sourcePoint of [node.points[0]!, node.points[node.points.length - 1]!]) {

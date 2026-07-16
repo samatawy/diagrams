@@ -32,8 +32,8 @@ export class FreehandAdapter extends PolylineAdapter {
         return false;
     }
 
-    public hitTest(node: INode, point: IPoint): NodeHandle {
-        const handle = super.hitTest(node, point);
+    public hitTest(node: INode, point: IPoint, point_as: 'pointer' | 'diagram'): NodeHandle {
+        const handle = super.hitTest(node, point, point_as);
         return (handle === NodeHandle.POINT) ? NodeHandle.MOVE : handle;
     }
 

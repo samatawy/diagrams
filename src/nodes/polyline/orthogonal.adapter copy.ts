@@ -1,15 +1,14 @@
 import type { IConnectionAnchor, IDiagram, INode } from "../../interfaces";
-import { isConnectionNode, isDiagramViewLike, type DiagramViewLike } from "../../guards";
+import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { LineAdapter } from "./line.adapter";
 import { RenderBasics } from "../render.basics";
 import type { HollowMode, SpecificOptions, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
 import { ConnectionBasics } from "../connection.basics";
 import { NodeBasics } from "../node.basics";
-import { type AnchorScope, type IPoint, type IRect, NodeHandle } from "../../types";
+import { type IPoint, NodeHandle } from "../../types";
 import type { DiagramView } from "../../view/diagram.view";
 import { arrowAt } from "../../value.utils";
-import { DiagramConstants } from "../../model/diagram.constants";
 
 type CardinalDirection = 'east' | 'west' | 'north' | 'south';
 
@@ -23,7 +22,7 @@ const STUB_SIZE = 16;
  * for handling one-to-one connection routing and hit testing.
  * Registers with the NodeRegistry under the name 'one_to_one'.
  */
-export class OrthogonalAdapter extends LineAdapter {
+export class OrthogonalAdapterCopy extends LineAdapter {
 
     public static TYPE = 'orthogonal';
 
@@ -31,23 +30,16 @@ export class OrthogonalAdapter extends LineAdapter {
     has_text = true;
     text_overflow: TextOverflowMode = 'hidden';
 
-    connection_handles: NodeHandle[] = [NodeHandle.POINT, NodeHandle.ALTER];
-
-
     afterConnect(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor | null): void {
         if (direction === 'from' && anchor) {
+            node.geometry = node.geometry || {} as any;
             const target = this.resolveNode(node.owner, anchor);
-            node.geometry = {
-                ...node.geometry ?? {},
-                from_handle: this.normalizeHandle(anchor, target)
-            };
+            node.geometry!.from_handle = this.normalizeHandle(anchor, target);
 
         } else if (direction === 'to' && anchor) {
+            node.geometry = node.geometry || {} as any;
             const target = this.resolveNode(node.owner, anchor);
-            node.geometry = {
-                ...node.geometry ?? {},
-                to_handle: this.normalizeHandle(anchor, target)
-            };
+            node.geometry!.to_handle = this.normalizeHandle(anchor, target);
         }
     }
 
@@ -181,23 +173,9 @@ export class OrthogonalAdapter extends LineAdapter {
 
         if (source.length < 2) return source;
 
-        let geometry = node.geometry ?? {};
-        let midway: IPoint | undefined = undefined;
-        if (geometry.midway_set && geometry.midway_x !== undefined && geometry.midway_y !== undefined) {
-            midway = this.clampMidway(node,
-                { x: +geometry.midway_x, y: +geometry.midway_y }
-            );
-        }
-
         if (from_stub && from_direction && to_stub && to_direction) {
-            midway = midway ?? this.midwayPoint(from_stub, to_stub);
+            let midway = this.midwayPoint(from_stub, to_stub);
             if (midway) {
-                /* Cache the point for anchors and hit testing */
-                node.geometry = {
-                    ...node.geometry ?? {},
-                    midway_x: midway.x,
-                    midway_y: midway.y
-                };
                 // Try to find an uncovered midway point that doesn't intersect with any nodes in the diagram
 
                 source.splice(2, 0, midway);
@@ -625,205 +603,6 @@ export class OrthogonalAdapter extends LineAdapter {
         return plan;
     }
 
-    /**
-     * Build a rect for the handle used to define a custom midway point.
-     * No transformation necessary here.
-     * @param node The node being tested.
-     * @param rect The bounding rectangle of the node.
-     * @returns A rectangle representing the handle's bounding area.
-     */
-    private getAlterRect(node: INode, rect: IRect): IRect | undefined {
-        if (node.geometry?.midway_x !== undefined && node.geometry?.midway_y !== undefined) {
-            return {
-                left: +node.geometry.midway_x - DiagramConstants.HANDLE_HIT_EPSILON,
-                top: +node.geometry.midway_y - DiagramConstants.HANDLE_HIT_EPSILON,
-                width: 2 * DiagramConstants.HANDLE_HIT_EPSILON,
-                height: 2 * DiagramConstants.HANDLE_HIT_EPSILON
-            }
-        }
-
-        const from_handle = node.geometry?.from_handle as NodeHandle;
-        const to_handle = node.geometry?.to_handle as NodeHandle;
-        if (!from_handle || !to_handle) return undefined;
-
-        const source: DirectedPoint[] = this.cloneDirected(node.points, from_handle, to_handle);
-
-        let from_stub: DirectedPoint | undefined;
-        let from_direction: CardinalDirection | undefined;
-        if (from_handle) {
-            from_direction = this.infer_cardinal_from_handle(from_handle);
-            from_stub = this.makeRelativePoint(source[0]!, from_direction, STUB_SIZE);
-        }
-
-        let to_stub: DirectedPoint | undefined;
-        let to_direction: CardinalDirection | undefined;
-        if (to_handle) {
-            to_direction = this.infer_cardinal_from_handle(to_handle);
-            to_stub = this.makeRelativePoint(source[source.length - 1]!, to_direction, STUB_SIZE);
-        }
-
-        if (!from_stub || !to_stub) return undefined;
-
-        let midway = this.midwayPoint(from_stub, to_stub);
-        if (!midway) return undefined;
-
-        // node.geometry = {
-        //     ...node.geometry ?? {},
-        //     midway_x: midway.x,
-        //     midway_y: midway.y
-        // };
-
-        const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
-        return {
-            left: midway!.x - epsilon,
-            top: midway!.y - epsilon,
-            width: 2 * epsilon,
-            height: 2 * epsilon
-        }
-    }
-
-    /**
-     * Test a point against the handle used to define a custom radius at the top left of the shape.
-     * No transformation necessary here.
-     * @param node The node being tested.
-     * @param rect The bounding rectangle of the node.
-     * @param point The point to test.
-     * @returns True if the point is within the handle's bounding rectangle, false otherwise.
-     */
-    protected hitTestAlter(node: INode, rect: IRect, point: IPoint): boolean {
-        const alter_rect = this.getAlterRect(node, rect);
-        if (!alter_rect) return false;
-
-        if (point.x >= alter_rect.left && point.x <= alter_rect.left + alter_rect.width &&
-            point.y >= alter_rect.top && point.y <= alter_rect.top + alter_rect.height) {
-            return true;
-        }
-        return false;
-    }
-
-    /** 
-     * Render the handle used to define a custom radius at the top left of the shape. 
-     * It has a rounded rectangle shape to indicate its function for adjusting the corner radius.
-     * No transformation necessary here.
-     * @param node The node being rendered.
-     * @param context The canvas rendering context.
-     * @param rect The bounding rectangle of the node.
-     */
-    protected renderAlterHandle(node: INode, context: CanvasRenderingContext2D, rect: IRect): void {
-        const alter_rect = this.getAlterRect(node, rect);
-        if (!alter_rect) return;
-
-        const handles = new Path2D();
-        handles.rect(alter_rect.left, alter_rect.top, alter_rect.width, alter_rect.height);
-        // handles.arc(alter_rect.left + alter_rect.width / 2,
-        //     alter_rect.top + alter_rect.height / 2,
-        //     alter_rect.width / 2, 0,
-        //     Math.PI * 2);
-        // handles.roundRect(alter_rect.left, alter_rect.top, alter_rect.width, alter_rect.height, [alter_rect.width / 2, 0, 0, 0]);
-        context.fill(handles);
-        context.stroke(handles);
-    }
-
-    /**
-     * Sliding the ALTER handle sets the corner radius as the distance between the handle start and the left of the bounding rect.
-     * Transformation is necessary here.
-     * @param node The node being altered.
-     * @param point The point where the handle is currently at.
-     */
-    public onAlterMove(node: INode, point: IPoint): void {
-        const diagram = node.owner;
-        if (!isDiagramViewLike(diagram)) return undefined;
-        const coordinates = diagram.getCoordinates();
-
-        const rect = coordinates.getBoundingRect(node);
-        const hitPoint = coordinates.getHitPoint(point, rect, 0);
-
-        /* Mark the midway as user-set */
-        node.geometry = { ...node.geometry, midway_set: true };
-        this.clampMidway(node, hitPoint);
-    }
-
-    /**
-     * Ensure that the given midway point is within the bounds defined by the from and to stubs.
-     * If it is, it is left unchanged. If it is outside, it is clamped to the nearest edge of the bounding rectangle and saved to the node's geometry.
-     * 
-     * @param node The node being altered.
-     * @param point The point to be clamped.
-     * @param rect The bounding rectangle of the node.
-     * @returns The clamped point or undefined if it cannot be calculated.
-     */
-    private clampMidway(node: INode, point: IPoint): IPoint | undefined {
-        const diagram = node.owner;
-        if (!isDiagramViewLike(diagram)) return undefined;
-        const coordinates = diagram.getCoordinates();
-
-        const from_handle = node.geometry?.from_handle as NodeHandle;
-        const to_handle = node.geometry?.to_handle as NodeHandle;
-        if (!from_handle || !to_handle) return undefined;
-
-        const source: DirectedPoint[] = this.cloneDirected(node.points, from_handle, to_handle);
-
-        let from_stub: DirectedPoint | undefined;
-        let from_direction: CardinalDirection | undefined;
-        if (from_handle) {
-            from_direction = this.infer_cardinal_from_handle(from_handle);
-            from_stub = this.makeRelativePoint(source[0]!, from_direction, STUB_SIZE);
-        }
-
-        let to_stub: DirectedPoint | undefined;
-        let to_direction: CardinalDirection | undefined;
-        if (to_handle) {
-            to_direction = this.infer_cardinal_from_handle(to_handle);
-            to_stub = this.makeRelativePoint(source[source.length - 1]!, to_direction, STUB_SIZE);
-        }
-
-        if (!from_stub || !to_stub) return undefined;
-
-        const bounds = {
-            left: Math.min(from_stub.x, to_stub.x),
-            top: Math.min(from_stub.y, to_stub.y),
-            right: Math.max(from_stub.x, to_stub.x),
-            bottom: Math.max(from_stub.y, to_stub.y)
-        }
-
-        // if (point.x < bounds.left && point.y < bounds.top) {
-        //     point.x = bounds.left;
-        //     point.y = bounds.top;
-        // } else if (point.x < bounds.left && point.y > bounds.bottom) {
-        //     point.x = bounds.left;
-        //     point.y = bounds.bottom;
-        // } else if (point.x > bounds.right && point.y < bounds.top) {
-        //     point.x = bounds.right;
-        //     point.y = bounds.top;
-        // } else if (point.x > bounds.right && point.y > bounds.bottom) {
-        //     point.x = bounds.right;
-        //     point.y = bounds.bottom;
-        // }
-        if (point.x < bounds.left) {
-            point.x = bounds.left;
-        }
-        if (point.x > bounds.right) {
-            point.x = bounds.right;
-        }
-        if (point.y < bounds.top) {
-            point.y = bounds.top;
-        }
-        if (point.y > bounds.bottom) {
-            point.y = bounds.bottom;
-        }
-
-        if (node.geometry?.midway_set) {
-            node.geometry = {
-                ...node.geometry ?? {},
-                midway_x: point.x,
-                midway_y: point.y,
-            };
-        }
-
-        return point;
-    }
-
-
     public textPlacement(node: INode): TextPlacement {
         const from_handle = node.geometry?.from_handle as NodeHandle;
         const to_handle = node.geometry?.to_handle as NodeHandle;
@@ -842,24 +621,6 @@ export class OrthogonalAdapter extends LineAdapter {
         if (path === 'geometry.radius' || path === 'radius') {
             return {
                 label: 'Radius',
-                datatype: 'number',
-            }
-        }
-        if (path === 'geometry.midway_set' || path === 'midway_set') {
-            return {
-                label: 'Midway Set',
-                datatype: 'boolean',
-            }
-        }
-        if (path === 'geometry.midway_x' || path === 'midway_x') {
-            return {
-                label: 'Midway X',
-                datatype: 'number',
-            }
-        }
-        if (path === 'geometry.midway_y' || path === 'midway_y') {
-            return {
-                label: 'Midway Y',
                 datatype: 'number',
             }
         }

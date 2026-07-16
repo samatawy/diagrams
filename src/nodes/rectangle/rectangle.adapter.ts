@@ -51,7 +51,7 @@ export class RectangleAdapter implements INodeAdapter {
         NodeRegistry.register(this.type, this);
     }
 
-    public hitTest(node: INode, point: IPoint): NodeHandle {
+    public hitTest(node: INode, point: IPoint, point_as: 'pointer' | 'diagram'): NodeHandle {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return NodeHandle.NONE;
         const coordinates = diagram.getCoordinates();
@@ -59,13 +59,16 @@ export class RectangleAdapter implements INodeAdapter {
         const cached = cache.getNode(node) || {} as INodeCached;
 
         if (node.points.length > 1) {
-            const angle = nodeAngle(node);
             const epsilon = DiagramConstants.HANDLE_HIT_EPSILON;
+            const rect = coordinates.getBoundingRect(node, false);
 
-            let rect = coordinates.getBoundingRect(node, false);
-            let cos = cached?.cos || Math.cos(angle);
-            let sin = cached?.sin || Math.sin(angle);
-            let pt = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, angle, cos, sin);
+            let pt = point;
+            if (point_as === 'pointer') {
+                const angle = nodeAngle(node);
+                let cos = cached?.cos || Math.cos(angle);
+                let sin = cached?.sin || Math.sin(angle);
+                pt = coordinates.getHitPoint({ x: point.x, y: point.y }, rect, angle, cos, sin);
+            }
             let x = pt.x!;
             let y = pt.y!;
 

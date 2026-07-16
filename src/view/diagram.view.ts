@@ -1132,7 +1132,7 @@ export class DiagramView extends Diagram implements HasSelection {
             for (const node of nodes) {
                 if (isContainer(node)) {
                     const handler = NodeRegistry.adapter(node.type);
-                    const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
+                    const handle = handler ? handler.hitTest(node, { x, y }, 'pointer') : NodeHandle.NONE;
                     if (handle != NodeHandle.NONE) found.push(node);
                 }
             }
@@ -1141,7 +1141,7 @@ export class DiagramView extends Diagram implements HasSelection {
             for (const node of nodes) {
                 if (!isContainer(node) && !isConnection(node)) {
                     const handler = NodeRegistry.adapter(node.type);
-                    const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
+                    const handle = handler ? handler.hitTest(node, { x, y }, 'pointer') : NodeHandle.NONE;
                     if (handle != NodeHandle.NONE) found.push(node);
                 }
             }
@@ -1150,7 +1150,7 @@ export class DiagramView extends Diagram implements HasSelection {
             for (const node of nodes) {
                 if (isConnection(node)) {
                     const handler = NodeRegistry.adapter(node.type);
-                    const handle = handler ? handler.hitTest(node, { x, y }) : NodeHandle.NONE;
+                    const handle = handler ? handler.hitTest(node, { x, y }, 'pointer') : NodeHandle.NONE;
                     if (handle != NodeHandle.NONE) found.push(node);
                 }
             }
@@ -1171,7 +1171,7 @@ export class DiagramView extends Diagram implements HasSelection {
         for (let i = 0; i < nodes.length; i++) {
             let node = nodes[i]!;
             const handler = NodeRegistry.adapter(node.type);
-            const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
+            const handle = handler?.hitTest(node, { x, y }, 'pointer') || NodeHandle.NONE;
             if (handle !== NodeHandle.NONE) {
                 return handle;
             }
@@ -1195,7 +1195,7 @@ export class DiagramView extends Diagram implements HasSelection {
             const handler = NodeRegistry.adapter(node.type);
             // const allowed = handler?.connection_handles || [];
             // if (allowed.length === 0) continue;
-            const handle = handler?.hitTest(node, { x, y }) || NodeHandle.NONE;
+            const handle = handler?.hitTest(node, { x, y }, 'pointer') || NodeHandle.NONE;
             // const isAllowed = handler?.canConnect(node, 'to', handle, { x, y }) ?? false;
             const isAllowed = handler?.canConnectTo(node, handle, 'to', undefined, { x, y }) ?? false;
             if (handle !== NodeHandle.NONE && isAllowed) {
