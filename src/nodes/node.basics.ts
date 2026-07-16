@@ -265,6 +265,14 @@ export class NodeBasics {
         if (target.left > rect.left + rect.width) return false;
         if (target.top > rect.top + rect.height) return false;
 
+        /* Quickly include nodes that are fully inside the target */
+        if (rect.left > target.left &&
+            rect.top > target.top &&
+            rect.left < target.left + target.width &&
+            rect.top < target.top + target.height
+        ) return true;
+
+        /* Check potential border nodes by hitTest() logic */
         const grid_width = DiagramConstants.GRID_CELL_WIDTH;        // node.owner.grid?.width
         const grid_height = DiagramConstants.GRID_CELL_HEIGHT;      // node.owner.grid?.height
 
