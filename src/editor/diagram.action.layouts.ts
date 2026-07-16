@@ -13,10 +13,13 @@ export const DIAGRAM_STYLESHEET_ACTION_LAYOUT: DiagramActionId[] = [
 ];
 
 export const DIAGRAM_VIEW_ACTION_LAYOUT: DiagramActionId[] = [
-    'show-grid',
-    'snap-grid',
-    'show-guides',
-    'snap-guides',
+    'toggle-guides',
+    'toggle-grid',
+    'toggle-visual-grid',
+    // 'show-grid',
+    // 'snap-grid',
+    // 'show-guides',
+    // 'snap-guides',
 ];
 
 export const DIAGRAM_ZOOM_ACTION_LAYOUT: DiagramActionId[] = [

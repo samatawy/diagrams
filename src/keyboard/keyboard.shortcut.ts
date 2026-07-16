@@ -43,3 +43,42 @@ export interface KeyboardShortcut<T extends any> {
      */
     action: (target: T) => void;
 }
+
+export function formatShortcut(shortcut?: string | string[]): string | undefined {
+    if (!shortcut) {
+        return undefined;
+    }
+
+    const options = Array.isArray(shortcut) ? shortcut : [shortcut];
+    const preferred = options.filter((one) => isMacPlatform() ? one.includes("Cmd") : one.includes("Ctrl"));
+    const candidate = (preferred[0] || options[0] || "").trim();
+    if (!candidate) {
+        return undefined;
+    }
+
+    return normalizeShortcut(candidate);
+}
+
+function normalizeShortcut(shortcut: string): string {
+    let normalized = shortcut;
+
+    if (isMacPlatform()) {
+        normalized = normalized
+            .replace(/Ctrl/g, "Cmd")
+            .replace(/Alt/g, "Option");
+    } else {
+        normalized = normalized
+            .replace(/Cmd/g, "Ctrl")
+            .replace(/Option/g, "Alt");
+    }
+
+    return normalized;
+}
+
+export function isMacPlatform(): boolean {
+    if (typeof navigator === "undefined") {
+        return false;
+    }
+
+    return /(Mac|iPhone|iPad|iPod)/i.test(navigator.platform || navigator.userAgent);
+}

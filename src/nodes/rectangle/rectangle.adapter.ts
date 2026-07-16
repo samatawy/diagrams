@@ -242,7 +242,7 @@ export class RectangleAdapter implements INodeAdapter {
         }
     }
 
-    public snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void {
+    public snapToGrid(node: INode, grid: IGrid, handle?: NodeHandle): void {
         if (!grid || !grid.forced) return;
 
         const diagram = node.owner;
@@ -317,6 +317,17 @@ export class RectangleAdapter implements INodeAdapter {
                     x: coordinates.getGridPoint(topLeft.x, topLeft.y, grid).x
                 };
                 snapBottomRight = {
+                    y: coordinates.getGridPoint(bottomRight.x, bottomRight.y, grid).y
+                };
+                break;
+            case undefined:
+                // Snap all points to the grid, preserving their relative positions
+                snapTopLeft = {
+                    x: coordinates.getGridPoint(topLeft.x, topLeft.y, grid).x,
+                    y: coordinates.getGridPoint(topLeft.x, topLeft.y, grid).y
+                };
+                snapBottomRight = {
+                    x: coordinates.getGridPoint(bottomRight.x, bottomRight.y, grid).x,
                     y: coordinates.getGridPoint(bottomRight.x, bottomRight.y, grid).y
                 };
                 break;

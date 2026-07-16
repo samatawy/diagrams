@@ -127,7 +127,7 @@ export class PolylineAdapter implements INodeAdapter {
         return null;
     }
 
-    public snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void {
+    public snapToGrid(node: INode, grid: IGrid, handle?: NodeHandle): void {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return;
         const coordinates = diagram.getCoordinates();

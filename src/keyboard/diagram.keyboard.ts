@@ -1,4 +1,4 @@
-import type { KeyboardShortcut } from "./keyboard.shortcut";
+import { isMacPlatform, type KeyboardShortcut } from "./keyboard.shortcut";
 import type { DiagramActionId } from "../editor/diagram.actions";
 
 export class DiagramKeyboard<T> {
@@ -27,20 +27,13 @@ export class DiagramKeyboard<T> {
 
                 // Keep Cmd/Meta bindings macOS-only to avoid accidental
                 // Windows key shortcuts when both Ctrl and Cmd are declared.
-                if (meta && !this.isMacPlatform()) {
+                if (meta && !isMacPlatform()) {
                     continue;
                 }
 
                 this.register({ key, shift, ctrl, alt, meta, action, action_id, help });
             }
         }
-    }
-
-    private isMacPlatform(): boolean {
-        if (typeof navigator === 'undefined') {
-            return false;
-        }
-        return /(Mac|iPhone|iPad|iPod)/i.test(navigator.platform || navigator.userAgent);
     }
 
     private parseShortcutSyntax(syntax: string): { key: string, shift?: boolean, ctrl?: boolean, alt?: boolean, meta?: boolean } | null {

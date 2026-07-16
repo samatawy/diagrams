@@ -359,15 +359,25 @@ IconRegistry.registerSymbol('fit-all', 'fit-all',
 
 IconRegistry.registerSymbol('show-grid', 'show-grid',
     sym('show-grid', '<line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>'));
+/* Exact alias */
+IconRegistry.registerSymbol('toggle-visual-grid', 'toggle-visual-grid',
+    sym('toggle-visual-grid', '<line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>'));
 
 IconRegistry.registerSymbol('snap-grid', 'snap-grid',
     sym('snap-grid', '<line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><rect x="8" y="8" width="7" height="7" fill="currentColor" stroke="none"/>'));
+/* Exact alias */
+IconRegistry.registerSymbol('toggle-grid', 'toggle-grid',
+    sym('toggle-grid', '<line x1="3" y1="8" x2="21" y2="8"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="8" y1="3" x2="8" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><rect x="8" y="8" width="7" height="7" fill="currentColor" stroke="none"/>'));
 
 IconRegistry.registerSymbol('show-guides', 'show-guides',
     sym('show-guides', '<line x1="8" y1="3" x2="8" y2="21"/><line x1="3" y1="8" x2="21" y2="8"/>'));
 
 IconRegistry.registerSymbol('snap-guides', 'snap-guides',
     sym('snap-guides', '<line x1="8" y1="3" x2="8" y2="21"/><line x1="3" y1="8" x2="21" y2="8"/><rect x="8" y="8" width="7" height="7" fill="currentColor" stroke="none"/>'));
+/* Exact alias */
+IconRegistry.registerSymbol('toggle-guides', 'toggle-guides',
+    sym('toggle-guides', '<line x1="8" y1="3" x2="8" y2="21"/><line x1="3" y1="8" x2="21" y2="8"/><rect x="8" y="8" width="7" height="7" fill="currentColor" stroke="none"/>'));
+
 
 IconRegistry.registerSymbol('select', 'tool-select',
     sym('tool-select', '<path d="M5 3l14 9-7 1-4 7z"/>'));

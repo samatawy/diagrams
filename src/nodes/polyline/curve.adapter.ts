@@ -190,7 +190,7 @@ export class CurveAdapter extends PolylineAdapter {
         );
     }
 
-    public snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void {
+    public snapToGrid(node: INode, grid: IGrid, handle?: NodeHandle): void {
         // Curves do not snap.
     }
 

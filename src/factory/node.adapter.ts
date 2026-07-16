@@ -241,7 +241,7 @@ export interface INodeAdapter {
      * @param grid The grid to snap the node to.
      * @param handle The handle being used to resize the node.
      */
-    snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void;
+    snapToGrid(node: INode, grid: IGrid, handle?: NodeHandle): void;
 
     /**
      * Renders the given node on the specified canvas context.

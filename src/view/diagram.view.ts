@@ -105,7 +105,7 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected animations: DiagramAnimations;
 
-    public grid: IGrid;
+    public grid: IGrid = { ...defaultGrid };
 
     public guideOptions: DiagramGuideOptions = {
         visible: true,

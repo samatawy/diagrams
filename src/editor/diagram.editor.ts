@@ -55,6 +55,7 @@ import { registerUmlAdapters } from "../nodes/uml";
 import { registerLogicAdapters } from "../nodes/logic";
 
 import DIAGRAM_EDITOR_STYLES from '../css_generated/editor/diagram.editor.css';
+import { DiagramTopMenu } from "./menus/diagram.top.menu";
 
 const DIAGRAM_EDITOR_STYLE_ID = 'diagram-editor-layout';
 
@@ -123,6 +124,9 @@ export class DiagramEditor {
     protected diagram: DiagramEditView;
 
     protected sheet_repository: SheetRepository;
+
+    protected topMenuHost?: HTMLElement;
+    protected topMenu?: DiagramTopMenu;
 
     protected headerHost?: HTMLElement;
     protected stageHost?: HTMLElement;
@@ -556,6 +560,11 @@ export class DiagramEditor {
             setClasses(host, 'diagram-editor');
         }
 
+        this.topMenuHost = document.createElement('div');
+        // Defer this lone till AFTER the diagram is created so the menu can access the diagram view for action state.
+        // this.topMenu = new DiagramTopMenu(this.topMenuHost, this.diagram);
+        host.appendChild(this.topMenuHost);
+
         // Create overall layout structure: header for toolbars and stage for the diagram and toolbox
 
         this.headerHost = document.createElement('div');
@@ -601,6 +610,10 @@ export class DiagramEditor {
         this.diagram.fileDialogs = this.createFileDialogs();
         this.diagram.prompts = this.createDiagramPrompts();
         this.diagram.contextMenu = new DiagramContextMenu(this.diagram);
+
+        if (this.topMenuHost) {
+            this.topMenu = new DiagramTopMenu(this.topMenuHost, this.diagram);
+        }
 
         if (this.inspectorHost) {
             this.inspector = new DiagramInspector(this.inspectorHost, this.diagram, config.inspector || {});

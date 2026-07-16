@@ -9,11 +9,14 @@ import { NORMAL_FONT_WEIGHT, BOLD_FONT_WEIGHT } from '../style.interfaces';
  */
 export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
     'load-stylesheet' | 'save-stylesheet' |
-    'show-grid' | 'snap-grid' | 'show-guides' | 'snap-guides' |
+    // 'show-grid' | 'snap-grid' | 'show-guides' | 'snap-guides' |
+    'toggle-grid' | 'toggle-visual-grid' | 'toggle-guides' |
+
     'zoom-in' | 'zoom-out' | 'fit-horizontally' | 'fit-all' |
     'undo' | 'redo' |
-    'front' | 'back' |
+    'front' | 'back' | 'forward' | 'backward' |
     'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' | 'copy-styles' | 'paste-styles' |
+    'select-all' |
     'align-left' | 'align-center' | 'align-right' | 'align-top' | 'align-middle' | 'align-bottom' | 'distribute-h' | 'distribute-v' |
     'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom' |
     'text-bold' | 'text-italic' | 'text-orientation-horizontal' | 'text-orientation-vertical' | 'text-orientation-path' |
@@ -32,6 +35,10 @@ export interface DiagramAction {
      * Optional tooltip text for the action. This is displayed on hover.
      */
     tooltip?: string;
+    /**
+     * Optional keyboard shortcut for the action. This is displayed in the tooltip and can be used to trigger the action.
+     */
+    shortcut?: string[];
     /**
      * Optional icon for the action. This can be an SVG use href (e.g. '#icon-undo'), a URL string, or an Element.
      */
@@ -62,12 +69,14 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'new',
         label: 'New Diagram',
         tooltip: 'Create a new diagram',
+        shortcut: ['Ctrl+N', 'Cmd+N'],
         execute: async (d) => { await d.newDiagram(); },
     },
     {
         id: 'open',
         label: 'Open Diagram',
         tooltip: 'Open an existing diagram',
+        shortcut: ['Ctrl+O', 'Cmd+O'],
         execute: async (d) => { await d.openDiagram(); },
         isEnabled: (d) => d.canOpenDiagram,
     },
@@ -75,12 +84,14 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'save',
         label: 'Save Diagram',
         tooltip: 'Save the current diagram',
+        shortcut: ['Ctrl+S', 'Cmd+S'],
         execute: async (d) => { await d.saveDiagram(); },
     },
     {
         id: 'export',
         label: 'Export Diagram',
         tooltip: 'Export the diagram as an image or file',
+        shortcut: ['Ctrl+Alt+E', 'Cmd+Alt+E'],
         execute: async (d) => { await d.saveImageDiagram(); },
     },
     {
@@ -102,6 +113,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'undo',
         label: 'Undo',
         tooltip: 'Undo (Ctrl+Z)',
+        shortcut: ['Ctrl+Z', 'Cmd+Z'],
         execute: (d) => d.undo(),
         isEnabled: (d) => d.canUndo,
     },
@@ -109,20 +121,39 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'redo',
         label: 'Redo',
         tooltip: 'Redo (Ctrl+Shift+Z)',
+        shortcut: ['Ctrl+Shift+Z', 'Cmd+Shift+Z'],
         execute: (d) => d.redo(),
         isEnabled: (d) => d.canRedo,
     },
     {
+        id: 'forward',
+        label: 'Bring Forward',
+        tooltip: 'Bring selection forward',
+        shortcut: ['Ctrl+]', 'Cmd+]'],
+        execute: (d) => d.bringSelectionForward(),
+        isEnabled: (d) => d.selection().some((n) => !isConnection(n)),
+    },
+    {
+        id: 'backward',
+        label: 'Send Backward',
+        tooltip: 'Send selection backward',
+        shortcut: ['Ctrl+[', 'Cmd+['],
+        execute: (d) => d.sendSelectionBackward(),
+        isEnabled: (d) => d.selection().some((n) => !isConnection(n)),
+    },
+    {
         id: 'front',
         label: 'Bring to Front',
-        tooltip: 'Bring to front',
+        tooltip: 'Bring selection to front',
+        shortcut: ['Ctrl+Shift+]', 'Cmd+Shift+]'],
         execute: (d) => d.bringSelectionToFront(),
         isEnabled: (d) => d.selection().some((n) => !isConnection(n)),
     },
     {
         id: 'back',
         label: 'Send to Back',
-        tooltip: 'Send to back',
+        tooltip: 'Send selection to back',
+        shortcut: ['Ctrl+Shift+[', 'Cmd+Shift+['],
         execute: (d) => d.sendSelectionToBack(),
         isEnabled: (d) => d.selection().some((n) => !isConnection(n)),
     },
@@ -130,6 +161,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'duplicate',
         label: 'Duplicate',
         tooltip: 'Duplicate selection',
+        shortcut: ['Ctrl+D', 'Cmd+D'],
         execute: (d) => d.cloneSelected(),
         isEnabled: (d) => d.selection().length > 0,
     },
@@ -137,6 +169,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'delete',
         label: 'Delete',
         tooltip: 'Delete selection',
+        shortcut: ['Del'],
         execute: (d) => d.deleteSelected(),
         isEnabled: (d) => d.selection().length > 0,
     },
@@ -144,6 +177,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'cut',
         label: 'Cut',
         tooltip: 'Cut (Ctrl+X)',
+        shortcut: ['Ctrl+X', 'Cmd+X'],
         execute: (d) => d.cutSelected(),
         isEnabled: (d) => d.selection().length > 0,
     },
@@ -151,6 +185,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'copy',
         label: 'Copy',
         tooltip: 'Copy (Ctrl+C)',
+        shortcut: ['Ctrl+C', 'Cmd+C'],
         execute: (d) => d.copySelected(),
         isEnabled: (d) => d.selection().length > 0,
     },
@@ -158,6 +193,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'paste',
         label: 'Paste',
         tooltip: 'Paste (Ctrl+V)',
+        shortcut: ['Ctrl+V', 'Cmd+V'],
         execute: (d) => d.pasteNodes(),
         isEnabled: (d) => !!d.canPaste,
     },
@@ -165,6 +201,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'copy-styles',
         label: 'Copy Styles',
         tooltip: 'Copy Styles (Ctrl+Shift+C)',
+        shortcut: ['Ctrl+Shift+C', 'Cmd+Shift+C'],
         execute: (d) => d.copyStyles(),
         isEnabled: (d) => d.selection().length === 1,
     },
@@ -172,65 +209,120 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'paste-styles',
         label: 'Paste Styles',
         tooltip: 'Paste Styles (Ctrl+Shift+V)',
+        shortcut: ['Ctrl+Shift+V', 'Cmd+Shift+V'],
         execute: (d) => d.pasteStyles(),
         isEnabled: (d) => d.canPasteStyles && d.selection().length > 0,
+    },
+    {
+        id: 'select-all',
+        label: 'Select All',
+        tooltip: 'Select all nodes',
+        shortcut: ['Ctrl+A', 'Cmd+A'],
+        execute: (d) => d.selectAll(),
+        isEnabled: (d) => d.nodes.length > 0,
     },
     {
         id: 'zoom-in',
         label: 'Zoom In',
         tooltip: 'Zoom in',
+        shortcut: ['Ctrl+Plus', 'Cmd+Plus'],
         execute: (d) => d.zoomBy(1.05, undefined, undefined, 'animate'),
     },
     {
         id: 'zoom-out',
         label: 'Zoom Out',
         tooltip: 'Zoom out',
+        shortcut: ['Ctrl+Minus', 'Cmd+Minus'],
         execute: (d) => d.zoomBy(1 / 1.05, undefined, undefined, 'animate'),
     },
     {
         id: 'fit-horizontally',
         label: 'Fit Horizontally',
         tooltip: 'Fit to Horizontal Size',
+        shortcut: ['Ctrl+Alt+H', 'Cmd+Alt+H'],
         execute: (d) => d.fitHorizontally(),
     },
     {
         id: 'fit-all',
         label: 'Fit All',
         tooltip: 'Fit all nodes',
+        shortcut: ['Ctrl+Alt+F', 'Cmd+Alt+F'],
         execute: (d) => d.fitToNodes(),
     },
+
     {
-        id: 'show-grid',
-        label: 'Show Grid',
-        tooltip: 'Toggle grid visibility',
+        id: 'toggle-guides',
+        label: 'Guide Lines',
+        tooltip: 'Toggle guide lines visibility and snapping',
+        // icon: 'toggle-guides',
+        shortcut: ['Ctrl+Alt+L', 'Cmd+Alt+L'],
         toggle: true,
-        execute: (d) => d.updateGrid({ visible: !d.grid?.visible }),
-        isActive: (d) => !!d.grid?.visible,
+        isActive: (d) => d.guideOptions.visible && d.guideOptions.snap,
+        execute: (d) => {
+            const visible = d.guideOptions.visible;
+            d.updateGuides({ visible: !visible, snap: !visible });
+        },
     },
     {
-        id: 'snap-grid',
-        label: 'Snap to Grid',
-        tooltip: 'Toggle snap to grid',
+        id: 'toggle-grid',
+        label: 'Force Grid',
+        tooltip: 'Toggle grid visibility and snapping',
+        // icon: 'toggle-grid',
+        shortcut: ['Ctrl+Alt+G', 'Cmd+Alt+G'],
         toggle: true,
-        execute: (d) => d.updateGrid({ forced: !d.grid?.forced }),
-        isActive: (d) => !!d.grid?.forced,
+        isActive: (d) => d.grid.visible && d.grid.forced,
+        execute: (d) => {
+            const visible = d.grid.visible;
+            d.updateGrid({ visible: !visible, forced: !visible });
+        },
     },
     {
-        id: 'show-guides',
-        label: 'Show Guides',
-        tooltip: 'Toggle guide visibility',
+        id: 'toggle-visual-grid',
+        label: 'Visible Grid',
+        tooltip: 'Toggle visual-only grid visibility',
+        // icon: 'toggle-visual-grid',
+        shortcut: ['Ctrl+Alt+Shift+G', 'Cmd+Alt+Shift+G'],
         toggle: true,
-        execute: (d) => d.updateGuides({ visible: !d.guideOptions?.visible }),
-        isActive: (d) => !!d.guideOptions?.visible,
+        isActive: (d) => d.grid.visible && !d.grid.forced,
+        execute: (d) => {
+            const visible = d.grid.visible;
+            d.updateGrid({ visible: !visible, forced: false });
+        },
     },
-    {
-        id: 'snap-guides',
-        label: 'Snap to Guides',
-        tooltip: 'Toggle snap to guides',
-        toggle: true,
-        execute: (d) => d.updateGuides({ snap: !d.guideOptions?.snap }),
-        isActive: (d) => !!d.guideOptions?.snap,
-    },
+
+    // TODO: The following MUST be removed and remapped
+    // {
+    //     id: 'show-grid',
+    //     label: 'Show Grid',
+    //     tooltip: 'Toggle grid visibility',
+    //     toggle: true,
+    //     execute: (d) => d.updateGrid({ visible: !d.grid?.visible }),
+    //     isActive: (d) => !!d.grid?.visible,
+    // },
+    // {
+    //     id: 'snap-grid',
+    //     label: 'Snap to Grid',
+    //     tooltip: 'Toggle snap to grid',
+    //     toggle: true,
+    //     execute: (d) => d.updateGrid({ forced: !d.grid?.forced }),
+    //     isActive: (d) => !!d.grid?.forced,
+    // },
+    // {
+    //     id: 'show-guides',
+    //     label: 'Show Guides',
+    //     tooltip: 'Toggle guide visibility',
+    //     toggle: true,
+    //     execute: (d) => d.updateGuides({ visible: !d.guideOptions?.visible }),
+    //     isActive: (d) => !!d.guideOptions?.visible,
+    // },
+    // {
+    //     id: 'snap-guides',
+    //     label: 'Snap to Guides',
+    //     tooltip: 'Toggle snap to guides',
+    //     toggle: true,
+    //     execute: (d) => d.updateGuides({ snap: !d.guideOptions?.snap }),
+    //     isActive: (d) => !!d.guideOptions?.snap,
+    // },
 
     // align text
     {
@@ -299,6 +391,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'text-bold',
         label: 'Bold',
         tooltip: 'Toggle bold',
+        shortcut: ['Ctrl+B', 'Cmd+B'],
         toggle: true,
         execute: (d) => {
             const isBold = d.selection().length > 0 && d.selection().every((n) => textBold(n));
@@ -311,6 +404,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'text-italic',
         label: 'Italic',
         tooltip: 'Toggle italic',
+        shortcut: ['Ctrl+I', 'Cmd+I'],
         toggle: true,
         execute: (d) => {
             const isItalic = d.selection().length > 0 && d.selection().every((n) => textItalic(n));
@@ -413,6 +507,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'group-nodes',
         label: 'Group Nodes',
         tooltip: 'Group selected nodes',
+        shortcut: ['Ctrl+G', 'Cmd+G'],
         execute: (d) => d.groupSelected(),
         isEnabled: (d) => d.selection().length >= 2,
         // isEnabled: (d) => d.selection().filter((n) => !isConnectionNode(n)).length >= 2,
@@ -421,6 +516,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         id: 'ungroup-nodes',
         label: 'Ungroup Nodes',
         tooltip: 'Ungroup selected nodes',
+        shortcut: ['Ctrl+Shift+G', 'Cmd+Shift+G'],
         execute: (d) => d.ungroupSelected(),
         isEnabled: (d) => d.selection().length >= 1,
     },

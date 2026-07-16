@@ -1,5 +1,6 @@
 import { ACTION_MAP } from "../editor/diagram.actions";
 import { appendShortcutSuffix, getActionShortcut } from "../editor/action.shortcuts";
+import { formatShortcut, isMacPlatform } from "../keyboard/keyboard.shortcut";
 import { DiagramEditViewKeyboard } from "../editview/edit.keyboard";
 import { DiagramKeyboard } from "../keyboard/diagram.keyboard";
 import type { DiagramHintAccessSurface, DiagramHintPoolItem } from "./hint.types";
@@ -19,7 +20,7 @@ export class DiagramHintMessageResolver {
     private readonly keyboard: DiagramKeyboard<any>;
 
     constructor(keyboard: DiagramKeyboard<any> = new DiagramEditViewKeyboard()) {
-        this.isMac = this.detectMacPlatform();
+        this.isMac = isMacPlatform();
         this.keyboard = keyboard;
     }
 
@@ -30,7 +31,7 @@ export class DiagramHintMessageResolver {
 
         const action = item.actionId ? ACTION_MAP.get(item.actionId) : undefined;
         const label = action?.label?.trim();
-        const shortcut = this.formatShortcut(item.shortcut) || getActionShortcut(item.actionId);
+        const shortcut = formatShortcut(item.shortcut) || getActionShortcut(item.actionId);
         const shortcutHelp = this.resolveShortcutHelp(item.shortcut);
         const access = this.formatAccess(item.access, !!shortcut);
 
@@ -115,42 +116,42 @@ export class DiagramHintMessageResolver {
         return match?.help?.trim() || undefined;
     }
 
-    private formatShortcut(shortcut?: string | string[]): string | undefined {
-        if (!shortcut) {
-            return undefined;
-        }
+    // private formatShortcut(shortcut?: string | string[]): string | undefined {
+    //     if (!shortcut) {
+    //         return undefined;
+    //     }
 
-        const options = Array.isArray(shortcut) ? shortcut : [shortcut];
-        const preferred = options.filter((one) => this.isMac ? one.includes("Cmd") : one.includes("Ctrl"));
-        const candidate = (preferred[0] || options[0] || "").trim();
-        if (!candidate) {
-            return undefined;
-        }
+    //     const options = Array.isArray(shortcut) ? shortcut : [shortcut];
+    //     const preferred = options.filter((one) => this.isMac ? one.includes("Cmd") : one.includes("Ctrl"));
+    //     const candidate = (preferred[0] || options[0] || "").trim();
+    //     if (!candidate) {
+    //         return undefined;
+    //     }
 
-        return this.normalizeShortcut(candidate);
-    }
+    //     return this.normalizeShortcut(candidate);
+    // }
 
-    private normalizeShortcut(shortcut: string): string {
-        let normalized = shortcut;
+    // private normalizeShortcut(shortcut: string): string {
+    //     let normalized = shortcut;
 
-        if (this.isMac) {
-            normalized = normalized
-                .replace(/Ctrl/g, "Cmd")
-                .replace(/Alt/g, "Option");
-        } else {
-            normalized = normalized
-                .replace(/Cmd/g, "Ctrl")
-                .replace(/Option/g, "Alt");
-        }
+    //     if (this.isMac) {
+    //         normalized = normalized
+    //             .replace(/Ctrl/g, "Cmd")
+    //             .replace(/Alt/g, "Option");
+    //     } else {
+    //         normalized = normalized
+    //             .replace(/Cmd/g, "Ctrl")
+    //             .replace(/Option/g, "Alt");
+    //     }
 
-        return normalized;
-    }
+    //     return normalized;
+    // }
 
-    private detectMacPlatform(): boolean {
-        if (typeof navigator === "undefined") {
-            return false;
-        }
+    // private detectMacPlatform(): boolean {
+    //     if (typeof navigator === "undefined") {
+    //         return false;
+    //     }
 
-        return /(Mac|iPhone|iPad|iPod)/i.test(navigator.platform || navigator.userAgent);
-    }
+    //     return /(Mac|iPhone|iPad|iPod)/i.test(navigator.platform || navigator.userAgent);
+    // }
 }

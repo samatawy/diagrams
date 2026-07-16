@@ -1948,6 +1948,12 @@ export class DiagramEditView extends DiagramView {
                 this.setSelection(pastedNodes);
                 this.can_paste = pastedNodes.length > 0;
 
+                if (this.grid.forced) {
+                    for (let node of pastedNodes) {
+                        NodeRegistry.adapter(node.type)?.snapToGrid(node, this.grid, NodeHandle.MOVE);
+                    }
+                }
+
                 this.render('all');
                 this.renderPreview();
 

@@ -1,0 +1,103 @@
+.top-menu {
+    /* position: absolute; */
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+
+    z-index: 1000;
+    min-width: 180px;
+    min-height: var(--diagram-top-menu-height, 40px);
+    padding: 4px 0;
+    background: var(--diagram-ui-surface-elevated, #ffffff);
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    /* border-radius: var(--diagram-ui-panel-radius, 10px); */
+    box-shadow: 0 8px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
+    font: var(--diagram-ui-font-size, 12px)/1.4 var(--diagram-ui-font-family, system-ui);
+    color: var(--diagram-ui-text, #1f2937);
+    user-select: none;
+}
+
+.top-menu-dropdown {
+    position: absolute;
+    top: calc(var(--diagram-top-menu-height, 40px) - 6px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding-inline: 0;
+    padding-block: 8px;
+    border-radius: 8px;
+    background: var(--diagram-ui-surface-elevated, #ffffff);
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    box-shadow: 0 8px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
+}
+
+.top-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px 6px 10px;
+    cursor: pointer;
+}
+
+.top-menu-item:hover {
+    background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
+}
+
+.top-menu-item.is-active .top-menu-item-icon {
+    background: var(--diagram-ui-accent, #0f766e);
+    color: var(--diagram-ui-accent-contrast, #ffffff);
+    border-radius: 4px;
+}
+
+.top-menu-item.is-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.top-menu-item-icon {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3px;
+    border-radius: 4px;
+}
+
+.top-menu-item-icon svg,
+.top-menu-item-icon img {
+    width: 18px;
+    height: 18px;
+    display: block;
+    pointer-events: none;
+}
+
+.top-menu-item-label {
+    flex: 1 1 auto;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.top-menu-item-shortcut {
+    flex: 0 0 auto;
+    margin-left: 8px;
+    color: var(--diagram-ui-text-secondary, #6b7280);
+    font-size: 11px;
+}
+
+.top-menu-separator {
+    height: 1px;
+    margin: 4px 8px;
+    background: var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+}
+
+.top-menu .is-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.top-menu .is-hidden {
+    display: none;
+}
