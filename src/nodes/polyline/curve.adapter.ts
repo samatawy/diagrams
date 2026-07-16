@@ -1,5 +1,5 @@
 import { NodeRegistry } from "../../factory/node.registry";
-import { type IConnectionAnchor, type INode } from "../../interfaces";
+import { type IConnectionAnchor, type IGrid, type INode } from "../../interfaces";
 import { type ITextOrientation, type IPoint, NodeHandle, type AnchorScope } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
@@ -190,14 +190,9 @@ export class CurveAdapter extends PolylineAdapter {
         );
     }
 
-    // public override canConnect(node: INode, direction: 'from' | 'to' | 'any', handle: NodeHandle, point: IPoint): boolean {
-    //     if (handle !== NodeHandle.POINT) return false;
-    //     if (point) {
-    //         return point == node.points[0] || point == node.points[node.points.length - 1];
-    //     } else {
-    //         return true;
-    //     }
-    // }
+    public snapToGrid(node: INode, grid: IGrid, handle: NodeHandle): void {
+        // Curves do not snap.
+    }
 
     public override canConnectTo(node: INode, handle: NodeHandle, direction: "from" | "to" | "any", target?: Partial<INode>, point?: IPoint): boolean {
         if (handle !== NodeHandle.POINT) return false;

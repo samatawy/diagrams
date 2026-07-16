@@ -284,16 +284,16 @@ export class OrthogonalAdapter extends LineAdapter {
 
         switch (from_direction) {
             case 'south':
-                (mdy > 0) ? mdy = Math.max(STUB_SIZE, mdy) : mdy = STUB_SIZE;
+                if (mdy <= 0) mdy = STUB_SIZE;
                 return { x: from.x, y: from.y + mdy, direction: 'south' };
             case 'north':
-                (mdy < 0) ? mdy = Math.min(-STUB_SIZE, mdy) : mdy = -STUB_SIZE;
+                if (mdy >= 0) mdy = -STUB_SIZE;
                 return { x: from.x, y: from.y + mdy, direction: 'north' };
             case 'east':
-                (mdx > 0) ? mdx = Math.max(STUB_SIZE, mdx) : mdx = STUB_SIZE;
+                if (mdx <= 0) mdx = STUB_SIZE;
                 return { x: from.x + mdx, y: from.y, direction: 'east' };
             case 'west':
-                (mdx < 0) ? mdx = Math.min(-STUB_SIZE, mdx) : mdx = -STUB_SIZE;
+                if (mdx >= 0) mdx = -STUB_SIZE;
                 return { x: from.x + mdx, y: from.y, direction: 'west' };
         }
     }
@@ -755,7 +755,7 @@ export class OrthogonalAdapter extends LineAdapter {
     private clampMidway(node: INode, point: IPoint): IPoint | undefined {
         const diagram = node.owner;
         if (!isDiagramViewLike(diagram)) return undefined;
-        const coordinates = diagram.getCoordinates();
+        // const coordinates = diagram.getCoordinates();
 
         const from_handle = node.geometry?.from_handle as NodeHandle;
         const to_handle = node.geometry?.to_handle as NodeHandle;
@@ -786,6 +786,11 @@ export class OrthogonalAdapter extends LineAdapter {
             bottom: Math.max(from_stub.y, to_stub.y)
         }
 
+        if (node.owner.grid?.forced) {
+            const coordinates = diagram.getCoordinates();
+            point = coordinates.getGridPoint(point.x, point.y, node.owner.grid);
+        }
+
         // if (point.x < bounds.left && point.y < bounds.top) {
         //     point.x = bounds.left;
         //     point.y = bounds.top;
@@ -800,16 +805,32 @@ export class OrthogonalAdapter extends LineAdapter {
         //     point.y = bounds.bottom;
         // }
         if (point.x < bounds.left) {
-            point.x = bounds.left;
+            if (from_direction === 'west' && to_direction === 'west') {
+                /* Allow */
+            } else {
+                point.x = bounds.left;
+            }
         }
         if (point.x > bounds.right) {
-            point.x = bounds.right;
+            if (from_direction === 'east' && to_direction === 'east') {
+                /* Allow */
+            } else {
+                point.x = bounds.right;
+            }
         }
         if (point.y < bounds.top) {
-            point.y = bounds.top;
+            if (from_direction === 'north' && to_direction === 'north') {
+                /* Allow */
+            } else {
+                point.y = bounds.top;
+            }
         }
         if (point.y > bounds.bottom) {
-            point.y = bounds.bottom;
+            if (from_direction === 'south' && to_direction === 'south') {
+                /* Allow */
+            } else {
+                point.y = bounds.bottom;
+            }
         }
 
         if (node.geometry?.midway_set) {

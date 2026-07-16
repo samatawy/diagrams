@@ -1,7 +1,7 @@
 import { NodeRegistry } from "../../factory/node.registry";
 import { type IConnection, type IGrid, type IHandlePoint, type INode } from "../../interfaces";
 import { NodeHandle, type AnchorScope, type IPoint, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
-import { isConnectionNode, isDiagramViewLike } from "../../guards";
+import { isConnection, isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { ConnectionBasics } from "../connection.basics";
 import { RenderBasics } from "../render.basics";
@@ -133,7 +133,10 @@ export class PolylineAdapter implements INodeAdapter {
         const coordinates = diagram.getCoordinates();
 
         if (grid && grid.forced) {
-            for (let i = 0; i < node.points.length; i++) {
+            const start = isConnection(node) ? 1 : 0;
+            const end = isConnection(node) ? node.points.length - 2 : node.points.length - 1;
+
+            for (let i = start; i <= end; i++) {
                 let point = node.points[i]!;
                 node.points[i] = coordinates.getGridPoint(point.x, point.y, grid);
             }

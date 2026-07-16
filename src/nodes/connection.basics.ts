@@ -50,7 +50,7 @@ export class ConnectionBasics {
         if (node.points.length > 0) {
             const point = node.points[0]!;
             if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
-                const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
+                const target = this.preferredTargetAtPointer(diagram, x, y, node.id);
                 let fromAnchor = this.getPointerConnectionAnchor(node, x, y);
                 if (fromAnchor) {
                     if (!NodeRegistry.canConnectTo(node, NodeHandle.MOVE, 'from', target)) {
@@ -77,7 +77,9 @@ export class ConnectionBasics {
         if (node.points.length > 1) {
             const point = node.points[node.points.length - 1]!;
             if (Math.abs(hit.x - point.x) <= threshold && Math.abs(hit.y - point.y) <= threshold) {
-                const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
+                // const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
+                const target = this.preferredTargetAtPointer(diagram, x, y, node.id);
+
                 const fromAnchor = node.from;
                 let toAnchor = this.getPointerConnectionAnchor(node, x, y);
                 if (toAnchor) {
@@ -87,7 +89,8 @@ export class ConnectionBasics {
                 }
 
                 if (!toAnchor || toAnchor?.handle === NodeHandle.MOVE) {
-                    const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
+                    // const target = diagram.hitNodes(x, y).find(n => n.id !== node.id);
+                    const target = this.preferredTargetAtPointer(diagram, x, y, node.id);
                     toAnchor = this.getNearestSupportedAnchor(target!, 'to', node, hit);
                 }
 
@@ -153,6 +156,12 @@ export class ConnectionBasics {
         if (anchorA?.handle !== anchorB?.handle) return false;
         if (anchorA?.index !== anchorB?.index) return false;
         return true;
+    }
+
+    private static preferredTargetAtPointer(diagram: InteractiveDiagram, x: number, y: number, excludeId: string): INode | undefined {
+        const hits = diagram.hitNodes(x, y).filter(n => n.id !== excludeId);
+        const nonConnections = hits.filter(n => !isConnection(n));
+        return nonConnections[0] ?? hits[0];
     }
 
     /**

@@ -3598,7 +3598,7 @@ export class DiagramEditView extends DiagramView {
 
         const layer = this.ensureCurrentLayer();
 
-        const point = this.getCoordinates().getPointFromEvent(event, this.grid);
+        const point = this.getCreatePoint(event);   //  this.getCoordinates().getPointFromEvent(event, this.grid);
 
         if (!this.current.draft) {
             this.addUndo();
@@ -3667,7 +3667,7 @@ export class DiagramEditView extends DiagramView {
     private createMove(event: PointerEvent): void {
         if (!this.current.draft) return;
 
-        let point = this.getCoordinates().getPointFromEvent(event, this.grid);
+        let point = this.getCreatePoint(event);     // this.getCoordinates().getPointFromEvent(event, this.grid);
         const draft = this.current.draft;
 
         // Snap the active endpoint to 45° when shift is held for connections/polylines
@@ -3726,6 +3726,14 @@ export class DiagramEditView extends DiagramView {
 
         this.render('all');
         this.finishDraftIfReady();
+    }
+
+    private getCreatePoint(event: PointerEvent): IPoint {
+        if (this.current.tool && NodeRegistry.isConnection(this.current.tool)) {
+            return this.getCoordinates().getPointFromEvent(event, 'ignore_grid');
+        } else {
+            return this.getCoordinates().getPointFromEvent(event, this.grid);
+        }
     }
 
     // ==================================================

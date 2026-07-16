@@ -184,6 +184,8 @@ export interface INodeAdapter {
      */
     can_snap?: boolean;
 
+    // can_snap_points?: number[];
+
     /**
      * Updates the draft node's points while the user is dragging during creation.
      * Called on every pointermove while a draft is active.
