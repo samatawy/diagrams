@@ -133,6 +133,7 @@ export class DiagramEditView extends DiagramView {
         textColor: string;
         textWeight: IFontWeight;
         textItalic: boolean;
+        textUnderline: boolean;
         textHalo: string;
         textAlign: ITextAlign;
         textBaseline: ITextBaseline;
@@ -161,6 +162,7 @@ export class DiagramEditView extends DiagramView {
             textBaseline: DiagramConstants.DEFAULT_NODE_TEXT_BASELINE,
             textWeight: NORMAL_FONT_WEIGHT,
             textItalic: false,
+            textUnderline: false,
             textHalo: 'inherit',
             nodeText: undefined,
             imageMode: 'none',
@@ -1016,6 +1018,7 @@ export class DiagramEditView extends DiagramView {
             orientation: this.settings.textOrientation,
             weight: this.settings.textWeight,
             italic: this.settings.textItalic,
+            underline: this.settings.textUnderline,
             halo: this.settings.textHalo || 'inherit',
         };
     }
@@ -1547,6 +1550,7 @@ export class DiagramEditView extends DiagramView {
         if (style.size !== undefined) this.settings.fontSize = style.size;
         if (style.weight !== undefined) this.settings.textWeight = style.weight;
         if (style.italic !== undefined) this.settings.textItalic = style.italic;
+        if (style.underline !== undefined) this.settings.textUnderline = style.underline;
         if (style.align !== undefined) this.settings.textAlign = style.align;
         // if (style.baseline !== undefined) this.settings.textBaseline = style.baseline;
         if (style.halo !== undefined) this.settings.textHalo = style.halo;
@@ -1578,6 +1582,7 @@ export class DiagramEditView extends DiagramView {
                 orientation: style.orientation,
                 weight: style.weight,
                 italic: style.italic,
+                underline: style.underline,
             },
         });
 
@@ -1626,6 +1631,7 @@ export class DiagramEditView extends DiagramView {
         if (patch['textStyle.orientation'] !== undefined) this.settings.textOrientation = patch['textStyle.orientation'] as ITextOrientation;
         if (patch['textStyle.weight'] !== undefined) this.settings.textWeight = patch['textStyle.weight'] as IFontWeight;
         if (patch['textStyle.italic'] !== undefined) this.settings.textItalic = Boolean(patch['textStyle.italic']);
+        if (patch['textStyle.underline'] !== undefined) this.settings.textUnderline = Boolean(patch['textStyle.underline']);
         if (patch['textStyle.halo'] !== undefined) this.settings.textHalo = String(patch['textStyle.halo']);
 
         if (patch['strokeStyle.color'] !== undefined) this.settings.strokeColor = String(patch['strokeStyle.color']);
@@ -1672,6 +1678,7 @@ export class DiagramEditView extends DiagramView {
             if (patch['textStyle.orientation'] !== undefined) nodeStyle.textStyle!.orientation = patch['textStyle.orientation'] as ITextOrientation;
             if (patch['textStyle.weight'] !== undefined) nodeStyle.textStyle!.weight = patch['textStyle.weight'] as IFontWeight;
             if (patch['textStyle.italic'] !== undefined) nodeStyle.textStyle!.italic = patch['textStyle.italic'] as boolean;
+            if (patch['textStyle.underline'] !== undefined) nodeStyle.textStyle!.underline = patch['textStyle.underline'] as boolean;
 
             if (patch['strokeStyle.color'] !== undefined) nodeStyle.strokeStyle!.color = patch['strokeStyle.color'] as string;
             if (patch['strokeStyle.width'] !== undefined) nodeStyle.strokeStyle!.width = patch['strokeStyle.width'] as number;

@@ -271,6 +271,12 @@ IconRegistry.registerSymbol('text-italic', 'text-italic',
     sym('text-italic', `<text x="8" y="18" font-family="serif" font-size="18" font-style="italic"
         fill="currentColor" stroke="none">i</text>`));
 
+// text-underline: serif "U" letterform with underline bar
+IconRegistry.registerSymbol('text-underline', 'text-underline',
+    sym('text-underline', `<text x="4" y="17" font-family="serif" font-size="16"
+        fill="currentColor" stroke="none">U</text>
+        <line x1="4" y1="21" x2="20" y2="21" stroke="currentColor" stroke-width="1.5"/>`));
+
 // text-orientation-horizontal: three horizontal text lines + filled right arrow (gap before arrow)
 IconRegistry.registerSymbol('text-orientation-horizontal', 'text-orientation-horizontal',
     sym('text-orientation-horizontal', `

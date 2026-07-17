@@ -57,7 +57,11 @@ export interface TextStyle {
      */
     italic?: boolean;
 
-    // underline?: boolean;
+    /**
+     * Whether the text is underlined, which can be true for underlined text, false for normal style, or undefined for a default style.
+     */
+    underline?: boolean;
+
     // strikethrough?: boolean;
 }
 

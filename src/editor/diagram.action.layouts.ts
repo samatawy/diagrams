@@ -74,6 +74,7 @@ export const DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT: DiagramActionId[] = [
 export const DIAGRAM_TEXT_FORMAT_ACTION_LAYOUT: DiagramActionId[] = [
     'text-bold',
     'text-italic',
+    'text-underline',
 ];
 
 export const DIAGRAM_TEXT_ORIENTATION_ACTION_LAYOUT: DiagramActionId[] = [

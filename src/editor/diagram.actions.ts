@@ -1,7 +1,7 @@
 import type { DiagramEditView } from '../editview/diagram.edit.view';
 import { NodeRegistry } from '../factory';
 import { isConnection, isConnectionNode } from '../guards';
-import { textAlign, textBaseline, textBold, textItalic, textOrientation } from '../value.utils';
+import { textAlign, textBaseline, textBold, textItalic, textOrientation, textUnderline } from '../value.utils';
 import { NORMAL_FONT_WEIGHT, BOLD_FONT_WEIGHT } from '../style.interfaces';
 
 /**
@@ -19,7 +19,8 @@ export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
     'select-all' |
     'align-left' | 'align-center' | 'align-right' | 'align-top' | 'align-middle' | 'align-bottom' | 'distribute-h' | 'distribute-v' |
     'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom' |
-    'text-bold' | 'text-italic' | 'text-orientation-horizontal' | 'text-orientation-vertical' | 'text-orientation-path' |
+    'text-bold' | 'text-italic' | 'text-underline' |
+    'text-orientation-horizontal' | 'text-orientation-vertical' | 'text-orientation-path' |
     'group-nodes' | 'ungroup-nodes';
 
 export interface DiagramAction {
@@ -413,6 +414,20 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textItalic(n)),
         isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.hasText(n.type)),
     },
+    {
+        id: 'text-underline',
+        label: 'Underline',
+        tooltip: 'Toggle underline',
+        shortcut: ['Ctrl+U', 'Cmd+U'],
+        toggle: true,
+        execute: (d) => {
+            const isUnderline = d.selection().length > 0 && d.selection().every((n) => textUnderline(n));
+            d.setTextStyle({ underline: !isUnderline });
+        },
+        isActive: (d) => d.selection().length > 0 && d.selection().every((n) => textUnderline(n)),
+        isEnabled: (d) => d.selection().length > 0 && d.selection().some((n) => NodeRegistry.hasText(n.type)),
+    },
+
     {
         id: 'text-orientation-horizontal',
         label: 'Horizontal Text',

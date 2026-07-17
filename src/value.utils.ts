@@ -94,6 +94,10 @@ export function textItalic(node: INode): boolean {
     return !!node.textStyle?.italic;
 }
 
+export function textUnderline(node: INode): boolean {
+    return !!node.textStyle?.underline;
+}
+
 export function nodeFontFace(node: INode): string {
     return node.textStyle?.fontFace || DiagramConstants.DEFAULT_NODE_FONT_FACE;
 }

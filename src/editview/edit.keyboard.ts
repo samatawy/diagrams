@@ -189,6 +189,9 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
         kb.setShortcut(['Ctrl+I', 'Cmd+I'], (d: DiagramEditView) => {
             d.setTextStyle({ italic: !d.textStyle.italic });
         }, 'Toggle italic', 'text-italic');
+        kb.setShortcut(['Ctrl+U', 'Cmd+U'], (d: DiagramEditView) => {
+            d.setTextStyle({ underline: !d.textStyle.underline });
+        }, 'Toggle underline', 'text-underline');
 
         // Node style operations
 

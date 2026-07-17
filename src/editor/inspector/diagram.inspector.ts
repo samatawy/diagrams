@@ -333,6 +333,11 @@ export class DiagramInspector extends Inspector {
             readonly: readonly, isVisible: hasText
         });
         this.addRow(text, {
+            key: 'textStyle.underline',
+            label: 'Underline', type: 'boolean',
+            readonly: readonly, isVisible: hasText
+        });
+        this.addRow(text, {
             key: 'textStyle.halo', label: 'Halo', type: 'string', editor: 'ColorSelect',
             editorOptions: { ...(this.inspectorConfig.colorSelect || {}), allowEmpty: true, showInheritOption: true },
             readonly: readonly, isVisible: hasText,

@@ -279,6 +279,16 @@ export class TopMenu {
             /* Select the first top-level item */
             this.selectDropdown(this.topLevel[0] as DropDownMenu);
         }
+        if (keyCode === 'ENTER') {
+            if (this.selectedMenuItem) {
+                if (isMenuItem(this.selectedMenuItem)) {
+                    this.selectedMenuItem.onClick();
+                } else if (isDropDownMenu(this.selectedMenuItem)) {
+                    this.openDropdown(this.selectedMenuItem);
+                }
+                this.close();
+            }
+        }
         if (keyCode === 'ESCAPE') {
             /* Close any open dropdowns and deselect the top-level item */
             this.close();
@@ -334,10 +344,6 @@ export class TopMenu {
 
         // Show/hide dropdown on hover
         item.addEventListener('mouseenter', () => {
-            for (const child of menu.items) {
-                /* Recalculate based on current state */
-                if (isMenuItem(child)) this.calculateMenuItem(child);
-            }
             this.openDropdown(menu);
         });
         item.addEventListener('mouseleave', () => {
@@ -482,6 +488,11 @@ export class TopMenu {
 
         const dropdownContainer = this.dropDownContainer(menu);
         if (dropdownContainer) {
+            for (const child of menu.items) {
+                /* Recalculate based on current state */
+                if (isMenuItem(child)) this.calculateMenuItem(child);
+            }
+
             dropdownContainer.style.display = 'block';
             this.activeDropDown = menu;
             this.selectMenuItem(menu.items[0]);

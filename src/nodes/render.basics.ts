@@ -455,28 +455,31 @@ export class RenderBasics {
         for (let i = 0; i < lines.length; i++) {
             let x = textRect.left;
             let y = startline + (i * lineHeight);
-            if (haloColor) {
-                context.save();
-                context.strokeStyle = haloColor;
-                context.lineWidth = haloWidth * 2;
-                context.lineJoin = 'round';
-                context.lineCap = 'round';
-                switch (align) {
-                    case 'left': context.strokeText(lines[i]!, x, y); break;
-                    case 'center': context.strokeText(lines[i]!, x + textRect.width / 2, y); break;
-                    case 'right': context.strokeText(lines[i]!, x + textRect.width, y); break;
-                }
-                context.restore();
-            }
+            // if (haloColor) {
+            //     context.save();
+            //     context.strokeStyle = haloColor;
+            //     context.lineWidth = haloWidth * 2;
+            //     context.lineJoin = 'round';
+            //     context.lineCap = 'round';
+            //     switch (align) {
+            //         case 'left': context.strokeText(lines[i]!, x, y); break;
+            //         case 'center': context.strokeText(lines[i]!, x + textRect.width / 2, y); break;
+            //         case 'right': context.strokeText(lines[i]!, x + textRect.width, y); break;
+            //     }
+            //     context.restore();
+            // }
             switch (align) {
                 case 'left':
-                    context.fillText(lines[i]!, x, y);
+                    this.renderTextAt(lines[i]!, x, y, node, context);
+                    // context.fillText(lines[i]!, x, y);
                     break;
                 case 'center':
-                    context.fillText(lines[i]!, x + textRect.width / 2, y);
+                    this.renderTextAt(lines[i]!, x + textRect.width / 2, y, node, context);
+                    // context.fillText(lines[i]!, x + textRect.width / 2, y);
                     break;
                 case 'right':
-                    context.fillText(lines[i]!, x + textRect.width, y);
+                    this.renderTextAt(lines[i]!, x + textRect.width, y, node, context);
+                    // context.fillText(lines[i]!, x + textRect.width, y);
                     break;
             }
 
@@ -571,28 +574,31 @@ export class RenderBasics {
         for (let i = 0; i < lines.length; i++) {
             let x = textRect.left;
             let y = startline + (i * lineHeight);
-            if (haloColor) {
-                context.save();
-                context.strokeStyle = haloColor;
-                context.lineWidth = haloWidth * 2;
-                context.lineJoin = 'round';
-                context.lineCap = 'round';
-                switch (align) {
-                    case 'left': context.strokeText(lines[i]!, x, y); break;
-                    case 'center': context.strokeText(lines[i]!, x + textRect.width / 2, y); break;
-                    case 'right': context.strokeText(lines[i]!, x + textRect.width, y); break;
-                }
-                context.restore();
-            }
+            // if (haloColor) {
+            //     context.save();
+            //     context.strokeStyle = haloColor;
+            //     context.lineWidth = haloWidth * 2;
+            //     context.lineJoin = 'round';
+            //     context.lineCap = 'round';
+            //     switch (align) {
+            //         case 'left': context.strokeText(lines[i]!, x, y); break;
+            //         case 'center': context.strokeText(lines[i]!, x + textRect.width / 2, y); break;
+            //         case 'right': context.strokeText(lines[i]!, x + textRect.width, y); break;
+            //     }
+            //     context.restore();
+            // }
             switch (align) {
                 case 'left':
-                    context.fillText(lines[i]!, x, y);
+                    this.renderTextAt(lines[i]!, x, y, node, context);
+                    // context.fillText(lines[i]!, x, y);
                     break;
                 case 'center':
-                    context.fillText(lines[i]!, x + textRect.width / 2, y);
+                    this.renderTextAt(lines[i]!, x + textRect.width / 2, y, node, context);
+                    // context.fillText(lines[i]!, x + textRect.width / 2, y);
                     break;
                 case 'right':
-                    context.fillText(lines[i]!, x + textRect.width, y);
+                    this.renderTextAt(lines[i]!, x + textRect.width, y, node, context);
+                    // context.fillText(lines[i]!, x + textRect.width, y);
                     break;
             }
 
@@ -716,18 +722,19 @@ export class RenderBasics {
             context.textAlign = 'center';
             context.textBaseline = 'middle';
 
-            const haloColorH = textHaloColor(node);
-            if (haloColorH) {
-                const fszH = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
-                context.save();
-                context.strokeStyle = haloColorH;
-                context.lineWidth = Math.max(2, fszH * 0.12) * 2;
-                context.lineJoin = 'round';
-                context.lineCap = 'round';
-                context.strokeText(line, anchorX, anchorY);
-                context.restore();
-            }
-            context.fillText(line, anchorX, anchorY);
+            this.renderTextAt(line, anchorX, anchorY, node, context);
+            // const haloColorH = textHaloColor(node);
+            // if (haloColorH) {
+            //     const fszH = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+            //     context.save();
+            //     context.strokeStyle = haloColorH;
+            //     context.lineWidth = Math.max(2, fszH * 0.12) * 2;
+            //     context.lineJoin = 'round';
+            //     context.lineCap = 'round';
+            //     context.strokeText(line, anchorX, anchorY);
+            //     context.restore();
+            // }
+            // context.fillText(line, anchorX, anchorY);
 
             // Axis-aligned hit box — no rotation math needed.
             const path = new Path2D();
@@ -765,16 +772,17 @@ export class RenderBasics {
         context.translate(-midX, -midY);
         context.textAlign = 'left';
         context.textBaseline = 'bottom';
-        const haloColorP = textHaloColor(node);
-        if (haloColorP) {
-            const fszP = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
-            context.strokeStyle = haloColorP;
-            context.lineWidth = Math.max(2, fszP * 0.12) * 2;
-            context.lineJoin = 'round';
-            context.lineCap = 'round';
-            context.strokeText(line, x, y);
-        }
-        context.fillText(line, x, y);
+        this.renderTextAt(line, x, y, node, context);
+        // const haloColorP = textHaloColor(node);
+        // if (haloColorP) {
+        //     const fszP = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+        //     context.strokeStyle = haloColorP;
+        //     context.lineWidth = Math.max(2, fszP * 0.12) * 2;
+        //     context.lineJoin = 'round';
+        //     context.lineCap = 'round';
+        //     context.strokeText(line, x, y);
+        // }
+        // context.fillText(line, x, y);
         context.restore();
 
         // Rotated hit box.
@@ -805,6 +813,60 @@ export class RenderBasics {
         path.closePath();
 
         return path;
+    }
+
+    private static renderTextAt(line: string, x: number, y: number, node: INode, context: CanvasRenderingContext2D) {
+        const fszP = nodeFontSize(node) || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+        const haloColorP = textHaloColor(node);
+
+        if (node.textStyle?.underline) {
+            const length = context.measureText(line).width;
+            const width = Math.max(1, fszP * 0.08);
+            const offset = fszP * 0.1;
+            let linestart = x;
+            switch (context.textAlign) {
+                case 'left': linestart = x; break;
+                case 'center': linestart = x - length / 2; break;
+                case 'right': linestart = x - length; break;
+            }
+            let baseline = y;
+            switch (context.textBaseline) {
+                case 'top': baseline = y + fszP; break;
+                case 'middle': baseline = y + fszP / 2; break;
+                case 'bottom': baseline = y; break;
+            }
+
+            context.save();
+            if (haloColorP) {
+                context.strokeStyle = haloColorP;
+                context.lineWidth = width * 2;  // Math.max(2, fszP * 0.12) * 2;
+                context.lineJoin = 'round';
+                context.lineCap = 'round';
+                const haloPath = new Path2D();
+                haloPath.moveTo(linestart, baseline + offset);
+                haloPath.lineTo(linestart + length, baseline + offset);
+                context.stroke(haloPath);
+            }
+            const path = new Path2D();
+            path.moveTo(linestart, baseline + offset);
+            path.lineTo(linestart + length, baseline + offset);
+            context.strokeStyle = context.fillStyle;
+            context.lineWidth = width;
+            context.lineCap = 'square';
+            context.stroke(path);
+            context.restore();
+        }
+
+        if (haloColorP) {
+            context.save();
+            context.strokeStyle = haloColorP;
+            context.lineWidth = Math.max(2, fszP * 0.12) * 2;
+            context.lineJoin = 'round';
+            context.lineCap = 'round';
+            context.strokeText(line, x, y);
+            context.restore();
+        }
+        context.fillText(line, x, y);
     }
 
     /**

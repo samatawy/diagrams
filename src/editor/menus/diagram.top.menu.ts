@@ -139,7 +139,7 @@ export class DiagramTopMenu extends TopMenu {
             items: [
                 this.actionMenuItem('text-bold', 'B'),
                 this.actionMenuItem('text-italic', 'I'),
-                // this.actionMenuItem('text-underline', 'U'),
+                this.actionMenuItem('text-underline', 'U'),
                 '-',
                 this.actionMenuItem('text-left', 'L'),
                 this.actionMenuItem('text-center', 'C'),

@@ -225,6 +225,15 @@ export const DIAGRAM_HINT_POOL: readonly DiagramHintPoolItem[] = [
         access: ['shortcut', 'toolbar', 'inspector'],
         requiresTextCapableSelection: true,
     },
+    {
+        id: 'shortcut-text-underline',
+        fallbackMessage: 'Toggle underline text with Cmd/Ctrl+U.',
+        category: 'text',
+        actionId: 'text-underline',
+        shortcut: ['Cmd+U', 'Ctrl+U'],
+        access: ['shortcut', 'toolbar', 'inspector'],
+        requiresTextCapableSelection: true,
+    },
 
     {
         id: 'action-fit-all',
