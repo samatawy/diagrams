@@ -248,6 +248,7 @@ export class DiagramEditor {
         this.hintService?.destroy();
         this.diagram.destroy();
 
+        this.topMenu?.destroy();
         this.toolbox?.destroy();
         this.inspector?.destroy();
         this.statusBar?.destroy();

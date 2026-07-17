@@ -41,7 +41,8 @@
     cursor: pointer;
 }
 
-.top-menu-item:hover {
+/* .top-menu-item:hover, */
+.top-menu-item.selected {
     background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
 }
 

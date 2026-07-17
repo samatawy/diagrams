@@ -64,13 +64,23 @@ export interface DropDownMenu {
     /** Optional icon for the dropdown menu. */
     icon?: string;
     /** The items in the dropdown menu. */
-    items: (TopMenuItem | '-')[];
+    items: MenuComponent[];
     /** Optional callback to determine whether the dropdown menu is enabled. */
     isEnabled?: (target?: unknown) => boolean;
     /** Optional callback to determine whether the dropdown menu is visible. */
     isVisible?: (target?: unknown) => boolean;
     /** Reference to the dropdown menu element, set only after the menu is rendered. */
     element?: HTMLElement;
+}
+
+export type MenuComponent = TopMenuItem | DropDownMenu | '-';
+
+function isMenuItem(item: MenuComponent | unknown): item is TopMenuItem {
+    return (item as TopMenuItem).onClick !== undefined;
+}
+
+function isDropDownMenu(item: MenuComponent | unknown): item is DropDownMenu {
+    return (item as DropDownMenu).items !== undefined;
 }
 
 /**
@@ -80,21 +90,36 @@ export class TopMenu {
 
     protected readonly host: HTMLElement;
 
+    protected readonly config: TopMenuConfig;
+
     protected target: unknown;
 
     protected menuElement: HTMLElement | null = null;
 
+    /** 
+     * The top-level menu items, including both dropdowns and individual items. 
+     */
     protected topLevel: (TopMenuItem | DropDownMenu)[] = [];
 
+    /** 
+     * All dropdown menus, extracted from the top-level items. 
+     */
     protected dropDownMenus: DropDownMenu[] = [];
 
-    protected readonly config: TopMenuConfig;
+    /** 
+     * The currently selected dropdown menu, if any. 
+     */
+    protected selectedDropDown?: DropDownMenu;
 
-    // private readonly onDocumentClick = (e: MouseEvent): void => {
-    //     if (this.menuElement && !this.menuElement.contains(e.target as Node)) {
-    //         this.close();
-    //     }
-    // };
+    /** 
+     * The currently opened dropdown menu, if any. 
+     */
+    protected activeDropDown?: DropDownMenu;
+
+    /**
+     * The currently selected menu item, if any. This may be a top-level dropdown or a menu item inside a dropdown.
+     */
+    protected selectedMenuItem?: TopMenuItem | DropDownMenu;
 
     /**
      * Creates a TopMenu. Styles are injected once.
@@ -112,6 +137,161 @@ export class TopMenu {
         this.menuElement = document.createElement('div');
         setClasses(this.menuElement, 'top-menu', this.config.menuClassName || '');
         this.host.appendChild(this.menuElement);
+
+        // TODO: This should not really do anything, consider removing it.
+        this.bindEventListeners();
+    }
+
+    /**
+     * Permanently removes the menu and cleans up listeners.
+     */
+    public destroy(): void {
+        this.unbindEventListeners();
+        this.close();
+        if (this.menuElement) {
+            this.menuElement.remove();
+            this.menuElement = null;
+        }
+    }
+
+    private bindEventListeners(): void {
+        document.addEventListener('click', this.onDocumentClick);
+        document.addEventListener('keydown', this.onKeydown);
+        document.addEventListener('keyup', this.onKeyup);
+    }
+
+    private unbindEventListeners(): void {
+        document.removeEventListener('click', this.onDocumentClick);
+        document.removeEventListener('keydown', this.onKeydown);
+        document.removeEventListener('keyup', this.onKeyup);
+    }
+
+    private readonly onDocumentClick = (e: MouseEvent): void => {
+        if (this.menuElement && !this.menuElement.contains(e.target as Node)) {
+            this.close();
+        }
+    }
+
+    private readonly onKeydown = (e: KeyboardEvent): void => {
+        const keyCode = e.code.toUpperCase();
+
+        if (e.altKey && this.activeDropDown) {
+            /* A menu is open, so find the item to be activated */
+            for (const item of this.activeDropDown.items.filter(i => i !== '-')) {
+                const altCode = 'KEY' + item.altKey.toUpperCase();
+                if (altCode === keyCode) {
+                    this.selectMenuItem(item);
+                    if (isMenuItem(item)) item.onClick();
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return;
+                }
+            }
+        }
+        else if (e.altKey || this.activeDropDown) {
+            /* Fall back to top level if no dropdown is active or no match was found in the active dropdown. */
+            for (const item of this.topLevel) {
+                const altCode = 'KEY' + item.altKey.toUpperCase();
+                if (altCode === keyCode) {
+                    if ((isMenuItem(item))) {
+                        this.close();
+                        item.onClick();
+
+                    } else if (isDropDownMenu(item)) {
+                        this.close();
+                        this.openDropdown(item);
+                    }
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return;
+                }
+            }
+        }
+
+        if (this.selectedDropDown) {
+            if (keyCode === 'ARROWLEFT') {
+                /* Focus the previous top-level menu */
+                const currentIndex = this.topLevel.indexOf(this.selectedDropDown);
+                const prevIndex = (currentIndex - 1 + this.topLevel.length) % this.topLevel.length;
+                const prevMenu = this.topLevel[prevIndex];
+                if ((prevMenu as DropDownMenu).items) {
+                    this.closeDropdown(this.selectedDropDown);
+                    this.openDropdown(prevMenu as DropDownMenu);
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+            } else if (keyCode === 'ARROWRIGHT') {
+                /* Focus the next top-level menu */
+                const currentIndex = this.topLevel.indexOf(this.selectedDropDown);
+                const nextIndex = (currentIndex + 1) % this.topLevel.length;
+                const nextMenu = this.topLevel[nextIndex];
+                if ((nextMenu as DropDownMenu).items) {
+                    this.closeDropdown(this.selectedDropDown);
+                    this.openDropdown(nextMenu as DropDownMenu);
+                }
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+            } else if (keyCode === 'ARROWDOWN' && !this.activeDropDown) {
+                /* Open the selected dropdown */
+                this.openDropdown(this.selectedDropDown);
+
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+            } else if (keyCode === 'ARROWDOWN' && this.activeDropDown) {
+                /* Focus the next item in the active dropdown. */
+                if (this.selectedMenuItem) {
+                    const index = this.activeDropDown.items.indexOf(this.selectedMenuItem);
+                    if (index !== undefined && index >= 0) {
+                        let nextIndex = (index + 1) % this.activeDropDown.items.length;
+                        let nextItem = this.activeDropDown.items[nextIndex];
+                        while (nextItem === '-') {
+                            // Skip over separators.
+                            nextIndex = (nextIndex + 1) % this.activeDropDown.items.length;
+                            nextItem = this.activeDropDown.items[nextIndex];
+                        }
+                        this.selectMenuItem(nextItem);
+                    }
+                }
+
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+            } else if (keyCode === 'ARROWUP' && this.activeDropDown) {
+                /* Focus the prior item in the active dropdown. */
+                if (this.selectedMenuItem) {
+                    const index = this.activeDropDown.items.indexOf(this.selectedMenuItem);
+                    if (index !== undefined && index >= 0) {
+                        let prevIndex = (index - 1 + this.activeDropDown.items.length) % this.activeDropDown.items.length;
+                        let prevItem = this.activeDropDown.items[prevIndex];
+                        while (prevItem === '-') {
+                            prevIndex = (prevIndex - 1 + this.activeDropDown.items.length) % this.activeDropDown.items.length;
+                            prevItem = this.activeDropDown.items[prevIndex];
+                        }
+                        this.selectMenuItem(prevItem);
+                    }
+                }
+            }
+        }
+        if (['ALT', 'ALTLEFT', 'ALTRIGHT', 'META', 'F10'].includes(keyCode) || (keyCode === 'F2' && e.ctrlKey)) {
+            /* Select the first top-level item */
+            this.selectDropdown(this.topLevel[0] as DropDownMenu);
+        }
+        if (keyCode === 'ESCAPE') {
+            /* Close any open dropdowns and deselect the top-level item */
+            this.close();
+        }
+    }
+
+    private readonly onKeyup = (e: KeyboardEvent): void => {
+        const keyCode = e.code.toUpperCase();
+        if (['ALT', 'ALTLEFT', 'ALTRIGHT', 'META', 'F10'].includes(keyCode)) {
+            if (!this.activeDropDown) {
+                this.selectDropdown(undefined);
+            }
+        }
     }
 
     /**
@@ -137,16 +317,16 @@ export class TopMenu {
 
         const labelEl = document.createElement('span');
         setClasses(labelEl, 'top-menu-item-label', this.config.labelClassName || '');
-        labelEl.textContent = menu.label;
+        labelEl.innerHTML = this.labelHtml(menu);
         item.appendChild(labelEl);
 
-        // Create the dropdown container
+        /* Create the dropdown container */
         const dropdownContainer = document.createElement('div');
         setClasses(dropdownContainer, 'top-menu-dropdown', 'is-hidden', this.config.menuClassName || '');
         menu.items.forEach(subItem => {
             if (subItem === '-') {
                 this.addSeparator(dropdownContainer);
-            } else {
+            } else if (isMenuItem(subItem)) {
                 this.addMenuItem(subItem, dropdownContainer);
             }
         });
@@ -156,22 +336,20 @@ export class TopMenu {
         item.addEventListener('mouseenter', () => {
             for (const child of menu.items) {
                 /* Recalculate based on current state */
-                if (child !== '-' && child.element) {
-                    const enabled = child.isEnabled ? child.isEnabled(this.target) : true;
-                    toggleClasses(child.element, !enabled, 'is-disabled', this.config.disabledClassName || '');
-                    const visible = child.isVisible ? child.isVisible(this.target) : true;
-                    toggleClasses(child.element, !visible, 'is-hidden');
-                }
+                if (isMenuItem(child)) this.calculateMenuItem(child);
             }
-            dropdownContainer.style.display = 'block';
+            this.openDropdown(menu);
         });
         item.addEventListener('mouseleave', () => {
-            dropdownContainer.style.display = 'none';
+            this.closeDropdown(menu);
         });
 
         this.menuElement?.appendChild(item);
         this.topLevel.push(menu);
         this.dropDownMenus.push(menu);
+
+        menu.element = item;
+
         return item;
     }
 
@@ -197,20 +375,9 @@ export class TopMenu {
 
         const labelEl = document.createElement('span');
         setClasses(labelEl, 'top-menu-item-label', this.config.labelClassName || '');
-        labelEl.textContent = item.label;
+        labelEl.innerHTML = this.labelHtml(item);
         menuItem.appendChild(labelEl);
 
-        // if (item.toggle) {
-        //     const enabled = item.isEnabled ? item.isEnabled(this.target) : true;
-        //     toggleClasses(menuItem, !enabled, 'is-disabled', this.config.disabledClassName || '');
-        //     const visible = item.isVisible ? item.isVisible(this.target) : true;
-        //     toggleClasses(menuItem, !visible, 'is-hidden');
-        //     if (item.toggle && item.isActive) {
-        //         const active = item.isActive(this.target);
-        //         toggleClasses(menuItem, active, 'is-active', this.config.activeClassName || '');
-        //     }
-        //     // toggleClasses(menuItem, item.toggle, 'is-active', this.config.activeClassName || '');
-        // }
         if (item.shortcut) {
             const shortcutText = formatShortcut(item.shortcut);
             if (shortcutText) {
@@ -224,7 +391,10 @@ export class TopMenu {
         menuItem.addEventListener('click', () => {
             item.onClick();
             this.calculateMenuState();
-            // this.close();
+        });
+
+        menuItem.addEventListener('mouseenter', () => {
+            this.selectMenuItem(item);
         });
 
         if (parent) {
@@ -240,41 +410,6 @@ export class TopMenu {
         return menuItem;
     }
 
-    // /**
-    //  * Appends a labelled menu item that calls the given handler and closes the menu on click.
-    //  * @param label Display text for the item.
-    //  * @param onClick Callback invoked when the item is clicked.
-    //  * @param options Optional icon element, active toggle state, and disabled flag.
-    //  * @returns The created menu item element.
-    //  */
-    // public addMenuItem(
-    //     label: string,
-    //     onClick: () => void,
-    //     options: { icon?: Element | null; active?: boolean; disabled?: boolean } = {},
-    // ): HTMLElement {
-    //     const item = document.createElement('div');
-    //     setClasses(item, 'top-menu-item', this.config.itemClassName || '');
-    //     if (options.disabled) toggleClasses(item, true, 'is-disabled', this.config.disabledClassName || '');
-    //     if (options.active) toggleClasses(item, true, 'is-active', this.config.activeClassName || '');
-
-    //     const iconSlot = document.createElement('span');
-    //     setClasses(iconSlot, 'top-menu-item-icon', this.config.iconClassName || '');
-    //     if (options.icon) iconSlot.appendChild(options.icon);
-    //     item.appendChild(iconSlot);
-
-    //     const labelEl = document.createElement('span');
-    //     setClasses(labelEl, 'top-menu-item-label', this.config.labelClassName || '');
-    //     labelEl.textContent = label;
-    //     item.appendChild(labelEl);
-
-    //     item.addEventListener('click', () => {
-    //         onClick();
-    //         this.close();
-    //     });
-    //     this.menuElement?.appendChild(item);
-    //     return item;
-    // }
-
     /**
      * Appends a visual separator line.
      */
@@ -288,75 +423,24 @@ export class TopMenu {
         }
     }
 
-    // /**
-    //  * Positions and displays the menu at the given viewport coordinates.
-    //  * Any previously open menu is closed first.
-    //  * Call this from {@link open} after populating items.
-    //  * @param x Horizontal position in viewport pixels.
-    //  * @param y Vertical position in viewport pixels.
-    //  */
-    // protected show(x: number, y: number): void {
-    //     this.close();
-    //     const menu = document.createElement('div');
-    //     setClasses(menu, 'top-menu', this.config.menuClassName || '');
-    //     this.host.appendChild(menu);
-    //     this.menuElement = menu;
-
-    //     // Convert viewport coords to host-local coords so position:absolute lands correctly
-    //     // regardless of whether an ancestor has a CSS transform.
-    //     const hostRect = this.host.getBoundingClientRect();
-    //     menu.style.left = `${x - hostRect.left}px`;
-    //     menu.style.top = `${y - hostRect.top}px`;
-
-    //     // Clamp against the viewport: getBoundingClientRect gives viewport coords so the
-    //     // overflow delta is coordinate-system-independent and can be subtracted directly
-    //     // from the host-local left/top values.
-    //     requestAnimationFrame(() => {
-    //         if (!this.menuElement || !hostRect) return;
-    //         const rect = this.menuElement.getBoundingClientRect();
-    //         const overRight = rect.right - hostRect.right;
-    //         const overBottom = rect.bottom - hostRect.bottom;
-    //         if (overRight > 0) this.menuElement.style.left = `${parseFloat(this.menuElement.style.left) - overRight - 1}px`;
-    //         if (overBottom > 0) this.menuElement.style.top = `${parseFloat(this.menuElement.style.top) - overBottom - 1}px`;
-    //     });
-
-    //     document.addEventListener('click', this.onDocumentClick, { capture: true, once: true });
-    // }
-
-    // /**
-    //  * Opens the context menu in response to a pointer event.
-    //  * Override in subclasses to populate items and call {@link show}.
-    //  * The base implementation does nothing.
-    //  * @param _event The pointer event that triggered the context menu.
-    //  */
-    // // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // public open(_event: MouseEvent): void { /* override in subclass */ }
-
-
+    /* 
+     * Update the state of all menu items based on their isEnabled, isVisible, and isActive callbacks.
+     */
     private calculateMenuState(): void {
-
         const items = [
             ...this.topLevel.filter(i => !(i as DropDownMenu)?.items).map(i => i as TopMenuItem),
         ];
         this.dropDownMenus.forEach(menu => {
-            items.push(...menu.items.filter(i => i !== '-').filter(i => i.element));
+            items.push(...menu.items.filter(i => isMenuItem(i)));
         });
 
         items.forEach(item => this.calculateMenuItem(item));
-        // for (const item of items) {
-        //     if (item.element) {
-        //         const enabled = item.isEnabled ? item.isEnabled(this.target) : true;
-        //         toggleClasses(item.element, !enabled, 'is-disabled', this.config.disabledClassName || '');
-        //         const visible = item.isVisible ? item.isVisible(this.target) : true;
-        //         toggleClasses(item.element, !visible, 'is-hidden');
-        //         if (item.toggle && item.isActive) {
-        //             const active = item.isActive(this.target);
-        //             toggleClasses(item.element, active, 'is-active', this.config.activeClassName || '');
-        //         }
-        //     }
-        // }
     }
 
+    /**
+     * Update the state of a single menu item based on its isEnabled, isVisible, and isActive callbacks.
+     * @param item The menu item to update.
+     */
     private calculateMenuItem(item: TopMenuItem): void {
         const menuItem = item.element;
         if (!menuItem) return;
@@ -372,21 +456,108 @@ export class TopMenu {
     }
 
     /**
+     * Builds the HTML for a menu item label, underlining the character that matches the altKey.
+     * @param item The menu item or dropdown menu.
+     * @returns The HTML string for the label.
+     */
+    private labelHtml(item: TopMenuItem | DropDownMenu): string {
+        let label = item.label;
+        let index = label.toUpperCase().indexOf(item.altKey.toUpperCase());
+        if (index >= 0) {
+            label = label.substring(0, index) + '<u>' + label.charAt(index) + '</u>' + label.substring(index + 1);
+        }
+        return label;
+    }
+
+    private dropDownContainer(menu: DropDownMenu): HTMLElement | null {
+        return menu.element?.querySelector('.top-menu-dropdown') || null;
+    }
+
+    /**
+     * Opens a dropdown menu and selects the first item in it. Closes any other open dropdowns.
+     * @param menu The dropdown menu to open.
+     */
+    private openDropdown(menu: DropDownMenu): void {
+        this.selectDropdown(menu);
+
+        const dropdownContainer = this.dropDownContainer(menu);
+        if (dropdownContainer) {
+            dropdownContainer.style.display = 'block';
+            this.activeDropDown = menu;
+            this.selectMenuItem(menu.items[0]);
+        }
+    }
+
+    /**
+     * Closes a dropdown menu and deselects any selected item in it. If the menu is not open, does nothing.
+     * @param menu The dropdown menu to close.
+     */
+    private closeDropdown(menu: DropDownMenu): void {
+        const dropdownContainer = this.dropDownContainer(menu);
+        if (dropdownContainer) {
+            dropdownContainer.style.display = 'none';
+            if (this.activeDropDown === menu) {
+                this.activeDropDown = undefined;
+                this.selectDropdown(undefined);
+            }
+        }
+    }
+
+    /**
+     * Selects a dropdown menu (without opening it), clearing any previously selected dropdown.
+     * @param item The dropdown menu to select, or undefined to clear the selection.
+     */
+    private selectDropdown(item: DropDownMenu | undefined): void {
+        /* Clear any previously selected item */
+        for (const menu of this.topLevel) {
+            if (isDropDownMenu(menu) && menu.element) {
+                menu.element.classList.remove('selected');
+            }
+        }
+        this.selectedDropDown = undefined;
+
+        if (!item) return;
+
+        /* Select the new item */
+        if (item.element) {
+            item.element.classList.add('selected');
+            this.selectedDropDown = item;
+        }
+    }
+
+    /**
+     * Selects a menu item (without invoking its action), clearing any previously selected item.
+     * @param item The menu item to select, or undefined to clear the selection.
+     */
+    private selectMenuItem(item: MenuComponent | undefined): void {
+        /* Clear any previously selected item */
+        for (const menu of this.dropDownMenus) {
+            for (const subItem of menu.items) {
+                if (subItem === '-') continue;
+                if (isMenuItem(subItem) && subItem.element) {
+                    subItem.element.classList.remove('selected');
+                }
+            }
+        }
+        this.selectedMenuItem = undefined;
+
+        if (!item || item === '-') return;
+
+        /* Select the new item */
+        if (item.element) {
+            item.element.classList.add('selected');
+            this.selectedMenuItem = item;
+        }
+    }
+
+    /**
      * Hides any visible dropdown menus.
      */
     public close(): void {
         for (const dropdown of this.dropDownMenus) {
-            if (dropdown.element) dropdown.element.style.display = 'none';
+            this.closeDropdown(dropdown);
         }
-        // this.menuElement?.remove();
-        // this.menuElement = null;
-        // document.removeEventListener('click', this.onDocumentClick, { capture: true });
-    }
-
-    /**
-     * Permanently removes the menu and cleans up listeners.
-     */
-    public destroy(): void {
-        this.close();
+        this.selectDropdown(undefined);
+        this.selectMenuItem(undefined);
     }
 }

@@ -100,6 +100,9 @@ You can tailor the editor for your own product:
 
 ## Version History
 
+- Since version `0.6.5`
+  - Added dropdown menu
+  - Improved connection and manipulation logic
 - Since version `0.6.0`
   - Added gradient support
   - Added fuller support for standard diagrams
