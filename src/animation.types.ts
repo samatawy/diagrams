@@ -31,6 +31,7 @@ export interface AnimationNodeCenter extends AnimationChannel {
 export interface AnimationNodeShutter extends AnimationChannel {
     type: 'shutter';
     node: string;
+    target?: IRect;
     cutout?: IRect;
     fillStyle?: string;
     strokeStyle?: string;

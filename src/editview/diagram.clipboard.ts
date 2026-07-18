@@ -330,13 +330,13 @@ export class DiagramClipboard {
      * @param nodes The nodes to clone.
      * @returns The cloned nodes, already inserted into the current layer.
      */
-    protected cloneNodes(nodes: INode[] | ISerializedNode[]): INode[] {
+    public cloneNodes(nodes: INode[] | ISerializedNode[]): INode[] {
         const layer = this.diagram.ensureCurrentLayer();
         const cloned: INode[] = [];
 
         /* First pass: assign new IDs so connection anchors within this
-                            paste batch can be remapped before any node is inserted. 
-                        */
+           paste batch can be remapped before any node is inserted. 
+         */
         const idMap = new Map<string, string>();
         for (const node of nodes) {
             const newId = `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;

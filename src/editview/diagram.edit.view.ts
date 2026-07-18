@@ -2253,112 +2253,123 @@ export class DiagramEditView extends DiagramView {
     /**
      * Clones the currently selected nodes in the diagram.
      * The cloned nodes are offset by 24 pixels in both x and y directions.
-     * // TODO: Support groups cloning
+     * 
+     * N.B. If a group is selected, the clone has parallel group relationships.
+     * However if selections are all in one group, the clones are added to that existing group. 
      */
     public async cloneSelected(): Promise<void> {
         this.addUndo();
 
-        const cloned = this.cloneNodes(this.selection());
+        const selected = this.selection();
+        const groups = selected.map(node => this.nodeGroup(node.id));
+        const group = (groups.length === 1 ? groups[0] : undefined);
+        // const group = (selected.length === 1) ? this.nodeGroup(selected[0]!) : undefined;
+
+        const cloned = this.clipboard.cloneNodes(selected);
         this.setSelection(cloned);
+
+        if (group) {
+            group.nodes.push(...cloned.map(node => node.id));
+        }
 
         this.render('all');
         this.renderPreview();
     }
 
-    /**
-     * Handles clone node.
-     * @param node The target node.
-     * @param id The identifier value.
-     * @returns The computed result.
-     */
-    protected cloneNode(node: INode | ISerializedNode, id?: string): INode {
-        return {
-            ...node,    /* Must NOT use deepClone on INode */
-            id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            points: deepClone(node.points),         // node.points.map(p => ({ ...p })),
-            ...(node.textStyle && { textStyle: deepClone(node.textStyle) }),
-            ...(node.strokeStyle && { strokeStyle: deepClone(node.strokeStyle) }),
-            ...(node.shadowStyle && { shadowStyle: deepClone(node.shadowStyle) }),
-            ...(node.specific && { specific: deepClone(node.specific) }),
-            ...(node.geometry && { geometry: deepClone(node.geometry) }),
-            ...(node.meta && { meta: deepClone(node.meta) }),
-        } as INode;
-    }
+    // /**
+    //  * Handles clone node.
+    //  * @param node The target node.
+    //  * @param id The identifier value.
+    //  * @returns The computed result.
+    //  */
+    // protected cloneNode(node: INode | ISerializedNode, id?: string): INode {
+    //     return {
+    //         ...node,    /* Must NOT use deepClone on INode */
+    //         id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    //         points: deepClone(node.points),         // node.points.map(p => ({ ...p })),
+    //         ...(node.textStyle && { textStyle: deepClone(node.textStyle) }),
+    //         ...(node.strokeStyle && { strokeStyle: deepClone(node.strokeStyle) }),
+    //         ...(node.shadowStyle && { shadowStyle: deepClone(node.shadowStyle) }),
+    //         ...(node.specific && { specific: deepClone(node.specific) }),
+    //         ...(node.geometry && { geometry: deepClone(node.geometry) }),
+    //         ...(node.meta && { meta: deepClone(node.meta) }),
+    //     } as INode;
+    // }
 
-    /**
-     * Handles clone nodes, including id remapping, reconnecting anchors, and handling groups.
-     * @param nodes The nodes to clone.
-     * @returns The cloned nodes, already inserted into the current layer.
-     */
-    protected cloneNodes(nodes: INode[] | ISerializedNode[]): INode[] {
-        const layer = this.ensureCurrentLayer();
-        const cloned: INode[] = [];
+    // /**
+    //  * Handles clone nodes, including id remapping, reconnecting anchors, and handling groups.
+    //  * @param nodes The nodes to clone.
+    //  * @returns The cloned nodes, already inserted into the current layer.
+    //  */
+    // protected cloneNodes(nodes: INode[] | ISerializedNode[]): INode[] {
+    //     const layer = this.ensureCurrentLayer();
+    //     const cloned: INode[] = [];
 
-        /* First pass: assign new IDs so connection anchors within this
-                            paste batch can be remapped before any node is inserted. 
-                        */
-        const idMap = new Map<string, string>();
-        for (const node of nodes) {
-            const newId = `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-            idMap.set(node.id, newId);
-        }
+    //     /* First pass: assign new IDs so connection anchors within this
+    //                         paste batch can be remapped before any node is inserted. 
+    //                     */
+    //     const idMap = new Map<string, string>();
+    //     for (const node of nodes) {
+    //         const newId = `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    //         idMap.set(node.id, newId);
+    //     }
 
-        const remapAnchor = (anchor: IConnectionAnchor | undefined): IConnectionAnchor | undefined => {
-            if (!anchor) return undefined;
-            const oldId = typeof anchor.node === 'string' ? anchor.node : anchor.node.id;
-            const newId = idMap.get(oldId);
-            return newId ? { ...anchor, node: newId } : { ...anchor };
-        };
+    //     const remapAnchor = (anchor: IConnectionAnchor | undefined): IConnectionAnchor | undefined => {
+    //         if (!anchor) return undefined;
+    //         const oldId = typeof anchor.node === 'string' ? anchor.node : anchor.node.id;
+    //         const newId = idMap.get(oldId);
+    //         return newId ? { ...anchor, node: newId } : { ...anchor };
+    //     };
 
-        /* Second pass: remap group memberships
-            creating new cloned groups if there was a container node in the paste batch.
-        */
-        const groupMap: Map<string, IGroup> = new Map();
-        for (let node of nodes) {       // }.filter(n => (n as IContainer & INode)?.owns_group)) {
-            const group_id = (node as IContainer & INode)?.owns_group;
-            if (group_id) {
-                const group = this.group(group_id);
-                if (group) {
-                    /* create a clone group from selected nodes */
-                    let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-                    let new_members = group.nodes.filter(id => idMap.has(id));
-                    new_members = new_members.map(id => idMap.get(id)!);
-                    const new_group = { id: cloned_group_id, nodes: new_members };
-                    groupMap.set(group.id, new_group);
+    //     /* Second pass: remap group memberships
+    //         creating new cloned groups if there was a container node in the paste batch.
+    //     */
+    //     const groupMap: Map<string, IGroup> = new Map();
+    //     for (let node of nodes) {       // }.filter(n => (n as IContainer & INode)?.owns_group)) {
+    //         const group_id = (node as IContainer & INode)?.owns_group;
+    //         if (group_id) {
+    //             const group = this.group(group_id);
+    //             if (group) {
+    //                 /* create a clone group from selected nodes */
+    //                 let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    //                 let new_members = group.nodes.filter(id => idMap.has(id));
+    //                 new_members = new_members.map(id => idMap.get(id)!);
+    //                 const new_group = { id: cloned_group_id, nodes: new_members };
+    //                 groupMap.set(group.id, new_group);
 
-                    this.upsertGroup(new_group);
-                }
-                // } else {
-                //     /* Create a new group for the cloned node to own */
-                //     let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-                //     const new_group = { id: cloned_group_id, nodes: [idMap.get(node.id)!] };
-                //     groupMap.set(group_id, new_group);
+    //                 this.upsertGroup(new_group);
+    //             }
+    //             // } else {
+    //             //     /* Create a new group for the cloned node to own */
+    //             //     let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    //             //     const new_group = { id: cloned_group_id, nodes: [idMap.get(node.id)!] };
+    //             //     groupMap.set(group_id, new_group);
 
-                //     this.upsertGroup(new_group);
-                //     (node as any).owns_group = cloned_group_id;
-            }
-        }
+    //             //     this.upsertGroup(new_group);
+    //             //     (node as any).owns_group = cloned_group_id;
+    //         }
+    //     }
 
-        /* Finally, clone the nodes into the diagram. */
-        for (let node of nodes) {
-            const clone = this.cloneNode(node, idMap.get(node.id));
-            const conn = clone as INode & IConnection;
-            conn.from = remapAnchor(conn.from);
-            conn.to = remapAnchor(conn.to);
-            if ((clone as any).owns_group) (clone as any).owns_group = groupMap.get((clone as any).owns_group)?.id;
-            this.upsertNode(clone);
-            layer.nodes.push(clone.id);
+    //     /* Finally, clone the nodes into the diagram. */
+    //     for (let node of nodes) {
+    //         const clone = this.cloneNode(node, idMap.get(node.id));
+    //         const conn = clone as INode & IConnection;
+    //         conn.from = remapAnchor(conn.from);
+    //         conn.to = remapAnchor(conn.to);
+    //         if ((clone as any).owns_group) (clone as any).owns_group = groupMap.get((clone as any).owns_group)?.id;
+    //         this.upsertNode(clone);
+    //         layer.nodes.push(clone.id);
 
-            NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
-            // this.select(clone, 'isolated');
-            cloned.push(clone);
-        }
+    //         NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
+    //         // this.select(clone, 'isolated');
+    //         cloned.push(clone);
+    //     }
 
-        /* Select cloned nodes */
-        // cloned.forEach(clone => this.select(clone, 'isolated'));
+    //     /* Select cloned nodes */
+    //     // cloned.forEach(clone => this.select(clone, 'isolated'));
 
-        return cloned;
-    }
+    //     return cloned;
+    // }
 
     /**
      * Creates a new group from the currently selected nodes, assigning them a unique group ID.
@@ -2855,20 +2866,32 @@ export class DiagramEditView extends DiagramView {
         const key = event.key.toLowerCase();
 
         if (this.activeTextEditor) {
-            const editingNode = this.node(this.activeTextEditor.nodeId);
-            const singleLine = this.activeTextEditor.singleLine || (editingNode ? NodeRegistry.isSingleLineText(editingNode.type) : false);
+            /** Shouldn't this be handled inside the textarea ? How can this be reached ? */
+            console.error('keydown event reached DiagramView while text editor is active. This should be handled inside the textarea.');
 
-            if (key === 'enter' && (singleLine || (!event.ctrlKey && !event.metaKey && !event.shiftKey))) {
-                consumeEvent();
-                this.closeTextEditor(true);
+            // const editingNode = this.node(this.activeTextEditor.nodeId);
+            // const singleLine = this.activeTextEditor.singleLine || (editingNode ? NodeRegistry.isSingleLineText(editingNode.type) : false);
 
-            } else if (key === 'escape') {
-                consumeEvent();
-                this.closeTextEditor(false);
+            // if (key === 'enter' && (singleLine || (!event.ctrlKey && !event.metaKey && !event.shiftKey))) {
+            //     consumeEvent();
+            //     this.closeTextEditor(true);
 
-            } else {
-                this.activeTextEditor.element.focus();
-            }
+            // } else if (key === 'escape') {
+            //     consumeEvent();
+            //     this.closeTextEditor(false);
+
+            //     // } else if (key === 'tab') {
+            //     //     consumeEvent();
+
+            //     //     if (event.shiftKey) {
+            //     //         this.selectPreviousTab();
+            //     //     } else {
+            //     //         this.selectNextTab();
+            //     //     }
+
+            // } else {
+            //     this.activeTextEditor.element.focus();
+            // }
             return;
         }
 
@@ -2895,9 +2918,10 @@ export class DiagramEditView extends DiagramView {
         if (key === 'enter') {
             consumeEvent();
 
-            const selected = this.selection().length === 1 ? this.selection()[0] : undefined;
-            if (selected && this.current.tool === 'select' && NodeRegistry.hasText(selected.type)) {
-                this.editText(selected);
+            const singleSelected = this.singleSelection();  // this.selection().length === 1 ? this.selection()[0] : undefined;
+
+            if (singleSelected && this.current.tool === 'select' && NodeRegistry.hasText(singleSelected.type)) {
+                this.editText(singleSelected);
                 return;
             }
 
@@ -2911,14 +2935,47 @@ export class DiagramEditView extends DiagramView {
                 return;
             }
 
-            if (selected) {
-                this.editText(selected);
+            if (singleSelected) {
+                this.editText(singleSelected);
             }
+            return;
+        }
+
+        if (key === 'tab') {
+            consumeEvent();
+
+            if (event.shiftKey) {
+                this.selectPreviousTab();
+            } else {
+                this.selectNextTab();
+            }
+            this.render('all');
             return;
         }
 
         super.keydown(event);
     }
+
+    private selectNextTab(): INode | undefined {
+        const start = this.selection().length > 0 ? this.selection()[0] : undefined;
+        const next = this.nextTab(start?.id);
+        if (next) {
+            this.setSelection([next]);
+            // this.render('all');
+        }
+        return next;
+    }
+
+    private selectPreviousTab(): INode | undefined {
+        const start = this.selection().length > 0 ? this.selection()[0] : undefined;
+        const next = this.previousTab(start?.id);
+        if (next) {
+            this.setSelection([next]);
+            // this.render('all');
+        }
+        return next;
+    }
+
 
     /**
      * Handles keyup.
@@ -4571,10 +4628,17 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
-        this.closeTextEditor(true);
+        if (this.activeTextEditor) {
+            /* If a text editor is already active, animate the shutter to the new location. */
+            this.animateNodeShutter(node, () => { });
+            this.closeTextEditor(true);
+        } else {
+            /* If no text editor is active, animate the shutter to the new node. */
+            this.animateNodeShutter(node, () => { });
+        }
         this.setInteractionHint('Editing text');
 
-        this.animateNodeShutter(node, () => { });
+        // this.animateNodeShutter(node, () => { });
 
         /* Prepare shortcuts and required data for all cases: */
 
@@ -4858,6 +4922,18 @@ export class DiagramEditView extends DiagramView {
             if (singleLine && event.key === 'Enter') {
                 event.preventDefault();
                 return;
+            }
+
+            if (event.key === 'Tab') {
+                event.preventDefault();
+
+                if (event.shiftKey) {
+                    const prev = this.selectPreviousTab();
+                    if (prev) this.editText(prev);
+                } else {
+                    const next = this.selectNextTab();
+                    if (next) this.editText(next);
+                }
             }
 
             if (event.key === 'Escape') {

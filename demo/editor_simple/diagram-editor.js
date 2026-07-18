@@ -176,7 +176,7 @@ view.loadDiagram(normalizeDemoDiagram({
             "from": { "node": "rhombus-drop-1782206090864-tibza", "handle": "e", "relative": { "x": 0, "y": 0 } },
             "to": { "node": "parallelogram-drop-1782206107301-vbi0g", "handle": "w", "relative": { "x": 0, "y": 0 } }
         }, {
-            "id": "manhattan-draft-1782206730629", "type": "manhattan",
+            "id": "orthogonal-draft-1782206730629", "type": "orthogonal",
             "points": [{ "x": 280, "y": 412.4120651612177 }, { "x": 503.6710223107027, "y": 478.69036620398015 }],
             "hollow": true, "text": "Issue",
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "bottom", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
@@ -220,7 +220,7 @@ view.loadDiagram(normalizeDemoDiagram({
             "from": { "node": "parallelogram-drop-1782206107301-vbi0g", "handle": "n", "relative": { "x": 0, "y": 0 } },
             "to": { "node": "rectangle-drop-1782206056828-x2vw4", "handle": "s", "relative": { "x": 0, "y": 0 } }
         }, {
-            "id": "manhattan-draft-1782212724191", "type": "manhattan",
+            "id": "orthogonal-draft-1782212724191", "type": "orthogonal",
             "points": [{ "x": 575.6710223107042, "y": 510.6903662039808 }, { "x": 602.8587895213109, "y": 238.44315089536516 }, { "x": 576, "y": 239.8664538477836 }],
             "hollow": true, "text": "Store",
             "textStyle": { "color": "#0f172a", "fontFace": "Helvetica", "size": 12, "align": "center", "baseline": "middle", "orientation": "horizontal", "weight": 500, "italic": true, "halo": "inherit" },
@@ -250,11 +250,11 @@ view.loadDiagram(normalizeDemoDiagram({
                     "line-draft-1782206587411",
                     "line-draft-1782206670780",
                     "line-draft-1782206683351",
-                    "manhattan-draft-1782206730629",
+                    "orthogonal-draft-1782206730629",
                     "line-draft-1782206923968",
                     "curve-draft-1782212591550",
                     "line-draft-1782212701801",
-                    "manhattan-draft-1782212724191"]
+                    "orthogonal-draft-1782212724191"]
             }]
 }));
 

@@ -327,6 +327,30 @@ export class DiagramView extends Diagram implements HasSelection {
     }
 
     /**
+     * Checks if the selection is a single node or a single container node.
+     * @returns The single selected node or container, if any; otherwise, undefined.
+     */
+    protected singleSelection(): INode | undefined {
+        const selected = this.selected_nodes;
+        if (selected.length === 1) {
+            /* Only one node is selected, so return it. */
+            return selected[0];
+        }
+
+        /* If multiple nodes are selected, check if they are all in the same container. If so, return that container. */
+        const containers = selected.filter(isContainer);
+        if (containers.length > 0) return undefined;    /* More than one container is selected. */
+
+        for (const node of selected.filter(n => !isContainer(n))) {
+            const group = this.nodeGroup(node);
+            if (group?.id !== containers[0]?.id) {
+                return undefined;   /* Selected nodes are not all in the same container. */
+            }
+        }
+        return containers[0];
+    }
+
+    /**
      * Selects a node.
      * @param node The node to select.
      * @param option Determines whether to select related nodes or isolate the selection.
@@ -420,7 +444,6 @@ export class DiagramView extends Diagram implements HasSelection {
     /**
      * Toggles the selection state of a node.
      * @param node The node to toggle.
-     * @returns void
      */
     public toggleSelection(node: INode, option: 'in_group' | 'isolated'): void {
         if (this.isSelected(node)) {
@@ -429,6 +452,53 @@ export class DiagramView extends Diagram implements HasSelection {
         }
 
         this.select(node, 'isolated');
+    }
+
+    /**
+     * Find the next node in the tab order within the same group as the given node.
+     * @param node The reference node to find the next tab node from.
+     * @returns The next node in the tab order within the same group, or undefined if none exists.
+     */
+    public nextTab(node: INode | string | undefined): INode | undefined {
+        if (!node) return;
+        const start = this.resolveNode(node);
+        if (!start) return;
+        const group = this.nodeGroup(start);
+        const candidates = group ? group.nodes.map(id => this.node(id) as INode).filter(n => !!n) : this.nodes;
+        const ordered = this.getTabOrder(candidates);
+        const index = ordered.indexOf(start);
+        return (index >= 0) ? ordered[(index + 1) % ordered.length] : undefined;
+    }
+
+    /**
+     * Find the previous node in the tab order within the same group as the given node.
+     * @param node The reference node to find the previous tab node from.
+     * @returns The previous node in the tab order within the same group, or undefined if none exists.
+     */
+    public previousTab(node: INode | string | undefined): INode | undefined {
+        if (!node) return;
+        const start = this.resolveNode(node);
+        if (!start) return;
+        const group = this.nodeGroup(start);
+        const candidates = group ? group.nodes.map(id => this.node(id) as INode).filter(n => !!n) : this.nodes;
+        const ordered = this.getTabOrder(candidates);
+        const index = ordered.indexOf(start);
+        return (index >= 0) ? ordered[(index - 1 + ordered.length) % ordered.length] : undefined;
+    }
+
+    private getTabOrder(nodes: INode[]): INode[] {
+        return nodes.sort((a, b) => {
+            const rectA = this.coordinates.getBoundingRect(a);
+            const rectB = this.coordinates.getBoundingRect(b);
+            if (!rectA || !rectB) return 0;
+            const rowThreshold = Math.min(rectA.height, rectB.height) * 0.5;
+            const sameRow = Math.abs(rectA.top - rectB.top) < rowThreshold;
+            if (sameRow) {
+                return rectA.left - rectB.left;
+            } else {
+                return rectA.top - rectB.top;
+            }
+        });
     }
 
     // ===============================================

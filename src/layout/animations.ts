@@ -93,6 +93,7 @@ export class DiagramAnimations {
             animation.lastTimestamp = undefined;
         }
         animation.state = 'idle';
+        // this.map.delete(channel);
     }
 
     public stopAnimationsByType(type: AnimationChannelType): void {
@@ -125,9 +126,18 @@ export class DiagramAnimations {
     }
 
     public animateNodeShutter(node: INode, func: () => void): void {
-        let channel = this.map.get(`shutter-${node.id}`) as AnimationNodeShutter | undefined;
-        if (!channel) {
-            channel = this.newAnimation('shutter', `shutter-${node.id}`) as AnimationNodeShutter;
+        // let channel = this.map.get(`shutter-${node.id}`) as AnimationNodeShutter | undefined;
+        // if (!channel) {
+        //     channel = this.newAnimation('shutter', `shutter-${node.id}`) as AnimationNodeShutter;
+        // }
+        let channel = this.map.get(`shutter`) as AnimationNodeShutter | undefined;
+        if (channel) {
+            if (channel.node && channel.node !== node.id) {
+                channel.cutout = { ...channel.target } as IRect;
+                channel.target = undefined;
+            }
+        } else {
+            channel = this.newAnimation('shutter', `shutter`) as AnimationNodeShutter;
         }
         channel.node = node.id;
         if (node.owner.background?.color) {
@@ -284,9 +294,10 @@ export class DiagramAnimations {
             func();
             return;
         }
-        channel.cutout = undefined;
+        // channel.cutout = undefined;
 
-        this.stopAnimation(`shutter-${node.id}`);
+        this.stopAnimation(`shutter`);
+        // this.stopAnimation(`shutter-${node.id}`);
 
         const animate = () => {
             const canvas = this.diagram.getCanvas();
@@ -309,13 +320,18 @@ export class DiagramAnimations {
                 height: canvas.height
             };
 
-            let nodeRect = this.getShutterRect(node, coordinates);
+            let nodeRect = channel.target;
+            if (!nodeRect) {
+                nodeRect = this.getShutterRect(node, coordinates);
 
-            // Transform nodeRect to canvas coordinates so we can draw with identity transform
-            nodeRect.left = (nodeRect.left * coordinates.zoom - coordinates.pan.x) * coordinates.pixelRatio;
-            nodeRect.top = (nodeRect.top * coordinates.zoom - coordinates.pan.y) * coordinates.pixelRatio;
-            nodeRect.width = nodeRect.width * coordinates.zoom * coordinates.pixelRatio;
-            nodeRect.height = nodeRect.height * coordinates.zoom * coordinates.pixelRatio;
+                // Transform nodeRect to canvas coordinates so we can draw with identity transform
+                nodeRect.left = (nodeRect.left * coordinates.zoom - coordinates.pan.x) * coordinates.pixelRatio;
+                nodeRect.top = (nodeRect.top * coordinates.zoom - coordinates.pan.y) * coordinates.pixelRatio;
+                nodeRect.width = nodeRect.width * coordinates.zoom * coordinates.pixelRatio;
+                nodeRect.height = nodeRect.height * coordinates.zoom * coordinates.pixelRatio;
+
+                channel.target = { ...nodeRect };
+            }
 
             if (!channel.cutout) {
                 channel.cutout = deepClone(canvasFullRect);

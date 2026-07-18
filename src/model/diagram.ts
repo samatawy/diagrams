@@ -181,6 +181,11 @@ export class Diagram implements IDiagram, HasSheetRepository {
         }
     }
 
+    /**
+     * Gets the group that a node belongs to, if any.
+     * @param node The node or node ID to check.
+     * @returns The group the node belongs to, or undefined if it doesn't belong to any group.
+     */
     public nodeGroup(node: string | INode): IGroup | undefined {
         const targetNode = this.resolveNode(node);
         if (!targetNode) return undefined;
@@ -666,7 +671,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
         }
     }
 
-    private resolveNode(node: string | INode): INode | undefined {
+    protected resolveNode(node: string | INode): INode | undefined {
         return typeof node === 'string' ? this.node(node) : node;
     }
 
