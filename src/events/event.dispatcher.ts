@@ -14,9 +14,11 @@ import {
     DIAGRAM_NODE_POINTS_CHANGED_EVENT,
     DIAGRAM_NODE_RESIZED_EVENT,
     DIAGRAM_NODE_GEOMETRY_ALTERED_EVENT,
+    DIAGRAM_NODE_TYPE_CHANGED_EVENT,
     DIAGRAM_SELECTION_EVENT,
     DIAGRAM_TOOL_CHANGED_EVENT,
     DIAGRAM_SHEET_LOADED_EVENT,
+    DIAGRAM_SHEET_CHANGED_EVENT,
     DIAGRAM_VIEWPORT_EVENT,
     type DiagramBackgroundClick,
     type DiagramClipboardEventDetail,
@@ -30,8 +32,8 @@ import {
     type DiagramSelectionChange,
     type DiagramToolChange,
     type DiagramViewportChange,
-    DIAGRAM_NODE_TYPE_CHANGED_EVENT,
     type DiagramSheetLoaded,
+    type DiagramSheetChanged,
 } from "./diagram.events";
 
 /**
@@ -181,6 +183,10 @@ export class EventDispatcher {
 
     public sheetLoaded(detail: DiagramSheetLoaded): void {
         this.dispatchInternal(DIAGRAM_SHEET_LOADED_EVENT, detail);
+    }
+
+    public sheetChanged(detail: DiagramSheetChanged): void {
+        this.dispatchInternal(DIAGRAM_SHEET_CHANGED_EVENT, detail);
     }
 
     /**

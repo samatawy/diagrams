@@ -192,7 +192,6 @@ export class StyleClassActionsAdapter extends InspectorAdapter {
                 textStyle: { ...(s.textStyle || {}) },
                 strokeStyle: { ...(s.strokeStyle || {}) },
                 fillStyle: { ...(s.fillStyle || {}) },
-                // fillStyle: s.fillStyle,
                 shadowStyle: {
                     ...(s.shadowStyle || DiagramConstants.NO_SHADOW),
                     offset: { ...(s.shadowStyle?.offset || DiagramConstants.NO_SHADOW.offset) },
@@ -205,7 +204,6 @@ export class StyleClassActionsAdapter extends InspectorAdapter {
             textStyle: { ...(node?.textStyle || {}) },
             strokeStyle: { ...(node?.strokeStyle || {}) },
             fillStyle: { ...(node?.fillStyle || {}) },
-            // fillStyle: node?.fillStyle ?? DiagramConstants.DEFAULT_FILL_STYLE,
             shadowStyle: {
                 ...(node?.shadowStyle || DiagramConstants.NO_SHADOW),
                 offset: { ...(node?.shadowStyle?.offset || DiagramConstants.NO_SHADOW.offset) },
@@ -214,13 +212,18 @@ export class StyleClassActionsAdapter extends InspectorAdapter {
     }
 
     private emitChanged(sourceEvent: string): void {
-        const host = (this.diagram as any).host as HTMLElement | undefined;
-        host?.dispatchEvent(new CustomEvent<DiagramChanged>(DIAGRAM_CHANGED_EVENT, {
-            detail: {
-                scope: 'model',
-                sourceEvent,
-            },
-        }));
+        this.diagram.eventDispatcher.sheetChanged({
+            action: sourceEvent,
+            sheetId: this.diagram.currentSheet?.id || '',
+            sheetNames: this.diagram.sheetRepository?.sheetNames || [],
+        });
+        // const host = (this.diagram as any).host as HTMLElement | undefined;
+        // host?.dispatchEvent(new CustomEvent<DiagramChanged>(DIAGRAM_CHANGED_EVENT, {
+        //     detail: {
+        //         scope: 'model',
+        //         sourceEvent,
+        //     },
+        // }));
     }
 
     // ── InspectorAdapter contract ─────────────────────────────────────────

@@ -6,6 +6,7 @@ import { TopMenu, type DropDownMenu, type TopMenuConfig, type TopMenuItem } from
 import { DiagramConstants } from '../../model';
 import type { ShadowStyle } from '../../style.interfaces';
 import type { DiagramEditor } from '../diagram.editor';
+import { DIAGRAM_SHEET_CHANGED_EVENT, DIAGRAM_SHEET_LOADED_EVENT } from '../../events/diagram.events';
 
 
 /**
@@ -45,6 +46,12 @@ export class DiagramTopMenu extends TopMenu {
         super(host, diagram, config);
         this.diagram = diagram;
         this.initialize();
+        this.bindDiagramEventListeners();
+    }
+
+    public destroy(): void {
+        this.unbindDiagramEventListeners();
+        super.destroy();
     }
 
     private initialize(): void {
@@ -104,7 +111,6 @@ export class DiagramTopMenu extends TopMenu {
             },
         ] : [];
 
-
         this.addDropDownMenu({
             label: 'View',
             altKey: 'V',
@@ -126,23 +132,6 @@ export class DiagramTopMenu extends TopMenu {
                 ...editorViewItems
             ],
         } as DropDownMenu);
-
-        //         {
-        //     label: 'Toolbars',
-        //     altKey: 'T',
-        //     onClick: () => {
-        //         this.editor.toggleToolbars();
-        //     }
-        // },
-        // {
-        //     label: 'Inspector',
-        //     altKey: 'I',
-        //     onClick: () => {
-        //         this.editor.toggleInspector();
-        //     }
-        // },
-        // '-',
-
 
         this.addDropDownMenu({
             label: 'Selection',
@@ -199,11 +188,71 @@ export class DiagramTopMenu extends TopMenu {
             ],
         } as DropDownMenu);
 
+        this.updateStyleMenu();
+        // this.addDropDownMenu({
+        //     label: 'Style',
+        //     altKey: 'S',
+        //     items: [
+        //         /* Dynamic items for each style class to be added ? */
+        //         this.actionShadowItem(DiagramConstants.NO_SHADOW, 'N'),
+        //         this.actionShadowItem(DiagramConstants.LOW_SHADOW, 'L'),
+        //         this.actionShadowItem(DiagramConstants.MEDIUM_SHADOW, 'M'),
+        //         this.actionShadowItem(DiagramConstants.HIGH_SHADOW, 'H'),
+        //         this.actionShadowItem(DiagramConstants.LOW_COLOR_SHADOW, 'C'),
+        //         this.actionShadowItem(DiagramConstants.MEDIUM_COLOR_SHADOW, 'D'),
+        //         this.actionShadowItem(DiagramConstants.HIGH_COLOR_SHADOW, 'E'),
+        //     ],
+        // } as DropDownMenu);
+    }
+
+    private bindDiagramEventListeners(): void {
+        const source = (this.diagram as any).host as HTMLElement | undefined;
+        source?.addEventListener(DIAGRAM_SHEET_LOADED_EVENT, this.updateStyleMenu.bind(this));
+        source?.addEventListener(DIAGRAM_SHEET_CHANGED_EVENT, this.updateStyleMenu.bind(this));
+    }
+
+    private unbindDiagramEventListeners(): void {
+        const source = (this.diagram as any).host as HTMLElement | undefined;
+        source?.removeEventListener(DIAGRAM_SHEET_CHANGED_EVENT, this.updateStyleMenu.bind(this));
+        source?.removeEventListener(DIAGRAM_SHEET_LOADED_EVENT, this.updateStyleMenu.bind(this));
+    }
+
+    private updateStyleMenu(): void {
+        let styleMenu = this.dropDownMenus.find(menu => menu.label === 'Style');
+        if (styleMenu) {
+            /* Remove the existing style menu before re-adding it with updated items. */
+            this.menuElement?.removeChild(styleMenu.element!);
+            this.topLevel = this.topLevel.filter(item => item !== styleMenu);
+            this.dropDownMenus = this.dropDownMenus.filter(menu => menu.label !== 'Style');
+        }
+
+        /* Populate the style menu with items for each style class in the current sheet. */
+        const styleClasses = this.diagram.sheet_id ? this.diagram.sheetRepository?.sheetClasses(this.diagram.sheet_id) : [];
+        let i = 0;
+        const styleItems: (TopMenuItem | '-')[] = styleClasses.map(cls => {
+            i++;
+            const altKey = i > 9 ? '' : i.toString();
+
+            return {
+                label: `${i}. ${cls}`,
+                altKey: altKey,
+                isEnabled: () => !!this.diagram.selection().length,
+                onClick: () => {
+                    this.diagram.applyNodePatch({ 'style_class': cls }, 'style_class');
+                }
+            } as DiagramTopMenuItem;
+        });
+
+        if (styleItems.length > 0) {
+            styleItems.push('-');
+        }
+
+        /* Add new style menu. */
         this.addDropDownMenu({
             label: 'Style',
             altKey: 'S',
             items: [
-                /* Dynamic items for each style class to be added ? */
+                ...styleItems,
                 this.actionShadowItem(DiagramConstants.NO_SHADOW, 'N'),
                 this.actionShadowItem(DiagramConstants.LOW_SHADOW, 'L'),
                 this.actionShadowItem(DiagramConstants.MEDIUM_SHADOW, 'M'),

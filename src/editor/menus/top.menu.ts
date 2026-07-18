@@ -175,13 +175,16 @@ export class TopMenu {
     private readonly onKeydown = (e: KeyboardEvent): void => {
         const keyCode = e.code.toUpperCase();
 
-        if (e.altKey && this.activeDropDown) {
+        if (this.activeDropDown) {
             /* A menu is open, so find the item to be activated */
             for (const item of this.activeDropDown.items.filter(i => i !== '-')) {
                 const altCode = 'KEY' + item.altKey.toUpperCase();
                 if (altCode === keyCode) {
                     this.selectMenuItem(item);
-                    if (isMenuItem(item)) item.onClick();
+                    if (isMenuItem(item)) {
+                        this.close();
+                        item.onClick();
+                    }
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     return;
@@ -311,7 +314,7 @@ export class TopMenu {
         return this.menuElement !== null;
     }
 
-    public addDropDownMenu(menu: DropDownMenu): HTMLElement {
+    public addDropDownMenu(menu: DropDownMenu, index: number = -1): HTMLElement {
         const item = document.createElement('div');
         setClasses(item, 'top-menu-item', this.config.itemClassName || '');
         if (menu.isEnabled && !menu.isEnabled(this.target)) toggleClasses(item, true, 'is-disabled', this.config.disabledClassName || '');
@@ -351,7 +354,11 @@ export class TopMenu {
         });
 
         this.menuElement?.appendChild(item);
-        this.topLevel.push(menu);
+        if (index >= 0 && index < this.topLevel.length) {
+            this.topLevel.splice(index, 0, menu);
+        } else {
+            this.topLevel.push(menu);
+        }
         this.dropDownMenus.push(menu);
 
         menu.element = item;
