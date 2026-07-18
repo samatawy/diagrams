@@ -633,6 +633,52 @@ export class DiagramView extends Diagram implements HasSelection {
         }
     }
 
+    /**
+     * Pan the diagram to include the specified node in the viewport.
+     * @param node The node to bring into view.
+     */
+    public panToNode(node: INode, mode: AnimationMode = 'instant'): void {
+        let rect = this.coordinates.getBoundingRect(node);
+        rect = NodeRegistry.adapter(node.type)?.getVisualRect(node, rect) ?? rect;
+
+        const zoom = this.coordinates.zoom;
+        const pan = this.coordinates.pan;
+        const padding = DiagramConstants.FIT_IMAGE_PADDING;
+
+        const cssWidth = this.canvas.width / this.pixelRatio;
+        const cssHeight = this.canvas.height / this.pixelRatio;
+
+        /* Convert world rect to canvas (CSS-pixel) coordinates */
+        const canvasLeft = rect.left * zoom - pan.x;
+        const canvasTop = rect.top * zoom - pan.y;
+        const canvasRight = canvasLeft + rect.width * zoom;
+        const canvasBottom = canvasTop + rect.height * zoom;
+
+        const isFullyVisible =
+            canvasLeft >= padding &&
+            canvasTop >= padding &&
+            canvasRight <= cssWidth - padding &&
+            canvasBottom <= cssHeight - padding;
+        if (isFullyVisible) return;
+
+        /* panBy(dx, dy) does: pan.x -= dx  (positive dx shifts content left) */
+        let deltaX = 0;
+        if (canvasLeft < padding) {
+            deltaX = -canvasLeft + padding;               /* bring left edge flush with viewport left */
+        } else if (canvasRight > cssWidth - padding) {
+            deltaX = cssWidth - canvasRight - padding;    /* bring right edge flush with viewport right */
+        }
+
+        let deltaY = 0;
+        if (canvasTop < padding) {
+            deltaY = -canvasTop + padding;
+        } else if (canvasBottom > cssHeight - padding) {
+            deltaY = cssHeight - canvasBottom - padding;
+        }
+
+        this.panBy(deltaX, deltaY, mode);
+    }
+
     // ============================================
     // ========== Data editing methods. ===========
     // ============================================

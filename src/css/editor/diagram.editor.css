@@ -19,6 +19,18 @@
     gap: var(--diagram-ui-control-gap, 4px);
     padding: 8px 8px 0;
     border-bottom: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+
+    min-height: 0;
+    max-height: 40vh;
+    overflow-y: auto;
+    transition: min-height 0.3s ease-in-out, max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
+}
+
+.diagram-editor-header.hidden {
+    padding-block: 0;
+    min-height: 0;
+    max-height: 0;
+    overflow: hidden;
 }
 
 .diagram-editor-toolbars {
@@ -64,6 +76,15 @@
     padding: 8px var(--diagram-ui-panel-padding, 6px);
     overflow-y: auto;
     min-width: 180px;
+    max-width: var(--diagram-inspector-width, 300px);
+    transition: min-width 0.3s ease-in-out, max-width 0.3s ease-in-out, padding 0.3s ease-in-out;
+}
+
+.diagram-editor-inspector.hidden {
+    padding-inline: 0;
+    min-width: 0;
+    max-width: 0;
+    overflow: hidden;
 }
 
 .diagram-editor-canvas {

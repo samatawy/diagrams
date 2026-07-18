@@ -294,10 +294,10 @@ export class DiagramAnimations {
             func();
             return;
         }
+        /* If used, this line forces every shutter animation to start from scratch. So we cannot transfer shutter between nodes. */
         // channel.cutout = undefined;
 
         this.stopAnimation(`shutter`);
-        // this.stopAnimation(`shutter-${node.id}`);
 
         const animate = () => {
             const canvas = this.diagram.getCanvas();
@@ -320,18 +320,17 @@ export class DiagramAnimations {
                 height: canvas.height
             };
 
-            let nodeRect = channel.target;
-            if (!nodeRect) {
-                nodeRect = this.getShutterRect(node, coordinates);
+            /* We cannot use the cached target since the canvas may be panning/zooming during the animation */
+            let nodeRect = this.getShutterRect(node, coordinates);
 
-                // Transform nodeRect to canvas coordinates so we can draw with identity transform
-                nodeRect.left = (nodeRect.left * coordinates.zoom - coordinates.pan.x) * coordinates.pixelRatio;
-                nodeRect.top = (nodeRect.top * coordinates.zoom - coordinates.pan.y) * coordinates.pixelRatio;
-                nodeRect.width = nodeRect.width * coordinates.zoom * coordinates.pixelRatio;
-                nodeRect.height = nodeRect.height * coordinates.zoom * coordinates.pixelRatio;
+            /* Transform nodeRect to canvas coordinates so we can draw with identity transform */
+            nodeRect.left = (nodeRect.left * coordinates.zoom - coordinates.pan.x) * coordinates.pixelRatio;
+            nodeRect.top = (nodeRect.top * coordinates.zoom - coordinates.pan.y) * coordinates.pixelRatio;
+            nodeRect.width = nodeRect.width * coordinates.zoom * coordinates.pixelRatio;
+            nodeRect.height = nodeRect.height * coordinates.zoom * coordinates.pixelRatio;
 
-                channel.target = { ...nodeRect };
-            }
+            /* This MUST be kept to support moving shutter between nodes! */
+            channel.target = { ...nodeRect };
 
             if (!channel.cutout) {
                 channel.cutout = deepClone(canvasFullRect);
@@ -514,6 +513,11 @@ export class DiagramAnimations {
             if (attainedZoom && attainedPan) {
                 channel.lastFrame = undefined;
                 this.diagram.setViewport(target); /* Finalize the viewport to the target values */
+                if (func) {
+                    func();
+                } else {
+                    this.diagram.render('all');
+                }
                 return;
             }
 

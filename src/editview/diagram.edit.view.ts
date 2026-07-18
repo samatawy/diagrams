@@ -775,7 +775,6 @@ export class DiagramEditView extends DiagramView {
 
             const merged: NodeStyle = {
                 ...class_style,
-                // fillStyle: change.fillStyle ?? class_style.fillStyle,
                 textStyle: { ...class_style.textStyle, ...change.textStyle },
                 strokeStyle: { ...class_style.strokeStyle, ...change.strokeStyle },
                 fillStyle: { ...class_style.fillStyle, ...change.fillStyle },
@@ -1106,7 +1105,7 @@ export class DiagramEditView extends DiagramView {
             try {
                 this.canvas.setPointerCapture?.(pointerId);
             } catch {
-                // Pointer capture can fail for stale pointer ids; creation still proceeds.
+                /* Pointer capture can fail for stale pointer ids; creation still proceeds. */
             }
         }
 
@@ -1134,13 +1133,12 @@ export class DiagramEditView extends DiagramView {
         const { owner: _owner, id: _id, ready: _ready, points, ...rest } = draft;
         Object.assign(node, rest);
         if (Array.isArray(points) && points.length > 0) {
-            node.points = deepClone(points);        // points.map((pt) => ({ x: pt.x, y: pt.y }));
+            node.points = deepClone(points);
         }
 
         this.centerNodeAt(node, center);
         node.ready = false;
         node.invisible = true;
-        // this.dragCreatePositioned = false;
         this.dragCreateDraft = node;
         this.render('all');
 
@@ -1178,10 +1176,8 @@ export class DiagramEditView extends DiagramView {
             owner: this,
             id: 'drag-draft-connector',
             points: [],
-            // hollow: true,
             invisible: true,
             ready: false,
-            // to: { node: draft },
         } as IConnection;
     }
 
@@ -1552,7 +1548,6 @@ export class DiagramEditView extends DiagramView {
         if (style.italic !== undefined) this.settings.textItalic = style.italic;
         if (style.underline !== undefined) this.settings.textUnderline = style.underline;
         if (style.align !== undefined) this.settings.textAlign = style.align;
-        // if (style.baseline !== undefined) this.settings.textBaseline = style.baseline;
         if (style.halo !== undefined) this.settings.textHalo = style.halo;
 
         for (let node of selected) {
@@ -1906,16 +1901,6 @@ export class DiagramEditView extends DiagramView {
             });
     }
 
-    // /**
-    //  * Checks if the clipboard contains styles that can be pasted into selected nodes.
-    //  */
-    // private clipboardHasStyles(): void {
-    //     this.clipboard.clipboardHasStyles()
-    //         .then((hasStyles) => {
-    //             this.can_paste_styles = hasStyles;
-    //         });
-    // }
-
     /**
      * Cuts the selected nodes, copying them to the clipboard and then deleting them from the diagram.
      */
@@ -1967,16 +1952,6 @@ export class DiagramEditView extends DiagramView {
                 this.emitClipboardChange('paste', pastedNodes);
             });
     }
-
-    // /**
-    //  * Checks if the clipboard contains nodes that can be pasted into the diagram.
-    //  */
-    // private clipboardHasNodes(): void {
-    //     this.clipboard.clipboardHasNodes()
-    //         .then((hasNodes) => {
-    //             this.can_paste = hasNodes;
-    //         });
-    // }
 
     /**
      * Emits clipboard change.
@@ -2263,7 +2238,6 @@ export class DiagramEditView extends DiagramView {
         const selected = this.selection();
         const groups = selected.map(node => this.nodeGroup(node.id));
         const group = (groups.length === 1 ? groups[0] : undefined);
-        // const group = (selected.length === 1) ? this.nodeGroup(selected[0]!) : undefined;
 
         const cloned = this.clipboard.cloneNodes(selected);
         this.setSelection(cloned);
@@ -2275,101 +2249,6 @@ export class DiagramEditView extends DiagramView {
         this.render('all');
         this.renderPreview();
     }
-
-    // /**
-    //  * Handles clone node.
-    //  * @param node The target node.
-    //  * @param id The identifier value.
-    //  * @returns The computed result.
-    //  */
-    // protected cloneNode(node: INode | ISerializedNode, id?: string): INode {
-    //     return {
-    //         ...node,    /* Must NOT use deepClone on INode */
-    //         id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    //         points: deepClone(node.points),         // node.points.map(p => ({ ...p })),
-    //         ...(node.textStyle && { textStyle: deepClone(node.textStyle) }),
-    //         ...(node.strokeStyle && { strokeStyle: deepClone(node.strokeStyle) }),
-    //         ...(node.shadowStyle && { shadowStyle: deepClone(node.shadowStyle) }),
-    //         ...(node.specific && { specific: deepClone(node.specific) }),
-    //         ...(node.geometry && { geometry: deepClone(node.geometry) }),
-    //         ...(node.meta && { meta: deepClone(node.meta) }),
-    //     } as INode;
-    // }
-
-    // /**
-    //  * Handles clone nodes, including id remapping, reconnecting anchors, and handling groups.
-    //  * @param nodes The nodes to clone.
-    //  * @returns The cloned nodes, already inserted into the current layer.
-    //  */
-    // protected cloneNodes(nodes: INode[] | ISerializedNode[]): INode[] {
-    //     const layer = this.ensureCurrentLayer();
-    //     const cloned: INode[] = [];
-
-    //     /* First pass: assign new IDs so connection anchors within this
-    //                         paste batch can be remapped before any node is inserted. 
-    //                     */
-    //     const idMap = new Map<string, string>();
-    //     for (const node of nodes) {
-    //         const newId = `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    //         idMap.set(node.id, newId);
-    //     }
-
-    //     const remapAnchor = (anchor: IConnectionAnchor | undefined): IConnectionAnchor | undefined => {
-    //         if (!anchor) return undefined;
-    //         const oldId = typeof anchor.node === 'string' ? anchor.node : anchor.node.id;
-    //         const newId = idMap.get(oldId);
-    //         return newId ? { ...anchor, node: newId } : { ...anchor };
-    //     };
-
-    //     /* Second pass: remap group memberships
-    //         creating new cloned groups if there was a container node in the paste batch.
-    //     */
-    //     const groupMap: Map<string, IGroup> = new Map();
-    //     for (let node of nodes) {       // }.filter(n => (n as IContainer & INode)?.owns_group)) {
-    //         const group_id = (node as IContainer & INode)?.owns_group;
-    //         if (group_id) {
-    //             const group = this.group(group_id);
-    //             if (group) {
-    //                 /* create a clone group from selected nodes */
-    //                 let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    //                 let new_members = group.nodes.filter(id => idMap.has(id));
-    //                 new_members = new_members.map(id => idMap.get(id)!);
-    //                 const new_group = { id: cloned_group_id, nodes: new_members };
-    //                 groupMap.set(group.id, new_group);
-
-    //                 this.upsertGroup(new_group);
-    //             }
-    //             // } else {
-    //             //     /* Create a new group for the cloned node to own */
-    //             //     let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    //             //     const new_group = { id: cloned_group_id, nodes: [idMap.get(node.id)!] };
-    //             //     groupMap.set(group_id, new_group);
-
-    //             //     this.upsertGroup(new_group);
-    //             //     (node as any).owns_group = cloned_group_id;
-    //         }
-    //     }
-
-    //     /* Finally, clone the nodes into the diagram. */
-    //     for (let node of nodes) {
-    //         const clone = this.cloneNode(node, idMap.get(node.id));
-    //         const conn = clone as INode & IConnection;
-    //         conn.from = remapAnchor(conn.from);
-    //         conn.to = remapAnchor(conn.to);
-    //         if ((clone as any).owns_group) (clone as any).owns_group = groupMap.get((clone as any).owns_group)?.id;
-    //         this.upsertNode(clone);
-    //         layer.nodes.push(clone.id);
-
-    //         NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
-    //         // this.select(clone, 'isolated');
-    //         cloned.push(clone);
-    //     }
-
-    //     /* Select cloned nodes */
-    //     // cloned.forEach(clone => this.select(clone, 'isolated'));
-
-    //     return cloned;
-    // }
 
     /**
      * Creates a new group from the currently selected nodes, assigning them a unique group ID.
@@ -2437,13 +2316,13 @@ export class DiagramEditView extends DiagramView {
             for (let conn of connections) {
                 if ((conn.from?.node === _node.id || conn.from?.node === _node) &&
                     conn.from?.handle !== undefined && !NodeRegistry.canConnectTo(_node, conn.from.handle, 'from')) {
-                    // conn.from?.handle !== undefined && !NodeRegistry.canConnect(_node, 'from', conn.from.handle)) {
+
                     ConnectionBasics.reconnectToBestHandle(conn, 'from');
                     ConnectionBasics.syncEndpoints(conn);
                 }
                 if ((conn.to?.node === _node.id || conn.to?.node === _node) &&
                     conn.to?.handle !== undefined && !NodeRegistry.canConnectTo(_node, conn.to.handle, 'to')) {
-                    // conn.to?.handle !== undefined && !NodeRegistry.canConnect(_node, 'to', conn.to.handle)) {
+
                     ConnectionBasics.reconnectToBestHandle(conn, 'to');
                     ConnectionBasics.syncEndpoints(conn);
                 }
@@ -2761,9 +2640,8 @@ export class DiagramEditView extends DiagramView {
         if (!this.current.draft && this.hasCreateTool() && NodeRegistry.isConnection(this.current.tool!)) {
             /* Just preview connector targets while creating a new connection */
             this.previewConnectorTargets(event.offsetX, event.offsetY, undefined, { type: this.current.tool });
-            // this.previewConnectorTargets(event.offsetX, event.offsetY);
             return;
-        } ``
+        }
 
         if (this.current.draft) {
             this.createMove(event);
@@ -2828,7 +2706,6 @@ export class DiagramEditView extends DiagramView {
 
             if (this.double_click_listener) {
                 this.double_click_listener(hit ?? undefined, event as unknown as PointerEvent);
-                // if (hit) this.animateNodeShutter(hit, () => { });
 
             } else if (hit && NodeRegistry.hasText(hit.type)) {
                 this.editText(hit);
@@ -2918,7 +2795,7 @@ export class DiagramEditView extends DiagramView {
         if (key === 'enter') {
             consumeEvent();
 
-            const singleSelected = this.singleSelection();  // this.selection().length === 1 ? this.selection()[0] : undefined;
+            const singleSelected = this.singleSelection();
 
             if (singleSelected && this.current.tool === 'select' && NodeRegistry.hasText(singleSelected.type)) {
                 this.editText(singleSelected);
@@ -2960,8 +2837,8 @@ export class DiagramEditView extends DiagramView {
         const start = this.selection().length > 0 ? this.selection()[0] : undefined;
         const next = this.nextTab(start?.id);
         if (next) {
+            this.panToNode(next, 'animate');
             this.setSelection([next]);
-            // this.render('all');
         }
         return next;
     }
@@ -2970,8 +2847,8 @@ export class DiagramEditView extends DiagramView {
         const start = this.selection().length > 0 ? this.selection()[0] : undefined;
         const next = this.previousTab(start?.id);
         if (next) {
+            this.panToNode(next, 'animate');
             this.setSelection([next]);
-            // this.render('all');
         }
         return next;
     }
@@ -3613,13 +3490,13 @@ export class DiagramEditView extends DiagramView {
     private freehandUp(event: PointerEvent): void {
         if (!this.freehandPath) return;
 
-        // 1. Reduce points (Douglas-Peucker or simple threshold)
+        /* 1. Reduce points (Douglas-Peucker or simple threshold) */
         const compacted = FreehandAdapter.douglasPeucker(this.freehandPath, 1.5); // 1.5px tolerance
 
-        // 2. Tranform into canvas coordinates
+        /* 2. Tranform into canvas coordinates */
         const transformed = compacted.map(pt => this.getCoordinates().getPoint(pt.x, pt.y, 'ignore_grid'));
 
-        // 3. Append to diagram as a new node
+        /* 3. Append to diagram as a new node */
         const node: INode = {
             owner: this,
             id: `freehand-${performance.now()}`,
@@ -3635,16 +3512,15 @@ export class DiagramEditView extends DiagramView {
 
         this.context.restore();
 
-        // console.log(node);
-
-        // 2. Smooth (Chaikin's algorithm or cubic spline fit)
+        /* 2. Smooth (Chaikin's algorithm or cubic spline fit) */
         //   const smoothed = chaikinSmooth(compacted, 2); // 2 iterations
 
-        // 3. Convert to SVG/Canvas path commands
+        /* 3. Convert to SVG/Canvas path commands */
         //   const pathData = buildPathCommands(smoothed);
 
-        // 4. Store as vector, clear temp array
+        /* 4. Store as vector, clear temp array */
         //   diagram.storeFreehandPath(pathData);
+
         this.freehandPath = undefined;
         this.lastFreehandPoint = undefined;
 
@@ -3668,7 +3544,7 @@ export class DiagramEditView extends DiagramView {
 
         const layer = this.ensureCurrentLayer();
 
-        const point = this.getCreatePoint(event);   //  this.getCoordinates().getPointFromEvent(event, this.grid);
+        const point = this.getCreatePoint(event);
 
         if (!this.current.draft) {
             this.addUndo();
@@ -3737,10 +3613,10 @@ export class DiagramEditView extends DiagramView {
     private createMove(event: PointerEvent): void {
         if (!this.current.draft) return;
 
-        let point = this.getCreatePoint(event);     // this.getCoordinates().getPointFromEvent(event, this.grid);
+        let point = this.getCreatePoint(event);
         const draft = this.current.draft;
 
-        // Snap the active endpoint to 45° when shift is held for connections/polylines
+        /* Snap the active endpoint to 45° when shift is held for connections/polylines. */
         if (event.shiftKey && NodeRegistry.isConnection(draft.type) && draft.points.length >= 2) {
             const anchor = draft.points[draft.points.length - 2]!;
             point = this.snapAngle45(point, anchor);
@@ -3826,10 +3702,6 @@ export class DiagramEditView extends DiagramView {
                 event.offsetX, event.offsetY,
                 'from',
                 this.dragCreateDraft)
-            // ? this.getPointerConnectionAnchorAndPoint(this.dragCreateDraft,
-            //     event.offsetX, event.offsetY,
-            //     'from',
-            //     this.dragDraftConnector as INode & IConnection)
             : undefined;
         const pointerAnchor = pointerHit?.anchor;
         if (pointerAnchor && typeof pointerAnchor.node !== 'string') {
@@ -3851,7 +3723,6 @@ export class DiagramEditView extends DiagramView {
                 /* Try to find a better anchor */
                 const is_inside = from_handle === NodeHandle.MOVE;
                 const from_nearest = NodeBasics.nearestConnectionHandle(overlaying, 'from', this.dragCreateDraft, from_point, is_inside);
-                // if (from_nearest && NodeRegistry.canConnect(overlaying, 'from', from_nearest.handle)) {
                 if (from_nearest) {
                     from_handle = from_nearest.handle;
                     from_point = from_nearest.point;
@@ -3863,10 +3734,6 @@ export class DiagramEditView extends DiagramView {
              * so we must not call positionDraftConnectedTo — that would cause visible flickering. */
             let to_nearest = NodeBasics.nearestConnectionHandle(this.dragCreateDraft, 'to', overlaying, from_point, false);
 
-            // if (to_nearest && !NodeRegistry.canConnect(this.dragCreateDraft, 'to', to_nearest.handle)) {
-            //     to_nearest = undefined;
-            // }
-
             if (to_nearest && (from_handle === NodeHandle.N || from_handle === NodeHandle.S ||
                 from_handle === NodeHandle.E || from_handle === NodeHandle.W ||
                 from_handle === NodeHandle.NE || from_handle === NodeHandle.NW ||
@@ -3877,7 +3744,7 @@ export class DiagramEditView extends DiagramView {
                 const to_handle = to_nearest.handle;
                 const to_point = to_nearest.point;
 
-                this.canvas.style.cursor = 'copy';  // indicate Adding to existing node
+                this.canvas.style.cursor = 'copy';  /* indicate Adding to existing node */
 
                 this.connectDragDraftTo(this.dragCreateDraft, from_point, from_handle, to_point);
                 this.animateLineDash('auto_connect', () => {
@@ -3903,15 +3770,6 @@ export class DiagramEditView extends DiagramView {
             }
         } else {
             this.stopAnimation('auto_connect');
-
-            // if (isContainer(overlaying)) {
-            //     this.animateLineDash('add_child', () => {
-            //         this.render('all');
-
-            //         /* Provide visual feedback indicating potential anchor points. */
-            //         this.renderConnectionHandles(overlaying);
-            //     });
-            // }
         }
 
         /* The dragged node is not over another node. */
@@ -3919,7 +3777,6 @@ export class DiagramEditView extends DiagramView {
 
         const point = this.coordinates.getPointFromEvent(event, this.grid);
         this.centerDragDraftAt(this.dragCreateDraft, point);
-        // this.centerNodeAt(this.dragCreateDraft, point);
         this.render('all');
 
         if (this.dragDraftConnector) {
@@ -4044,7 +3901,6 @@ export class DiagramEditView extends DiagramView {
         } else {
             /* The created node is not over another node. */
             this.animations.animateNodeCenter(created, point, () => { });
-            // this.centerNodeAt(created, point);
         }
 
         created.ready = true;
@@ -4072,7 +3928,6 @@ export class DiagramEditView extends DiagramView {
         if (adapter?.can_snap) {
             adapter.snapToGrid(created, this.grid, NodeHandle.MOVE);
         }
-        // NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid, NodeHandle.MOVE);
 
         this.clearSelection();
         this.select(created, 'isolated');
@@ -4250,7 +4105,6 @@ export class DiagramEditView extends DiagramView {
             if (!at || at.handle === NodeHandle.ROTATE) continue;
 
             const rect = this.coordinates.getBoundingRect(source, false);
-            // const point = this.coordinates.getHitPoint({ x: canvasX, y: canvasY }, rect, source.angle || 0);
             const anchor = ConnectionBasics.buildConnectableAnchor(source, at.handle, at.point, rect);
             if (!anchor) {
                 continue;
@@ -4358,7 +4212,6 @@ export class DiagramEditView extends DiagramView {
             ? [{ ...start }, { ...start }, { ...start }, { ...start }]
             : [{ ...start }, { ...start }];
 
-        // const defaultFillStyle = NodeRegistry.isConnection(tool) ? 'transparent' : this.fillColor;
         const defaultFillStyle = NodeRegistry.isConnection(tool)
             ? { color: 'transparent' }
             : { color: this.settings.fillColor, gradient: this.settings.fillGradient };
@@ -4447,7 +4300,6 @@ export class DiagramEditView extends DiagramView {
         if (adapter?.can_snap) {
             adapter.snapToGrid(created, this.grid, NodeHandle.MOVE);
         }
-        // NodeRegistry.adapter(created.type)?.snapToGrid(created, this.grid, NodeHandle.MOVE);
 
         this.clearSelection();
         this.select(created, 'isolated');
@@ -4628,17 +4480,28 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
-        if (this.activeTextEditor) {
-            /* If a text editor is already active, animate the shutter to the new location. */
-            this.animateNodeShutter(node, () => { });
-            this.closeTextEditor(true);
-        } else {
-            /* If no text editor is active, animate the shutter to the new node. */
-            this.animateNodeShutter(node, () => { });
-        }
+        // if (this.activeTextEditor) {
+        //     /* If a text editor is already active, animate the shutter to the new location. */
+        //     this.animateNodeShutter(node, () => { });
+        //     this.closeTextEditor(true);
+        // } else {
+        //     /* If no text editor is active, animate the shutter to the new node. */
+        //     this.animateNodeShutter(node, () => { });
+        // }
         this.setInteractionHint('Editing text');
-
-        // this.animateNodeShutter(node, () => { });
+        this.closeTextEditor(true);
+        this.animateNodeShutter(node, () => {
+            if (this.activeTextEditor?.element) {
+                const textarea = this.activeTextEditor.element;
+                const screenArea = this.getScreenTextArea(node);
+                if (screenArea?.rect) {
+                    textarea.style.left = `${screenArea.rect.left}px`;
+                    textarea.style.top = `${screenArea.rect.top}px`;
+                    textarea.style.width = `${screenArea.rect.width}px`;
+                    textarea.style.height = `${screenArea.rect.height}px`;
+                }
+            }
+        });
 
         /* Prepare shortcuts and required data for all cases: */
 
@@ -4650,8 +4513,10 @@ export class DiagramEditView extends DiagramView {
         const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
         const baseline = textBaseline(node);
         const orientation = textOrientation(node);
-        let rotateCenter: IPoint | undefined;
-        let transformOrigin = 'center center';
+        // let rotateCenter: IPoint | undefined;
+        // const transformOrigin = 'center center';
+        // let rotateCenter: IPoint | undefined;
+        // let transformOrigin = 'center center';
 
         const fontFace = node.textStyle?.fontFace || this.textStyle.fontFace || DiagramConstants.DEFAULT_NODE_FONT_FACE;
         const fontSize = node.textStyle?.size || this.textStyle.size || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
@@ -4672,131 +4537,135 @@ export class DiagramEditView extends DiagramView {
         };
         let layoutRect: IRect = { ...screenRect };
 
-        let editorWidth: number;
-        let editorHeight: number;
-        let left: number;
-        let top: number;
-        let transform = '';
+        // let editorWidth: number;
+        // let editorHeight: number;
+        // let left: number;
+        // let top: number;
+        // let transform = '';
+        // let editorWidth: number;
+        // let editorHeight: number;
+        // let left: number;
+        // let top: number;
+        // let transform = '';
 
         /* Decide where text should be placed: */
 
-        const placement = NodeRegistry.adapter(node.type)?.textPlacement(node);
-        if (placement?.rect) {
-            /* Lines in a bounded rect */
+        const screenTextArea = this.getScreenTextArea(node);
+        if (screenTextArea === undefined) return;
 
-            rect = placement.rect;
-            screenRect = {
-                left: canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x,
-                top: canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y,
-                width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
-                height: Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom),
-            };
-            layoutRect = { ...screenRect };
+        const transform = screenTextArea?.transform || '';
+        const transformOrigin = screenTextArea?.transformOrigin || 'center center';
+        const rotateCenter = screenTextArea?.rotateCenter;
+        const left = screenTextArea?.rect.left || screenRect.left;
+        const top = screenTextArea?.rect.top || screenRect.top;
+        const editorWidth = screenTextArea?.rect.width || screenRect.width;
+        const editorHeight = screenTextArea?.rect.height || screenRect.height;
 
-            if (orientation === 'vertical') {
-                rotateCenter = {
-                    x: screenRect.left + screenRect.width / 2,
-                    y: screenRect.top + screenRect.height / 2,
-                };
-                layoutRect = {
-                    left: rotateCenter.x - screenRect.height / 2,
-                    top: rotateCenter.y - screenRect.width / 2,
-                    width: screenRect.height,
-                    height: screenRect.width,
-                };
-            }
+        // const placement = NodeRegistry.adapter(node.type)?.textPlacement(node);
+        // if (placement?.rect) {
+        //     /* Lines in a bounded rect */
 
-            left = layoutRect.left;
-            editorWidth = Math.max(24, layoutRect.width);
+        //     rect = placement.rect;
+        //     screenRect = {
+        //         left: canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x,
+        //         top: canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y,
+        //         width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
+        //         height: Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom),
+        //     };
+        //     layoutRect = { ...screenRect };
 
-            const text = nodeText(node);
-            const measureContext = this.context;
-            measureContext.save();
-            measureContext.font = [fontItalic, fontWeight, `${scaledFontSize}px`, fontFace].filter(Boolean).join(' ');
-            const wrapped = this.wrapEditorTextLines(text, editorWidth, measureContext);
-            measureContext.restore();
+        //     if (orientation === 'vertical') {
+        //         rotateCenter = {
+        //             x: screenRect.left + screenRect.width / 2,
+        //             y: screenRect.top + screenRect.height / 2,
+        //         };
+        //         layoutRect = {
+        //             left: rotateCenter.x - screenRect.height / 2,
+        //             top: rotateCenter.y - screenRect.width / 2,
+        //             width: screenRect.height,
+        //             height: screenRect.width,
+        //         };
+        //     }
 
-            const lineCount = Math.max(1, wrapped.length);
-            const textBlockHeight = lineCount * scaledLineHeight;
+        //     left = layoutRect.left;
+        //     editorWidth = Math.max(24, layoutRect.width);
 
-            // const startline = baseline === 'top'
-            //     ? layoutRect.top + (scaledFontSize / 2)
-            //     : baseline === 'bottom'
-            //         ? layoutRect.top + layoutRect.height - (scaledLineHeight * (lineCount - 1))
-            //         : layoutRect.top + (scaledFontSize / 4) + (layoutRect.height / 2) - (scaledLineHeight * (lineCount - 1) / 2);
+        //     const text = nodeText(node);
+        //     const measureContext = this.context;
+        //     measureContext.save();
+        //     measureContext.font = [fontItalic, fontWeight, `${scaledFontSize}px`, fontFace].filter(Boolean).join(' ');
+        //     const wrapped = this.wrapEditorTextLines(text, editorWidth, measureContext);
+        //     measureContext.restore();
 
-            // const firstLineTop = baseline === 'top'
-            //     ? startline
-            //     : baseline === 'bottom'
-            //         ? startline - scaledLineHeight
-            //         : startline - (scaledLineHeight / 2);
+        //     const lineCount = Math.max(1, wrapped.length);
+        //     const textBlockHeight = lineCount * scaledLineHeight;
 
-            editorHeight = Math.max(scaledLineHeight, textBlockHeight);
-            const halfLeading = (scaledLineHeight - scaledFontSize) / 2;
-            const firstLineTop = baseline === 'top'
-                ? layoutRect.top - halfLeading
-                : baseline === 'bottom'
-                    ? layoutRect.top + layoutRect.height - editorHeight + halfLeading
-                    : layoutRect.top + layoutRect.height / 2 - editorHeight / 2;
-            top = firstLineTop;
+        //     editorHeight = Math.max(scaledLineHeight, textBlockHeight);
+        //     const halfLeading = (scaledLineHeight - scaledFontSize) / 2;
+        //     const firstLineTop = baseline === 'top'
+        //         ? layoutRect.top - halfLeading
+        //         : baseline === 'bottom'
+        //             ? layoutRect.top + layoutRect.height - editorHeight + halfLeading
+        //             : layoutRect.top + layoutRect.height / 2 - editorHeight / 2;
+        //     top = firstLineTop;
 
-            if (orientation === 'vertical') {
-                transform = `rotate(-90deg)`;
-                if (rotateCenter) {
-                    transformOrigin = `${rotateCenter.x - left}px ${rotateCenter.y - top}px`;
-                } else {
-                    transformOrigin = 'center center';
-                }
-            }
+        //     if (orientation === 'vertical') {
+        //         transform = `rotate(-90deg)`;
+        //         if (rotateCenter) {
+        //             transformOrigin = `${rotateCenter.x - left}px ${rotateCenter.y - top}px`;
+        //         } else {
+        //             transformOrigin = 'center center';
+        //         }
+        //     }
 
-        } else if (placement?.segment) {
-            /* Text along a line segment */
+        // } else if (placement?.segment) {
+        //     /* Text along a line segment */
 
-            rect = this.coordinates.getBoundingRect(node);
+        //     rect = this.coordinates.getBoundingRect(node);
 
-            /* Normalise direction the same way the renderer does. */
-            const { from, to } = NodeBasics.normalizeLine(placement.segment.from, placement.segment.to);
+        //     /* Normalise direction the same way the renderer does. */
+        //     const { from, to } = NodeBasics.normalizeLine(placement.segment.from, placement.segment.to);
 
-            const worldToScreen = (x: number, y: number): IPoint => ({
-                x: canvasRect.left + (x * zoom) - pan.x,
-                y: canvasRect.top + (y * zoom) - pan.y,
-            });
+        //     const worldToScreen = (x: number, y: number): IPoint => ({
+        //         x: canvasRect.left + (x * zoom) - pan.x,
+        //         y: canvasRect.top + (y * zoom) - pan.y,
+        //     });
 
-            const fromScreen = worldToScreen(from.x, from.y);
-            const toScreen = worldToScreen(to.x, to.y);
-            const midScreen = { x: (fromScreen.x + toScreen.x) / 2, y: (fromScreen.y + toScreen.y) / 2 };
+        //     const fromScreen = worldToScreen(from.x, from.y);
+        //     const toScreen = worldToScreen(to.x, to.y);
+        //     const midScreen = { x: (fromScreen.x + toScreen.x) / 2, y: (fromScreen.y + toScreen.y) / 2 };
 
-            if (textOrientation(node) === 'path') {
-                /* Path label: rotate the textarea to follow the segment angle. */
-                const angle = NodeBasics.calculateAngle(from, to);
-                const nx = Math.sin(angle);
-                const ny = -Math.cos(angle);
-                const offset = scaledLineHeight / 2;
+        //     if (textOrientation(node) === 'path') {
+        //         /* Path label: rotate the textarea to follow the segment angle. */
+        //         const angle = NodeBasics.calculateAngle(from, to);
+        //         const nx = Math.sin(angle);
+        //         const ny = -Math.cos(angle);
+        //         const offset = scaledLineHeight / 2;
 
-                editorWidth = Math.max(24, NodeBasics.calculateLength(fromScreen, toScreen));
-                editorHeight = scaledLineHeight;
-                left = midScreen.x + nx * offset - editorWidth / 2;
-                top = midScreen.y + ny * offset - editorHeight / 2;
-                transform = `rotate(${angle}rad)`;
+        //         editorWidth = Math.max(24, NodeBasics.calculateLength(fromScreen, toScreen));
+        //         editorHeight = scaledLineHeight;
+        //         left = midScreen.x + nx * offset - editorWidth / 2;
+        //         top = midScreen.y + ny * offset - editorHeight / 2;
+        //         transform = `rotate(${angle}rad)`;
 
-            } else if (textOrientation(node) === 'horizontal') {
-                /* Horizontal label: anchor at segment midpoint shifted up by half a line, no rotation. */
-                editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
-                editorHeight = scaledLineHeight;
-                left = midScreen.x - editorWidth / 2;
-                top = midScreen.y - editorHeight / 2;
-                /* transform stays undefined — no rotation on the textarea. */
+        //     } else if (textOrientation(node) === 'horizontal') {
+        //         /* Horizontal label: anchor at segment midpoint shifted up by half a line, no rotation. */
+        //         editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
+        //         editorHeight = scaledLineHeight;
+        //         left = midScreen.x - editorWidth / 2;
+        //         top = midScreen.y - editorHeight / 2;
+        //         /* transform stays undefined — no rotation on the textarea. */
 
-            } else {
-                /* Unknown orientation: fallback to horizontal. */
-                editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
-                editorHeight = scaledLineHeight;
-                left = midScreen.x - editorWidth / 2;
-                top = midScreen.y - editorHeight / 2;
-            }
-        } else {
-            return;
-        }
+        //     } else {
+        //         /* Unknown orientation: fallback to horizontal. */
+        //         editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
+        //         editorHeight = scaledLineHeight;
+        //         left = midScreen.x - editorWidth / 2;
+        //         top = midScreen.y - editorHeight / 2;
+        //     }
+        // } else {
+        //     return;
+        // }
 
         /* Now we have the data so we can create the textarea: */
 
@@ -4828,7 +4697,6 @@ export class DiagramEditView extends DiagramView {
         textarea.style.zIndex = '2147483647';
         textarea.style.cursor = 'text';
         textarea.style.fontSynthesis = 'none';
-        // textarea.style.textRendering = 'geometricPrecision';
 
         /* Rotate the textarea if required: */
 
@@ -4874,13 +4742,10 @@ export class DiagramEditView extends DiagramView {
             textarea.style.height = `${nextHeight}px`;
 
             if (baseline === 'top') {
-                // textarea.style.top = `${layoutRect.top + (scaledFontSize / 2)}px`;
                 textarea.style.top = `${layoutRect.top - (scaledLineHeight - scaledFontSize) / 2}px`;
             } else if (baseline === 'bottom') {
-                // textarea.style.top = `${layoutRect.top + layoutRect.height - nextHeight}px`;
                 textarea.style.top = `${layoutRect.top + layoutRect.height - nextHeight + (scaledLineHeight - scaledFontSize) / 2}px`;
             } else {
-                // textarea.style.top = `${layoutRect.top + (scaledFontSize / 4) + (layoutRect.height / 2) - (nextHeight / 2)}px`;
                 textarea.style.top = `${layoutRect.top + layoutRect.height / 2 - nextHeight / 2}px`;
             }
 
@@ -5008,6 +4873,158 @@ export class DiagramEditView extends DiagramView {
         this.setInteractionHint(undefined);
 
         return true;
+    }
+
+    private getScreenTextArea(node: INode): { rect: IRect, transform: string, rotateCenter?: IPoint, transformOrigin?: string } | undefined {
+        const canvasRect = this.canvas.getBoundingClientRect();
+        const zoom = this.coordinates.zoom;
+        const pan = this.coordinates.pan;
+        // const singleLine = NodeRegistry.isSingleLineText(node.type);
+
+        const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
+        const baseline = textBaseline(node);
+        const orientation = textOrientation(node);
+        let rotateCenter: IPoint | undefined;
+        let transformOrigin = 'center center';
+
+        const fontFace = node.textStyle?.fontFace || this.textStyle.fontFace || DiagramConstants.DEFAULT_NODE_FONT_FACE;
+        const fontSize = node.textStyle?.size || this.textStyle.size || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
+        const fontItalic = node.textStyle?.italic ? 'italic' : '';
+        const rawWeight = node.textStyle?.weight;
+        const fontWeight = (typeof rawWeight === 'number' && Number.isFinite(rawWeight))
+            ? Math.min(900, Math.max(100, Math.round(rawWeight / 100) * 100))
+            : 400;
+        const scaledFontSize = Math.max(1, fontSize * zoom);
+        const scaledLineHeight = Math.max(scaledFontSize * 1.25, 1);
+
+        let rect = this.coordinates.getBoundingRect(node);
+        let screenRect: IRect = {
+            left: canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x,
+            top: canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y,
+            width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
+            height: Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom),
+        };
+        let layoutRect: IRect = { ...screenRect };
+
+        let editorWidth: number;
+        let editorHeight: number;
+        let left: number;
+        let top: number;
+        let transform = '';
+
+        const placement = NodeRegistry.adapter(node.type)?.textPlacement(node);
+        if (placement?.rect) {
+            /* Lines in a bounded rect */
+
+            const rect = placement.rect;
+            const screenRect = {
+                left: canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x,
+                top: canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y,
+                width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
+                height: Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom),
+            };
+            layoutRect = { ...screenRect };
+
+            if (orientation === 'vertical') {
+                rotateCenter = {
+                    x: screenRect.left + screenRect.width / 2,
+                    y: screenRect.top + screenRect.height / 2,
+                };
+                layoutRect = {
+                    left: rotateCenter.x - screenRect.height / 2,
+                    top: rotateCenter.y - screenRect.width / 2,
+                    width: screenRect.height,
+                    height: screenRect.width,
+                };
+            }
+
+            left = layoutRect.left;
+            editorWidth = Math.max(24, layoutRect.width);
+
+            const text = nodeText(node);
+            const measureContext = this.context;
+            measureContext.save();
+            measureContext.font = [fontItalic, fontWeight, `${scaledFontSize}px`, fontFace].filter(Boolean).join(' ');
+            const wrapped = this.wrapEditorTextLines(text, editorWidth, measureContext);
+            measureContext.restore();
+
+            const lineCount = Math.max(1, wrapped.length);
+            const textBlockHeight = lineCount * scaledLineHeight;
+
+            editorHeight = Math.max(scaledLineHeight, textBlockHeight);
+            const halfLeading = (scaledLineHeight - scaledFontSize) / 2;
+            const firstLineTop = baseline === 'top'
+                ? layoutRect.top - halfLeading
+                : baseline === 'bottom'
+                    ? layoutRect.top + layoutRect.height - editorHeight + halfLeading
+                    : layoutRect.top + layoutRect.height / 2 - editorHeight / 2;
+            top = firstLineTop;
+
+            if (orientation === 'vertical') {
+                transform = `rotate(-90deg)`;
+                if (rotateCenter) {
+                    transformOrigin = `${rotateCenter.x - left}px ${rotateCenter.y - top}px`;
+                } else {
+                    transformOrigin = 'center center';
+                }
+            }
+
+        } else if (placement?.segment) {
+            /* Text along a line segment */
+
+            rect = this.coordinates.getBoundingRect(node);
+
+            /* Normalise direction the same way the renderer does. */
+            const { from, to } = NodeBasics.normalizeLine(placement.segment.from, placement.segment.to);
+
+            const worldToScreen = (x: number, y: number): IPoint => ({
+                x: canvasRect.left + (x * zoom) - pan.x,
+                y: canvasRect.top + (y * zoom) - pan.y,
+            });
+
+            const fromScreen = worldToScreen(from.x, from.y);
+            const toScreen = worldToScreen(to.x, to.y);
+            const midScreen = { x: (fromScreen.x + toScreen.x) / 2, y: (fromScreen.y + toScreen.y) / 2 };
+
+            if (textOrientation(node) === 'path') {
+                /* Path label: rotate the textarea to follow the segment angle. */
+                const angle = NodeBasics.calculateAngle(from, to);
+                const nx = Math.sin(angle);
+                const ny = -Math.cos(angle);
+                const offset = scaledLineHeight / 2;
+
+                editorWidth = Math.max(24, NodeBasics.calculateLength(fromScreen, toScreen));
+                editorHeight = scaledLineHeight;
+                left = midScreen.x + nx * offset - editorWidth / 2;
+                top = midScreen.y + ny * offset - editorHeight / 2;
+                transform = `rotate(${angle}rad)`;
+
+            } else if (textOrientation(node) === 'horizontal') {
+                /* Horizontal label: anchor at segment midpoint shifted up by half a line, no rotation. */
+                editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
+                editorHeight = scaledLineHeight;
+                left = midScreen.x - editorWidth / 2;
+                top = midScreen.y - editorHeight / 2;
+                /* transform stays undefined — no rotation on the textarea. */
+
+            } else {
+                /* Unknown orientation: fallback to horizontal. */
+                editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
+                editorHeight = scaledLineHeight;
+                left = midScreen.x - editorWidth / 2;
+                top = midScreen.y - editorHeight / 2;
+            }
+
+        } else {
+            return undefined;
+        }
+
+        return {
+            rect: { left, top, width: editorWidth, height: editorHeight },
+            transform,
+            rotateCenter,
+            transformOrigin,
+        };
     }
 
     /**

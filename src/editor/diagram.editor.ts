@@ -546,6 +546,23 @@ export class DiagramEditor {
         return this.fillStyleSelect;
     }
 
+    public isHeaderVisible(): boolean {
+        return !this.headerHost?.classList.contains('hidden');
+    }
+
+    public showHeader(visible: boolean) {
+        this.headerHost?.classList.toggle('hidden', !visible);
+    }
+
+    public isInspectorVisible(): boolean {
+        return !this.inspectorHost?.classList.contains('hidden');
+    }
+
+    public showInspector(visible: boolean) {
+        this.inspectorHost?.classList.toggle('hidden', !visible);
+    }
+
+
     /**
      * Builds the editor layout and initializes all owned controls.
      * @param host The editor host element.
@@ -613,7 +630,7 @@ export class DiagramEditor {
         this.diagram.contextMenu = new DiagramContextMenu(this.diagram);
 
         if (this.topMenuHost) {
-            this.topMenu = new DiagramTopMenu(this.topMenuHost, this.diagram);
+            this.topMenu = new DiagramTopMenu(this.topMenuHost, this.diagram, { editor: this });
         }
 
         if (this.inspectorHost) {

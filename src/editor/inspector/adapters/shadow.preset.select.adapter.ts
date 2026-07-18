@@ -1,6 +1,5 @@
 import type { InspectorAdapterInit, EditableRecord } from "../inspector";
 import { InspectorAdapter } from "../inspector";
-// import { SizeSelect, type SizeSelectConfig } from "../../inputs/size.select";
 import { SHADOW_PRESET_CHANGE_EVENT, ShadowPresetSelect } from "../../inputs/shadow.preset.select";
 import type { ShadowStyle } from "../../../style.interfaces";
 import { DiagramConstants } from "../../../model";

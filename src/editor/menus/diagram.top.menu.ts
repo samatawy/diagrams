@@ -3,12 +3,16 @@ import { DiagramEditView } from '../../editview/diagram.edit.view';
 
 import { ACTION_MAP, type DiagramAction, type DiagramActionId } from '../diagram.actions';
 import { TopMenu, type DropDownMenu, type TopMenuConfig, type TopMenuItem } from './top.menu';
+import { DiagramConstants } from '../../model';
+import type { ShadowStyle } from '../../style.interfaces';
+import type { DiagramEditor } from '../diagram.editor';
 
 
 /**
  * Configuration options for {@link DiagramTopMenu}.
  */
 export interface DiagramTopMenuConfig extends TopMenuConfig {
+    editor?: DiagramEditor;
 }
 
 interface DiagramTopMenuItem extends TopMenuItem {
@@ -30,8 +34,6 @@ interface DiagramTopMenuItem extends TopMenuItem {
 export class DiagramTopMenu extends TopMenu {
 
     private readonly diagram: DiagramEditView;
-    // private readonly emptyLayout: DiagramActionId[];
-    // private readonly selectionLayout: DiagramActionId[];
 
     /**
      * Creates a new DiagramTopMenu.
@@ -79,6 +81,30 @@ export class DiagramTopMenu extends TopMenu {
             ],
         } as DropDownMenu);
 
+        const config = this.config as DiagramTopMenuConfig;
+        const editorViewItems = config.editor ? [
+            '-',
+            {
+                label: 'Toolbars',
+                altKey: 'T',
+                toggle: true,
+                isActive: () => config.editor?.isHeaderVisible() ?? false,
+                onClick: () => {
+                    config.editor?.showHeader(!config.editor.isHeaderVisible());
+                }
+            },
+            {
+                label: 'Inspector',
+                altKey: 'I',
+                toggle: true,
+                isActive: () => config.editor?.isInspectorVisible() ?? false,
+                onClick: () => {
+                    config.editor?.showInspector(!config.editor.isInspectorVisible());
+                }
+            },
+        ] : [];
+
+
         this.addDropDownMenu({
             label: 'View',
             altKey: 'V',
@@ -96,13 +122,31 @@ export class DiagramTopMenu extends TopMenu {
                 this.actionMenuItem('zoom-out', 'O'),
                 this.actionMenuItem('fit-horizontally', 'H'),
                 this.actionMenuItem('fit-all', 'F'),
+
+                ...editorViewItems
             ],
         } as DropDownMenu);
+
+        //         {
+        //     label: 'Toolbars',
+        //     altKey: 'T',
+        //     onClick: () => {
+        //         this.editor.toggleToolbars();
+        //     }
+        // },
+        // {
+        //     label: 'Inspector',
+        //     altKey: 'I',
+        //     onClick: () => {
+        //         this.editor.toggleInspector();
+        //     }
+        // },
+        // '-',
 
 
         this.addDropDownMenu({
             label: 'Selection',
-            altKey: 'S',
+            altKey: 'N',
             items: [
                 this.actionMenuItem('select-all', 'A'),
                 '-',
@@ -154,6 +198,21 @@ export class DiagramTopMenu extends TopMenu {
                 this.actionMenuItem('text-orientation-path', 'P')
             ],
         } as DropDownMenu);
+
+        this.addDropDownMenu({
+            label: 'Style',
+            altKey: 'S',
+            items: [
+                /* Dynamic items for each style class to be added ? */
+                this.actionShadowItem(DiagramConstants.NO_SHADOW, 'N'),
+                this.actionShadowItem(DiagramConstants.LOW_SHADOW, 'L'),
+                this.actionShadowItem(DiagramConstants.MEDIUM_SHADOW, 'M'),
+                this.actionShadowItem(DiagramConstants.HIGH_SHADOW, 'H'),
+                this.actionShadowItem(DiagramConstants.LOW_COLOR_SHADOW, 'C'),
+                this.actionShadowItem(DiagramConstants.MEDIUM_COLOR_SHADOW, 'D'),
+                this.actionShadowItem(DiagramConstants.HIGH_COLOR_SHADOW, 'E'),
+            ],
+        } as DropDownMenu);
     }
 
     private actionMenuItem(actionId: DiagramActionId, altKey: string): DiagramTopMenuItem {
@@ -181,4 +240,15 @@ export class DiagramTopMenu extends TopMenu {
         };
     }
 
+    private actionShadowItem(style: ShadowStyle, altKey: string): DiagramTopMenuItem {
+        return {
+            label: style.name,
+            altKey: altKey,
+            isEnabled: () => !!this.diagram.selection().length,
+            onClick: () => {
+                this.diagram.applyNodePatch({ 'shadowStyle': style }, 'shadowStyle');
+            }
+        };
+    }
 }
+
