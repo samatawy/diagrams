@@ -260,7 +260,7 @@ export interface DiagramSheetChanged {
 /**
  * Clipboard operations emitted by the editor.
  */
-export type DiagramClipboardOperation = 'copy' | 'cut' | 'paste';
+export type DiagramClipboardOperation = 'copy' | 'cut' | 'paste' | 'copy-styles' | 'paste-styles';
 
 /**
  * Defines the structure of a diagram clipboard event.

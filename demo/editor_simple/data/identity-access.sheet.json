@@ -1,0 +1,349 @@
+{
+    "id": "demo-identity-sheet-v1",
+    "name": "Demo Identity Sheet",
+    "version": "1.0.0",
+    "description": "Named style classes for the Identity and Access sample diagram.",
+    "diagram": {
+        "background": {
+            "gradient": {
+                "type": "linear",
+                "angle": 20,
+                "centerX": 50,
+                "centerY": 50,
+                "stops": [
+                    {
+                        "id": "bg-1",
+                        "color": "#f8fafc",
+                        "position": 0
+                    },
+                    {
+                        "id": "bg-2",
+                        "color": "#eef2ff",
+                        "position": 100
+                    }
+                ]
+            }
+        }
+    },
+    "types": {},
+    "classes": {
+        "title": {
+            "textStyle": {
+                "fontFace": "Georgia",
+                "size": 24,
+                "weight": 700,
+                "align": "center",
+                "baseline": "middle",
+                "color": "#1e1b4b"
+            },
+            "strokeStyle": {
+                "color": "#1e1b4b",
+                "width": 1
+            },
+            "fillStyle": {
+                "color": "transparent"
+            },
+            "shadowStyle": {
+                "name": "No Shadow",
+                "color": "transparent",
+                "blur": 0,
+                "offset": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        },
+        "svc": {
+            "textStyle": {
+                "fontFace": "Inter",
+                "size": 13,
+                "weight": 700,
+                "align": "center",
+                "baseline": "middle",
+                "color": "#0f172a"
+            },
+            "strokeStyle": {
+                "color": "#1d4ed8",
+                "width": 2
+            },
+            "fillStyle": {
+                "gradient": {
+                    "type": "linear",
+                    "angle": 90,
+                    "centerX": 50,
+                    "centerY": 50,
+                    "stops": [
+                        {
+                            "id": "svc-1",
+                            "color": "#dbeafe",
+                            "position": 0
+                        },
+                        {
+                            "id": "svc-2",
+                            "color": "#bfdbfe",
+                            "position": 100
+                        }
+                    ]
+                }
+            },
+            "shadowStyle": {
+                "name": "Close",
+                "color": "rgba(30,58,138,0.25)",
+                "blur": 3,
+                "offset": {
+                    "x": 1,
+                    "y": 2
+                }
+            }
+        },
+        "decision": {
+            "textStyle": {
+                "fontFace": "Inter",
+                "size": 12,
+                "weight": 700,
+                "align": "center",
+                "baseline": "middle",
+                "color": "#3b0764"
+            },
+            "strokeStyle": {
+                "color": "#7e22ce",
+                "width": 2
+            },
+            "fillStyle": {
+                "color": "#f3e8ff"
+            },
+            "shadowStyle": {
+                "name": "No Shadow",
+                "color": "transparent",
+                "blur": 0,
+                "offset": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        },
+        "datastore": {
+            "textStyle": {
+                "fontFace": "Inter",
+                "size": 12,
+                "weight": 700,
+                "align": "center",
+                "baseline": "middle",
+                "color": "#14532d"
+            },
+            "strokeStyle": {
+                "color": "#15803d",
+                "width": 2
+            },
+            "fillStyle": {
+                "color": "#dcfce7"
+            },
+            "shadowStyle": {
+                "name": "No Shadow",
+                "color": "transparent",
+                "blur": 0,
+                "offset": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        },
+        "queue": {
+            "textStyle": {
+                "fontFace": "Inter",
+                "size": 12,
+                "weight": 700,
+                "align": "center",
+                "baseline": "middle",
+                "color": "#7c2d12"
+            },
+            "strokeStyle": {
+                "color": "#c2410c",
+                "width": 2
+            },
+            "fillStyle": {
+                "color": "#ffedd5"
+            },
+            "shadowStyle": {
+                "name": "No Shadow",
+                "color": "transparent",
+                "blur": 0,
+                "offset": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        },
+        "document": {
+            "textStyle": {
+                "fontFace": "Inter",
+                "size": 12,
+                "weight": 700,
+                "align": "center",
+                "baseline": "middle",
+                "color": "#334155"
+            },
+            "strokeStyle": {
+                "color": "#475569",
+                "width": 2
+            },
+            "fillStyle": {
+                "color": "#f8fafc"
+            },
+            "shadowStyle": {
+                "name": "Medium",
+                "color": "rgba(15,23,42,0.18)",
+                "blur": 6,
+                "offset": {
+                    "x": 3,
+                    "y": 3
+                }
+            }
+        },
+        "flow_primary": {
+            "textStyle": {
+                "fontFace": "Inter",
+                "size": 11,
+                "weight": 500,
+                "align": "center",
+                "baseline": "bottom",
+                "color": "#0f172a"
+            },
+            "strokeStyle": {
+                "color": "#1d4ed8",
+                "width": 1.8,
+                "dash": "solid",
+                "arrow_at": "end",
+                "arrow_type": "solid_triangle"
+            },
+            "fillStyle": {
+                "color": "transparent"
+            },
+            "shadowStyle": {
+                "name": "No Shadow",
+                "color": "transparent",
+                "blur": 0,
+                "offset": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        },
+        "flow_conditional": {
+            "textStyle": {
+                "fontFace": "Inter",
+                "size": 11,
+                "weight": 500,
+                "align": "center",
+                "baseline": "bottom",
+                "color": "#4c1d95"
+            },
+            "strokeStyle": {
+                "color": "#7e22ce",
+                "width": 1.8,
+                "dash": "dashdot",
+                "arrow_at": "end",
+                "arrow_type": "hollow_diamond"
+            },
+            "fillStyle": {
+                "color": "transparent"
+            },
+            "shadowStyle": {
+                "name": "No Shadow",
+                "color": "transparent",
+                "blur": 0,
+                "offset": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        },
+        "flow_async": {
+            "textStyle": {
+                "fontFace": "Inter",
+                "size": 11,
+                "weight": 500,
+                "align": "center",
+                "baseline": "bottom",
+                "color": "#9a3412"
+            },
+            "strokeStyle": {
+                "color": "#ea580c",
+                "width": 1.8,
+                "dash": "dashed",
+                "arrow_at": "end",
+                "arrow_type": "hollow_triangle"
+            },
+            "fillStyle": {
+                "color": "transparent"
+            },
+            "shadowStyle": {
+                "name": "No Shadow",
+                "color": "transparent",
+                "blur": 0,
+                "offset": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        },
+        "flow_secondary": {
+            "textStyle": {
+                "fontFace": "Inter",
+                "size": 11,
+                "weight": 500,
+                "align": "center",
+                "baseline": "bottom",
+                "color": "#334155"
+            },
+            "strokeStyle": {
+                "color": "#475569",
+                "width": 1.6,
+                "dash": "dotted",
+                "arrow_at": "end",
+                "arrow_type": "hollow_circle"
+            },
+            "fillStyle": {
+                "color": "transparent"
+            },
+            "shadowStyle": {
+                "name": "No Shadow",
+                "color": "transparent",
+                "blur": 0,
+                "offset": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        },
+        "flow_storage": {
+            "textStyle": {
+                "fontFace": "Inter",
+                "size": 11,
+                "weight": 500,
+                "align": "center",
+                "baseline": "bottom",
+                "color": "#14532d"
+            },
+            "strokeStyle": {
+                "color": "#15803d",
+                "width": 1.6,
+                "dash": "solid",
+                "arrow_at": "end",
+                "arrow_type": "solid_circle"
+            },
+            "fillStyle": {
+                "color": "transparent"
+            },
+            "shadowStyle": {
+                "name": "No Shadow",
+                "color": "transparent",
+                "blur": 0,
+                "offset": {
+                    "x": 0,
+                    "y": 0
+                }
+            }
+        }
+    }
+}

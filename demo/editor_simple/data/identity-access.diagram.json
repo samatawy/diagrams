@@ -1,0 +1,311 @@
+{
+    "id": "demo-identity-access-v2",
+    "sheet_id": "demo-identity-sheet-v1",
+    "nodes": [
+        {
+            "id": "title",
+            "type": "text",
+            "style_class": "title",
+            "points": [
+                {
+                    "x": 80,
+                    "y": 24
+                },
+                {
+                    "x": 980,
+                    "y": 78
+                }
+            ],
+            "text": "Identity And Access Flow"
+        },
+        {
+            "id": "gateway",
+            "type": "arrow_triangle",
+            "style_class": "svc",
+            "points": [
+                {
+                    "x": 90,
+                    "y": 150
+                },
+                {
+                    "x": 285,
+                    "y": 225
+                }
+            ],
+            "text": "API Gateway"
+        },
+        {
+            "id": "auth",
+            "type": "round_rectangle",
+            "style_class": "svc",
+            "points": [
+                {
+                    "x": 350,
+                    "y": 145
+                },
+                {
+                    "x": 590,
+                    "y": 225
+                }
+            ],
+            "text": "Auth Service"
+        },
+        {
+            "id": "policy",
+            "type": "rhombus",
+            "style_class": "decision",
+            "points": [
+                {
+                    "x": 650,
+                    "y": 140
+                },
+                {
+                    "x": 810,
+                    "y": 280
+                }
+            ],
+            "text": "Policy Check"
+        },
+        {
+            "id": "users",
+            "type": "cylinder",
+            "style_class": "datastore",
+            "points": [
+                {
+                    "x": 360,
+                    "y": 320
+                },
+                {
+                    "x": 560,
+                    "y": 425
+                }
+            ],
+            "text": "User Store"
+        },
+        {
+            "id": "events",
+            "type": "trapezoid",
+            "style_class": "queue",
+            "points": [
+                {
+                    "x": 840,
+                    "y": 145
+                },
+                {
+                    "x": 1040,
+                    "y": 245
+                }
+            ],
+            "text": "Event Queue"
+        },
+        {
+            "id": "docs",
+            "type": "document",
+            "style_class": "document",
+            "points": [
+                {
+                    "x": 840,
+                    "y": 300
+                },
+                {
+                    "x": 1040,
+                    "y": 400
+                }
+            ],
+            "text": "Audit Report"
+        },
+        {
+            "id": "c1",
+            "type": "line",
+            "style_class": "flow_primary",
+            "points": [
+                {
+                    "x": 285,
+                    "y": 187
+                },
+                {
+                    "x": 350,
+                    "y": 187
+                }
+            ],
+            "from": {
+                "node": "gateway",
+                "handle": "e",
+                "relative": {
+                    "x": 1,
+                    "y": 0.5
+                }
+            },
+            "to": {
+                "node": "auth",
+                "handle": "w",
+                "relative": {
+                    "x": 0,
+                    "y": 0.5
+                }
+            },
+            "text": "Request"
+        },
+        {
+            "id": "c2",
+            "type": "orthogonal",
+            "style_class": "flow_conditional",
+            "points": [
+                {
+                    "x": 590,
+                    "y": 185
+                },
+                {
+                    "x": 650,
+                    "y": 185
+                }
+            ],
+            "from": {
+                "node": "auth",
+                "handle": "e",
+                "relative": {
+                    "x": 1,
+                    "y": 0.5
+                }
+            },
+            "to": {
+                "node": "policy",
+                "handle": "w",
+                "relative": {
+                    "x": 0,
+                    "y": 0.5
+                }
+            },
+            "text": "Authorize?"
+        },
+        {
+            "id": "c3",
+            "type": "polyline",
+            "style_class": "flow_async",
+            "points": [
+                {
+                    "x": 810,
+                    "y": 210
+                },
+                {
+                    "x": 870,
+                    "y": 210
+                },
+                {
+                    "x": 870,
+                    "y": 195
+                },
+                {
+                    "x": 840,
+                    "y": 195
+                }
+            ],
+            "from": {
+                "node": "policy",
+                "handle": "e",
+                "relative": {
+                    "x": 1,
+                    "y": 0.5
+                }
+            },
+            "to": {
+                "node": "events",
+                "handle": "n",
+                "relative": {
+                    "x": 0.5,
+                    "y": 0
+                }
+            },
+            "text": "Emit"
+        },
+        {
+            "id": "c4",
+            "type": "curve",
+            "style_class": "flow_secondary",
+            "points": [
+                {
+                    "x": 590,
+                    "y": 225
+                },
+                {
+                    "x": 760,
+                    "y": 360
+                },
+                {
+                    "x": 840,
+                    "y": 350
+                }
+            ],
+            "from": {
+                "node": "auth",
+                "handle": "s",
+                "relative": {
+                    "x": 0.5,
+                    "y": 1
+                }
+            },
+            "to": {
+                "node": "docs",
+                "handle": "w",
+                "relative": {
+                    "x": 0,
+                    "y": 0.5
+                }
+            },
+            "text": "Audit"
+        },
+        {
+            "id": "c5",
+            "type": "line",
+            "style_class": "flow_storage",
+            "points": [
+                {
+                    "x": 470,
+                    "y": 225
+                },
+                {
+                    "x": 470,
+                    "y": 320
+                }
+            ],
+            "from": {
+                "node": "auth",
+                "handle": "s",
+                "relative": {
+                    "x": 0.5,
+                    "y": 1
+                }
+            },
+            "to": {
+                "node": "users",
+                "handle": "n",
+                "relative": {
+                    "x": 0.5,
+                    "y": 0
+                }
+            },
+            "text": "Lookup"
+        }
+    ],
+    "layers": [
+        {
+            "id": "main",
+            "name": "Main",
+            "visible": true,
+            "nodes": [
+                "title",
+                "gateway",
+                "auth",
+                "policy",
+                "users",
+                "events",
+                "docs",
+                "c1",
+                "c2",
+                "c3",
+                "c4",
+                "c5"
+            ]
+        }
+    ]
+}

@@ -9,7 +9,10 @@
     width: var(--diagram-toolbox-width, 120px);
     min-width: var(--diagram-toolbox-width, 120px);
 
-    --inspector-base: 15, 118, 110;
+    --inspector-base: var(--diagram-inspector-base, 15, 118, 110);
+    --background-mixer: var(--diagram-background-mixer, white);
+    --foreground-mixer: var(--diagram-foreground-mixer, #0f172a);
+
     --inspector-header-bg: rgba(var(--inspector-base), 0.14);
     --inspector-header-border: rgba(var(--inspector-base), 0.34);
     --inspector-label-bg: rgba(var(--inspector-base), 0.08);
@@ -94,7 +97,7 @@
 
     align-items: start;
     padding: 6px 6px;
-    background: color-mix(in srgb, var(--inspector-value-bg) 60%, white 40%);
+    background: color-mix(in srgb, var(--inspector-value-bg) 60%, var(--background-mixer) 40%);
     border-top: none;
     min-height: 0;
     opacity: 1;
@@ -125,7 +128,7 @@
 /* Label */
 .toolbox .toolbox-label {
     font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
-    color: color-mix(in srgb, rgba(var(--inspector-base), 1) 70%, #0f172a 30%);
+    color: color-mix(in srgb, rgba(var(--inspector-base), 1) 70%, var(--foreground-mixer) 30%);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

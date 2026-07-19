@@ -1882,7 +1882,14 @@ export class DiagramEditView extends DiagramView {
      * @returns Nothing.
      */
     public copyStyles(): void {
+        const nodes = this.selection();
+        if (nodes.length === 0) return;
+
         this.clipboard.copyStyles();
+        this.can_paste_styles = true;
+
+        this.emitClipboardChange('copy-styles', nodes);
+
     }
 
     /**
@@ -1891,13 +1898,13 @@ export class DiagramEditView extends DiagramView {
      */
     public pasteStyles(): void {
         this.clipboard.pasteStyles()
-            .then(affectedNodes => {
-                if (affectedNodes.length > 0) {
-                    this.render('all');
-                    this.renderPreview();
+            .then((pastedNodes) => {
+                this.can_paste_styles = pastedNodes.length > 0;
 
-                    this.event_dispatcher.styleChanged('paste-styles');
-                }
+                this.render('all');
+                this.renderPreview();
+
+                this.emitClipboardChange('paste-styles', pastedNodes);
             });
     }
 
