@@ -9,12 +9,14 @@ import { EllipseAdapter } from './rectangle/ellipse.adapter';
 import { CircleAdapter } from './rectangle/circle.adapter';
 import { ParallelogramAdapter } from './rectangle/parallelogram.adapter';
 import { RectangleAdapter } from './rectangle/rectangle.adapter';
-import { SpeechBubbleAdapter } from './rectangle/speech.bubble.adapter';
 import { RhombusAdapter } from './rectangle/rhombus.adapter';
 import { RoundRectangleAdapter } from './rectangle/round.rectangle.adapter';
 import { TextAdapter } from './rectangle/text.adapter';
 import { TrapezoidAdapter } from './rectangle/trapezoid.adapter';
 import { CylinderAdapter } from './rectangle/cylinder.adapter';
+import { ArrowTriangleAdapter } from './rectangle/arrow.triangle.adapter';
+import { ArrowChevronAdapter } from './rectangle/arrow.chevron.adapter';
+import { SpeechBubbleAdapter } from './rectangle/speech.bubble.adapter';
 
 import { HorizontalPoolAdapter } from './container/horizontal.pool.adapter';
 import { VerticalPoolAdapter } from './container/vertical.pool.adapter';
@@ -47,6 +49,8 @@ export function registerBasicAdapters(): void {
     CircleAdapter.register();
     TextAdapter.register();
     SpeechBubbleAdapter.register();
+    ArrowTriangleAdapter.register();
+    ArrowChevronAdapter.register();
 
     LineAdapter.register();
     PolylineAdapter.register();
@@ -77,6 +81,8 @@ export function registerBasicAdapters(): void {
         DocumentAdapter.TYPE,
         CylinderAdapter.TYPE,
         SpeechBubbleAdapter.TYPE,
+        ArrowTriangleAdapter.TYPE,
+        ArrowChevronAdapter.TYPE,
     ]);
 
     NodeRegistry.registerTransferables([

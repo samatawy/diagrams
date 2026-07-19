@@ -39,6 +39,9 @@ export const DEFAULT_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'ellipse',
     'circle',
     'text',
+    'speech_bubble',
+    'arrow_triangle',
+    'arrow_chevron',
     'line',
     'polyline',
     'orthogonal',
@@ -48,7 +51,7 @@ export const DEFAULT_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'trapezoid',
     'document',
     'polygon',
-    'svg',
+    // 'svg',
     '*',
 ];
 
@@ -61,6 +64,8 @@ export const BASIC_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'circle',
     'text',
     'speech_bubble',
+    'arrow_triangle',
+    'arrow_chevron',
     'line',
     'polyline',
     'orthogonal',

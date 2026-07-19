@@ -10,3 +10,5 @@ export * from './document.adapter';
 export * from './cylinder.adapter';
 
 export * from './speech.bubble.adapter';
+export * from './arrow.triangle.adapter';
+export * from './arrow.chevron.adapter';

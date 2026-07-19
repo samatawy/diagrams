@@ -483,6 +483,14 @@ IconRegistry.registerSymbol('speech_bubble', 'tool-speech-bubble',
     sym('tool-speech-bubble',
         '<path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-6l-3 2-1-2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"/>'));
 
+IconRegistry.registerSymbol('arrow_triangle', 'tool-arrow-triangle',
+    sym('tool-arrow-triangle',
+        '<path d="M4 9H12V6L20 12L12 18V15H4Z"/>'));    //'<path d="M4 9H13V6L20 12L13 18V15H4Z"/>'));
+
+IconRegistry.registerSymbol('arrow_chevron', 'tool-arrow-chevron',
+    sym('tool-arrow-chevron',
+        '<path d="M4 6H13L20 12L13 18H4L8 12Z"/>'));    //'<path d="M4 9H13L20 12L13 15H4L8 12Z"/>'));
+
 IconRegistry.registerSymbol('svg', 'tool-svg',
     sym('tool-svg', '<path d="M4 14.5S4 18 8 18s4-7 8-7 4 3.5 4 3.5"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/>'));
 
