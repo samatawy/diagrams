@@ -11,6 +11,7 @@ function ensureStyles(): void {
 }
 
 export interface TypeTransferPanelConfig {
+    tooltip?: string;
     className?: string;
     currentType?: string;
     transferables?: string[];
@@ -40,6 +41,7 @@ export class TypeTransferPanel {
 
         this.root = document.createElement('div');
         setClasses(this.root, 'type-transfer-panel', config.className || '');
+        this.root.title = config.tooltip ?? '';
 
         this.toggle = document.createElement('button');
         this.toggle.type = 'button';

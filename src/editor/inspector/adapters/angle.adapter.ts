@@ -27,7 +27,8 @@ export class AngleAdapter extends InspectorAdapter {
         this.input.type = 'number';
         this.input.step = '1'; //// this.precision === 0 ? '1' : String(Math.pow(10, -this.precision));
         this.input.readOnly = initial.readonly;
-        this.input.title = 'Angle in degrees';
+        // this.input.title = (initial.def.editorOptions as )?.tooltip ?? 'Angle in degrees';
+
         cell.appendChild(this.input);
         this.input.addEventListener('input', () => {
             if (this.isTransientNumberInput(this.input.value)) {

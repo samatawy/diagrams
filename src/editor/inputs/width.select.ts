@@ -11,6 +11,7 @@ function ensureDefaultStyles(): void {
  * Configuration options for the WidthSelect component.
  */
 export interface WidthSelectConfig {
+    tooltip?: string;
     /**
      * An array of predefined widths to display in the dropdown. Each width should be a positive number.
      * If not provided, a default set of widths will be used.
@@ -61,6 +62,7 @@ export interface WidthSelectConfig {
 const DEFAULT_WIDTHS: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const DEFAULT_CONFIG: Required<Omit<WidthSelectConfig, 'widths'>> & { widths: number[] } = {
+    tooltip: '',
     widths: DEFAULT_WIDTHS,
     strokeColor: 'var(--diagram-ui-text, #1f2937)',
     showLabel: true,
@@ -144,6 +146,7 @@ export class WidthSelect {
         setClasses(this.trigger, DEFAULT_CONFIG.triggerClassName, this.config.triggerClassName);
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
+        this.trigger.title = this.config.tooltip;
 
         this.triggerSwatch = document.createElement('div');
         setClasses(this.triggerSwatch, DEFAULT_CONFIG.swatchClassName, this.config.swatchClassName);

@@ -55,6 +55,7 @@ export class ImageAlignSelect {
         this.trigger.type = 'button';
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
+        // this.trigger.title = this.config.tooltip;
         setClasses(this.trigger, 'image-align-select-trigger');
 
         this.triggerIcon = document.createElement('span');

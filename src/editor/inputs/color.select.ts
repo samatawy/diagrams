@@ -13,6 +13,7 @@ function ensureDefaultStyles(): void {
  * Provide only the properties you want to override; defaults will be used for the rest.
  */
 export interface ColorSelectConfig {
+    tooltip?: string;
     /**
      * Whether to show a color swatch in the trigger button. Default is true.
      */
@@ -94,6 +95,7 @@ export interface ColorOptionInput {
 }
 
 const DEFAULT_CONFIG: Required<ColorSelectConfig> = {
+    tooltip: '',
     showSwatch: true,
     showLabel: true,
     showNativeInput: 'option',
@@ -161,6 +163,7 @@ export class ColorSelect {
         setClasses(this.trigger, DEFAULT_CONFIG.triggerClassName, this.config.triggerClassName);
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
+        this.trigger.title = this.config.tooltip;
 
         if (this.config.showSwatch) {
             this.triggerSwatch = this.createSwatch(this.selected);

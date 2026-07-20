@@ -29,7 +29,7 @@ import { ImageSelectAdapter } from "./adapters/image.select.adapter";
 import type { NumberInputAdapterConfig } from "./native/number.input.adapter";
 import { MetaAddAdapter, MetaValueAdapter, type MetaAddChange, type MetaDeleteChange } from "./native/meta.kv.adapters";
 import { StyleClassActionsAdapter, type StyleClassActionsAdapterConfig } from "./adapters/style.class.actions.adapter";
-import { GradientPickerAdapter } from "./adapters/gradient.picker.adapter";
+import { GradientSelectAdapter } from "./adapters/gradient.select.adapter";
 import { type ArrowTypeSelectConfig } from "../inputs/arrow.type.select";
 import { ShadowPresetSelectAdapter } from "./adapters/shadow.preset.select.adapter";
 
@@ -103,6 +103,7 @@ export class DiagramInspector extends Inspector {
         super.registerAdapters();
 
         Inspector.registerAdapter('ColorSelect', ColorSelectAdapter);
+        Inspector.registerAdapter('GradientSelect', GradientSelectAdapter);
         Inspector.registerAdapter('WidthSelect', WidthSelectAdapter);
         Inspector.registerAdapter('ArrowDirectionSelect', ArrowDirectionSelectAdapter);
         Inspector.registerAdapter('ArrowTypeSelect', ArrowTypeSelectAdapter);
@@ -117,7 +118,6 @@ export class DiagramInspector extends Inspector {
         Inspector.registerAdapter('MetaValue', MetaValueAdapter);
         Inspector.registerAdapter('MetaAdd', MetaAddAdapter);
         Inspector.registerAdapter('ClassActions', StyleClassActionsAdapter);
-        Inspector.registerAdapter('GradientPicker', GradientPickerAdapter);
         Inspector.registerAdapter('ShadowPresetSelect', ShadowPresetSelectAdapter);
     }
 
@@ -149,6 +149,7 @@ export class DiagramInspector extends Inspector {
             type: 'select',
             editor: 'EnumSelect',
             editorOptions: {
+                tooltip: 'Select the active sheet for the diagram',
                 options: () => {
                     const d = this.diagram as DiagramEditView;
                     const repo = d?.sheetRepository;
@@ -167,13 +168,18 @@ export class DiagramInspector extends Inspector {
             label: 'Color',
             type: 'string',
             editor: 'ColorSelect',
-            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), allowEmpty: true },
+            editorOptions: {
+                tooltip: 'Select the background color for the diagram',
+                ...(this.inspectorConfig.colorSelect || {}),
+                allowEmpty: true
+            },
             readonly: readonly,
             isVisible: noSelection,
         });
         this.addRow(diagramFillGrid, {
             key: 'diagram.background.gradient', label: 'Gradient',
-            type: 'string', editor: 'GradientPicker',
+            type: 'string',
+            editor: 'GradientSelect',
             readonly: readonly, isVisible: noSelection,
         });
 
@@ -236,6 +242,7 @@ export class DiagramInspector extends Inspector {
             type: 'select',
             editor: 'TypeTransfer',
             editorOptions: {
+                tooltip: 'Change the type of the selected node(s)',
                 options: () => {
                     const items = selected();
                     if (items.length !== 1) {
@@ -257,6 +264,7 @@ export class DiagramInspector extends Inspector {
             type: 'select',
             editor: 'EnumSelect',
             editorOptions: {
+                tooltip: 'Select a style class for the selected node(s)',
                 options: () => {
                     const d = this.diagram as DiagramEditView;
                     const sheet = d?.currentSheet;
@@ -307,24 +315,37 @@ export class DiagramInspector extends Inspector {
         this.addRow(text, {
             key: 'textStyle.fontFace', label: 'Font Face',
             type: 'string', editor: 'FontSelect',
-            editorOptions: this.inspectorConfig.fontSelect || {},
+            editorOptions: {
+                tooltip: 'Select the font face for the selected node(s)',
+                ...(this.inspectorConfig.fontSelect || {}),
+            },
             readonly: readonly, isVisible: hasText
         });
         this.addRow(text, {
             key: 'textStyle.size', label: 'Font Size',
             type: 'number', editor: 'SizeSelect',
-            editorOptions: this.inspectorConfig.sizeSelect || {},
+            editorOptions: {
+                tooltip: 'Select the font size for the selected node(s)',
+                ...this.inspectorConfig.sizeSelect
+            },
             readonly: readonly, isVisible: hasText
         });
         this.addRow(text, {
             key: 'textStyle.color', label: 'Color',
             type: 'string', editor: 'ColorSelect',
-            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.textColor || {}) },
+            editorOptions: {
+                tooltip: 'Select the font color for the selected node(s)',
+                ...(this.inspectorConfig.colorSelect || {}),
+                ...(this.inspectorConfig.textColor || {})
+            },
             readonly: readonly, isVisible: hasText
         });
         this.addRow(text, {
             key: 'textStyle.weight', label: 'Weight', type: 'select', editor: 'EnumSelect',
-            editorOptions: { options: [100, 200, 300, 400, 500, 600, 700, 800, 900].map((w) => ({ value: w, label: w })) },
+            editorOptions: {
+                tooltip: 'Select the font weight for the selected node(s)',
+                options: [100, 200, 300, 400, 500, 600, 700, 800, 900].map((w) => ({ value: w, label: w }))
+            },
             readonly: readonly, isVisible: hasText,
         });
         this.addRow(text, {
@@ -339,17 +360,26 @@ export class DiagramInspector extends Inspector {
         });
         this.addRow(text, {
             key: 'textStyle.halo', label: 'Halo', type: 'string', editor: 'ColorSelect',
-            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), allowEmpty: true, showInheritOption: true },
+            editorOptions: {
+                tooltip: 'Select the halo color for the selected node(s)',
+                ...(this.inspectorConfig.colorSelect || {}),
+                allowEmpty: true,
+                showInheritOption: true
+            },
             readonly: readonly, isVisible: hasText,
         });
         this.addRow(text, {
             key: 'textStyle.align', label: 'Align', type: 'select', editor: 'EnumSelect',
-            editorOptions: { options: this.inspectorConfig.textAlignOptions || ['left', 'center', 'right'] } as EnumSelectAdapterConfig,
+            editorOptions: {
+                tooltip: 'Select the text alignment for the selected node(s)',
+                options: this.inspectorConfig.textAlignOptions || ['left', 'center', 'right']
+            } as EnumSelectAdapterConfig,
             readonly: readonly, isVisible: hasText,
         });
         this.addRow(text, {
             key: 'textStyle.baseline', label: 'Baseline', type: 'select', editor: 'EnumSelect',
             editorOptions: {
+                tooltip: 'Select the text baseline for the selected node(s)',
                 options: () => {
                     const ALL: ITextBaseline[] = ['top', 'middle', 'bottom'];
                     const configured = this.inspectorConfig.textBaselineOptions;
@@ -371,6 +401,7 @@ export class DiagramInspector extends Inspector {
         this.addRow(text, {
             key: 'textStyle.orientation', label: 'Orientation', type: 'select', editor: 'EnumSelect',
             editorOptions: {
+                tooltip: 'Select the text orientation for the selected node(s)',
                 options: () => {
                     const ALL: ITextOrientation[] = ['horizontal', 'vertical', 'path'];
                     const base: ITextOrientation[] = ALL;
@@ -389,31 +420,47 @@ export class DiagramInspector extends Inspector {
         this.addRow(line, {
             key: 'strokeStyle.color', label: 'Line Color',
             type: 'string', editor: 'ColorSelect',
-            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.strokeColor || {}) },
+            editorOptions: {
+                tooltip: 'Select the line color for the selected node(s)',
+                ...(this.inspectorConfig.colorSelect || {}),
+                ...(this.inspectorConfig.strokeColor || {})
+            },
             readonly: readonly, isVisible: hasSelected
         });
         this.addRow(line, {
             key: 'strokeStyle.width', label: 'Line Width',
             type: 'number', editor: 'WidthSelect',
-            editorOptions: this.inspectorConfig.widthSelect || {},
+            editorOptions: {
+                tooltip: 'Select the line width for the selected node(s)',
+                ...this.inspectorConfig.widthSelect
+            },
             readonly: readonly, isVisible: hasSelected
         });
         this.addRow(line, {
             key: 'strokeStyle.dash', label: 'Line Style',
             type: 'number', editor: 'DashSelect',
-            editorOptions: this.inspectorConfig.dashSelect || {},
+            editorOptions: {
+                tooltip: 'Select the line style for the selected node(s)',
+                ...(this.inspectorConfig.dashSelect || {})
+            },
             readonly: readonly, isVisible: hasSelected
         });
         this.addRow(line, {
             key: 'strokeStyle.arrow_start', label: 'Start Arrow',
             type: 'string', editor: 'ArrowTypeSelect',
-            editorOptions: this.inspectorConfig.arrowTypeSelect || { direction: 'start' },
+            editorOptions: {
+                tooltip: 'Select the start arrow type for the selected node(s)',
+                ...(this.inspectorConfig.arrowTypeSelect || { direction: 'start' }),
+            },
             readonly: readonly, isVisible: hasConnections
         });
         this.addRow(line, {
             key: 'strokeStyle.arrow_end', label: 'End Arrow',
             type: 'string', editor: 'ArrowTypeSelect',
-            editorOptions: this.inspectorConfig.arrowTypeSelect || { direction: 'end' },
+            editorOptions: {
+                tooltip: 'Select the end arrow type for the selected node(s)',
+                ...(this.inspectorConfig.arrowTypeSelect || { direction: 'end' }),
+            },
             readonly: readonly, isVisible: hasConnections
         });
 
@@ -421,32 +468,52 @@ export class DiagramInspector extends Inspector {
         this.addRow(fill, {
             key: 'fillStyle.color', label: 'Fill Color',
             type: 'string', editor: 'ColorSelect',
-            editorOptions: { ...(this.inspectorConfig.colorSelect || {}), ...(this.inspectorConfig.fillColor || {}) },
+            editorOptions: {
+                tooltip: 'Select the fill color for the selected node(s)',
+                ...(this.inspectorConfig.colorSelect || {}),
+                ...(this.inspectorConfig.fillColor || {})
+            },
             readonly: readonly, isVisible: hasNonConnections // Selected
         });
         this.addRow(fill, {
             key: 'fillStyle.gradient', label: 'Gradient',
-            type: 'string', editor: 'GradientPicker',
+            type: 'string',
+            editor: 'GradientSelect',
+            editorOptions: {
+                tooltip: 'Select the fill gradient for the selected node(s)',
+            },
             readonly: readonly, isVisible: hasNonConnections,
         });
 
         this.addRow(fill, {
             key: 'image_id', label: 'Image',
             type: 'string', editor: 'ImageSelect',
-            editorOptions: { diagram: this.diagram },
+            editorOptions: {
+                diagram: this.diagram,
+                tooltip: 'Select an image for the selected node(s)',
+            },
             readonly: readonly, isVisible: hasNonConnections
         });
         this.addRow(fill, {
             key: 'image_mode', label: 'Mode', type: 'select', editor: 'EnumSelect',
-            editorOptions: { options: ['contain', 'cover', 'fit', 'pattern', 'none'] } as EnumSelectAdapterConfig,
+            editorOptions: {
+                tooltip: 'Select the image mode for the selected node(s)',
+                options: ['contain', 'cover', 'fit', 'pattern', 'none']
+            } as EnumSelectAdapterConfig,
             readonly: readonly, isVisible: hasNonConnections,
         });
         this.addRow(fill, {
             key: 'image_align', label: 'Align', type: 'select', editor: 'EnumSelect',
-            editorOptions: { options: ['left', 'center', 'right', 'top', 'middle', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right'] } as EnumSelectAdapterConfig,
+            editorOptions: {
+                tooltip: 'Select the image alignment for the selected node(s)',
+                options: ['left', 'center', 'right', 'top', 'middle', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right']
+            } as EnumSelectAdapterConfig,
             readonly: readonly, isVisible: hasNonConnections,
         });
-        this.addRow(fill, { key: 'image_padding', label: 'Padding', type: 'number', readonly: readonly, isVisible: hasNonConnections });
+        this.addRow(fill, {
+            key: 'image_padding', label: 'Padding', type: 'number', readonly: readonly,
+            isVisible: hasNonConnections
+        });
 
         const { grid: shadow } = this.buildSection('Shadow', 'collapsed');
         this.addRow(shadow, {
@@ -462,6 +529,7 @@ export class DiagramInspector extends Inspector {
             type: 'string',
             editor: 'ColorSelect',
             editorOptions: {
+                tooltip: 'Select the shadow color for the selected node(s)',
                 ...(this.inspectorConfig.colorSelect || {}),
                 ...(this.inspectorConfig.shadowColor || {}),
                 showInheritOption: true,
@@ -489,7 +557,11 @@ export class DiagramInspector extends Inspector {
             label: 'Add',
             type: 'string',
             editor: 'MetaAdd',
-            editorOptions: { basePath: 'meta', buttonLabel: '+' },
+            editorOptions: {
+                tooltip: 'Add a new metadata key-value pair',
+                basePath: 'meta',
+                buttonLabel: '+'
+            },
             readonly: readonly,
             isVisible: () => hasSelected() && !readonly,
         });
@@ -603,7 +675,6 @@ export class DiagramInspector extends Inspector {
 
             this.syncRowVisibility();
             this.schedulePendingFocus();
-            // this.schedulePendingMetaValueFocus();
         } finally {
             this.syncingAdapters = false;
         }
@@ -728,18 +799,6 @@ export class DiagramInspector extends Inspector {
         }
 
         return defs;
-        // const keys = this.collectFlatRecordKeys(selected, 'geometry');
-        // return keys.map((key) => {
-        //     const type = this.resolveFlatValueType(selected, 'geometry', key);
-        //     return {
-        //         key: `geometry.${key}`,
-        //         label: key.length ? `${key[0]!.toUpperCase()}${key.slice(1)}` : key,
-        //         type,
-        //         editorOptions: type === 'number' ? { precision: 4 } : undefined,
-        //         readonly: this.readonly,
-        //         volatile: true,
-        //     };
-        // });
     }
 
     /**
@@ -833,9 +892,9 @@ export class DiagramInspector extends Inspector {
     // }
 
     /**
- * Builds one property definition for a geometry.* OR specific.* path after aggregating schema hints across the selection.
- * Returns undefined when any selected node does not support the key or exposes conflicting editor types.
- */
+     * Builds one property definition for a geometry.* OR specific.* path after aggregating schema hints across the selection.
+     * Returns undefined when any selected node does not support the key or exposes conflicting editor types.
+     */
     private buildCustomRowDefinition(selected: INode[], key: string, prefix: string): InspectorPropertyDefinition | undefined {
         const path = `${prefix}.${key}`;
         let config_function: string;

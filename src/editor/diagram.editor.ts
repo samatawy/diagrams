@@ -202,10 +202,6 @@ export class DiagramEditor {
 
     protected syncingControls: boolean = false;
 
-    private hoverHint?: string;
-
-    private focusHint?: string;
-
     static {
         registerBasicAdapters();
         registerBpmnAdapters();
@@ -853,6 +849,9 @@ export class DiagramEditor {
         this.reflectStyles();
     }
 
+    /**
+     * Attaches a media query listener to detect changes in the user's preferred color scheme (light or dark mode).
+     */
     private attachMediaQuery(): void {
         if (this.mediaQuery) return;
 
@@ -884,7 +883,6 @@ export class DiagramEditor {
                 return;
             }
             const hint = this.resolveTooltip(event.target);
-            this.hoverHint = hint || undefined;
             this.emitEditorHint('editor-hover', hint, !!hint);
         });
 
@@ -896,21 +894,18 @@ export class DiagramEditor {
 
             const next = pointer.relatedTarget as Node | null;
             if (!next || !this.host.contains(next)) {
-                this.hoverHint = undefined;
                 this.emitEditorHint('editor-hover', undefined, false);
             }
         });
 
         this.addManagedEventListener(this.host, 'focusin', (event) => {
             const hint = this.resolveTooltip(event.target);
-            this.focusHint = hint || undefined;
             this.emitEditorHint('editor-focus', hint, !!hint);
         });
 
         this.addManagedEventListener(this.host, 'focusout', () => {
             const active = document.activeElement;
             if (!active || !this.host.contains(active)) {
-                this.focusHint = undefined;
                 this.emitEditorHint('editor-focus', undefined, false);
             }
         });

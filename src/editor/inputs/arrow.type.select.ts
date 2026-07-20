@@ -9,6 +9,7 @@ function ensureDefaultStyles(): void {
 }
 
 export interface ArrowTypeSelectConfig {
+    tooltip?: string;
     arrows?: ArrowType[];
     direction?: 'start' | 'end';
     strokeColor?: string;
@@ -34,6 +35,7 @@ const DEFAULT_ARROWS: ArrowType[] = [
 ];
 
 const DEFAULT_CONFIG: Required<Omit<ArrowTypeSelectConfig, 'arrows'>> & { arrows: ArrowType[] } = {
+    tooltip: '',
     arrows: DEFAULT_ARROWS,
     direction: 'end',
     strokeColor: 'var(--diagram-ui-text, #1f2937)',
@@ -74,6 +76,7 @@ export class ArrowTypeSelect {
         setClasses(this.trigger, DEFAULT_CONFIG.triggerClassName, this.config.triggerClassName);
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
+        this.trigger.title = this.config.tooltip;
 
         this.triggerSwatch = document.createElement('div');
         setClasses(this.triggerSwatch, DEFAULT_CONFIG.swatchClassName, this.config.swatchClassName);

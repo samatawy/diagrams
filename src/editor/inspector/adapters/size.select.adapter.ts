@@ -13,6 +13,7 @@ export class SizeSelectAdapter extends InspectorAdapter {
         super(cell, mixedClassName);
         const host = document.createElement('div');
         host.style.width = '100%';
+
         cell.appendChild(host);
         const options: SizeSelectConfig = {
             ...(initial.def.editorOptions as SizeSelectConfig),

@@ -133,7 +133,6 @@ export class DiagramClipboard {
      * Copies the selected nodes to the clipboard in JSON format. 
      * The copied data includes all properties of the nodes, allowing for accurate reconstruction when pasted. 
      * After copying, the `canPaste` flag is set to true, indicating that there is data available in the clipboard that can be pasted into the diagram.
-     * @param operation The clipboard operation type, either 'copy' or 'cut'. Defaults to 'copy'.
      * @returns An array of the nodes that were copied to the clipboard.
      */
     public copySelected(): INode[] {

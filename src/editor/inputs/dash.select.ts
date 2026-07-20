@@ -22,6 +22,7 @@ export type LineDashValue = DashPreset | number[];
  * Configuration options for the DashSelect component.
  */
 export interface DashSelectConfig {
+    tooltip?: string;
     /**
      * Dash options shown in the dropdown.
      */
@@ -77,6 +78,7 @@ const PRESET_MAP: Record<DashPreset, number[]> = {
 const DEFAULT_DASHES: LineDashValue[] = ['solid', 'dashed', 'dotted', 'dashdot'];
 
 const DEFAULT_CONFIG: Required<Omit<DashSelectConfig, 'dashes'>> & { dashes: LineDashValue[] } = {
+    tooltip: '',
     dashes: DEFAULT_DASHES,
     strokeColor: 'var(--diagram-ui-text, #1f2937)',
     hostClassName: 'dash-select-control',
@@ -125,6 +127,7 @@ export class DashSelect {
         setClasses(this.trigger, DEFAULT_CONFIG.triggerClassName, this.config.triggerClassName);
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
+        this.trigger.title = this.config.tooltip;
 
         this.triggerSwatch = document.createElement('div');
         setClasses(this.triggerSwatch, DEFAULT_CONFIG.swatchClassName, this.config.swatchClassName);

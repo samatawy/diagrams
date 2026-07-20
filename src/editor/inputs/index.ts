@@ -1,6 +1,7 @@
 export * from './arrow.direction.select';
 export * from './arrow.type.select';
 export * from './color.select';
+export * from './gradient.select';
 export * from './dash.select';
 export * from './enum.select';
 export * from './font.select';

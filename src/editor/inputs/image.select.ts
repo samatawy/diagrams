@@ -20,6 +20,7 @@ export interface IImageAssetStore {
 // ── Config ────────────────────────────────────────────────────────────────────
 
 export interface ImageSelectConfig {
+    tooltip?: string;
     /**
      * Optional asset store used to enumerate, look up, and register images.
      * Can also be supplied (or replaced) later via {@link ImageSelect.setAssetStore}.
@@ -45,6 +46,7 @@ export interface ImageSelectConfig {
 // ── Defaults ──────────────────────────────────────────────────────────────────
 
 const DEFAULT_CONFIG: Required<Omit<ImageSelectConfig, 'assetStore'>> = {
+    tooltip: '',
     readonly: false,
     hostClassName: 'image-select-control',
     triggerClassName: 'image-select-trigger',
@@ -91,6 +93,7 @@ export class ImageSelect {
 
         this.host = target;
         this.config = {
+            tooltip: config.tooltip ?? DEFAULT_CONFIG.tooltip,
             readonly: config.readonly ?? DEFAULT_CONFIG.readonly,
             hostClassName: config.hostClassName ?? DEFAULT_CONFIG.hostClassName,
             triggerClassName: config.triggerClassName ?? DEFAULT_CONFIG.triggerClassName,
@@ -111,6 +114,7 @@ export class ImageSelect {
         setClasses(this.trigger, DEFAULT_CONFIG.triggerClassName, this.config.triggerClassName);
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
+        this.trigger.title = this.config.tooltip;
 
         this.triggerThumb = document.createElement('img');
         this.triggerThumb.className = 'image-select-trigger-thumb';

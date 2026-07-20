@@ -4,6 +4,7 @@ import type { DiagramView } from "../../../view";
 
 export interface ImageSelectAdapterConfig {
     diagram: DiagramView;
+    tooltip?: string;
 }
 
 /**
@@ -23,6 +24,7 @@ export class ImageSelectAdapter extends InspectorAdapter {
         const diagram = config.diagram;
 
         this.imageSelect = new ImageSelect(cell, {
+            tooltip: config.tooltip || '',
             assetStore: (diagram as any).assetStore,
             readonly: initial.readonly,
         });

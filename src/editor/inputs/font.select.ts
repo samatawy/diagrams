@@ -13,6 +13,7 @@ function ensureDefaultStyles(): void {
  * Provide only the properties you want to customize. All other properties will use default values.
  */
 export interface FontSelectConfig {
+    tooltip?: string;
     /**
      * Optional array of font family names to display in the dropdown. If not provided, a default set of common fonts will be used.
      * If an empty array is provided, the default fonts will be used.
@@ -68,6 +69,7 @@ export const DEFAULT_FONTS: string[] = [
 ];
 
 const DEFAULT_CONFIG: Required<Omit<FontSelectConfig, 'fonts'>> & { fonts: string[] } = {
+    tooltip: '',
     fonts: DEFAULT_FONTS,
     showPreview: true,
     hostClassName: 'font-select-control',
@@ -127,6 +129,7 @@ export class FontSelect {
         setClasses(this.trigger, DEFAULT_CONFIG.triggerClassName, this.config.triggerClassName);
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
+        this.trigger.title = this.config.tooltip;
 
         this.triggerPreview = document.createElement('span');
         setClasses(this.triggerPreview, DEFAULT_CONFIG.previewClassName, this.config.previewClassName);

@@ -1,0 +1,169 @@
+/* .color-preset-control {
+    position: relative;
+    min-width: 132px;
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-family: var(--diagram-ui-font-family, system-ui);
+    line-height: 1.2;
+}
+.color-preset-control.with-native-input {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    align-items: center;
+    gap: 0;
+    min-width: 172px;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 10px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+}
+.color-preset-control.with-native-input.native-end {
+    grid-template-columns: minmax(0, 1fr) 34px;
+}
+.color-preset-control.with-native-input:hover,
+.color-preset-control.with-native-input:focus-within {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+}
+.color-preset-trigger,
+.color-preset-control button[aria-haspopup='listbox'] {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: var(--diagram-ui-control-gap, 8px);
+    padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
+    cursor: pointer;
+    appearance: none;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 10px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text, #1f2937);
+    font-weight: 600;
+}
+.color-preset-trigger::after {
+    content: '▾';
+    font-size: var(--diagram-ui-font-size, 12px);
+    color: var(--diagram-ui-text-muted, #334155);
+}
+.color-preset-trigger:hover,
+.color-preset-trigger:focus-visible,
+.color-preset-control button[aria-haspopup='listbox']:hover,
+.color-preset-control button[aria-haspopup='listbox']:focus-visible {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+}
+.color-preset-swatch {
+    width: 100%;
+    min-height: 18px;
+    border-radius: 5px;
+}
+.color-preset-trigger .color-preset-swatch {
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.2));
+}
+.color-preset-label {
+    font-size: var(--diagram-ui-font-size, 12px);
+    font-weight: 400;
+    line-height: 1.2;
+    color: var(--diagram-ui-text-muted, #334155);
+    text-transform: lowercase;
+    justify-self: end;
+}
+.color-preset-menu {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + var(--diagram-ui-control-gap, 6px));
+    z-index: 40;
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-panel-radius, 10px);
+    background: var(--diagram-ui-surface-elevated, #ffffff);
+    padding: var(--diagram-ui-panel-padding, 6px);
+    display: none;
+    max-height: 220px;
+    overflow: auto;
+    box-shadow: 0 10px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
+}
+.color-preset-control.is-open .color-preset-menu {
+    display: grid;
+    gap: var(--diagram-ui-group-gap, 6px);
+}
+.color-preset-control.with-native-input.native-end .color-preset-menu {
+    right: 40px;
+}
+.color-preset-control.with-native-input.native-start .color-preset-menu {
+    left: 40px;
+}
+.color-preset-option {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--diagram-ui-group-gap, 8px);
+    border: none;
+    border-radius: var(--diagram-ui-control-radius, 6px);
+    background: transparent;
+    padding: var(--diagram-ui-group-gap, 4px) var(--diagram-ui-control-padding-x, 6px);
+    cursor: pointer;
+    font: inherit;
+}
+.color-preset-option:hover,
+.color-preset-option.is-selected {
+    background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
+}
+.color-preset-custom-option {
+    text-transform: lowercase;
+}
+.color-preset-custom-option .color-preset-swatch {
+    background: linear-gradient(90deg, #ff0000 0%, #00ff00 50%, #0000ff 100%);
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.16));
+}
+.color-preset-native-input {
+    border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
+    border-radius: var(--diagram-ui-control-radius, 10px);
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
+    color: var(--diagram-ui-text, #1f2937);
+    width: 34px;
+    height: 32px;
+    padding: 2px;
+    display: block;
+    overflow: hidden;
+    cursor: pointer;
+}
+.color-preset-control.with-native-input .color-preset-trigger,
+.color-preset-control.with-native-input button[aria-haspopup='listbox'] {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+.color-preset-control.with-native-input .color-preset-trigger:hover,
+.color-preset-control.with-native-input .color-preset-trigger:focus-visible,
+.color-preset-control.with-native-input button[aria-haspopup='listbox']:hover,
+.color-preset-control.with-native-input button[aria-haspopup='listbox']:focus-visible {
+    border-color: transparent;
+}
+.color-preset-control.with-native-input .color-preset-native-input {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    width: 34px;
+    height: 32px;
+    padding: 5px;
+}
+.color-preset-control.with-native-input.native-start .color-preset-native-input {
+    border-right: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+}
+.color-preset-control.with-native-input.native-end .color-preset-native-input {
+    border-left: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+}
+.color-preset-native-input:hover,
+.color-preset-native-input:focus-visible {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
+}
+.color-preset-native-input::-webkit-color-swatch-wrapper {
+    padding: 1px;
+}
+.color-preset-native-input::-webkit-color-swatch {
+    border: none;
+    border-radius: var(--diagram-ui-control-radius, 6px);
+}
+.color-preset-native-input::-moz-color-swatch {
+    border: none;
+    border-radius: var(--diagram-ui-control-radius, 6px);
+} */

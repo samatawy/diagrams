@@ -1,7 +1,6 @@
 import { injectStyles } from '../../editor.utils';
 import { InspectorAdapter, type EditableRecord, type InspectorAdapterInit } from '../inspector.adapter';
 import type { DiagramEditView } from '../../../editview';
-import { DIAGRAM_CHANGED_EVENT, type DiagramChanged } from '../../../events';
 import { DiagramConstants } from '../../../model/diagram.constants';
 import type { NodeStyle } from '../../../sheets/spec.sheet';
 
@@ -38,6 +37,7 @@ export class StyleClassActionsAdapter extends InspectorAdapter {
 
         this.wrap = document.createElement('div');
         this.wrap.className = 'class-actions is-idle';
+        // this.wrap.title = initial.tooltip || 'Manage style classes for the selected node(s)';
 
         // ── Add button ────────────────────────────────────────────────────
         this.addBtn = document.createElement('button');

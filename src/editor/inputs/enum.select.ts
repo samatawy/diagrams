@@ -10,6 +10,7 @@ function ensureDefaultStyles(): void {
 export type EnumSelectOption<T> = { value: T; label?: string };
 
 export interface EnumSelectConfig<T> {
+    tooltip?: string;
     options: EnumSelectOption<T>[];
     equals?: (left: T, right: T) => boolean;
     hostClassName?: string;
@@ -23,6 +24,7 @@ export interface EnumSelectConfig<T> {
 }
 
 const DEFAULT_CONFIG: Required<Omit<EnumSelectConfig<unknown>, 'options' | 'equals'>> = {
+    tooltip: '',
     hostClassName: 'enum-select-control',
     triggerClassName: 'color-preset-trigger',
     menuClassName: 'color-preset-menu',
@@ -63,6 +65,7 @@ export class EnumSelect<T> {
         setClasses(this.trigger, DEFAULT_CONFIG.triggerClassName, this.classes.triggerClassName);
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
+        this.trigger.title = config.tooltip ?? DEFAULT_CONFIG.tooltip;
 
         this.menu = document.createElement('div');
         setClasses(this.menu, DEFAULT_CONFIG.menuClassName, this.classes.menuClassName);

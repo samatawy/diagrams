@@ -12,6 +12,7 @@ function ensureDefaultStyles(): void {
  * Configuration options for the ArrowDirectionSelect component.
  */
 export interface ArrowDirectionSelectConfig {
+    tooltip?: string;
     /**
      * An array of arrow types to display in the dropdown. Each type is represented as a string.
      * The default arrow types are: 'start', 'end', 'both', and 'none'.
@@ -55,6 +56,7 @@ export interface ArrowDirectionSelectConfig {
 const DEFAULT_ARROWS: ArrowDirection[] = ['end', 'start', 'both', 'none'];
 
 const DEFAULT_CONFIG: Required<Omit<ArrowDirectionSelectConfig, 'arrows'>> & { arrows: ArrowDirection[] } = {
+    tooltip: '',
     arrows: DEFAULT_ARROWS,
     strokeColor: 'var(--diagram-ui-text, #1f2937)',
     hostClassName: 'arrow-select-control',
@@ -112,6 +114,7 @@ export class ArrowDirectionSelect {
         setClasses(this.trigger, DEFAULT_CONFIG.triggerClassName, this.config.triggerClassName);
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
+        this.trigger.title = 'Select Arrow Direction…';
 
         this.triggerSwatch = document.createElement('div');
         setClasses(this.triggerSwatch, DEFAULT_CONFIG.swatchClassName, this.config.swatchClassName);

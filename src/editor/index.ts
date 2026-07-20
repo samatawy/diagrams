@@ -1,5 +1,6 @@
 // Unbound components
 export * from './inputs/index';
+export * from './gradient/index';
 export * from './prompt.dialog';
 export * from './editor.utils';
 

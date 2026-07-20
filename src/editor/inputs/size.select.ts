@@ -13,6 +13,7 @@ function ensureDefaultStyles(): void {
  * Provide only the properties you want to customize. All other properties will use default values.
  */
 export interface SizeSelectConfig {
+    tooltip?: string;
     /**
      * Optional array of sizes to display in the dropdown. If not provided, a default set of sizes will be used.
      */
@@ -62,6 +63,7 @@ export interface SizeSelectConfig {
 export const DEFAULT_SIZES: number[] = [6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 24, 28, 32, 40];
 
 const DEFAULT_CONFIG: Required<Omit<SizeSelectConfig, 'sizes'>> & { sizes: number[] } = {
+    tooltip: '',
     sizes: DEFAULT_SIZES,
     unit: 'px',
     showLabel: true,
@@ -144,6 +146,7 @@ export class SizeSelect {
         setClasses(this.trigger, DEFAULT_CONFIG.triggerClassName, this.config.triggerClassName);
         this.trigger.setAttribute('aria-haspopup', 'listbox');
         this.trigger.setAttribute('aria-expanded', 'false');
+        this.trigger.title = this.config.tooltip;
 
         this.triggerPreview = document.createElement('span');
         setClasses(this.triggerPreview, DEFAULT_CONFIG.previewClassName, this.config.previewClassName);

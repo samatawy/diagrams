@@ -8,6 +8,7 @@ export type EnumSelectAdapterOption = string | { value: string; label?: string }
  * Configuration options for EnumSelectAdapter.
  */
 export interface EnumSelectAdapterConfig {
+    tooltip?: string;
     /**
      * Allowed option values, with optional display labels.
      * May be a static array or a zero-argument factory called on every refresh,
@@ -26,8 +27,11 @@ export interface EnumSelectAdapterConfig {
 export class EnumSelectAdapter extends InspectorAdapter {
 
     private readonly allOptions: Array<{ value: string; label: string }>;
+
     private readonly optionsFn: (() => Array<{ value: string; label: string }>) | null;
+
     private readonly select: EnumSelect<string>;
+
     private readonly onEnumChange: (event: Event) => void;
 
     constructor(cell: HTMLElement, mixedClassName: string, initial: InspectorAdapterInit) {
@@ -50,6 +54,7 @@ export class EnumSelectAdapter extends InspectorAdapter {
         }
 
         this.select = new EnumSelect<string>(cell, {
+            tooltip: cfg.tooltip || '',
             options: this.allOptions.map((option) => ({ value: option.value, label: option.label })),
             disabled: initial.readonly,
             placeholder: cfg.placeholder || '',

@@ -64,6 +64,8 @@ export class ShadowPresetSelect {
                 && left.blur === right.blur
                 && left.offset.x === right.offset.x
                 && left.offset.y === right.offset.y,
+
+            tooltip: 'Select a shadow style for the selected node(s)',
             hostClassName: 'shadow-preset-select-control',
             triggerClassName: 'shadow-preset-trigger',
             menuClassName: 'shadow-preset-menu',
