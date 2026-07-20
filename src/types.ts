@@ -99,6 +99,8 @@ type LineDash = 'solid' | 'dashed' | 'dotted' | 'dashdot' | number[];
  * - 'both': Arrows are drawn at both the starting and ending points of the connection.
  * - 'none': No arrows are drawn on the connection.
  * This property allows for clear visual indication of the directionality of connections between nodes in the diagram, which can be important for understanding flow and relationships.
+ * 
+ * @deprecated Use ArrowType instead for more specific arrowhead styles.
  */
 export type ArrowDirection = 'start' | 'end' | 'both' | 'none';
 

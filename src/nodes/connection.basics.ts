@@ -5,8 +5,7 @@ import type { CoordinateSystem } from "../view/coordinate.system";
 import { NodeRegistry } from "../factory/node.registry";
 import { NodeBasics } from "./node.basics";
 import { DiagramConstants } from "../model/diagram.constants";
-import { SelectionBasics } from "./selection.basics";
-import { absoluteToRelative, arrowAt, relativeToAbsolute } from "../value.utils";
+import { absoluteToRelative, arrowEnd, arrowStart, relativeToAbsolute } from "../value.utils";
 
 type InteractiveDiagram = INode['owner'] & {
     getCoordinates(): CoordinateSystem;
@@ -189,9 +188,9 @@ export class ConnectionBasics {
     }
 
     public static guessConnectionDirection(node: INode & IConnection, x: number, y: number): 'from' | 'to' | 'any' {
-        const arrow = arrowAt(node);
-        const forward = arrow === 'end';
-        const backward = arrow === 'start';
+        const start = arrowStart(node), end = arrowEnd(node);
+        const forward = start === 'none' && end !== 'none';
+        const backward = start !== 'none' && end === 'none';
 
         if (node.points.length < 2) return (forward) ? 'from' : (backward) ? 'to' : 'any';
 

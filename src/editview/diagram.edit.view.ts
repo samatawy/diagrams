@@ -6,7 +6,6 @@ import {
     NodeHandle,
     type IPoint, type IRect,
     type ITextAlign, type ITextBaseline, type ITextOrientation,
-    type ArrowDirection,
     type ImageMode, type ImageAlign,
     type IFontWeight,
     type ArrowType,
@@ -119,8 +118,8 @@ export class DiagramEditView extends DiagramView {
         opacity: number;
         lineWidth: number;
         lineDash: string | number[];
-        arrow_at: ArrowDirection;
-        arrow_type: ArrowType;
+        arrowStart: ArrowType;
+        arrowEnd: ArrowType;
         strokeColor: string;
         fillColor: string;
         fillGradient?: IGradient;
@@ -146,8 +145,8 @@ export class DiagramEditView extends DiagramView {
             opacity: 100,
             lineDash: [],
             lineWidth: DiagramConstants.DEFAULT_NODE_LINE_WIDTH,
-            arrow_at: 'end',
-            arrow_type: 'solid_triangle',
+            arrowStart: 'none',
+            arrowEnd: 'solid_triangle',
             strokeColor: DiagramConstants.DEFAULT_STROKE_COLOR,
             fillColor: DiagramConstants.DEFAULT_FILL_COLOR,
             fillGradient: undefined,
@@ -862,33 +861,20 @@ export class DiagramEditView extends DiagramView {
         this.setLineDash(value);
     }
 
-    /**
-     * Gets the current arrow direction derived from the settings flags.
-     */
-    public get arrowAt(): ArrowDirection {
-        return this.settings.arrow_at || 'end';
+    public get arrowStart(): ArrowType {
+        return this.settings.arrowStart;
     }
 
-    /**
-     * Gets the current arrow type derived from the settings flags.
-     */
-    public get arrowType(): ArrowType {
-        return this.settings.arrow_type || 'solid_triangle';
+    public set arrowStart(value: ArrowType) {
+        this.setArrowStart(value);
     }
 
-    /**
-     * Sets the default arrow direction and applies it to current selection.
-     * @param value Arrow direction value.
-     */
-    public set arrowAt(value: ArrowDirection) {
-        this.setArrowAt(value);
+    public get arrowEnd(): ArrowType {
+        return this.settings.arrowEnd;
     }
 
-    /**
-     * Gets the current default stroke color.
-     */
-    public get strokeColor(): string {
-        return this.settings.strokeColor;
+    public set arrowEnd(value: ArrowType) {
+        this.setArrowEnd(value);
     }
 
     /**
@@ -972,8 +958,8 @@ export class DiagramEditView extends DiagramView {
             color: this.settings.strokeColor,
             width: this.settings.lineWidth,
             dash: this.settings.lineDash,
-            arrow_at: this.settings.arrow_at,
-            arrow_type: this.settings.arrow_type,
+            arrow_start: this.settings.arrowStart,
+            arrow_end: this.settings.arrowEnd,
         };
     }
 
@@ -1165,8 +1151,8 @@ export class DiagramEditView extends DiagramView {
                 color: this.settings.strokeColor,
                 width: this.settings.lineWidth,
                 dash: this.settings.lineDash,
-                arrow_at: this.settings.arrow_at,
-                arrow_type: this.settings.arrow_type,
+                arrow_start: this.settings.arrowStart,
+                arrow_end: this.settings.arrowEnd,
             },
 
             /* Override with defined properties from the adapter */
@@ -1389,46 +1375,46 @@ export class DiagramEditView extends DiagramView {
      * Sets the arrow direction for the selected nodes and new nodes to be created.
      * @param arrow The arrow direction to set.
      */
-    public setArrowAt(arrow: ArrowDirection): void {
+    public setArrowStart(arrow: ArrowType): void {
         const selected = this.selection();
         if (selected.length) {
             this.addUndo();
         }
 
-        this.settings.arrow_at = arrow;
+        this.settings.arrowStart = arrow;
 
         for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
-            node.strokeStyle.arrow_at = arrow;
+            node.strokeStyle.arrow_start = arrow;
         }
-        this.applyClassChange(selected, { strokeStyle: { arrow_at: arrow } });
+        this.applyClassChange(selected, { strokeStyle: { arrow_start: arrow } });
 
         this.render('all');
         this.renderPreview();
-        this.event_dispatcher.styleChanged('set-arrow-at');
+        this.event_dispatcher.styleChanged('set-arrow-start');
     }
 
     /**
      * Sets the arrow type for the selected nodes and new nodes to be created.
      * @param arrow The arrow type to set.
      */
-    public setArrowType(arrow: ArrowType): void {
+    public setArrowEnd(arrow: ArrowType): void {
         const selected = this.selection();
         if (selected.length) {
             this.addUndo();
         }
 
-        this.settings.arrow_type = arrow;
+        this.settings.arrowEnd = arrow;
 
         for (let node of selected) {
             node.strokeStyle = node.strokeStyle || {};
-            node.strokeStyle.arrow_type = arrow;
+            node.strokeStyle.arrow_end = arrow;
         }
-        this.applyClassChange(selected, { strokeStyle: { arrow_type: arrow } });
+        this.applyClassChange(selected, { strokeStyle: { arrow_end: arrow } });
 
         this.render('all');
         this.renderPreview();
-        this.event_dispatcher.styleChanged('set-arrow-type');
+        this.event_dispatcher.styleChanged('set-arrow-end');
     }
 
     /**
@@ -1444,15 +1430,15 @@ export class DiagramEditView extends DiagramView {
         if (style.color !== undefined) this.settings.strokeColor = style.color;
         if (style.width !== undefined) this.settings.lineWidth = style.width;
         if (style.dash !== undefined) this.settings.lineDash = style.dash;
-        if (style.arrow_at !== undefined) this.settings.arrow_at = style.arrow_at;
-        if (style.arrow_type !== undefined) this.settings.arrow_type = style.arrow_type;
+        if (style.arrow_start !== undefined) this.settings.arrowStart = style.arrow_start;
+        if (style.arrow_end !== undefined) this.settings.arrowEnd = style.arrow_end;
 
         const merged: StrokeStyle = {
             color: this.settings.strokeColor,
             width: this.settings.lineWidth,
             dash: this.settings.lineDash,
-            arrow_at: this.settings.arrow_at,
-            arrow_type: this.settings.arrow_type,
+            arrow_start: this.settings.arrowStart,
+            arrow_end: this.settings.arrowEnd,
         };
 
         for (let node of selected) {
@@ -1632,8 +1618,8 @@ export class DiagramEditView extends DiagramView {
         if (patch['strokeStyle.color'] !== undefined) this.settings.strokeColor = String(patch['strokeStyle.color']);
         if (patch['strokeStyle.width'] !== undefined) this.settings.lineWidth = Number(patch['strokeStyle.width']);
         if (patch['strokeStyle.dash'] !== undefined) this.settings.lineDash = patch['strokeStyle.dash'] as string | number[];
-        if (patch['strokeStyle.arrow_at'] !== undefined) this.settings.arrow_at = patch['strokeStyle.arrow_at'] as ArrowDirection;
-        if (patch['strokeStyle.arrow_type'] !== undefined) this.settings.arrow_type = patch['strokeStyle.arrow_type'] as ArrowType;
+        if (patch['strokeStyle.arrow_start'] !== undefined) this.settings.arrowStart = patch['strokeStyle.arrow_start'] as ArrowType;
+        if (patch['strokeStyle.arrow_end'] !== undefined) this.settings.arrowEnd = patch['strokeStyle.arrow_end'] as ArrowType;
 
         if (patch['fillStyle.color'] !== undefined) this.settings.fillColor = String(patch['fillStyle.color']);
         if (patch['fillStyle.gradient'] !== undefined) this.settings.fillGradient = { ...patch['fillStyle.gradient'] } as IGradient;
@@ -1678,8 +1664,8 @@ export class DiagramEditView extends DiagramView {
             if (patch['strokeStyle.color'] !== undefined) nodeStyle.strokeStyle!.color = patch['strokeStyle.color'] as string;
             if (patch['strokeStyle.width'] !== undefined) nodeStyle.strokeStyle!.width = patch['strokeStyle.width'] as number;
             if (patch['strokeStyle.dash'] !== undefined) nodeStyle.strokeStyle!.dash = patch['strokeStyle.dash'] as string | number[];
-            if (patch['strokeStyle.arrow_at'] !== undefined) nodeStyle.strokeStyle!.arrow_at = patch['strokeStyle.arrow_at'] as ArrowDirection;
-            if (patch['strokeStyle.arrow_type'] !== undefined) nodeStyle.strokeStyle!.arrow_type = patch['strokeStyle.arrow_type'] as ArrowType;
+            if (patch['strokeStyle.arrow_start'] !== undefined) nodeStyle.strokeStyle!.arrow_start = patch['strokeStyle.arrow_start'] as ArrowType;
+            if (patch['strokeStyle.arrow_end'] !== undefined) nodeStyle.strokeStyle!.arrow_end = patch['strokeStyle.arrow_end'] as ArrowType;
 
             if (patch['fillStyle.color'] !== undefined) nodeStyle.fillStyle!.color = patch['fillStyle.color'] as string;
             if (patch['fillStyle.gradient'] !== undefined) nodeStyle.fillStyle!.gradient = { ...patch['fillStyle.gradient'] } as IGradient;
@@ -4272,8 +4258,8 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (NodeRegistry.isConnection(tool)) {
-            draft.strokeStyle!.arrow_at = draft.strokeStyle!.arrow_at ?? this.settings.arrow_at;
-            draft.strokeStyle!.arrow_type = draft.strokeStyle!.arrow_type ?? this.settings.arrow_type;
+            draft.strokeStyle!.arrow_start = draft.strokeStyle!.arrow_start ?? this.settings.arrowStart;
+            draft.strokeStyle!.arrow_end = draft.strokeStyle!.arrow_end ?? this.settings.arrowEnd;
             draft.textStyle = {
                 ...(draft.textStyle || {}),
                 orientation: 'horizontal',
@@ -5853,8 +5839,8 @@ export class DiagramEditView extends DiagramView {
             this.settings.shadowOffsetY = (shape.shadowStyle ?? DiagramConstants.NO_SHADOW).offset.y;
 
             if (isConnection(shape)) {
-                this.settings.arrow_at = shape.strokeStyle?.arrow_at || 'end';
-                this.settings.arrow_type = shape.strokeStyle?.arrow_type || 'solid_triangle';
+                this.settings.arrowStart = shape.strokeStyle?.arrow_start || 'none';
+                this.settings.arrowEnd = shape.strokeStyle?.arrow_end || 'solid_triangle';
             }
         }
     }

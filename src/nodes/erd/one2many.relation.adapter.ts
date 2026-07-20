@@ -15,8 +15,8 @@ export class One2ManyRelationAdapter extends AbstractRelationAdapter {
         return {
             type: this.type,
             strokeStyle: {
-                arrow_at: 'none',
-                arrow_type: 'none',
+                arrow_start: 'none',
+                arrow_end: 'none',
             },
             geometry: {
                 radius: 8,

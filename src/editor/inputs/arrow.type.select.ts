@@ -10,6 +10,7 @@ function ensureDefaultStyles(): void {
 
 export interface ArrowTypeSelectConfig {
     arrows?: ArrowType[];
+    direction?: 'start' | 'end';
     strokeColor?: string;
     hostClassName?: string;
     triggerClassName?: string;
@@ -34,6 +35,7 @@ const DEFAULT_ARROWS: ArrowType[] = [
 
 const DEFAULT_CONFIG: Required<Omit<ArrowTypeSelectConfig, 'arrows'>> & { arrows: ArrowType[] } = {
     arrows: DEFAULT_ARROWS,
+    direction: 'end',
     strokeColor: 'var(--diagram-ui-text, #1f2937)',
     hostClassName: 'arrow-select-control',
     triggerClassName: 'color-preset-trigger',
@@ -188,6 +190,10 @@ export class ArrowTypeSelect {
         const marker = this.createArrowMarker(normalized);
         if (marker) {
             svg.appendChild(marker);
+        }
+        if (this.config.direction === 'start') {
+            // const transform = 'scale(-1, 1)' translate(-100%, 0)';
+            svg?.setAttribute('transform', 'scale(-1, 1)');
         }
 
         return svg;

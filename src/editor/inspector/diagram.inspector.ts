@@ -405,15 +405,15 @@ export class DiagramInspector extends Inspector {
             readonly: readonly, isVisible: hasSelected
         });
         this.addRow(line, {
-            key: 'strokeStyle.arrow_at', label: 'Arrows',
-            type: 'string', editor: 'ArrowDirectionSelect',
-            editorOptions: this.inspectorConfig.arrowDirectionSelect || {},
+            key: 'strokeStyle.arrow_start', label: 'Start Arrow',
+            type: 'string', editor: 'ArrowTypeSelect',
+            editorOptions: this.inspectorConfig.arrowTypeSelect || { direction: 'start' },
             readonly: readonly, isVisible: hasConnections
         });
         this.addRow(line, {
-            key: 'strokeStyle.arrow_type', label: 'Arrow Type',
+            key: 'strokeStyle.arrow_end', label: 'End Arrow',
             type: 'string', editor: 'ArrowTypeSelect',
-            editorOptions: this.inspectorConfig.arrowTypeSelect || {},
+            editorOptions: this.inspectorConfig.arrowTypeSelect || { direction: 'end' },
             readonly: readonly, isVisible: hasConnections
         });
 

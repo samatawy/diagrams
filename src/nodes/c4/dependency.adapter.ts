@@ -1,5 +1,4 @@
 import type { INode } from "../../interfaces";
-import type { ArrowDirection, ArrowType } from "../../types";
 import { PolylineAdapter } from "../polyline/polyline.adapter";
 
 export class C4DependencyAdapter extends PolylineAdapter {
@@ -15,11 +14,11 @@ export class C4DependencyAdapter extends PolylineAdapter {
                 color: '#ffffff00',
             },
             strokeStyle: {
-                arrow_type: 'solid_spear' as ArrowType,
-                arrow_at: 'end' as ArrowDirection,
                 color: '#1f77b4',
                 width: 1,
                 dash: [],
+                arrow_start: 'none',
+                arrow_end: 'solid_spear',
             },
             textStyle: {
                 color: '#1f77b4',

@@ -1,0 +1,351 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Diagram",
+    "type": "object",
+    "required": [
+        "id",
+        "sheet_id",
+        "nodes",
+        "layers"
+    ],
+    "properties": {
+        "id": {
+            "type": "string",
+            "description": "Unique diagram identifier"
+        },
+        "sheet_id": {
+            "type": "string",
+            "description": "Style Sheet identifier"
+        },
+        "nodes": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Node"
+            }
+        },
+        "layers": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/Layer"
+            }
+        }
+    },
+    "definitions": {
+        "Point": {
+            "type": "object",
+            "required": [
+                "x",
+                "y"
+            ],
+            "properties": {
+                "x": {
+                    "type": "number",
+                    "description": "The x axis coordinate in absolute diagram units, not relative"
+                },
+                "y": {
+                    "type": "number",
+                    "description": "The y axis coordinate in absolute diagram units, not relative"
+                }
+            }
+        },
+        "Node": {
+            "type": "object",
+            "required": [
+                "id",
+                "type",
+                "points"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "Unique node identifier"
+                },
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "text",
+                        "arrow_triangle",
+                        "round_rectangle",
+                        "rhombus",
+                        "cylinder",
+                        "trapezoid",
+                        "document",
+                        "line",
+                        "orthogonal",
+                        "polyline",
+                        "curve"
+                    ],
+                    "description": "Node type"
+                },
+                "style_class": {
+                    "type": "string",
+                    "description": "Identifier of the style class to apply to this node, as defined in the diagram's style sheet"
+                },
+                "points": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Point"
+                    },
+                    "minItems": 2,
+                    "description": "Bounding box or path points"
+                },
+                "textStyle": {
+                    "$ref": "#/definitions/TextStyle",
+                    "description": "Optional text style overrides for this node"
+                },
+                "strokeStyle": {
+                    "$ref": "#/definitions/StrokeStyle",
+                    "description": "Optional stroke style overrides for this node"
+                },
+                "fillStyle": {
+                    "$ref": "#/definitions/FillStyle",
+                    "description": "Optional fill style overrides for this node"
+                },
+                "shadowStyle": {
+                    "$ref": "#/definitions/ShadowStyle",
+                    "description": "Optional shadow style overrides for this node"
+                },
+                "locked": {
+                    "type": "boolean",
+                    "description": "Whether the node is locked from moving, editing, etc. (does not affect the ability to select or view the node)"
+                },
+                "locked_aspect": {
+                    "type": "boolean",
+                    "description": "Whether the node's aspect ratio is locked"
+                },
+                "invisible": {
+                    "type": "boolean",
+                    "description": "Whether the node is invisible (not rendered)"
+                },
+                "text": {
+                    "type": "string",
+                    "description": "Optional label text"
+                },
+                "owns_group": {
+                    "type": "string",
+                    "description": "Optional group ID that this node owns, if it is a container node"
+                },
+                "from": {
+                    "$ref": "#/definitions/ConnectionEndpoint",
+                    "description": "For connectors: source endpoint"
+                },
+                "to": {
+                    "$ref": "#/definitions/ConnectionEndpoint",
+                    "description": "For connectors: target endpoint"
+                },
+                "opacity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "Optional opacity value for the node, between 0 (fully transparent) and 1 (fully opaque)"
+                },
+                "angle": {
+                    "type": "number",
+                    "description": "Optional rotation angle for the node, in degrees"
+                },
+                "geometry": {
+                    "type": "object",
+                    "description": "Optional geometry data for the node, such as control points for curves or polylines"
+                },
+                "specific": {
+                    "type": "object",
+                    "description": "Optional node-specific data, not related to geometry or style, such as datatype or scope midifiers for a UML class field"
+                },
+                "metadata": {
+                    "type": "object",
+                    "description": "Optional arbitrary metadata for the node, such as author, a unique identifier for a database record, or a URL for a web service"
+                }
+            }
+        },
+        "TextStyle": {
+            "type": "object",
+            "properties": {
+                "fontFace": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "number"
+                },
+                "weight": {
+                    "type": "number"
+                },
+                "align": {
+                    "type": "string",
+                    "enum": [
+                        "left",
+                        "center",
+                        "right"
+                    ]
+                },
+                "baseline": {
+                    "type": "string",
+                    "enum": [
+                        "top",
+                        "middle",
+                        "bottom"
+                    ]
+                },
+                "color": {
+                    "type": "string"
+                }
+            }
+        },
+        "StrokeStyle": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "width": {
+                    "type": "number"
+                },
+                "arrow_to": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "start",
+                        "end",
+                        "both"
+                    ]
+                },
+                "arrow_type": {
+                    "type": "string",
+                    "enum": [
+                        "none",
+                        "triangle",
+                        "diamond",
+                        "circle"
+                    ]
+                }
+            }
+        },
+        "FillStyle": {
+            "type": "object",
+            "properties": {
+                "color": {
+                    "type": "string"
+                },
+                "gradient": {
+                    "type": "string"
+                }
+            }
+        },
+        "ShadowStyle": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "color": {
+                    "type": "string"
+                },
+                "blur": {
+                    "type": "number"
+                },
+                "offset": {
+                    "$ref": "#/definitions/Point"
+                }
+            }
+        },
+        "ConnectionEndpoint": {
+            "type": "object",
+            "required": [
+                "node",
+                "handle",
+                "relative"
+            ],
+            "properties": {
+                "node": {
+                    "type": "string",
+                    "description": "ID of connected node"
+                },
+                "handle": {
+                    "type": "string",
+                    "enum": [
+                        "n",
+                        "s",
+                        "e",
+                        "w",
+                        "ne",
+                        "nw",
+                        "se",
+                        "sw"
+                    ],
+                    "description": "Connection handle (compass direction)"
+                },
+                "relative": {
+                    "type": "object",
+                    "description": "Position of the connection point relative to the node's bounding box, with x and y values between 0 and 1",
+                    "required": [
+                        "x",
+                        "y"
+                    ],
+                    "properties": {
+                        "x": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                        },
+                        "y": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                        }
+                    }
+                }
+            }
+        },
+        "Layer": {
+            "type": "object",
+            "description": "A collection of nodes that controls rendering order",
+            "required": [
+                "id",
+                "name",
+                "visible",
+                "nodes"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "visible": {
+                    "type": "boolean"
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Array of node IDs in this layer"
+                }
+            }
+        },
+        "Group": {
+            "type": "object",
+            "description": "A collection of nodes that can be selected and manipulated together",
+            "required": [
+                "id",
+                "name",
+                "nodes"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": "Array of node IDs in this group"
+                }
+            }
+        }
+    }
+}

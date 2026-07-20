@@ -10,9 +10,9 @@ export class UmlAssociationAdapter extends AbstractUmlRelationAdapter {
             type: UmlAssociationAdapter.TYPE,
             strokeStyle: {
                 color: '#000000',
-                arrow_at: 'end',
-                arrow_type: 'solid_spear',
                 dash: [],
+                arrow_start: 'none',
+                arrow_end: 'solid_spear',
             }
         }
     }

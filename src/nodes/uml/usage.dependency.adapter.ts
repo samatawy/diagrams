@@ -15,9 +15,9 @@ export class UmlUsageDependencyAdapter extends AbstractUmlRelationAdapter {
             text: '<<use>>',
             strokeStyle: {
                 color: '#000000',
-                arrow_at: 'end',
-                arrow_type: 'solid_spear',
                 dash: [6, 4],
+                arrow_start: 'none',
+                arrow_end: 'solid_spear',
             }
         }
     }

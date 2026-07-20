@@ -1,5 +1,5 @@
 import type { INode } from "../../interfaces";
-import type { ArrowDirection, ArrowType, IPoint, NodeHandle } from "../../types";
+import type { IPoint, NodeHandle } from "../../types";
 import { OrthogonalAdapter } from "../polyline/orthogonal.adapter";
 import { BPMN_CONNECTION_STROKE_STYLE } from "./Bpmn.Basics";
 
@@ -19,10 +19,10 @@ export class BpmnSequenceFlowAdapter extends OrthogonalAdapter {
             type: 'bpmn_sequence_flow',
             text: '',
             strokeStyle: {
-                arrow_type: 'solid_triangle' as ArrowType,
-                arrow_at: 'end' as ArrowDirection,
                 color: BPMN_CONNECTION_STROKE_STYLE,
                 dash: 'solid',
+                arrow_start: 'none',
+                arrow_end: 'solid_triangle',
             },
         }
     }

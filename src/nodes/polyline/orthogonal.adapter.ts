@@ -6,9 +6,9 @@ import { RenderBasics } from "../render.basics";
 import type { HollowMode, SpecificOptions, TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
 import { ConnectionBasics } from "../connection.basics";
 import { NodeBasics } from "../node.basics";
-import { type AnchorScope, type IPoint, type IRect, NodeHandle } from "../../types";
+import { type IPoint, type IRect, NodeHandle } from "../../types";
 import type { DiagramView } from "../../view/diagram.view";
-import { arrowAt } from "../../value.utils";
+import { arrowEnd, arrowStart } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 
 type CardinalDirection = 'east' | 'west' | 'north' | 'south';
@@ -95,19 +95,17 @@ export class OrthogonalAdapter extends LineAdapter {
             context.stroke(path);
 
             if (isConnectionNode(node)) {
-                // RenderBasics.renderArrows(node, context);
                 if (pathPoints.length < 2) return;
 
-                const direction = arrowAt(node);
-
-                if (direction === 'start' || direction === 'both') {
-                    RenderBasics.renderArrowTyped(node, pathPoints[1]!, pathPoints[0]!, context);
+                const start = arrowStart(node);
+                if (start !== 'none') {
+                    RenderBasics.renderArrowTyped(node, start, pathPoints[1]!, pathPoints[0]!, context);
                 }
 
-                if (direction === 'end' || direction === 'both') {
-                    RenderBasics.renderArrowTyped(node, pathPoints[pathPoints.length - 2]!, pathPoints[pathPoints.length - 1]!, context);
+                const end = arrowEnd(node);
+                if (end !== 'none') {
+                    RenderBasics.renderArrowTyped(node, end, pathPoints[pathPoints.length - 2]!, pathPoints[pathPoints.length - 1]!, context);
                 }
-
             }
 
             if (node.text && show !== 'quick') {

@@ -2,8 +2,7 @@ import type { IConnection, INode } from '../src/interfaces';
 import { ConnectionBasics } from '../src/nodes/connection.basics';
 import { LineAdapter } from '../src/nodes/polyline/line.adapter';
 import type { StrokeStyle } from '../src/style.interfaces';
-import type { ArrowDirection } from '../src/types';
-import { NodeHandle } from '../src/types';
+import { NodeHandle, type ArrowType } from '../src/types';
 
 class FakePath2D {
     commands: Array<{ type: string; values: number[] }> = [];
@@ -30,7 +29,7 @@ class FakePath2D {
 }
 
 type NodeOverrides = Partial<INode & IConnection> & {
-    arrow?: ArrowDirection;
+    arrow_end?: ArrowType;
     lineWidth?: number;
 };
 
@@ -38,7 +37,7 @@ function createNode(owner: any, overrides: NodeOverrides = {}): INode & IConnect
     const strokeStyle = {
         ...(overrides.strokeStyle || {}),
         ...(overrides.lineWidth !== undefined ? { width: overrides.lineWidth } : {}),
-        ...(overrides.arrow ? { arrow_at: overrides.arrow } : {}),
+        ...(overrides.arrow_end ? { arrow_end: overrides.arrow_end } : {}),
     } as StrokeStyle;
 
     return {
@@ -111,7 +110,7 @@ describe('LineHandler', () => {
             id: 'line',
             points: [{ x: 0, y: 0 }, { x: 40, y: 10 }, { x: 80, y: 40 }, { x: 120, y: 80 }],
             from: { node: 'target', handle: NodeHandle.E, relative: { x: 1, y: 0.5 } },
-            arrow: 'end',
+            arrow_end: 'solid_triangle',
             strokeStyle: { color: '#111827' },
         });
 

@@ -1,5 +1,5 @@
 import type { INode } from "../../interfaces";
-import type { ArrowDirection, ArrowType, NodeHandle, IPoint } from "../../types";
+import type { NodeHandle, IPoint } from "../../types";
 import { OrthogonalAdapter } from "../polyline/orthogonal.adapter";
 import { BPMN_CONNECTION_STROKE_STYLE } from "./Bpmn.Basics";
 
@@ -19,11 +19,11 @@ export class BpmnDataAssociationAdapter extends OrthogonalAdapter {
             type: 'bpmn_data_association',
             text: '',
             strokeStyle: {
-                arrow_type: 'solid_spear' as ArrowType,
-                arrow_at: 'end' as ArrowDirection,
                 color: BPMN_CONNECTION_STROKE_STYLE,
                 width: 1,
                 dash: 'dotted',
+                arrow_start: 'none',
+                arrow_end: 'solid_spear',
             },
         }
     }

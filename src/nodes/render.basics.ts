@@ -1,9 +1,9 @@
 import type { IConnection, INode } from "../interfaces";
-import type { ImageMode, IPoint, IRect } from "../types";
+import type { ArrowType, ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDash, lineDashArray, arrowType, arrowAt, deepClone, fillColor } from "../value.utils";
+import { imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDashArray, fillColor, arrowStart, arrowEnd } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
@@ -1058,41 +1058,40 @@ export class RenderBasics {
         points = points || node.points;
         if (points.length < 2) return;
 
-        const direction = arrowAt(node);
-
-        if (direction === 'start' || direction === 'both') {
-            this.renderArrowTyped(node, points[1]!, points[0]!, context);
+        const start = arrowStart(node);
+        if (start !== 'none') {
+            this.renderArrowTyped(node, start, points[1]!, points[0]!, context);
         }
-
-        if (direction === 'end' || direction === 'both') {
-            this.renderArrowTyped(node, points[points.length - 2]!, points[points.length - 1]!, context);
+        const end = arrowEnd(node);
+        if (end !== 'none') {
+            this.renderArrowTyped(node, end, points[points.length - 2]!, points[points.length - 1]!, context);
         }
     }
 
-    public static renderArrowTyped(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
-        switch (arrowType(node)) {
+    public static renderArrowTyped(node: INode, type: ArrowType, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+        switch (type) {
             case 'solid_triangle':
             case 'hollow_triangle':
-                this.renderTriangleArrow(node, from, to, context);
+                this.renderTriangleArrow(node, type, from, to, context);
                 break;
             case 'solid_spear':
             case 'hollow_spear':
-                this.renderSpearArrow(node, from, to, context);
+                this.renderSpearArrow(node, type, from, to, context);
                 break;
             case 'solid_diamond':
             case 'hollow_diamond':
-                this.renderDiamondArrow(node, from, to, context);
+                this.renderDiamondArrow(node, type, from, to, context);
                 break;
             case 'solid_circle':
             case 'hollow_circle':
-                this.renderCircleArrow(node, from, to, context);
+                this.renderCircleArrow(node, type, from, to, context);
                 break;
             default:
             // None or unsupported arrow type; do nothing.
         }
     }
 
-    private static renderTriangleArrow(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+    private static renderTriangleArrow(node: INode, type: ArrowType, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
         const headlen = 10;
         const angle = NodeBasics.calculateAngle(from, to);
 
@@ -1112,7 +1111,7 @@ export class RenderBasics {
         //     to.y - headlen * Math.sin(angle - Math.PI / 7),
         // );
 
-        if (arrowType(node) === 'solid_triangle') {
+        if (type === 'solid_triangle') {
             context.fillStyle = context.strokeStyle;
         } else {
             context.fillStyle = this.getHollowFillColor(node);
@@ -1122,7 +1121,7 @@ export class RenderBasics {
         context.stroke();
     }
 
-    private static renderSpearArrow(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+    private static renderSpearArrow(node: INode, type: ArrowType, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
         const headlen = 10;
         const angle = NodeBasics.calculateAngle(from, to);
 
@@ -1142,7 +1141,7 @@ export class RenderBasics {
         );
         context.lineTo(to.x, to.y);
 
-        if (arrowType(node) === 'solid_spear') {
+        if (type === 'solid_spear') {
             context.fillStyle = context.strokeStyle;
         } else {
             context.fillStyle = this.getHollowFillColor(node);
@@ -1152,7 +1151,7 @@ export class RenderBasics {
         context.stroke();
     }
 
-    private static renderDiamondArrow(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+    private static renderDiamondArrow(node: INode, type: ArrowType, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
         const headlen = 10;
         const angle = NodeBasics.calculateAngle(from, to);
 
@@ -1172,7 +1171,7 @@ export class RenderBasics {
         );
         context.lineTo(to.x, to.y);
 
-        if (arrowType(node) === 'solid_diamond') {
+        if (type === 'solid_diamond') {
             context.fillStyle = context.strokeStyle;
         } else {
             context.fillStyle = this.getHollowFillColor(node);
@@ -1182,7 +1181,7 @@ export class RenderBasics {
         context.stroke();
     }
 
-    private static renderCircleArrow(node: INode, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
+    private static renderCircleArrow(node: INode, type: ArrowType, from: IPoint, to: IPoint, context: CanvasRenderingContext2D): void {
         const headlen = 10;
         const angle = NodeBasics.calculateAngle(from, to);
 
@@ -1191,7 +1190,7 @@ export class RenderBasics {
             to.y - headlen / 2 * Math.sin(angle),
             headlen / 2, 0, 2 * Math.PI);
 
-        if (arrowType(node) === 'solid_circle') {
+        if (type === 'solid_circle') {
             context.fillStyle = context.strokeStyle;
         } else {
             context.fillStyle = this.getHollowFillColor(node);

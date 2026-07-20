@@ -100,8 +100,9 @@ You can tailor the editor for your own product:
 
 ## Version History
 
-- Since version `0.6.5`
+- Since version `0.6.3`
   - Added dropdown menu
+  - Improved UI and added dark theme
   - Improved connection and manipulation logic
 - Since version `0.6.0`
   - Added gradient support

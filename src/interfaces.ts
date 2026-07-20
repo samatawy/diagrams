@@ -123,12 +123,6 @@ export interface INode {
      */
     angle?: number;
 
-    // /**
-    //  * An optional array of child elements that are rendered inside or with the node. 
-    //  * Child elements can include icons, table rows, markdown elements, or other visual components.
-    //  */
-    // children?: IChildElement[];
-
     /**
      * An optional geometry object that can store additional geometric properties of the node, such as width, height, or other custom measurements.
      * This can be used to extend the node's geometry beyond the basic points and provide more detailed control over its shape and size.

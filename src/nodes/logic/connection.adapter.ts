@@ -25,8 +25,8 @@ export class LogicConnectionAdapter extends OrthogonalAdapter {
             strokeStyle: {
                 color: '#000000',
                 width: 1,
-                arrow_at: 'none',
-                arrow_type: 'none',
+                arrow_start: 'none',
+                arrow_end: 'none',
             },
             geometry: {
                 radius: 0,

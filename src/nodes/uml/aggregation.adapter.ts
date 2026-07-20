@@ -10,9 +10,9 @@ export class UmlAggregationAdapter extends AbstractUmlRelationAdapter {
             type: UmlAggregationAdapter.TYPE,
             strokeStyle: {
                 color: '#000000',
-                arrow_at: 'end',
-                arrow_type: 'hollow_diamond',
                 dash: [],
+                arrow_start: 'none',
+                arrow_end: 'hollow_diamond',
             }
         }
     }

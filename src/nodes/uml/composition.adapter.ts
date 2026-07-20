@@ -10,9 +10,9 @@ export class UmlCompositionAdapter extends AbstractUmlRelationAdapter {
             type: UmlCompositionAdapter.TYPE,
             strokeStyle: {
                 color: '#000000',
-                arrow_at: 'end',
-                arrow_type: 'solid_diamond',
                 dash: [],
+                arrow_start: 'none',
+                arrow_end: 'solid_diamond',
             }
         }
     }

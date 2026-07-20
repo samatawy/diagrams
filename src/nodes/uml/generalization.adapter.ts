@@ -10,9 +10,9 @@ export class UmlGeneralizationAdapter extends AbstractUmlRelationAdapter {
             type: UmlGeneralizationAdapter.TYPE,
             strokeStyle: {
                 color: '#000000',
-                arrow_at: 'end',
-                arrow_type: 'hollow_triangle',
                 dash: [],
+                arrow_start: 'none',
+                arrow_end: 'hollow_triangle',
             }
         }
     }

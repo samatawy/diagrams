@@ -29,13 +29,12 @@ import { SizeSelect, type SizeSelectConfig } from "./inputs/size.select";
 import { DIAGRAM_CHANGED_EVENT, type DiagramHintChange } from "../events/diagram.events";
 import { EventDispatcher } from "../events/event.dispatcher";
 import { WidthSelect, type WidthSelectConfig } from "./inputs/width.select";
-import { ArrowDirectionSelect, type ArrowDirectionSelectConfig } from "./inputs/arrow.direction.select";
 import { ArrowTypeSelect, type ArrowTypeSelectConfig } from "./inputs/arrow.type.select";
 import { DashSelect, type DashSelectConfig, type LineDashValue } from "./inputs/dash.select";
 import { ImageSelect, type ImageSelectConfig } from "./inputs/image.select";
 import { ImageModeSelect } from "./inputs/image.mode.select";
 import { ImageAlignSelect } from "./inputs/image.align.select";
-import type { ArrowDirection, ArrowType } from "../types";
+import type { ArrowType } from "../types";
 import { IntegerRangeSelect, type IntegerRangeSelectConfig } from "./inputs/integer.range.select";
 import { DiagramInspector } from "./inspector/diagram.inspector";
 import type { InspectorConfig } from "./inspector/inspector";
@@ -95,7 +94,7 @@ export type DiagramEditorConfig = {
     strokeColor?: ColorSelectConfig;
     strokeWidth?: WidthSelectConfig;
     dashSelect?: DashSelectConfig;
-    arrowDirectionSelect?: ArrowDirectionSelectConfig;
+    // arrowDirectionSelect?: ArrowDirectionSelectConfig;
     arrowTypeSelect?: ArrowTypeSelectConfig;
     shadowOffsetX?: IntegerRangeSelectConfig;
     shadowOffsetY?: IntegerRangeSelectConfig;
@@ -163,13 +162,17 @@ export class DiagramEditor {
     protected strokeColorSelectHost?: HTMLElement;
     protected strokeWidthSelectHost?: HTMLElement;
     protected dashSelectHost?: HTMLElement;
-    protected arrowDirectionSelectHost?: HTMLElement;
-    protected arrowTypeSelect?: ArrowTypeSelect;
+    // protected arrowDirectionSelectHost?: HTMLElement;
+    // protected arrowTypeSelect?: ArrowTypeSelect;
     protected strokeColorSelect?: ColorSelect;
     protected strokeWidthSelect?: WidthSelect;
     protected dashSelect?: DashSelect;
-    protected arrowDirectionSelect?: ArrowDirectionSelect;
-    protected arrowTypeSelectHost?: HTMLElement;
+    // protected arrowDirectionSelect?: ArrowDirectionSelect;
+    // protected arrowTypeSelectHost?: HTMLElement;
+    protected arrowStartSelectHost?: HTMLElement;
+    protected arrowStartSelect?: ArrowTypeSelect;
+    protected arrowEndSelectHost?: HTMLElement;
+    protected arrowEndSelect?: ArrowTypeSelect;
 
     protected shadowToolbar?: HTMLElement;
     protected shadowPresetSelectHost?: HTMLElement;
@@ -264,8 +267,10 @@ export class DiagramEditor {
         this.strokeColorSelect?.destroy();
         this.strokeWidthSelect?.destroy();
         this.dashSelect?.destroy();
-        this.arrowDirectionSelect?.destroy();
-        this.arrowTypeSelect?.destroy();
+        // this.arrowDirectionSelect?.destroy();
+        // this.arrowTypeSelect?.destroy();
+        this.arrowStartSelect?.destroy();
+        this.arrowEndSelect?.destroy();
         this.shadowPresetSelect?.destroy();
         this.shadowOffsetXSelect?.destroy();
         this.shadowOffsetYSelect?.destroy();
@@ -525,18 +530,31 @@ export class DiagramEditor {
         return this.dashSelect;
     }
 
+    // /**
+    //  * Returns the arrow direction selector control when available.
+    //  */
+    // public getArrowDirectionSelect(): ArrowDirectionSelect | undefined {
+    //     return this.arrowDirectionSelect;
+    // }
+
+    // /**
+    //   * Returns the arrow type selector control when available.
+    //   */
+    // public getArrowTypeSelect(): ArrowTypeSelect | undefined {
+    //     return this.arrowTypeSelect;
+    // }
     /**
-     * Returns the arrow direction selector control when available.
+     * Returns the arrow start selector control when available.
      */
-    public getArrowDirectionSelect(): ArrowDirectionSelect | undefined {
-        return this.arrowDirectionSelect;
+    public getArrowStartSelect(): ArrowTypeSelect | undefined {
+        return this.arrowStartSelect;
     }
 
     /**
-      * Returns the arrow type selector control when available.
+      * Returns the arrow end selector control when available.
       */
-    public getArrowTypeSelect(): ArrowTypeSelect | undefined {
-        return this.arrowTypeSelect;
+    public getArrowEndSelect(): ArrowTypeSelect | undefined {
+        return this.arrowEndSelect;
     }
 
     /**
@@ -699,14 +717,14 @@ export class DiagramEditor {
             this.strokeColorSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-color-select');
             this.strokeWidthSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-stroke-width-select');
             this.dashSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-dash-select');
-            this.arrowDirectionSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
-            this.arrowTypeSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
+            this.arrowStartSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
+            this.arrowEndSelectHost = this.createControlHost(this.strokeToolbar, 'diagram-editor-arrow-select');
 
             this.strokeColorSelect = new ColorSelect(this.strokeColorSelectHost, config.strokeColor || {});
             this.strokeWidthSelect = new WidthSelect(this.strokeWidthSelectHost, config.strokeWidth || {});
             this.dashSelect = new DashSelect(this.dashSelectHost, config.dashSelect || {});
-            this.arrowDirectionSelect = new ArrowDirectionSelect(this.arrowDirectionSelectHost, config.arrowDirectionSelect || {});
-            this.arrowTypeSelect = new ArrowTypeSelect(this.arrowTypeSelectHost, config.arrowTypeSelect || {});
+            this.arrowStartSelect = new ArrowTypeSelect(this.arrowStartSelectHost, config.arrowTypeSelect || {});
+            this.arrowEndSelect = new ArrowTypeSelect(this.arrowEndSelectHost, config.arrowTypeSelect || {});
 
             // Initialize fill toolbar
             this.fillToolbar = this.createGroupToolbar(this.toolbarsHost, 'diagram-editor-fill-toolbar', 'Fill');
@@ -925,19 +943,19 @@ export class DiagramEditor {
             });
         }
 
-        if (this.arrowDirectionSelectHost) {
-            this.addManagedListener<ArrowDirection>(this.arrowDirectionSelectHost, 'arrowchange', (arrow) => {
+        if (this.arrowStartSelectHost) {
+            this.addManagedListener<ArrowType>(this.arrowStartSelectHost, 'arrow_change', (arrow) => {
                 if (this.syncingControls) return;
                 if (arrow) {
-                    this.diagram.setArrowAt(arrow);
+                    this.diagram.setArrowStart(arrow);
                 }
             });
         }
-        if (this.arrowTypeSelectHost) {
-            this.addManagedListener<ArrowType>(this.arrowTypeSelectHost, 'arrowtypechange', (arrowType) => {
+        if (this.arrowEndSelectHost) {
+            this.addManagedListener<ArrowType>(this.arrowEndSelectHost, 'arrow_change', (arrowType) => {
                 if (this.syncingControls) return;
                 if (arrowType) {
-                    this.diagram.setArrowType(arrowType);
+                    this.diagram.setArrowEnd(arrowType);
                 }
             });
         }
@@ -1099,11 +1117,11 @@ export class DiagramEditor {
                 this.dashSelect.value = this.normalizeLineDashValue(this.diagram.lineDash);
             }
 
-            if (this.arrowDirectionSelect) {
-                this.arrowDirectionSelect.value = this.diagram.arrowAt;
+            if (this.arrowStartSelect) {
+                this.arrowStartSelect.value = this.diagram.arrowStart;
             }
-            if (this.arrowTypeSelect) {
-                this.arrowTypeSelect.value = this.diagram.arrowType;
+            if (this.arrowEndSelect) {
+                this.arrowEndSelect.value = this.diagram.arrowEnd;
             }
 
             if (this.shadowPresetSelect) {
