@@ -201,6 +201,7 @@ export class ArrowTypeSelect {
 
     protected createArrowMarker(arrow: ArrowType): SVGElement | null {
         const stroke = this.config.strokeColor;
+        const hollow_fill = `var(--diagram-ui-surface, #ffffff)`;
         const ns = 'http://www.w3.org/2000/svg';
 
         const makePoly = (points: string, fill: string, outline = false): SVGPolygonElement => {
@@ -219,15 +220,15 @@ export class ArrowTypeSelect {
             case 'solid_triangle':
                 return makePoly('90,10 82,6 82,14', stroke);
             case 'hollow_triangle':
-                return makePoly('90,10 82,6 82,14', 'white', true);
+                return makePoly('90,10 82,6 82,14', hollow_fill, true);
             case 'solid_spear':
                 return makePoly('90,10 82,5 85,10 82,15', stroke);
             case 'hollow_spear':
-                return makePoly('90,10 82,5 85,10 82,15', 'white', true);
+                return makePoly('90,10 82,5 85,10 82,15', hollow_fill, true);
             case 'solid_diamond':
                 return makePoly('90,10 84,6 78,10 84,14', stroke);
             case 'hollow_diamond':
-                return makePoly('90,10 84,6 78,10 84,14', 'white', true);
+                return makePoly('90,10 84,6 78,10 84,14', hollow_fill, true);
             case 'solid_circle': {
                 const c = document.createElementNS(ns, 'circle');
                 c.setAttribute('cx', '84');
@@ -241,7 +242,7 @@ export class ArrowTypeSelect {
                 c.setAttribute('cx', '84');
                 c.setAttribute('cy', '10');
                 c.setAttribute('r', '4');
-                c.setAttribute('fill', 'white');
+                c.setAttribute('fill', hollow_fill);
                 c.setAttribute('stroke', stroke);
                 c.setAttribute('stroke-width', '2');
                 return c;
