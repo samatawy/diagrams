@@ -29,6 +29,7 @@ export class TextAdapter extends RectangleAdapter {
     }
 
     renderSelection(node: INode, context: CanvasRenderingContext2D, show: AnchorScope): void {
+        /* render handles first */
         super.renderSelection(node, context, show);
 
         if (!context) return;
@@ -41,6 +42,7 @@ export class TextAdapter extends RectangleAdapter {
         RenderBasics.prepareHandles(node, context);
 
         context.setLineDash([1 / coordinates.zoom, 2 / coordinates.zoom]);
+        context.beginPath();
         context.rect(rect.left, rect.top, rect.width, rect.height);
         context.stroke();
 

@@ -94,7 +94,6 @@ export type DiagramEditorConfig = {
     strokeColor?: ColorSelectConfig;
     strokeWidth?: WidthSelectConfig;
     dashSelect?: DashSelectConfig;
-    // arrowDirectionSelect?: ArrowDirectionSelectConfig;
     arrowTypeSelect?: ArrowTypeSelectConfig;
     shadowOffsetX?: IntegerRangeSelectConfig;
     shadowOffsetY?: IntegerRangeSelectConfig;
@@ -119,6 +118,7 @@ export class DiagramEditor {
     protected readonly eventDispatcher: EventDispatcher;
 
     protected config: DiagramEditorConfig;
+    protected prefer_dark: boolean = false;
 
     protected diagram: DiagramEditView;
 
@@ -162,13 +162,9 @@ export class DiagramEditor {
     protected strokeColorSelectHost?: HTMLElement;
     protected strokeWidthSelectHost?: HTMLElement;
     protected dashSelectHost?: HTMLElement;
-    // protected arrowDirectionSelectHost?: HTMLElement;
-    // protected arrowTypeSelect?: ArrowTypeSelect;
     protected strokeColorSelect?: ColorSelect;
     protected strokeWidthSelect?: WidthSelect;
     protected dashSelect?: DashSelect;
-    // protected arrowDirectionSelect?: ArrowDirectionSelect;
-    // protected arrowTypeSelectHost?: HTMLElement;
     protected arrowStartSelectHost?: HTMLElement;
     protected arrowStartSelect?: ArrowTypeSelect;
     protected arrowEndSelectHost?: HTMLElement;
@@ -201,6 +197,7 @@ export class DiagramEditor {
     protected imagePaddingHost?: HTMLElement;
     protected imagePaddingSelect?: IntegerRangeSelect;
 
+    protected mediaQuery?: MediaQueryList;
     protected listenerDisposers: Array<() => void> = [];
 
     protected syncingControls: boolean = false;
@@ -267,8 +264,6 @@ export class DiagramEditor {
         this.strokeColorSelect?.destroy();
         this.strokeWidthSelect?.destroy();
         this.dashSelect?.destroy();
-        // this.arrowDirectionSelect?.destroy();
-        // this.arrowTypeSelect?.destroy();
         this.arrowStartSelect?.destroy();
         this.arrowEndSelect?.destroy();
         this.shadowPresetSelect?.destroy();
@@ -405,6 +400,31 @@ export class DiagramEditor {
         return this.diagram;
     }
 
+    public get theme(): 'light' | 'dark' {
+        if (document.body.classList.contains('dark-editor-theme')) {
+            return 'dark';
+        } else if (document.body.classList.contains('light-editor-theme')) {
+            return 'light';
+        }
+        return this.prefer_dark ? 'dark' : 'light';
+    }
+
+    public set theme(theme: 'light' | 'dark') {
+        this.setTheme(theme);
+    }
+
+    public setTheme(theme: 'light' | 'dark') {
+        if (theme === 'dark') {
+            document.body.classList.add('dark-editor-theme');
+            document.body.classList.remove('light-editor-theme');
+            this.prefer_dark = true;
+        } else if (theme === 'light') {
+            document.body.classList.add('light-editor-theme');
+            document.body.classList.remove('dark-editor-theme');
+            this.prefer_dark = false;
+        }
+    }
+
     /**
      * Returns the owned diagram editing view.
      * @returns The current diagram in this editor.
@@ -530,19 +550,6 @@ export class DiagramEditor {
         return this.dashSelect;
     }
 
-    // /**
-    //  * Returns the arrow direction selector control when available.
-    //  */
-    // public getArrowDirectionSelect(): ArrowDirectionSelect | undefined {
-    //     return this.arrowDirectionSelect;
-    // }
-
-    // /**
-    //   * Returns the arrow type selector control when available.
-    //   */
-    // public getArrowTypeSelect(): ArrowTypeSelect | undefined {
-    //     return this.arrowTypeSelect;
-    // }
     /**
      * Returns the arrow start selector control when available.
      */
@@ -579,7 +586,6 @@ export class DiagramEditor {
     public showInspector(visible: boolean) {
         this.inspectorHost?.classList.toggle('hidden', !visible);
     }
-
 
     /**
      * Builds the editor layout and initializes all owned controls.
@@ -842,8 +848,28 @@ export class DiagramEditor {
         this.freehandWidthHost = this.createControlHost(this.freehandToolbar, 'diagram-editor-freehand-width-select');
         this.freehandWidthSelect = new WidthSelect(this.freehandWidthHost, config.strokeWidth || {});
 
+        this.attachMediaQuery();
         this.attachListeners();
         this.reflectStyles();
+    }
+
+    private attachMediaQuery(): void {
+        if (this.mediaQuery) return;
+
+        this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this.prefer_dark = this.mediaQuery.matches;
+        this.setTheme(this.prefer_dark ? 'dark' : 'light');
+
+        const handler = (event: MediaQueryListEvent) => {
+            const isDark = event.matches;
+            this.setTheme(isDark ? 'dark' : 'light');
+            console.log(`Theme changed to: ${isDark ? 'dark' : 'light'}`);
+        };
+        this.mediaQuery.addEventListener('change', handler);
+
+        this.listenerDisposers.push(() => {
+            this.mediaQuery?.removeEventListener('change', handler);
+        });
     }
 
     /**

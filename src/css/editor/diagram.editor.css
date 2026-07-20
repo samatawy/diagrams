@@ -12,13 +12,45 @@
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
 }
 
+/* Light theme variables, duplicated with @media (prefers-color-scheme: light) body */
+body.light-editor-theme {
+    color-scheme: light;
+
+    --diagram-ui-surface: #ffffff;
+    --diagram-ui-surface-elevated: initial;
+    --diagram-ui-text: initial;
+    --diagram-ui-text-muted: initial;
+    --diagram-ui-accent: initial;
+    --diagram-ui-accent-contrast: initial;
+    --diagram-ui-border: initial;
+    --diagram-inspector-base: initial;
+    --diagram-foreground-mixer: initial;
+    --diagram-background-mixer: initial;
+}
+
+/* Dark theme variables, duplicated with @media (prefers-color-scheme: dark) body */
+body.dark-editor-theme {
+    color-scheme: dark;
+
+    --diagram-ui-surface: rgb(36, 36, 36);
+    --diagram-ui-surface-elevated: rgb(48, 48, 48);
+    --diagram-ui-text: white;
+    --diagram-ui-text-muted: darkgray;
+    --diagram-ui-accent: darkgreen;
+    --diagram-ui-accent-contrast: lime;
+    --diagram-ui-border: rgb(80, 80, 80);
+    --diagram-inspector-base: 80, 160, 80;
+    --diagram-foreground-mixer: white;
+    --diagram-background-mixer: #0f172a;
+}
+
+/*
 @media (prefers-color-scheme: dark) {
     :root {
-        /* Style scrollbars to match */
         color-scheme: dark;
     }
 
-    body {
+    body:not(.light-editor-theme) {
         --diagram-ui-surface: rgb(36, 36, 36);
         --diagram-ui-surface-elevated: rgb(48, 48, 48);
         --diagram-ui-text: white;
@@ -26,13 +58,12 @@
         --diagram-ui-accent: darkgreen;
         --diagram-ui-accent-contrast: lime;
         --diagram-ui-border: rgb(80, 80, 80);
-        /* --diagram-ui-control-radius: 4px; */
-        /* --diagram-inspector-base: 120, 200, 120; */
         --diagram-inspector-base: 80, 160, 80;
         --diagram-foreground-mixer: white;
         --diagram-background-mixer: #0f172a;
     }
 }
+*/
 
 .diagram-editor-header {
     flex: 0 0 auto;

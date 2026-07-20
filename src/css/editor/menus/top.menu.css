@@ -12,7 +12,7 @@
     background: var(--diagram-ui-surface-elevated, #ffffff);
     border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
     /* border-radius: var(--diagram-ui-panel-radius, 10px); */
-    box-shadow: 0 8px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18));
+    /* box-shadow: 0 8px 24px var(--diagram-ui-shadow-color, rgba(15, 23, 42, 0.18)); */
     font: var(--diagram-ui-font-size, 12px)/1.4 var(--diagram-ui-font-family, system-ui);
     color: var(--diagram-ui-text, #1f2937);
     user-select: none;

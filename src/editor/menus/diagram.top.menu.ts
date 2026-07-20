@@ -112,6 +112,20 @@ export class DiagramTopMenu extends TopMenu {
                     config.editor?.showInspector(!config.editor.isInspectorVisible());
                 }
             },
+            {
+                label: 'Light Theme',
+                altKey: 'L',
+                toggle: true,
+                isActive: () => config.editor?.theme === 'light',
+                onClick: () => config.editor ? config.editor.theme = 'light' : undefined
+            },
+            {
+                label: 'Dark Theme',
+                altKey: 'D',
+                toggle: true,
+                isActive: () => config.editor?.theme === 'dark',
+                onClick: () => config.editor ? config.editor.theme = 'dark' : undefined
+            }
         ] : [];
 
         this.addDropDownMenu({
