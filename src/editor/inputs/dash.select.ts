@@ -78,7 +78,7 @@ const DEFAULT_DASHES: LineDashValue[] = ['solid', 'dashed', 'dotted', 'dashdot']
 
 const DEFAULT_CONFIG: Required<Omit<DashSelectConfig, 'dashes'>> & { dashes: LineDashValue[] } = {
     dashes: DEFAULT_DASHES,
-    strokeColor: '#1f2937',
+    strokeColor: 'var(--diagram-ui-text, #1f2937)',
     hostClassName: 'dash-select-control',
     triggerClassName: 'color-preset-trigger',
     menuClassName: 'color-preset-menu',

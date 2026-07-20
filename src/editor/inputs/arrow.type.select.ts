@@ -34,7 +34,7 @@ const DEFAULT_ARROWS: ArrowType[] = [
 
 const DEFAULT_CONFIG: Required<Omit<ArrowTypeSelectConfig, 'arrows'>> & { arrows: ArrowType[] } = {
     arrows: DEFAULT_ARROWS,
-    strokeColor: '#1f2937',
+    strokeColor: 'var(--diagram-ui-text, #1f2937)',
     hostClassName: 'arrow-select-control',
     triggerClassName: 'color-preset-trigger',
     menuClassName: 'color-preset-menu',

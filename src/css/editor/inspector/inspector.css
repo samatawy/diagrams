@@ -131,11 +131,12 @@
 /* Value / control cell */
 .inspector .inspector-value {
     display: flex;
-    align-items: stretch;
+    /* align-items: stretch; */
+    align-items: center;
     min-height: 26px;
     position: relative;
     border-radius: 6px;
-    background: var(--inspector-value-bg);
+    /* background: var(--inspector-value-bg); */
     padding: 2px;
 }
 

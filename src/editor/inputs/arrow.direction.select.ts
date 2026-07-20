@@ -56,7 +56,7 @@ const DEFAULT_ARROWS: ArrowDirection[] = ['end', 'start', 'both', 'none'];
 
 const DEFAULT_CONFIG: Required<Omit<ArrowDirectionSelectConfig, 'arrows'>> & { arrows: ArrowDirection[] } = {
     arrows: DEFAULT_ARROWS,
-    strokeColor: '#1f2937',
+    strokeColor: 'var(--diagram-ui-text, #1f2937)',
     hostClassName: 'arrow-select-control',
     triggerClassName: 'color-preset-trigger',
     menuClassName: 'color-preset-menu',

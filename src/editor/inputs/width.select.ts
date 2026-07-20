@@ -62,7 +62,7 @@ const DEFAULT_WIDTHS: number[] = [1, 2, 3, 4, 5, 6, 7, 8];
 
 const DEFAULT_CONFIG: Required<Omit<WidthSelectConfig, 'widths'>> & { widths: number[] } = {
     widths: DEFAULT_WIDTHS,
-    strokeColor: '#1f2937',
+    strokeColor: 'var(--diagram-ui-text, #1f2937)',
     showLabel: true,
     hostClassName: 'line-width-control',
     triggerClassName: 'color-preset-trigger',

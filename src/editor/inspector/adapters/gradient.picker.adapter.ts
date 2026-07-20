@@ -3,6 +3,10 @@ import type { IGradient } from '../../../color.types';
 import { CHECKER_CSS_IMAGE } from '../../../color.types';
 import { buildGradientCss } from '../../gradient/color.utils';
 import { InspectorAdapter, type EditableRecord, type InspectorAdapterInit } from '../inspector.adapter';
+import { injectStyles } from '../../editor.utils';
+
+import DEFAULT_STYLES from '../../../css_generated/editor/gradient/gradient.adapter.css';
+const STYLE_ID = 'gp-defaults';
 
 /**
  * Inspector adapter for `fillStyle.gradient`.
@@ -26,33 +30,18 @@ export class GradientPickerAdapter extends InspectorAdapter {
     constructor(cell: HTMLElement, mixedClassName: string, _initial: InspectorAdapterInit) {
         super(cell, mixedClassName);
 
+        injectStyles(STYLE_ID, DEFAULT_STYLES);
+
         // Trigger styled to match .color-preset-trigger exactly.
         this.trigger = document.createElement('button');
         this.trigger.type = 'button';
         this.trigger.className = 'gp-trigger';
         this.trigger.title = 'Edit gradient…';
-        Object.assign(this.trigger.style, {
-            display: 'block',
-            width: '100%',
-            padding: '6px 8px',
-            cursor: 'pointer',
-            appearance: 'none',
-            border: '1px solid rgba(15,23,42,0.15)',
-            borderRadius: '10px',
-            background: 'rgba(255,255,255,0.88)',
-            position: 'relative',
-            boxSizing: 'border-box',
-        });
 
         // Inner swatch — mirrors .color-preset-swatch structure.
         // backgroundImage and backgroundSize are always set together in syncSwatch().
         this.swatch = document.createElement('div');
-        Object.assign(this.swatch.style, {
-            width: '100%',
-            minHeight: '18px',
-            borderRadius: '5px',
-            border: '1px solid rgba(15,23,42,0.2)',
-        });
+        this.swatch.className = 'gp-swatch';
 
         this.trigger.appendChild(this.swatch);
         this.trigger.addEventListener('click', () => this.openPicker());

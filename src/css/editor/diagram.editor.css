@@ -12,6 +12,28 @@
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
 }
 
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Style scrollbars to match */
+        color-scheme: dark;
+    }
+
+    body {
+        --diagram-ui-surface: rgb(36, 36, 36);
+        --diagram-ui-surface-elevated: rgb(48, 48, 48);
+        --diagram-ui-text: white;
+        --diagram-ui-text-muted: darkgray;
+        --diagram-ui-accent: darkgreen;
+        --diagram-ui-accent-contrast: lime;
+        --diagram-ui-border: rgb(80, 80, 80);
+        /* --diagram-ui-control-radius: 4px; */
+        /* --diagram-inspector-base: 120, 200, 120; */
+        --diagram-inspector-base: 80, 160, 80;
+        --diagram-foreground-mixer: white;
+        --diagram-background-mixer: #0f172a;
+    }
+}
+
 .diagram-editor-header {
     flex: 0 0 auto;
     display: flex;
