@@ -2,14 +2,8 @@ import type { ArrowType, IPoint, ITextAlign, ITextBaseline, ITextOrientation } f
 import type { FillStyle, StrokeStyle, TextStyle } from "../style.interfaces";
 import type { ISerializedDiagram, ISerializedNode } from "./serialized.types";
 import type { IGradient } from "../color.types";
-import { CodedMessageCatalog, ObjectCheck, type CheckOptions, type ResultCodeDefinition } from "../../node_modules/@samatawy/checks";
+import { ObjectCheck, type CheckOptions } from "@samatawy/checks";
 import type { SpecSheet } from "../sheets/spec.sheet";
-
-// export interface FormatValidationResult {
-//     is_valid?: boolean;
-//     is_old_format?: boolean;
-//     is_current_format?: boolean;
-// }
 
 const MISSING = 'missing';
 const MISTYPED = 'mistyped';

@@ -718,7 +718,7 @@ export class DiagramEditor {
 
         if (diagram) try {
             this.diagram.read(diagram);
-        } catch (err) {
+        } catch (err: unknown) {
             // TODO: Provide user feedback for this error instead of just logging to console.
             console.error('Failed to load provided diagram into editor:', err);
         }
