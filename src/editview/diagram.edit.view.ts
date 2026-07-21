@@ -429,7 +429,7 @@ export class DiagramEditView extends DiagramView {
      */
     public async loadStylesheet(source: StylesheetOpenSource, options: Pick<StylesheetOpenOptions, 'applyAfterLoad' | 'preferId'> = {}): Promise<boolean> {
         try {
-            const sheet = this.sheetRepository.upsertSheetFromSource(source, options.preferId);
+            const sheet = await this.sheetRepository.upsertSheetFromSource(source, options.preferId);
 
             if (options.applyAfterLoad ?? true) {
                 this.setCurrentSheet(sheet.id);
@@ -441,7 +441,8 @@ export class DiagramEditView extends DiagramView {
             this.renderPreview();
             return true;
         } catch (error) {
-            console.warn('[DiagramEditView] Failed to load stylesheet:', error);
+            const lines = (error instanceof Error ? error.message.split('|') : [String(error)]);
+            this.emitError('Invalid stylesheet', lines);
             return false;
         }
     }
@@ -577,12 +578,19 @@ export class DiagramEditView extends DiagramView {
      */
     private async applyDiagramSource(source: DiagramOpenSource): Promise<void> {
         this.clear();
-        if (source instanceof Diagram) {
-            await this.read(source.write(jsonSerializer), jsonSerializer);
-        } else if (typeof source === 'string') {
-            await this.read(source, jsonSerializer);
-        } else {
-            await this.read(source, jsonSerializer);
+
+        try {
+            if (source instanceof Diagram) {
+                await this.read(source.write(jsonSerializer), jsonSerializer);
+            } else if (typeof source === 'string') {
+                await this.read(source, jsonSerializer);
+            } else {
+                await this.read(source, jsonSerializer);
+            }
+
+        } catch (error) {
+            const lines = (error instanceof Error ? error.message.split('|') : [String(error)]);
+            this.emitError('Invalid diagram', lines);
         }
 
         this.modified = false;

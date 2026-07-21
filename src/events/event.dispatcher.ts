@@ -34,6 +34,8 @@ import {
     type DiagramViewportChange,
     type DiagramSheetLoaded,
     type DiagramSheetChanged,
+    DIAGRAM_ERROR_EVENT,
+    type DiagramErrorEvent,
 } from "./diagram.events";
 
 /**
@@ -214,6 +216,14 @@ export class EventDispatcher {
      */
     public hintChanged(detail: DiagramHintChange): void {
         this.dispatchInternal(DIAGRAM_HINT_EVENT, detail);
+    }
+
+    /**
+     * Emits the diagram-error event.
+     * @param detail Error payload.
+     */
+    public notifyError(detail: DiagramErrorEvent): void {
+        this.dispatchInternal(DIAGRAM_ERROR_EVENT, detail);
     }
 
     private dispatchInternal<T>(eventName: string, detail: T, cancelable: boolean = false): boolean {

@@ -34,6 +34,10 @@ export const DIAGRAM_SHEET_CHANGED_EVENT = "diagram-sheet-changed";
  * Broad compatibility event.
  */
 export const DIAGRAM_CHANGED_EVENT = "diagram-changed";
+/**
+ * Broad error event. This is a generic event that can be used to signal an error in the diagram system to be handled by a listener (e.g. the DiagramEditor).
+ */
+export const DIAGRAM_ERROR_EVENT = "diagram-error";
 
 /**
  * Defines the scope of a diagram change, which can be related to the model, view, or style of the diagram. 
@@ -57,6 +61,23 @@ export interface DiagramChanged {
      * This property provides context about what caused the change, enabling more informed handling of the event.
      */
     sourceEvent: string;
+}
+
+/**
+ * Defines the structure of a diagram error event, which includes a title and an array of error messages.
+ * This defines what should be displayed to the user, e.g. in a dialog,
+ */
+export interface DiagramErrorEvent {
+    /**
+     * A descriptive title for the error event, providing a brief summary of the error that occurred. 
+     * This title can be used for logging, debugging, or displaying user-friendly error notifications.
+     */
+    title: string,
+    /**
+     * A descriptive message array providing information about the error(s) that occurred within the diagram system.
+     * This message can be used for logging, debugging, or displaying user-friendly error notifications.
+     */
+    errors: string[];
 }
 
 /**

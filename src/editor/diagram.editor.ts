@@ -26,7 +26,7 @@ import { injectStyles, setClasses } from "./editor.utils";
 import { FontSelect, type FontSelectConfig } from "./inputs/font.select";
 import { PromptDialog } from "./prompt.dialog";
 import { SizeSelect, type SizeSelectConfig } from "./inputs/size.select";
-import { DIAGRAM_CHANGED_EVENT, type DiagramHintChange } from "../events/diagram.events";
+import { DIAGRAM_CHANGED_EVENT, DIAGRAM_ERROR_EVENT, type DiagramErrorEvent, type DiagramHintChange } from "../events/diagram.events";
 import { EventDispatcher } from "../events/event.dispatcher";
 import { WidthSelect, type WidthSelectConfig } from "./inputs/width.select";
 import { ArrowTypeSelect, type ArrowTypeSelectConfig } from "./inputs/arrow.type.select";
@@ -278,6 +278,32 @@ export class DiagramEditor {
         this.host.innerHTML = '';
     }
 
+    private showValidationError(title: string, error: unknown): void {
+        let message = '';
+        if (typeof error === 'string') {
+            message = error;
+        } else if (Array.isArray(error)) {
+            message = error.join('\n');
+        } else if (error instanceof Error) {
+            message = error.message;
+            if (message.includes('|')) {
+                const lines = message.split('|');
+                const lineSet = new Set<string>(lines);
+                message = `${lineSet.size} validation errors:\n\n${Array.from(lineSet).join('\n')}`;
+            }
+        }
+
+        PromptDialog.show({
+            prompt: `${message}`,
+            title: title,
+            actions: [{
+                label: 'OK',
+                value: 'ok',
+                primary: true
+            }]
+        });
+    }
+
     /**
      * Clears the current diagram after resolving any unsaved-change prompt.
      * A prompt will be shown if the diagram has unsaved changes.
@@ -298,11 +324,17 @@ export class DiagramEditor {
      * @returns True when the source was loaded; otherwise false when loading was canceled.
      */
     public async loadDiagram(source: string | ISerializedDiagram | Diagram): Promise<boolean> {
-        const loaded = await this.diagram.loadDiagram(source);
-        if (loaded) {
-            this.reflectStyles();
+        try {
+            const loaded = await this.diagram.loadDiagram(source);
+            if (loaded) {
+                this.reflectStyles();
+            }
+            return loaded;
+
+        } catch (error) {
+            this.showValidationError('Invalid diagram', error);
+            return false;
         }
-        return loaded;
     }
 
     /**
@@ -311,11 +343,16 @@ export class DiagramEditor {
      * @returns True when a diagram was opened; otherwise false.
      */
     public async openDiagram(options?: DiagramOpenOptions): Promise<boolean> {
-        const opened = await this.diagram.openDiagram(options);
-        if (opened) {
-            this.reflectStyles();
+        try {
+            const opened = await this.diagram.openDiagram(options);
+            if (opened) {
+                this.reflectStyles();
+            }
+            return opened;
+        } catch (error) {
+            this.showValidationError('Invalid diagram', error);
+            return false;
         }
-        return opened;
     }
 
     /**
@@ -325,11 +362,16 @@ export class DiagramEditor {
      * @returns True when loading succeeded; otherwise false.
      */
     public async loadStylesheet(source: StylesheetOpenSource, options?: Pick<StylesheetOpenOptions, 'applyAfterLoad' | 'preferId'>): Promise<boolean> {
-        const loaded = await this.diagram.loadStylesheet(source, options);
-        if (loaded) {
-            this.reflectStyles();
+        try {
+            const loaded = await this.diagram.loadStylesheet(source, options);
+            if (loaded) {
+                this.reflectStyles();
+            }
+            return loaded;
+        } catch (error) {
+            this.showValidationError('Invalid stylesheet', error);
+            return false;
         }
-        return loaded;
     }
 
     /**
@@ -338,11 +380,16 @@ export class DiagramEditor {
      * @returns True when loading succeeded; otherwise false.
      */
     public async openStylesheet(options?: StylesheetOpenOptions): Promise<boolean> {
-        const opened = await this.diagram.openStylesheet(options);
-        if (opened) {
-            this.reflectStyles();
+        try {
+            const opened = await this.diagram.openStylesheet(options);
+            if (opened) {
+                this.reflectStyles();
+            }
+            return opened;
+        } catch (error) {
+            this.showValidationError('Invalid stylesheet', error);
+            return false;
         }
-        return opened;
     }
 
     /**
@@ -669,7 +716,12 @@ export class DiagramEditor {
             });
         }
 
-        if (diagram) this.diagram.read(diagram);
+        if (diagram) try {
+            this.diagram.read(diagram);
+        } catch (err) {
+            // TODO: Provide user feedback for this error instead of just logging to console.
+            console.error('Failed to load provided diagram into editor:', err);
+        }
 
         // Initialize the tool palette
         this.toolbox = new DiagramToolbox(this.toolboxHost, this.diagram, config.toolbox || {});
@@ -1087,6 +1139,17 @@ export class DiagramEditor {
 
         this.addManagedEventListener(this.host, DIAGRAM_CHANGED_EVENT, () => {
             this.reflectStyles();
+        });
+
+        this.addManagedEventListener(this.host, DIAGRAM_ERROR_EVENT, (event: unknown) => {
+            const detail = (event as any)?.detail as DiagramErrorEvent | undefined;
+            if (detail?.errors) {
+                const distinct = new Set<string>(detail.errors);
+                const lines = [`Invalid syntax with ${distinct.size} error(s):`,
+                ...distinct
+                ];
+                this.showValidationError(detail.title, lines);
+            }
         });
     }
 

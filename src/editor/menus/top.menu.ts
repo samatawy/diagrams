@@ -372,8 +372,16 @@ export class TopMenu {
         if (item.isEnabled && !item.isEnabled(this.target)) toggleClasses(menuItem, true, 'is-disabled', this.config.disabledClassName || '');
         if (item.isVisible && !item.isVisible(this.target)) toggleClasses(menuItem, true, 'is-hidden');
 
+        let tooltip = item.hint || item.label;
+        if (item.shortcut) {
+            const shortcutText = formatShortcut(item.shortcut);
+            if (shortcutText) {
+                tooltip += ` (${shortcutText})`;
+            }
+        }
+
         menuItem.setAttribute('aria-label', item.label);
-        menuItem.setAttribute('title', item.hint || item.label);
+        menuItem.setAttribute('title', tooltip);
 
 
         const iconSlot = document.createElement('span');

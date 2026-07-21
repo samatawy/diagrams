@@ -14,17 +14,17 @@ export class DiagramHintRotator {
 
     private current_hint?: DiagramHintPoolItem;
 
-    private readonly resolver: DiagramHintMessageResolver;
+    private readonly hintResolver: DiagramHintMessageResolver;
 
     constructor() {
         this.hints = [...DIAGRAM_HINT_POOL];
         this.seen_hints = new Map<string, number>();
-        this.resolver = new DiagramHintMessageResolver();
+        this.hintResolver = new DiagramHintMessageResolver();
     }
 
     public getNextHint(filter: DiagramHintPoolFilter): string | undefined {
         // Do not rotate to a new hint if the current hint is still active.
-        if (this.current_hint) return this.resolver.resolve(this.current_hint);
+        if (this.current_hint) return this.hintResolver.resolve(this.current_hint);
 
         // If not known, set and return the new current hint.
 
@@ -50,7 +50,7 @@ export class DiagramHintRotator {
 
             this.startAttentionTimer();
             this.current_hint = hint;
-            return this.resolver.resolve(hint);
+            return this.hintResolver.resolve(hint);
         }
         return undefined;
     }

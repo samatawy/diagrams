@@ -42,6 +42,7 @@
 .toolbar button[data-toolbar-button='true'].is-active,
 .toolbar button[data-toolbar-button='true'][data-toggle='true'].is-active {
     background: var(--diagram-ui-accent, #0f766e);
+    /* background: color-mix(in srgb, var(--diagram-ui-accent, #0f766e) 20%, var(--diagram-foreground-mixer, rgba(255, 255, 255, 0.88)) 80%); */
     border-color: var(--diagram-ui-accent, #0f766e);
     color: var(--diagram-ui-accent-contrast, #ffffff);
 }

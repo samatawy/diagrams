@@ -137,7 +137,8 @@ export class PromptDialog {
         }
 
         const message = document.createElement('p');
-        message.textContent = input.prompt;
+        const lines = (input.prompt.includes('\n')) ? input.prompt.split('\n').join('<br>') : input.prompt;
+        message.innerHTML = lines;
         body.appendChild(message);
 
         head.appendChild(body);

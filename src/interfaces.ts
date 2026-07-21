@@ -334,8 +334,6 @@ export interface IDiagram extends Serializable {
      */
     sheet_id?: string;
 
-    // sheet: SheetStyles;
-
     /**
      * An optional background fill style for the diagram, which can be used to set the background color or gradient of the diagram area.
      */

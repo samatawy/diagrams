@@ -14,22 +14,22 @@ export class DiagramEditViewKeyboard extends DiagramViewKeyboard<DiagramEditView
 
         kb.setShortcut(['Ctrl+N', 'Cmd+N'], (d: DiagramEditView) => {
             d.newDiagram();
-        }, 'New diagram', 'new');
+        }, 'New Diagram', 'new');
         kb.setShortcut(['Ctrl+O', 'Cmd+O'], (d: DiagramEditView) => {
             d.openDiagram();
-        }, 'Open diagram', 'open');
+        }, 'Open Diagram', 'open');
         kb.setShortcut(['Ctrl+S', 'Cmd+S'], (d: DiagramEditView) => {
             d.saveDiagram();
-        }, 'Save diagram', 'save');
+        }, 'Save Diagram', 'save');
         kb.setShortcut(['Ctrl+Alt+E', 'Cmd+Alt+E'], (d: DiagramEditView) => {
             d.saveImageDiagram();
-        }, 'Export diagram', 'export');
+        }, 'Export Image', 'export');
 
         // View operations
 
         kb.setShortcut(['Ctrl+A', 'Cmd+A'], (d: DiagramEditView) => {
             d.selectAll();
-        }, 'Select all');
+        }, 'Select All');
 
         // Guides
 

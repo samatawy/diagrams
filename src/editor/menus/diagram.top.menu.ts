@@ -136,11 +136,6 @@ export class DiagramTopMenu extends TopMenu {
                 this.actionMenuItem('toggle-grid', 'G'),
                 this.actionMenuItem('toggle-visual-grid', 'V'),
                 '-',
-                // this.actionMenuItem('show-grid', 'G'),
-                // this.actionMenuItem('snap-grid', 'S'),
-                // this.actionMenuItem('show-guides', 'I'),
-                // this.actionMenuItem('snap-guides', 'A'),
-                // '-',
                 this.actionMenuItem('zoom-in', 'Z'),
                 this.actionMenuItem('zoom-out', 'O'),
                 this.actionMenuItem('fit-horizontally', 'H'),
@@ -206,20 +201,6 @@ export class DiagramTopMenu extends TopMenu {
         } as DropDownMenu);
 
         this.updateStyleMenu();
-        // this.addDropDownMenu({
-        //     label: 'Style',
-        //     altKey: 'S',
-        //     items: [
-        //         /* Dynamic items for each style class to be added ? */
-        //         this.actionShadowItem(DiagramConstants.NO_SHADOW, 'N'),
-        //         this.actionShadowItem(DiagramConstants.LOW_SHADOW, 'L'),
-        //         this.actionShadowItem(DiagramConstants.MEDIUM_SHADOW, 'M'),
-        //         this.actionShadowItem(DiagramConstants.HIGH_SHADOW, 'H'),
-        //         this.actionShadowItem(DiagramConstants.LOW_COLOR_SHADOW, 'C'),
-        //         this.actionShadowItem(DiagramConstants.MEDIUM_COLOR_SHADOW, 'D'),
-        //         this.actionShadowItem(DiagramConstants.HIGH_COLOR_SHADOW, 'E'),
-        //     ],
-        // } as DropDownMenu);
     }
 
     private bindDiagramEventListeners(): void {
@@ -248,7 +229,7 @@ export class DiagramTopMenu extends TopMenu {
         let i = 0;
         const styleItems: (TopMenuItem | '-')[] = styleClasses.map(cls => {
             i++;
-            const altKey = i > 9 ? '' : i.toString();
+            const altKey = i > 9 ? '~' : i.toString();
 
             return {
                 label: `${i}. ${cls}`,

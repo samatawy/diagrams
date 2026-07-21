@@ -1,5 +1,5 @@
 import type { IConnectionAnchor, IGrid, INode } from "../interfaces";
-import type { EmbeddedSheet } from "../sheets/spec.sheet";
+// import type { EmbeddedSheet } from "../sheets/spec.sheet";
 import type { FillStyle } from "../style.interfaces";
 
 /**
@@ -63,7 +63,7 @@ export interface ISerializedDiagram {
     groups?: ISerializedGroup[];
     layers: ISerializedLayer[];
     sheet_id?: string;
-    sheet?: EmbeddedSheet;
+    // sheet?: EmbeddedSheet;
     background?: FillStyle;
     meta?: Record<string, unknown>;
     image_assets?: Record<string, string>;

@@ -10,6 +10,8 @@ import { SheetRepository } from "../sheets/sheet.repository";
 import { deepClone } from "../value.utils";
 import type { FillStyle } from "../style.interfaces";
 import { isContainerNode } from "../guards";
+import { FormatValidator } from "../io/format.validator";
+import type { ResultSet } from "@samatawy/checks";
 
 
 /**
@@ -510,6 +512,14 @@ export class Diagram implements IDiagram, HasSheetRepository {
                 const msg = e instanceof Error ? e.message : String(e);
                 throw new Error(`Invalid JSON string provided for diagram loading, ${msg}`);
             }
+
+            const check = await FormatValidator.isValidDiagram(json);
+            const result = check.result({ flattened: true }) as ResultSet;
+            if (!result.valid) {
+                const errors = (Array.isArray(result.errors) ? result.errors : []);
+                throw new Error(errors.map(err => err).join('|'));
+            }
+
         } else {
             json = source;
         }
@@ -518,25 +528,25 @@ export class Diagram implements IDiagram, HasSheetRepository {
         this.sheet_id = json.sheet_id;
 
         // Load embedded sheet if any
-        if (json.sheet && typeof json.sheet === 'object') {
-            const styles = this.sheet_repository.readEmbedded(json.sheet);
-            const size = Object.keys(styles.types ?? {}).length + Object.keys(styles.classes ?? {}).length;
-            if (size > 0) {
-                const sheetId = this.sheet_id ?? this.sheet_repository.makeCustomSheetId(this.id);
-                const isCustomSheet = this.sheet_repository.isCustomSheetId(sheetId);
-                this.sheet_id = sheetId;
+        // if (json.sheet && typeof json.sheet === 'object') {
+        //     const styles = this.sheet_repository.readEmbedded(json.sheet);
+        //     const size = Object.keys(styles.types ?? {}).length + Object.keys(styles.classes ?? {}).length;
+        //     if (size > 0) {
+        //         const sheetId = this.sheet_id ?? this.sheet_repository.makeCustomSheetId(this.id);
+        //         const isCustomSheet = this.sheet_repository.isCustomSheetId(sheetId);
+        //         this.sheet_id = sheetId;
 
-                this.sheet_repository.upsertSheet({
-                    id: sheetId,
-                    name: !isCustomSheet && json.sheet.name ? json.sheet.name : 'Custom',
-                    version: !isCustomSheet ? json.sheet.version : undefined,
-                    description: !isCustomSheet && json.sheet.description ? json.sheet.description : 'Custom sheet saved with diagram',
-                    diagram: styles.diagram ?? {},
-                    types: styles.types,
-                    classes: styles.classes,
-                });
-            }
-        }
+        //         this.sheet_repository.upsertSheet({
+        //             id: sheetId,
+        //             name: !isCustomSheet && json.sheet.name ? json.sheet.name : 'Custom',
+        //             version: !isCustomSheet ? json.sheet.version : undefined,
+        //             description: !isCustomSheet && json.sheet.description ? json.sheet.description : 'Custom sheet saved with diagram',
+        //             diagram: styles.diagram ?? {},
+        //             types: styles.types,
+        //             classes: styles.classes,
+        //         });
+        //     }
+        // }
 
         this.asset_store.merge(json.image_assets);
 
@@ -560,8 +570,8 @@ export class Diagram implements IDiagram, HasSheetRepository {
      * @returns The serialized diagram data.
      */
     public write(serializer: ISerializer): any {
-        const hasSheet = !!(this.sheet_id && this.sheet_repository.sheet(this.sheet_id));
-        const serializedSheet = hasSheet ? this.sheet_repository.writeEmbedded(this.sheet_id!) : undefined;
+        // const hasSheet = !!(this.sheet_id && this.sheet_repository.sheet(this.sheet_id));
+        // const serializedSheet = hasSheet ? this.sheet_repository.writeEmbedded(this.sheet_id!) : undefined;
 
         const serializedNodes = this.nodes.map(node => this.serializeNode(node));
 
@@ -593,7 +603,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
         return serializer.write({
             id: this.id,
             sheet_id: this.sheet_id,
-            sheet: serializedSheet,
+            // sheet: serializedSheet,
             nodes: serializedNodes,
             groups: serializedGroups,
             layers: serializedLayers,

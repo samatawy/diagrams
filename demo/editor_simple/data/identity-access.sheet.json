@@ -212,7 +212,7 @@
             "strokeStyle": {
                 "color": "#1d4ed8",
                 "width": 1.8,
-                "dash": "solid",
+                "dash": [],
                 "arrow_at": "end",
                 "arrow_type": "solid_triangle"
             },
@@ -241,7 +241,10 @@
             "strokeStyle": {
                 "color": "#7e22ce",
                 "width": 1.8,
-                "dash": "dashdot",
+                "dash": [
+                    2,
+                    1
+                ],
                 "arrow_at": "end",
                 "arrow_type": "hollow_diamond"
             },
@@ -270,7 +273,10 @@
             "strokeStyle": {
                 "color": "#ea580c",
                 "width": 1.8,
-                "dash": "dashed",
+                "dash": [
+                    4,
+                    3
+                ],
                 "arrow_at": "end",
                 "arrow_type": "hollow_triangle"
             },
@@ -299,7 +305,10 @@
             "strokeStyle": {
                 "color": "#475569",
                 "width": 1.6,
-                "dash": "dotted",
+                "dash": [
+                    2,
+                    1
+                ],
                 "arrow_at": "end",
                 "arrow_type": "hollow_circle"
             },
@@ -328,7 +337,7 @@
             "strokeStyle": {
                 "color": "#15803d",
                 "width": 1.6,
-                "dash": "solid",
+                "dash": [],
                 "arrow_at": "end",
                 "arrow_type": "solid_circle"
             },

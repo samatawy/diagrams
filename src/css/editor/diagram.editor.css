@@ -23,6 +23,7 @@ body.light-editor-theme {
     --diagram-ui-accent: initial;
     --diagram-ui-accent-contrast: initial;
     --diagram-ui-border: initial;
+    --diagram-ui-border-strong: initial;
     --diagram-inspector-base: initial;
     --diagram-foreground-mixer: initial;
     --diagram-background-mixer: initial;
@@ -36,9 +37,10 @@ body.dark-editor-theme {
     --diagram-ui-surface-elevated: rgb(48, 48, 48);
     --diagram-ui-text: white;
     --diagram-ui-text-muted: darkgray;
-    --diagram-ui-accent: darkgreen;
-    --diagram-ui-accent-contrast: lime;
+    --diagram-ui-accent: lightgreen;
+    --diagram-ui-accent-contrast: darkgreen;
     --diagram-ui-border: rgb(80, 80, 80);
+    --diagram-ui-border-strong: lime;
     --diagram-inspector-base: 80, 160, 80;
     --diagram-foreground-mixer: white;
     --diagram-background-mixer: #0f172a;

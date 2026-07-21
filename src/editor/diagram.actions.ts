@@ -75,7 +75,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
     },
     {
         id: 'open',
-        label: 'Open Diagram',
+        label: 'Open',
         tooltip: 'Open an existing diagram',
         shortcut: ['Ctrl+O', 'Cmd+O'],
         execute: async (d) => { await d.openDiagram(); },
@@ -83,14 +83,14 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
     },
     {
         id: 'save',
-        label: 'Save Diagram',
+        label: 'Save',
         tooltip: 'Save the current diagram',
         shortcut: ['Ctrl+S', 'Cmd+S'],
         execute: async (d) => { await d.saveDiagram(); },
     },
     {
         id: 'export',
-        label: 'Export Diagram',
+        label: 'Export Image',
         tooltip: 'Export the diagram as an image or file',
         shortcut: ['Ctrl+Alt+E', 'Cmd+Alt+E'],
         execute: async (d) => { await d.saveImageDiagram(); },
@@ -113,7 +113,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
     {
         id: 'undo',
         label: 'Undo',
-        tooltip: 'Undo (Ctrl+Z)',
+        tooltip: 'Undo',
         shortcut: ['Ctrl+Z', 'Cmd+Z'],
         execute: (d) => d.undo(),
         isEnabled: (d) => d.canUndo,
@@ -121,7 +121,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
     {
         id: 'redo',
         label: 'Redo',
-        tooltip: 'Redo (Ctrl+Shift+Z)',
+        tooltip: 'Redo',
         shortcut: ['Ctrl+Shift+Z', 'Cmd+Shift+Z'],
         execute: (d) => d.redo(),
         isEnabled: (d) => d.canRedo,
@@ -177,7 +177,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
     {
         id: 'cut',
         label: 'Cut',
-        tooltip: 'Cut (Ctrl+X)',
+        tooltip: 'Cut',
         shortcut: ['Ctrl+X', 'Cmd+X'],
         execute: (d) => d.cutSelected(),
         isEnabled: (d) => d.selection().length > 0,
@@ -185,7 +185,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
     {
         id: 'copy',
         label: 'Copy',
-        tooltip: 'Copy (Ctrl+C)',
+        tooltip: 'Copy',
         shortcut: ['Ctrl+C', 'Cmd+C'],
         execute: (d) => d.copySelected(),
         isEnabled: (d) => d.selection().length > 0,
@@ -193,7 +193,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
     {
         id: 'paste',
         label: 'Paste',
-        tooltip: 'Paste (Ctrl+V)',
+        tooltip: 'Paste',
         shortcut: ['Ctrl+V', 'Cmd+V'],
         execute: (d) => d.pasteNodes(),
         isEnabled: (d) => !!d.canPaste,
@@ -201,7 +201,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
     {
         id: 'copy-styles',
         label: 'Copy Styles',
-        tooltip: 'Copy Styles (Ctrl+Shift+C)',
+        tooltip: 'Copy Styles',
         shortcut: ['Ctrl+Shift+C', 'Cmd+Shift+C'],
         execute: (d) => d.copyStyles(),
         isEnabled: (d) => d.selection().length === 1,
@@ -209,7 +209,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
     {
         id: 'paste-styles',
         label: 'Paste Styles',
-        tooltip: 'Paste Styles (Ctrl+Shift+V)',
+        tooltip: 'Paste Styles',
         shortcut: ['Ctrl+Shift+V', 'Cmd+Shift+V'],
         execute: (d) => d.pasteStyles(),
         isEnabled: (d) => d.canPasteStyles && d.selection().length > 0,

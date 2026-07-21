@@ -1,4 +1,6 @@
+import type { ResultSet } from "@samatawy/checks";
 import type { INode } from "../interfaces";
+import { FormatValidator } from "../io/format.validator";
 import type { Diagram } from "../model/diagram";
 import { deepClone, nodeClass } from "../value.utils";
 import type { NodeStyle, EmbeddedSheet, SpecSheet } from "./spec.sheet";
@@ -133,9 +135,18 @@ export class SheetRepository {
      * @param source Stylesheet source payload.
      * @param preferId Optional id used when source omits an id.
      * @returns The stored spec sheet.
+     * @throws Error when the source is invalid or fails validation.
      */
-    public upsertSheetFromSource(source: string | EmbeddedSheet | SpecSheet | { sheet?: EmbeddedSheet | SpecSheet }, preferId?: string): SpecSheet {
+    public async upsertSheetFromSource(source: string | EmbeddedSheet | SpecSheet | { sheet?: EmbeddedSheet | SpecSheet }, preferId?: string): Promise<SpecSheet> {
         const sheet = this.resolveSheetSource(source, preferId);
+
+        const check = await FormatValidator.isValidSpecSheet(sheet);
+        const result = check.result({ flattened: true }) as ResultSet;
+        if (!result.valid) {
+            const errors = (Array.isArray(result.errors) ? result.errors : []);
+            throw new Error(errors.map(err => err).join('|'));
+        }
+
         this.upsertSheet(sheet);
         return this.writeSheet(sheet.id);
     }

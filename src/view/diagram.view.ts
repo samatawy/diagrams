@@ -883,7 +883,6 @@ export class DiagramView extends Diagram implements HasSelection {
         context.restore();
     }
 
-
     /**
      * Updates the grid settings for the diagram and re-renders it to reflect the changes.
      * @param json A partial object containing the grid properties to update. Only the provided properties will be updated, while the others will remain unchanged.
@@ -1711,6 +1710,10 @@ export class DiagramView extends Diagram implements HasSelection {
         } satisfies DiagramViewportChange;
 
         this.event_dispatcher.viewportChanged(detail);
+    }
+
+    protected emitError(title: string, errors: string[]): void {
+        this.event_dispatcher.notifyError({ title, errors });
     }
 
     // ==================================================
