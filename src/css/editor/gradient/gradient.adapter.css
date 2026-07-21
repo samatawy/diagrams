@@ -5,7 +5,7 @@
     cursor: pointer;
     appearance: none;
     border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-    border-radius: var(--diagram-ui-control-radius, 10px);
+    border-radius: var(--diagram-ui-control-radius, 6px);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     position: relative;
     box-sizing: border-box;

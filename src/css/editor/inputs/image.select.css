@@ -18,7 +18,7 @@
     cursor: pointer;
     appearance: none;
     border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-    border-radius: var(--diagram-ui-control-radius, 10px);
+    border-radius: var(--diagram-ui-control-radius, 6px);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     color: var(--diagram-ui-text, #1f2937);
     font-weight: 600;
@@ -100,7 +100,7 @@
     justify-content: center;
     padding: var(--diagram-ui-control-padding-y, 6px) var(--diagram-ui-control-padding-x, 8px);
     border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-    border-radius: var(--diagram-ui-control-radius, 10px);
+    border-radius: var(--diagram-ui-control-radius, 6px);
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
     color: var(--diagram-ui-text, #1f2937);
     font-weight: 600;
