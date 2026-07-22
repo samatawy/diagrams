@@ -1,17 +1,10 @@
-// export * from './Bpmn.Basics';
-// export * from './start.event.adapter';
-// export * from './intermediate.event.adapter';
-// export * from './end.event.adapter';
-// export * from './gateway.adapter';
-// export * from './task.adapter';
-// export * from './data.store.adapter';
-// export * from './data.object.adapter';
+import { NodeRegistry } from '../../factory/node.registry';
+import { ToolsetRegistry } from '../../factory/toolset.registry';
 
 import { BpmnStartEventAdapter } from './start.event.adapter';
 import { BpmnIntermediateEventAdapter } from './intermediate.event.adapter';
 import { BpmnEndEventAdapter } from './end.event.adapter';
 import { BpmnGatewayAdapter } from './gateway.adapter';
-import { NodeRegistry } from '../../factory/node.registry';
 import { BpmnTaskAdapter } from './task.adapter';
 import { BpmnDataStoreAdapter } from './data.store.adapter';
 import { BpmnDataObjectAdapter } from './data.object.adapter';
@@ -60,3 +53,14 @@ export const BPMN_TOOL_LAYOUT = [
     'bpmn_sequence_flow', 'bpmn_message_flow',
     'bpmn_association', 'bpmn_data_association',
 ];
+
+
+export function registerBpmnToolset(): void {
+    registerBpmnAdapters();
+
+    ToolsetRegistry.global.register({
+        name: 'BPMN',
+        layout: BPMN_TOOL_LAYOUT,
+    });
+}
+

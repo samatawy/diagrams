@@ -19,7 +19,9 @@ import {
     // LineAdapter,
     // TrapezoidAdapter,
     // DocumentAdapter,
-    registerBasicAdapters, registerBpmnAdapters,
+    registerBasicAdapters, registerBpmnAdapters, registerBpmnToolset, registerC4Toolset, registerErdToolset, registerLogicToolset, registerUmlToolset,
+    FLAG_ICON_NAMES,
+    ToolsetRegistry,
 } from '../dist/index.js';
 
 let registered = false;
@@ -42,12 +44,23 @@ let registered = false;
 //     { key: 'document', label: 'Document' },
 // ];
 
-export function registerAdapters() {
+export function registerTools() {
     if (registered) return;
     registered = true;
 
-    registerBasicAdapters();
-    registerBpmnAdapters();
+    // registerBasicAdapters();
+    // registerBpmnAdapters();
+
+    registerBpmnToolset();
+    registerC4Toolset();
+    registerErdToolset();
+    registerLogicToolset();
+    registerUmlToolset();
+
+    ToolsetRegistry.global.register({
+        name: 'Flags',
+        layout: FLAG_ICON_NAMES,
+    });
 
     /*
     RectangleAdapter.register();
@@ -229,7 +242,7 @@ function mountBase(target, seed, createView, fitPadding) {
             return undefined;
         }
 
-        registerAdapters();
+        registerTools();
         const view = createView(seed.id, host);
         seed.populate(view);
 

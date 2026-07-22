@@ -6,7 +6,7 @@ export default defineConfig({
     format: ['esm', 'cjs', 'iife'],
     platform: 'browser',
     bundle: true,
-    sourcemap: true,
+    sourcemap: false,
     splitting: false,
     dts: true,
     external: [

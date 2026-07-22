@@ -1,8 +1,6 @@
-
-// export * from './table.adapter';
-// export * from './table.row.adapter';
-
 import { NodeRegistry } from '../../factory/node.registry';
+import { ToolsetRegistry } from '../../factory/toolset.registry';
+
 import { Many2ManyRelationAdapter } from './many2many.relation.adapter';
 import { One2ManyRelationAdapter } from './one2many.relation.adapter';
 import { One2OneRelationAdapter } from './one2one.relation.adapter';
@@ -33,3 +31,13 @@ export const ERD_TOOL_LAYOUT = [
     'erd_one_to_many',
     'erd_many_to_many',
 ];
+
+export function registerErdToolset(): void {
+    registerErdAdapters();
+
+    ToolsetRegistry.global.register({
+        name: 'ERD',
+        layout: ERD_TOOL_LAYOUT,
+    });
+}
+

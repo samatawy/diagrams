@@ -1,4 +1,6 @@
-import { NodeRegistry } from '../factory';
+import { NodeRegistry } from '../factory/node.registry';
+import { ToolsetRegistry } from '../factory/toolset.registry';
+
 import { CurveAdapter } from './polyline/curve.adapter';
 import { LineAdapter } from './polyline/line.adapter';
 import { OrthogonalAdapter } from './polyline/orthogonal.adapter';
@@ -23,6 +25,7 @@ import { VerticalPoolAdapter } from './container/vertical.pool.adapter';
 
 import { SvgAdapter } from './rectangle/svg.adapter';
 import { FreehandAdapter } from './free/freehand.adapter';
+import type { StringDecoder } from 'string_decoder';
 
 export * from './node.basics';
 export * from './connection.basics';
@@ -38,6 +41,8 @@ export * from './polyline/index';
 export * from './bpmn/index';
 export * from './c4/index';
 export * from './erd/index';
+export * from './logic/index';
+export * from './uml/index';
 
 export function registerBasicAdapters(): void {
 
@@ -90,4 +95,36 @@ export function registerBasicAdapters(): void {
         OrthogonalAdapter.TYPE,
         CurveAdapter.TYPE,
     ]);
+}
+
+export const BASIC_TOOL_LAYOUT: string[] = [
+    'select',
+    'freehand',
+    'rectangle',
+    'round_rectangle',
+    'ellipse',
+    'circle',
+    'text',
+    'speech_bubble',
+    'arrow_triangle',
+    'arrow_chevron',
+    'line',
+    'polyline',
+    'orthogonal',
+    'curve',
+    'rhombus',
+    'parallelogram',
+    'trapezoid',
+    'document',
+    'cylinder',
+    'polygon',
+];
+
+export function registerBasicToolset(): void {
+    registerBasicAdapters();
+
+    ToolsetRegistry.global.register({
+        name: 'Basic',
+        layout: BASIC_TOOL_LAYOUT,
+    });
 }

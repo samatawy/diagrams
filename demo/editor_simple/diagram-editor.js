@@ -1,7 +1,7 @@
 import { DiagramEditor } from '../../dist/index.js';
-import { registerAdapters, normalizeDemoDiagram } from '../demo-common.js';
+import { registerTools, normalizeDemoDiagram } from '../demo-common.js';
 
-registerAdapters();
+registerTools();
 
 const host = document.getElementById('diagram-editor-host');
 if (!host) throw new Error('Host element not found');

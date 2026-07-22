@@ -1,8 +1,11 @@
 import { DiagramConstants } from "../model/diagram.constants";
+import { ICON_NAMES as FLAG_ICON_NAMES } from "../icons_generated/flag.icons";
 
 export type IconSource =
     | { type: 'svg'; markup: string }
     | { type: 'url'; src: string };
+
+export { FLAG_ICON_NAMES };
 
 /**
  * Registry of icon sources used by editor and toolbar components.

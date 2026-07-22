@@ -1,7 +1,5 @@
-// export * from './component.adapter';
-// export * from './container.adapter';
-// export * from './system.adapter';
-// export * from './database.adapter';
+import { NodeRegistry } from '../../factory/node.registry';
+import { ToolsetRegistry } from '../../factory/toolset.registry';
 
 import { C4SystemAdapter } from './system.adapter';
 import { C4ContainerAdapter } from './container.adapter';
@@ -9,11 +7,9 @@ import { C4ComponentAdapter } from './component.adapter';
 import { C4DatabaseAdapter } from "./database.adapter";
 import { C4StoreAdapter } from "./store.adapter";
 import { C4PersonAdapter } from "./person.adapter";
-import { NodeRegistry } from '../../factory/node.registry';
 import { C4RelationshipAdapter } from './relationship.adapter';
 import { C4AsyncRelationshipAdapter } from './async.relationship.adapter';
 import { C4DependencyAdapter } from './dependency.adapter';
-
 
 export function registerC4Adapters(): void {
     C4SystemAdapter.register();
@@ -47,3 +43,12 @@ export const C4_TOOL_LAYOUT = [
     'c4_system', 'c4_container', 'c4_database', 'c4_component', 'c4_store', 'c4_person', 'text',
     'c4_relationship', 'c4_async_relationship', 'c4_dependency',
 ];
+
+export function registerC4Toolset(): void {
+    registerC4Adapters();
+
+    ToolsetRegistry.global.register({
+        name: 'C4',
+        layout: C4_TOOL_LAYOUT,
+    });
+}

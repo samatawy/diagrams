@@ -5,6 +5,7 @@ import { DIAGRAM_TOOL_CHANGED_EVENT, type DiagramToolChange } from '../../events
 import { injectStyles, setClasses } from '../editor.utils';
 
 import DEFAULT_STYLES from '../../css_generated/editor/toolbox/diagram.toolset.css';
+import type { ToolsetConfig } from '../../factory/toolset.registry';
 const STYLE_ID = 'toolset-defaults';
 
 function ensureDefaultStyles(): void {
@@ -15,21 +16,21 @@ export const TOOLSET_TOOL_SELECTED_EVENT = 'tool-selected';
 
 export type ToolsetLayoutItem = string | '*';
 
-/**
- * Configuration options for the Toolset component.
- * Provide only the properties you want to customize. All other properties will use default values.
- */
-export interface ToolsetConfig {
-    name: string;
-    /**
-     * Ordered layout of tools in the palette. '*' means insert all remaining tools at this position.
-     */
-    layout: ToolsetLayoutItem[];
-    /**
-     * Optional CSS class name to apply to the host element of the tool palette. This allows for custom styling of the entire palette.
-     */
-    hostClassName?: string;
-}
+// /**
+//  * Configuration options for the Toolset component.
+//  * Provide only the properties you want to customize. All other properties will use default values.
+//  */
+// export interface ToolsetConfig {
+//     name: string;
+//     /**
+//      * Ordered layout of tools in the palette. '*' means insert all remaining tools at this position.
+//      */
+//     layout: ToolsetLayoutItem[];
+//     /**
+//      * Optional CSS class name to apply to the host element of the tool palette. This allows for custom styling of the entire palette.
+//      */
+//     hostClassName?: string;
+// }
 
 export const DEFAULT_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     'select',
@@ -55,28 +56,28 @@ export const DEFAULT_TOOL_LAYOUT: ToolsetLayoutItem[] = [
     '*',
 ];
 
-export const BASIC_TOOL_LAYOUT: ToolsetLayoutItem[] = [
-    'select',
-    'freehand',
-    'rectangle',
-    'round_rectangle',
-    'ellipse',
-    'circle',
-    'text',
-    'speech_bubble',
-    'arrow_triangle',
-    'arrow_chevron',
-    'line',
-    'polyline',
-    'orthogonal',
-    'curve',
-    'rhombus',
-    'parallelogram',
-    'trapezoid',
-    'document',
-    'cylinder',
-    'polygon',
-];
+// export const BASIC_TOOL_LAYOUT: ToolsetLayoutItem[] = [
+//     'select',
+//     'freehand',
+//     'rectangle',
+//     'round_rectangle',
+//     'ellipse',
+//     'circle',
+//     'text',
+//     'speech_bubble',
+//     'arrow_triangle',
+//     'arrow_chevron',
+//     'line',
+//     'polyline',
+//     'orthogonal',
+//     'curve',
+//     'rhombus',
+//     'parallelogram',
+//     'trapezoid',
+//     'document',
+//     'cylinder',
+//     'polygon',
+// ];
 
 /**
  * Converts a tool key into a display label.

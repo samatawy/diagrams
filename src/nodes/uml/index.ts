@@ -1,4 +1,6 @@
 import { NodeRegistry } from '../../factory/node.registry';
+import { ToolsetRegistry } from '../../factory/toolset.registry';
+
 import { UmlClassAdapter } from './class.adapter';
 import { UmlPropertyAdapter } from './property.adapter';
 import { UmlMethodAdapter } from './method.adapter';
@@ -57,3 +59,12 @@ export const UML_TOOL_LAYOUT = [
     'uml_usage_dependency',
     'uml_template_binding',
 ];
+
+export function registerUmlToolset(): void {
+    registerUmlAdapters();
+
+    ToolsetRegistry.global.register({
+        name: 'UML',
+        layout: UML_TOOL_LAYOUT,
+    });
+}

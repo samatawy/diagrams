@@ -1,7 +1,4 @@
-import type { ArrowType, IPoint, ITextAlign, ITextBaseline, ITextOrientation } from "../types";
-import type { FillStyle, StrokeStyle, TextStyle } from "../style.interfaces";
 import type { ISerializedDiagram, ISerializedNode } from "./serialized.types";
-import type { IGradient } from "../color.types";
 import { ObjectCheck, type CheckOptions } from "@samatawy/checks";
 import type { SpecSheet } from "../sheets/spec.sheet";
 
@@ -54,7 +51,6 @@ export class FormatValidator {
             ss.optional('color').string(),
             ss.optional('width').number().atLeast(1),
             ss.optional('dash').array().of('number'),
-            // ss.optional('dash').array().isTrueEach((d) => typeof d === 'number', this.mistyped('Dash array', 'array of numbers')),
             ss.optional('arrow_start').string()
                 .equalsOneOf(['none', 'solid_triangle', 'hollow_triangle', 'solid_spear', 'hollow_spear', 'solid_diamond', 'hollow_diamond', 'solid_circle', 'hollow_circle']),
             ss.optional('arrow_end').string()
@@ -117,14 +113,12 @@ export class FormatValidator {
             d.optional('groups').array().checkEach((group) => [
                 group.required('id').string(),
                 group.required('nodes').array().of('string'),
-                // .isTrueEach((nodeId) => typeof nodeId === 'string', this.invalid('A group must have an array of node ids as strings')),
             ]),
             d.optional('layers').array().checkEach((layer) => [
                 layer.required('id', { code: MISSING }).string(),
                 layer.required('name', { code: MISSING }).string(),
                 layer.required('visible', { code: MISSING }).boolean(),
                 layer.required('nodes', { code: MISSING }).array().of('string'),
-                // .isTrueEach((nodeId) => typeof nodeId === 'string', this.invalid('A layer must have an array of nodes ids as strings')),
             ]),
             d.optional('sheet_id').string(),
             d.optional('background').object().check(this.checkFillStyle),
@@ -154,17 +148,6 @@ export class FormatValidator {
                     ]),
                 ])
         ]);
-        //     ([className, style]) => [
-        //     style.required('textStyle', this.missing(`textStyle for class ${className}`))
-        //         .object().check(this.checkTextStyle),
-        //     style.required('strokeStyle', this.missing(`strokeStyle for class ${className}`))
-        //         .object().check(this.checkStrokeStyle),
-        //     style.required('fillStyle', this.missing(`fillStyle for class ${className}`))
-        //         .object().check(this.checkFillStyle),
-        //     style.required('shadowStyle', this.missing(`shadowStyle for class ${className}`))
-        //         .object().check(this.checkShadowStyle),
-        // ]).reduce((acc, val) => acc.concat(val), []))
-        // )]);
         return check;
     }
 

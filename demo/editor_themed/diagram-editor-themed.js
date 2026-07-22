@@ -9,9 +9,9 @@ import {
     DIAGRAM_ALIGN_ACTION_LAYOUT,
     DIAGRAM_TEXT_ALIGN_ACTION_LAYOUT,
 } from '../../dist/index.js';
-import { registerAdapters, normalizeDemoDiagram } from '../demo-common.js';
+import { registerTools, normalizeDemoDiagram } from '../demo-common.js';
 
-registerAdapters();
+registerTools();
 
 ThemeRegistry.registerTheme('indigo', {
     accent: '#4338ca',

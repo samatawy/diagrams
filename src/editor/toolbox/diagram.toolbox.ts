@@ -1,17 +1,19 @@
 import type { DiagramEditView } from "../../editview";
 import { injectStyles, setClasses } from "../editor.utils";
-import { BASIC_TOOL_LAYOUT, DiagramToolset, type ToolsetConfig } from "./diagram.toolset";
-import { BPMN_TOOL_LAYOUT } from "../../nodes/bpmn";
-import { C4_TOOL_LAYOUT } from "../../nodes/c4";
-import { ERD_TOOL_LAYOUT } from "../../nodes/erd";
-import { UML_TOOL_LAYOUT } from "../../nodes/uml";
-import { LOGIC_TOOL_LAYOUT } from "../../nodes/logic";
+import { DiagramToolset } from "./diagram.toolset";
+// import { BASIC_TOOL_LAYOUT } from "../../nodes";
+// import { BPMN_TOOL_LAYOUT } from "../../nodes/bpmn";
+// import { C4_TOOL_LAYOUT } from "../../nodes/c4";
+// import { ERD_TOOL_LAYOUT } from "../../nodes/erd";
+// import { UML_TOOL_LAYOUT } from "../../nodes/uml";
+// import { LOGIC_TOOL_LAYOUT } from "../../nodes/logic";
 
 import DEFAULT_STYLES from '../../css_generated/editor/toolbox/diagram.toolbox.css';
 // import { loadTablerIcons } from "../../factory/svg.tool.loader";
 import { loadFlagIcons } from "../../factory/svg.tool.loader";
 // import { ICON_NAMES as TABLER_ICON_NAMES } from "../../icons_generated/tabler.icons";
 import { ICON_NAMES as FLAG_ICON_NAMES } from "../../icons_generated/flag.icons";
+import { ToolsetRegistry, type ToolsetConfig } from "../../factory/toolset.registry";
 
 const STYLE_ID = 'toolbox-defaults';
 
@@ -46,28 +48,29 @@ export interface DiagramToolBoxConfig {
 
 
 const DEFAULT_CONFIG: Required<DiagramToolBoxConfig> = {
-    toolsets: [{
-        name: 'Basic',
-        layout: BASIC_TOOL_LAYOUT,
-    }, {
-        name: 'BPMN',
-        layout: BPMN_TOOL_LAYOUT,
-    }, {
-        name: 'C4',
-        layout: C4_TOOL_LAYOUT,
-    }, {
-        name: 'ERD',
-        layout: ERD_TOOL_LAYOUT,
-    }, {
-        name: 'UML',
-        layout: UML_TOOL_LAYOUT,
-    }, {
-        name: 'Logic',
-        layout: LOGIC_TOOL_LAYOUT,
-    }, {
-        name: 'Flags',
-        layout: FLAG_ICON_NAMES,
-    }],
+    toolsets: [],
+    // toolsets: [{
+    //     name: 'Basic',
+    //     layout: BASIC_TOOL_LAYOUT,
+    // }, {
+    //     name: 'BPMN',
+    //     layout: BPMN_TOOL_LAYOUT,
+    // }, {
+    //     name: 'C4',
+    //     layout: C4_TOOL_LAYOUT,
+    // }, {
+    //     name: 'ERD',
+    //     layout: ERD_TOOL_LAYOUT,
+    // }, {
+    //     name: 'UML',
+    //     layout: UML_TOOL_LAYOUT,
+    // }, {
+    //     name: 'Logic',
+    //     layout: LOGIC_TOOL_LAYOUT,
+    // }, {
+    //     name: 'Flags',
+    //     layout: FLAG_ICON_NAMES,
+    // }],
     // , {
     //     name: 'Tabler',
     //     layout: [], //TABLER_ICON_NAMES,        
@@ -134,10 +137,7 @@ export class DiagramToolbox {
         for (const toolset of this.toolsets.values()) {
             toolset.setDiagramView(diagram);
         }
-        // this.unbindDiagramEvents();
-        // this.diagram = diagram;
-        // this.bindDiagramEvents();
-        // this.refresh();
+        this.diagram = diagram;
     }
 
     public addToolSet(config: ToolsetConfig): void {
@@ -175,7 +175,9 @@ export class DiagramToolbox {
     protected build(config: Required<DiagramToolBoxConfig>): void {
         setClasses(this.host, DEFAULT_CONFIG.hostClassName, config.hostClassName);
 
-        for (const toolsetConfig of config.toolsets || []) {
+        const toolsetConfigs = config.toolsets.length > 0 ? config.toolsets : ToolsetRegistry.global.registeredToolsets();
+
+        for (const toolsetConfig of toolsetConfigs || []) {
             const { section, grid } = this.buildSection(toolsetConfig.name, 'expanded');
             // this.host.appendChild(section);
 

@@ -485,52 +485,52 @@ export class DiagramEditor {
     public getSheetRepository(): SheetRepository {
         if (!this.sheet_repository) {
             const repo = new SheetRepository();
-            repo.upsertSheet({
-                id: 'default_sheet',
-                name: 'Default',
-                types: {},
-                classes: {
-                    'default': {
-                        // id: 'default_node',
-                        strokeStyle: {
-                            color: 'red',
-                            width: 2
-                        },
-                        fillStyle: {
-                            color: 'white',
-                        },
-                        textStyle: {},
-                        shadowStyle: DiagramConstants.LOW_SHADOW,
-                    }
-                },
-                diagram: {
-                    background: { color: 'transparent' },
-                }
-            });
-            repo.upsertSheet({
-                id: 'bw_sheet',
-                name: 'Black and White',
-                types: {},
-                classes: {
-                    'default': {
-                        // id: 'default_node',
-                        strokeStyle: {
-                            color: 'black',
-                            width: 2
-                        },
-                        fillStyle: {
-                            color: 'white',
-                        },
-                        textStyle: {
-                            weight: 700,
-                        },
-                        shadowStyle: DiagramConstants.MEDIUM_SHADOW,
-                    }
-                },
-                diagram: {
-                    background: { color: 'transparent' },
-                }
-            });
+            // repo.upsertSheet({
+            //     id: 'default_sheet',
+            //     name: 'Default',
+            //     types: {},
+            //     classes: {
+            //         'default': {
+            //             // id: 'default_node',
+            //             strokeStyle: {
+            //                 color: 'red',
+            //                 width: 2
+            //             },
+            //             fillStyle: {
+            //                 color: 'white',
+            //             },
+            //             textStyle: {},
+            //             shadowStyle: DiagramConstants.LOW_SHADOW,
+            //         }
+            //     },
+            //     diagram: {
+            //         background: { color: 'transparent' },
+            //     }
+            // });
+            // repo.upsertSheet({
+            //     id: 'bw_sheet',
+            //     name: 'Black and White',
+            //     types: {},
+            //     classes: {
+            //         'default': {
+            //             // id: 'default_node',
+            //             strokeStyle: {
+            //                 color: 'black',
+            //                 width: 2
+            //             },
+            //             fillStyle: {
+            //                 color: 'white',
+            //             },
+            //             textStyle: {
+            //                 weight: 700,
+            //             },
+            //             shadowStyle: DiagramConstants.MEDIUM_SHADOW,
+            //         }
+            //     },
+            //     diagram: {
+            //         background: { color: 'transparent' },
+            //     }
+            // });
 
             this.sheet_repository = repo;
         }

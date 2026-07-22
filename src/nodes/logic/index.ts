@@ -1,4 +1,6 @@
-import { NodeRegistry } from "../../factory";
+import { NodeRegistry } from "../../factory/node.registry";
+import { ToolsetRegistry } from "../../factory/toolset.registry";
+
 import { LogicAndGateAdapter } from "./and.gate";
 import { LogicOrGateAdapter } from "./or.gate";
 import { LogicNotGateAdapter } from "./not.gate";
@@ -138,3 +140,12 @@ export const LOGIC_TOOL_LAYOUT = [
     'logic_half_adder',
     'logic_full_adder',
 ];
+
+export function registerLogicToolset(): void {
+    registerLogicAdapters();
+
+    ToolsetRegistry.global.register({
+        name: 'Logic',
+        layout: LOGIC_TOOL_LAYOUT,
+    });
+}
