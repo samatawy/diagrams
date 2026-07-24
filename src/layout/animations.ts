@@ -1,4 +1,4 @@
-import type { AnimationConfig, AnimationChannel, AnimationLineDash, AnimationChannelType, AnimationViewport, AnimationNodeCenter, AnimationNodeShutter } from "../animation.types";
+import type { AnimationConfig, AnimationChannel, AnimationLineDash, AnimationChannelType, AnimationViewport, AnimationNodeCenter, AnimationNodeShutter, AnimationLayout } from "../animation.types";
 import { withAlpha } from "../editor/gradient/color.utils";
 import { NodeRegistry } from "../factory";
 import type { INode } from "../interfaces";
@@ -57,7 +57,11 @@ export class DiagramAnimations {
 
         let channel = this.map.get(id);
         if (!channel) {
-            channel = this.newAnimation(type, id);
+            channel = this.addChannel({
+                type,
+                state: 'idle',
+            }, id);
+            // channel = this.newAnimation(type, id);
         }
 
         channel!.state = 'running';
@@ -75,6 +79,9 @@ export class DiagramAnimations {
 
             case 'viewport':
                 throw new Error('Viewport animation should be started using animateViewport() method.');
+
+            case 'layout':
+                throw new Error('Layout animation should be started using animateLayout() method.');
 
             default:
                 this.doAnimate(func);
@@ -107,7 +114,12 @@ export class DiagramAnimations {
     public animateLineDash(id: string, func: () => void): void {
         let channel = this.map.get(id) as AnimationLineDash | undefined;
         if (!channel) {
-            channel = this.newAnimation('linedash', id) as AnimationLineDash;
+            channel = this.addChannel<AnimationLineDash>({
+                type: 'linedash',
+                state: 'idle',
+                dashOffset: 0,
+            }, id);
+            // channel = this.newAnimation('linedash', id) as AnimationLineDash;
         }
         channel.state = 'running';
         channel.lastTimestamp = performance.now();
@@ -118,7 +130,12 @@ export class DiagramAnimations {
     public animateNodeCenter(node: INode, target: IPoint, func: () => void): void {
         let channel = this.map.get(node.id) as AnimationNodeCenter | undefined;
         if (!channel) {
-            channel = this.newAnimation('node', node.id) as AnimationNodeCenter;
+            channel = this.addChannel<AnimationNodeCenter>({
+                type: 'node',
+                state: 'idle',
+                target: deepClone(target),
+            }, node.id);
+            // channel = this.newAnimation('node', node.id) as AnimationNodeCenter;
         }
         channel.target = target;
 
@@ -137,7 +154,12 @@ export class DiagramAnimations {
                 channel.target = undefined;
             }
         } else {
-            channel = this.newAnimation('shutter', `shutter`) as AnimationNodeShutter;
+            channel = this.addChannel<AnimationNodeShutter>({
+                type: 'shutter',
+                state: 'idle',
+                node: node.id,
+            }, `shutter`);
+            // channel = this.newAnimation('shutter', `shutter`) as AnimationNodeShutter;
         }
         channel.node = node.id;
         if (node.owner.background?.color) {
@@ -151,12 +173,41 @@ export class DiagramAnimations {
         this.doAnimateNodeShutter(channel, node, func);
     }
 
+    public animateLayout(nodes: INode[], func: () => void): void {
+        let channel = this.map.get('layout') as AnimationLayout | undefined;
+        if (channel) {
+            this.applyLayoutProgress(channel, 1); /* Apply the current layout before starting a new one */
+            channel.state = 'idle';
+            channel.progress = 0;
+            channel.nodes = nodes;
+        } else {
+            channel = this.addChannel<AnimationLayout>({
+                type: 'layout',
+                state: 'idle',
+                nodes: nodes,
+                progress: 0,
+            }, 'layout');
+        }
+        // channel.nodes = nodes;
+
+        this.doAnimateLayout(channel, func);
+    }
+
     public animateViewport(target: { zoom?: number, pan?: { x: number, y: number } }, func?: () => void): void {
         let channel = this.map.get('viewport') as AnimationViewport | undefined;
-        if (!channel) {
-            channel = this.newAnimation('viewport', 'viewport') as AnimationViewport;
+        if (channel) {
+            channel.target = target;
         }
-        channel.target = target;
+
+        if (!channel) {
+            const last = this.map.get('viewport') as AnimationViewport | undefined;
+            channel = this.addChannel<AnimationViewport>({
+                type: 'viewport',
+                state: 'idle',
+                token: last ? last.token + 1 : 0,
+                target: target,
+            }, 'viewport');
+        }
 
         this.doAnimateCoordinates(channel, target, func);
     }
@@ -173,35 +224,48 @@ export class DiagramAnimations {
         channel.state = 'idle';
     }
 
-    private newAnimation(type: AnimationChannelType, id?: string): AnimationChannel {
-        id = id ?? type;
-
-        let animation: AnimationChannel;
-        if (type === 'linedash') {
-            animation = {
-                type: 'linedash',
-                state: 'idle',
-                dashOffset: 0,
-            } as AnimationLineDash;
-
-        } else if (type === 'viewport') {
-            // Find the last viewport animation for this type, if it exists, to continue from its state
-            const last = this.map.get(type) as AnimationViewport | undefined;
-            animation = {
-                type: 'viewport',
-                state: 'idle',
-                token: last ? last.token + 1 : 0,
-            } as AnimationViewport;
-
-        } else {
-            animation = {
-                type,
-                state: 'idle',
-            };
-        }
-        this.map.set(id, animation);
-        return animation;
+    private addChannel<T extends AnimationChannel>(channel: T, id?: string): T {
+        this.map.set(id ?? channel.type, channel);
+        return channel;
     }
+
+    // private newAnimation(type: AnimationChannelType, id?: string): AnimationChannel {
+    //     id = id ?? type;
+
+    //     let animation: AnimationChannel;
+    //     if (type === 'linedash') {
+    //         animation = {
+    //             type: 'linedash',
+    //             state: 'idle',
+    //             dashOffset: 0,
+    //         } as AnimationLineDash;
+
+    //     } else if (type === 'layout') {
+    //         animation = {
+    //             type: 'layout',
+    //             state: 'idle',
+    //             nodes: [],
+    //             progress: 0,
+    //         } as AnimationLayout;
+
+    //     } else if (type === 'viewport') {
+    //         // Find the last viewport animation for this type, if it exists, to continue from its state
+    //         const last = this.map.get(type) as AnimationViewport | undefined;
+    //         animation = {
+    //             type: 'viewport',
+    //             state: 'idle',
+    //             token: last ? last.token + 1 : 0,
+    //         } as AnimationViewport;
+
+    //     } else {
+    //         animation = {
+    //             type,
+    //             state: 'idle',
+    //         };
+    //     }
+    //     this.map.set(id, animation);
+    //     return animation;
+    // }
 
     private doAnimate(func: () => void): void {
         if (!this.config.enabled) {
@@ -481,6 +545,82 @@ export class DiagramAnimations {
             }
         }
         return nodeRect;
+    }
+
+    private applyLayoutProgress(channel: AnimationLayout, delta: number): void {
+        for (const node of channel.nodes) {
+            const target = this.diagram.node(node.id);
+
+            /* Rectangle-based */
+            if (target && target.points.length === 2 && node.points.length === 2) {
+                const planned_first = target.points[0]!;
+                const planned_second = target.points[1]!;
+                const original_first = node.points[0]!;
+                const original_second = node.points[1]!;
+
+                planned_first.x += (original_first.x - planned_first.x) * delta;
+                planned_first.y += (original_first.y - planned_first.y) * delta;
+                planned_second.x += (original_second.x - planned_second.x) * delta;
+                planned_second.y += (original_second.y - planned_second.y) * delta;
+            }
+
+            /* Polyline-based */
+            if (target && target.points.length > 2 && node.points.length === target.points.length) {
+                for (let i = 0; i < node.points.length; i++) {
+                    const planned = target.points[i]!;
+                    const original = node.points[i]!;
+
+                    planned.x += (original.x - planned.x) * delta;
+                    planned.y += (original.y - planned.y) * delta;
+                }
+            }
+
+            /* Simplified edges */
+            if (target && target.points.length >= 2 && node.points.length < target.points.length) {
+                const preserve = target.points.slice(0, node.points.length - 1);
+                const last = target.points[target.points.length - 1];
+                target.points = preserve.concat(last!);
+
+                // const rect = this.diagram.getCoordinates().getBoundingRect(node);
+                for (let i = 0; i < node.points.length; i++) {
+                    const planned = target.points[i]!;
+                    const original = node.points[i]!;
+
+                    planned.x += (original.x - planned.x) * delta;
+                    planned.y += (original.y - planned.y) * delta;
+                }
+            }
+        }
+        // this.diagram.fitToNodes(); /* Adjust the viewport to fit the nodes after applying the layout progress */
+    }
+
+    private doAnimateLayout(channel: AnimationLayout, func: () => void): void {
+        if (!this.config.enabled) {
+            this.applyLayoutProgress(channel, 1);
+            func();
+            return;
+        }
+
+        const animate = () => {
+
+            channel.progress += 0.02; /* Adjust this value for smoother or faster animation */
+            this.applyLayoutProgress(channel, channel.progress);
+
+            const attained = channel.progress > 0.99;
+
+            if (attained) {
+                channel.lastFrame = undefined;
+                this.applyLayoutProgress(channel, 1);
+                func();
+                return;
+            }
+
+            func();
+            this.diagram.render('all');
+
+            channel.lastFrame = requestAnimationFrame(animate);
+        };
+        animate();
     }
 
     private doAnimateCoordinates(channel: AnimationViewport, target: { zoom?: number, pan?: { x: number, y: number } }, func?: () => void): void {

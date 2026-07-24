@@ -380,7 +380,7 @@ export class DiagramClipboard {
             this.diagram.upsertNode(clone);
             layer.nodes.push(clone.id);
 
-            NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
+            // NodeBasics.moveBy(clone, 24, 24, 'ignore_scale');
             cloned.push(clone);
         }
 

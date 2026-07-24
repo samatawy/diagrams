@@ -43,14 +43,13 @@ import {
     type DiagramClipboardOperation,
     type DiagramEditContextMenu,
 } from "../events/diagram.events";
-import type { ISerializedNode } from "../io";
 
 import {
-    deepClone,
+    deepClone, deepCloneNode,
     fillColor,
     humanize, isInvisible, isLocked, lineDash, lineWidth,
     nodeAngle, nodeFontFace, nodeFontSize, nodeOpacity, nodeText, absoluteToRelative, strokeColor,
-    textAlign, textBaseline, textColor, textHaloColor, textItalic, textOrientation, textWeight
+    textAlign, textBaseline, textColor, textHaloColor, textItalic, textOrientation, textWeight,
 } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
@@ -2247,8 +2246,13 @@ export class DiagramEditView extends DiagramView {
             group.nodes.push(...cloned.map(node => node.id));
         }
 
-        this.render('all');
-        this.renderPreview();
+        /* Render animated */
+        const target_place = cloned.map(node => deepCloneNode(node))
+            .map(node => {
+                NodeBasics.moveBy(node, -24, -24, 'ignore_scale');
+                return node;
+            });
+        this.animateLayout(target_place, () => { });
     }
 
     /**
@@ -2346,6 +2350,8 @@ export class DiagramEditView extends DiagramView {
         let nodes = this.selection().filter(n => !isConnection(n));
         if (nodes.length < 2) return;
 
+        nodes = nodes.map(n => deepCloneNode(n));
+
         this.addUndo();
 
         /* Compute the union bounding rect across all selected nodes. */
@@ -2402,7 +2408,9 @@ export class DiagramEditView extends DiagramView {
                 break;
             }
         }
-        this.render('all');
+
+        /* Render animated */
+        this.animateLayout(nodes, () => { });
     }
 
     /**
@@ -2412,6 +2420,8 @@ export class DiagramEditView extends DiagramView {
     public spreadSelected(dir: 'row' | 'column'): void {
         let nodes = this.selection().filter(n => !isConnection(n));
         if (nodes.length < 3) return;
+
+        nodes = nodes.map(n => deepCloneNode(n));
 
         this.addUndo();
 
@@ -2487,7 +2497,9 @@ export class DiagramEditView extends DiagramView {
                 }
             }
         }
-        this.render('all');
+
+        /* Render animated */
+        this.animateLayout(nodes, () => { });
     }
 
     // ==================================================
@@ -3170,12 +3182,13 @@ export class DiagramEditView extends DiagramView {
                 case NodeHandle.SE:
                 case NodeHandle.SW: {
 
+                    let movePos = { x: event.offsetX, y: event.offsetY }
+
                     const allowed = this.downShape ? NodeRegistry.adapter(this.downShape.type)?.resize_handles : undefined;
                     if (allowed && !allowed.includes(this.downHandle!)) {
+                        this.downPos = movePos;
                         break;
                     }
-
-                    let movePos = { x: event.offsetX, y: event.offsetY }
 
                     let preserveAspect = event.shiftKey;
 
@@ -5288,8 +5301,14 @@ export class DiagramEditView extends DiagramView {
      * @param preserveAspect Whether to preserve aspect ratio.
      */
     private resizeNode(node: INode, handle: NodeHandle, byX: number, byY: number, preserveAspect = false): void {
+        // if (!node || node.locked) return false;
+        // const before = this.coordinates.getBoundingRect(node);
+
         NodeBasics.resizeHandle(node, handle, byX, byY, preserveAspect);
         NodeRegistry.afterResize(node, handle);
+
+        // const after = this.coordinates.getBoundingRect(node);
+        // return before.width !== after.width || before.height !== after.height;
     }
 
     /**

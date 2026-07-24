@@ -1,5 +1,5 @@
 import { NodeRegistry } from "../factory/node.registry";
-import type { HasSelection, IDiagram, IGrid, IHandlePoint, ILayer, INode } from "../interfaces";
+import type { HasSelection, IConnection, IDiagram, IGrid, IHandlePoint, ILayer, INode } from "../interfaces";
 import { createCanvas2D, downloadBlob, isBrowserRuntime } from "../io/browser.support";
 import type { ImageSaveOptions, ImageSerializer, ImageWriteOptions } from "../io/export.types";
 import { isNodeRuntime, writeBinaryFile } from "../io/node.support";
@@ -1057,57 +1057,15 @@ export class DiagramView extends Diagram implements HasSelection {
 
     protected startAnimation(type: AnimationChannelType, id: string | undefined, func: () => void): void {
         this.animations.startAnimation(type, id, func);
-        // this.stopAnimation();
-
-        // if (!this.animation.enabled) {
-        //     func?.();
-        //     return;
-        // }
-
-        // this.animation.animate = true;
-        // this.animation.lastTimestamp = performance.now();
-        // this.animation.lastFrame = requestAnimationFrame(() => this.renderAnimated(func));
     }
 
     protected stopAnimation(id: string): void {
         this.animations.stopAnimation(id);
-        // if (this.animation.lastFrame) {
-        //     cancelAnimationFrame(this.animation.lastFrame);
-        //     this.animation.lastFrame = undefined;
-        //     this.animation.lastTimestamp = undefined;
-        // }
-        // this.animation.animate = false;
     }
 
     protected stopAnimations(type: AnimationChannelType): void {
         this.animations.stopAnimationsByType(type);
     }
-    // if (this.animation.lastFrame) {
-
-    // private renderAnimated(func?: () => void): void {
-    //     if (!this.animation.animate || !this.animation.lastTimestamp) {
-    //         return;
-    //     }
-
-    //     const now = performance.now();
-    //     const delta = (now - this.animation.lastTimestamp);
-    //     const interval = 1000 / this.animation.fps;
-    //     const offset = (delta / interval) * 0.25;
-
-    //     this.animation.dashOffset -= offset;
-    //     // if (this.animation.dashOffset < -12) {
-    //     //     this.animation.dashOffset = 0;
-    //     // }
-
-    //     if (func) {
-    //         func();
-    //     } else {
-    //         this.render();
-    //     }
-
-    //     this.animation.lastTimestamp = now;
-    //     this.animation.lastFrame = requestAnimationFrame(() => this.renderAnimated(func));
-    // }
 
     public animateLineDash(id: string, func: () => void): void {
         this.animations.animateLineDash(id, func);
@@ -1117,67 +1075,16 @@ export class DiagramView extends Diagram implements HasSelection {
         this.animations.animateNodeShutter(node, func);
     }
 
+    public animateLayout(target: INode[], func?: () => void): void {
+        this.animations.animateLayout(target, func ?? (() => this.fitToNodes()));
+    }
+
     public animateViewport(target: { zoom?: number, pan?: { x: number, y: number } }, func?: () => void): void {
         this.animations.animateViewport(target, func);
-        // () => {
-        //     // this.render('all');
-        //     func ? func() : this.render('all');
-        // });
-
-        // if (!this.animation.enabled) {
-        //     this.setViewport(target);   /* sets and emits events */
-        //     return;
-        // }
-
-        // this.stopViewportAnimation();
-        // const token = ++this.viewportAnimationToken;
-
-        // const animate = () => {
-        //     if (token !== this.viewportAnimationToken) {
-        //         return;
-        //     }
-
-        //     const currentZoom = this.coordinates.zoom;
-        //     const currentPan = { ...this.coordinates.pan };
-
-        //     const zoomDiff = (target.zoom ?? currentZoom) - currentZoom;
-        //     const panDiff = {
-        //         x: (target.pan?.x ?? currentPan.x) - currentPan.x,
-        //         y: (target.pan?.y ?? currentPan.y) - currentPan.y,
-        //     };
-
-        //     const attainedZoom = target.zoom === undefined || Math.abs(zoomDiff) < 0.01;
-        //     const attainedPan = target.pan === undefined || (Math.abs(panDiff.x) < 0.5 && Math.abs(panDiff.y) < 0.5);
-
-        //     if (attainedZoom && attainedPan) {
-        //         this.viewportAnimationFrame = undefined;
-        //         this.setViewport(target); /* Finalize the viewport to the target values */
-        //         return;
-        //     }
-
-        //     const step = 0.2; /* Adjust this value for smoother or faster animation */
-
-        //     const nextZoom = currentZoom + (zoomDiff * step);
-        //     const nextPan = {
-        //         x: currentPan.x + (panDiff.x * step),
-        //         y: currentPan.y + (panDiff.y * step),
-        //     };
-
-        //     this.coordinates.zoom = nextZoom;
-        //     this.coordinates.pan = nextPan;
-        //     this.render('all');
-
-        //     this.viewportAnimationFrame = requestAnimationFrame(animate);
-        // };
-        // animate();
     }
 
     private stopViewportAnimation(): void {
         this.animations.stopAnimation('viewport');
-        // if (this.viewportAnimationFrame !== undefined) {
-        //     cancelAnimationFrame(this.viewportAnimationFrame);
-        //     this.viewportAnimationFrame = undefined;
-        // }
     }
 
     // =================================================

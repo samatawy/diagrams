@@ -179,6 +179,17 @@ export class DiagramTopMenu extends TopMenu {
         } as DropDownMenu);
 
         this.addDropDownMenu({
+            label: 'Layout',
+            altKey: 'L',
+            items: [
+                this.actionMenuItem('autolayout', 'A'),
+                this.actionMenuItem('autolayout-circuit', 'C'),
+                this.actionMenuItem('autolayout-topdown', 'T'),
+                this.actionMenuItem('autolayout-leftright', 'L'),
+            ],
+        } as DropDownMenu);
+
+        this.addDropDownMenu({
             label: 'Text',
             altKey: 'T',
             items: [

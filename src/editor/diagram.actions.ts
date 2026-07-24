@@ -3,6 +3,7 @@ import { NodeRegistry } from '../factory';
 import { isConnection, isConnectionNode } from '../guards';
 import { textAlign, textBaseline, textBold, textItalic, textOrientation, textUnderline } from '../value.utils';
 import { NORMAL_FONT_WEIGHT, BOLD_FONT_WEIGHT } from '../style.interfaces';
+import { ElkLayout } from '../layout/elk';
 
 /**
  * Available built-in diagram actions. These can be used in the toolbar layout, context menu, etc.
@@ -13,6 +14,7 @@ export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
     'toggle-grid' | 'toggle-visual-grid' | 'toggle-guides' |
 
     'zoom-in' | 'zoom-out' | 'fit-horizontally' | 'fit-all' |
+    'autolayout' | 'autolayout-topdown' | 'autolayout-leftright' | 'autolayout-circuit' |
     'undo' | 'redo' |
     'front' | 'back' | 'forward' | 'backward' |
     'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' | 'copy-styles' | 'paste-styles' |
@@ -249,6 +251,58 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         tooltip: 'Fit all nodes',
         shortcut: ['Ctrl+Alt+F', 'Cmd+Alt+F'],
         execute: (d) => d.fitToNodes(),
+    },
+    {
+        id: 'autolayout',
+        label: 'Autolayout',
+        tooltip: 'Automatically layout nodes',
+        shortcut: ['Ctrl+Alt+A', 'Cmd+Alt+A'],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autoLayout()
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+    {
+        id: 'autolayout-topdown',
+        label: 'Top-Down',
+        tooltip: 'Automatically layout nodes in a top-down flow',
+        shortcut: ['Ctrl+Alt+T', 'Cmd+Alt+T'],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autoTopBottom()
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+    {
+        id: 'autolayout-leftright',
+        label: 'Left-Right',
+        tooltip: 'Automatically layout nodes in a left-right flow',
+        shortcut: ['Ctrl+Alt+L', 'Cmd+Alt+L'],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autoLeftRight()
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+    {
+        id: 'autolayout-circuit',
+        label: 'Circuit',
+        tooltip: 'Automatically layout nodes in a circuit flow',
+        shortcut: ['Ctrl+Alt+C', 'Cmd+Alt+C'],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autoCircuit()
+                .then(planned => d.animateLayout(planned));
+        },
     },
 
     {

@@ -1,5 +1,4 @@
-import { NodeRegistry } from "../../factory/node.registry";
-import { type IConnectionAnchor, type IGrid, type INode } from "../../interfaces";
+import { type IGrid, type INode } from "../../interfaces";
 import { type ITextOrientation, type IPoint, NodeHandle, type AnchorScope } from "../../types";
 import { isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";

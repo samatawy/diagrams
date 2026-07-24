@@ -9,22 +9,30 @@ export function humanize(key: string): string {
     return parts.map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
 }
 
-export function deepClone(obj: any): any {
+export function deepClone(obj: any, options?: { exclude?: string[] }): any {
     if (obj === null || typeof obj !== 'object') {
         return obj;
     }
 
     if (Array.isArray(obj)) {
-        return obj.map(deepClone);
+        return obj.map(item => deepClone(item));
     }
 
     const cloned: any = {};
     for (const key in obj) {
+        if (options?.exclude?.includes(key)) continue;
+
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
             cloned[key] = deepClone(obj[key]);
         }
     }
     return cloned;
+}
+
+export function deepCloneNode(obj: any, options?: { exclude?: string[] }): any {
+    const clone = deepClone(obj, { exclude: [...options?.exclude ?? [], 'owner'] });
+    clone.owner = obj.owner; // Preserve the owner reference
+    return clone;
 }
 
 export function absoluteToRelative(point: IPoint, rect: IRect): IPoint {

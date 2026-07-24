@@ -1,5 +1,5 @@
 import { NodeRegistry } from "../../factory/node.registry";
-import { type IConnection, type IGrid, type IHandlePoint, type INode } from "../../interfaces";
+import { type IConnection, type IConnectionAnchor, type IDiagram, type IGrid, type IHandlePoint, type INode } from "../../interfaces";
 import { NodeHandle, type AnchorScope, type IPoint, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
 import { isConnection, isConnectionNode, isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
@@ -9,6 +9,7 @@ import type { HollowMode, INodeAdapter, SpecificOptions, TextOverflowMode, TextP
 import { isHollow, lineWidth, nodeAngle } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 import { NodeBasics } from "../node.basics";
+import type { DiagramView } from "../../view/diagram.view";
 
 /**
  * PolylineAdapter is a node adapter responsible for rendering polyline nodes in the diagram. 
@@ -125,6 +126,60 @@ export class PolylineAdapter implements INodeAdapter {
 
     public defaultConnection(): Partial<IConnection> | null {
         return null;
+    }
+
+    afterConnect(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor | null): void {
+        if (direction === 'from' && anchor) {
+            const target = this.resolveNode(node.owner, anchor);
+            node.geometry = {
+                ...node.geometry ?? {},
+                from_handle: this.normalizeHandle(anchor, target)
+            };
+
+        } else if (direction === 'to' && anchor) {
+            const target = this.resolveNode(node.owner, anchor);
+            node.geometry = {
+                ...node.geometry ?? {},
+                to_handle: this.normalizeHandle(anchor, target)
+            };
+        }
+    }
+
+    private normalizeHandle(anchor: IConnectionAnchor, node?: INode): NodeHandle {
+        const given = anchor.handle;
+        if (given === NodeHandle.N || given === NodeHandle.S || given === NodeHandle.E || given === NodeHandle.W) {
+            return given;
+        }
+
+        if (!node) {
+            return given;
+        }
+
+        const diagram = node.owner as DiagramView;
+        const coordinates = diagram.getCoordinates();
+        const rect = coordinates.getBoundingRect(node);
+        switch (given) {
+            case NodeHandle.NE:
+                return (rect.width > rect.height) ? NodeHandle.N : NodeHandle.E;
+            case NodeHandle.NW:
+                return (rect.width > rect.height) ? NodeHandle.N : NodeHandle.W;
+            case NodeHandle.SE:
+                return (rect.width > rect.height) ? NodeHandle.S : NodeHandle.E;
+            case NodeHandle.SW:
+                return (rect.width > rect.height) ? NodeHandle.S : NodeHandle.W;
+            default:
+                return given;
+        }
+    }
+
+    private resolveNode(diagram: IDiagram, anchor: IConnectionAnchor): INode | undefined {
+        if (anchor.node) {
+            if (typeof anchor.node === 'string') {
+                return diagram.node(anchor.node);
+            } else {
+                return anchor.node;
+            }
+        }
     }
 
     public snapToGrid(node: INode, grid: IGrid, handle?: NodeHandle): void {

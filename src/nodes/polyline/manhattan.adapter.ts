@@ -32,16 +32,17 @@ export class ManhattanAdapter extends PolylineAdapter {
     text_overflow: TextOverflowMode = 'hidden';
 
     afterConnect(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor | null): void {
-        if (direction === 'from' && anchor) {
-            node.geometry = node.geometry || {} as any;
-            const target = this.resolveNode(node.owner, anchor);
-            node.geometry!.from_handle = this.normalizeHandle(anchor, target);
+        super.afterConnect(node, direction, anchor);
+        // if (direction === 'from' && anchor) {
+        //     node.geometry = node.geometry || {} as any;
+        //     const target = this.resolveNode(node.owner, anchor);
+        //     node.geometry!.from_handle = this.normalizeHandle(anchor, target);
 
-        } else if (direction === 'to' && anchor) {
-            node.geometry = node.geometry || {} as any;
-            const target = this.resolveNode(node.owner, anchor);
-            node.geometry!.to_handle = this.normalizeHandle(anchor, target);
-        }
+        // } else if (direction === 'to' && anchor) {
+        //     node.geometry = node.geometry || {} as any;
+        //     const target = this.resolveNode(node.owner, anchor);
+        //     node.geometry!.to_handle = this.normalizeHandle(anchor, target);
+        // }
 
 
         // Ensure at least one midpoint exists.
@@ -340,42 +341,42 @@ export class ManhattanAdapter extends PolylineAdapter {
 
     // Helper routines
 
-    private normalizeHandle(anchor: IConnectionAnchor, node?: INode): NodeHandle {
-        const given = anchor.handle;
-        if (given === NodeHandle.N || given === NodeHandle.S || given === NodeHandle.E || given === NodeHandle.W) {
-            return given;
-        }
+    // private normalizeHandle(anchor: IConnectionAnchor, node?: INode): NodeHandle {
+    //     const given = anchor.handle;
+    //     if (given === NodeHandle.N || given === NodeHandle.S || given === NodeHandle.E || given === NodeHandle.W) {
+    //         return given;
+    //     }
 
-        if (!node) {
-            return given;
-        }
+    //     if (!node) {
+    //         return given;
+    //     }
 
-        const diagram = node.owner as DiagramView;
-        const coordinates = diagram.getCoordinates();
-        const rect = coordinates.getBoundingRect(node);
-        switch (given) {
-            case NodeHandle.NE:
-                return (rect.width > rect.height) ? NodeHandle.N : NodeHandle.E;
-            case NodeHandle.NW:
-                return (rect.width > rect.height) ? NodeHandle.N : NodeHandle.W;
-            case NodeHandle.SE:
-                return (rect.width > rect.height) ? NodeHandle.S : NodeHandle.E;
-            case NodeHandle.SW:
-                return (rect.width > rect.height) ? NodeHandle.S : NodeHandle.W;
-            default:
-                return given;
-        }
-    }
+    //     const diagram = node.owner as DiagramView;
+    //     const coordinates = diagram.getCoordinates();
+    //     const rect = coordinates.getBoundingRect(node);
+    //     switch (given) {
+    //         case NodeHandle.NE:
+    //             return (rect.width > rect.height) ? NodeHandle.N : NodeHandle.E;
+    //         case NodeHandle.NW:
+    //             return (rect.width > rect.height) ? NodeHandle.N : NodeHandle.W;
+    //         case NodeHandle.SE:
+    //             return (rect.width > rect.height) ? NodeHandle.S : NodeHandle.E;
+    //         case NodeHandle.SW:
+    //             return (rect.width > rect.height) ? NodeHandle.S : NodeHandle.W;
+    //         default:
+    //             return given;
+    //     }
+    // }
 
-    private resolveNode(diagram: IDiagram, anchor: IConnectionAnchor): INode | undefined {
-        if (anchor.node) {
-            if (typeof anchor.node === 'string') {
-                return diagram.node(anchor.node);
-            } else {
-                return anchor.node;
-            }
-        }
-    }
+    // private resolveNode(diagram: IDiagram, anchor: IConnectionAnchor): INode | undefined {
+    //     if (anchor.node) {
+    //         if (typeof anchor.node === 'string') {
+    //             return diagram.node(anchor.node);
+    //         } else {
+    //             return anchor.node;
+    //         }
+    //     }
+    // }
 
     private infer_cardinal_from_handle(fromHandle?: NodeHandle): CardinalDirection {
         switch (fromHandle) {

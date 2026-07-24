@@ -1,4 +1,3 @@
-import { NodeRegistry } from "../../factory/node.registry";
 import type { INode } from "../../interfaces";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";

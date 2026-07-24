@@ -10,10 +10,12 @@ export default defineConfig({
     splitting: false,
     dts: true,
     external: [
+        'web-worker',
         'file-type',
         'probe-image-size'
     ],
     noExternal: [
+        'elkjs',
         '@samatawy/checks'
     ]
 });

@@ -4,7 +4,7 @@ export type AnimationMode = 'instant' | 'animate';
 
 export type AnimationState = 'idle' | 'running';
 
-export type AnimationChannelType = 'linedash' | 'node' | 'shutter' | 'viewport' | 'other';
+export type AnimationChannelType = 'linedash' | 'node' | 'shutter' | 'viewport' | 'layout' | 'other';
 
 export interface AnimationConfig {
     enabled: boolean;
@@ -35,6 +35,12 @@ export interface AnimationNodeShutter extends AnimationChannel {
     cutout?: IRect;
     fillStyle?: string;
     strokeStyle?: string;
+}
+
+export interface AnimationLayout extends AnimationChannel {
+    type: 'layout';
+    nodes: any[];
+    progress: number;
 }
 
 export interface AnimationViewport extends AnimationChannel {

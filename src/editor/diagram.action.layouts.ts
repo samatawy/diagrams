@@ -27,6 +27,8 @@ export const DIAGRAM_ZOOM_ACTION_LAYOUT: DiagramActionId[] = [
     'zoom-out',
     'fit-horizontally',
     'fit-all',
+    // 'autolayout-topdown',
+    // 'autolayout-leftright',
 ];
 
 export const DIAGRAM_HISTORY_ACTION_LAYOUT: DiagramActionId[] = [
