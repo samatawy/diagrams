@@ -100,8 +100,9 @@ You can tailor the editor for your own product:
 
 ## Version History
 
-- Since version `0.6.6`
+- Since version `0.6.5`
   - Added file format validation
+  - Added autolayout algorithms
 - Since version `0.6.3`
   - Added dropdown menu
   - Improved UI and added dark theme
