@@ -2249,7 +2249,7 @@ export class DiagramEditView extends DiagramView {
         /* Render animated */
         const target_place = cloned.map(node => deepCloneNode(node))
             .map(node => {
-                NodeBasics.moveBy(node, -24, -24, 'ignore_scale');
+                NodeBasics.moveBy(node, 24, 24, 'ignore_scale');
                 return node;
             });
         this.animateLayout(target_place, () => { });
