@@ -8,9 +8,7 @@ import { FitViewport } from "../layout/fit.viewport";
 import { Diagram } from "../model/diagram";
 import type { ImageMode, IRect } from "../types";
 import { NodeHandle } from "../types";
-import {
-    type DiagramViewportChange,
-} from "../events/diagram.events";
+import { type DiagramViewportChange } from "../events/diagram.events";
 import { EventDispatcher } from "../events/event.dispatcher";
 import { CoordinateSystem } from "./coordinate.system";
 import { ViewCache } from "./view.cache";
@@ -28,10 +26,12 @@ import { isConnection, isContainer, isContainerNode } from "../guards";
 import { DiagramKeyboard } from "../keyboard/diagram.keyboard";
 import { DiagramViewKeyboard } from "./view.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
-import type { AnimationChannelType, AnimationLineDash, AnimationMode } from "../animation.types";
+import type { AnimationChannelType, AnimationMode } from "../animation.types";
 import { DiagramAnimations } from "../layout/animations";
 import { deepClone } from "../value.utils";
 import { ConnectionBasics, RenderBasics } from "../nodes";
+
+// import CanvasToSvg from 'canvas-to-svg';
 
 export type RenderMode = 'view' | 'editing';
 
@@ -1003,6 +1003,30 @@ export class DiagramView extends Diagram implements HasSelection {
 
         this.coordinates.resetTransform(context);
     }
+
+    // public exportSVG(options: ImageWriteOptions = {}, serializer: ImageSerializer = new CanvasImageSerializer()): Blob {
+    //     const padding = Number.isFinite(options.padding) ? Math.max(0, options.padding!) : DiagramConstants.EXPORT_IMAGE_PADDING;
+    //     const exportCanvas = this.createSvgCanvas(padding);
+    //     const svg = exportCanvas.getSerializedSvg(true);
+    //     console.log(svg);
+    //     const blob = new Blob([svg], { type: 'image/svg+xml' });
+    //     return blob;
+    //     // return serializer.write(exportCanvas as unknown as HTMLCanvasElement, options);
+    // }
+
+    // private createSvgCanvas(padding: number): CanvasToSvg {
+    //     const bounds = this.getNodeBounds();
+
+    //     if (!bounds || bounds.width <= 0 || bounds.height <= 0) {
+    //         return new CanvasToSvg(1, 1);
+    //     }
+
+    //     const width = bounds.width + padding * 2;
+    //     const height = bounds.height + padding * 2;
+    //     const context = new CanvasToSvg(width, height);
+    //     this.renderContentToContext(context as unknown as CanvasRenderingContext2D, bounds, padding);
+    //     return context;
+    // }
 
     /**
      * Determine the appropriate file extension for an image based on its MIME type.

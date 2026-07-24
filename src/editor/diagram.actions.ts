@@ -8,7 +8,7 @@ import { ElkLayout } from '../layout/elk';
 /**
  * Available built-in diagram actions. These can be used in the toolbar layout, context menu, etc.
  */
-export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
+export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' | 'export-svg' |
     'load-stylesheet' | 'save-stylesheet' |
     // 'show-grid' | 'snap-grid' | 'show-guides' | 'snap-guides' |
     'toggle-grid' | 'toggle-visual-grid' | 'toggle-guides' |
@@ -99,6 +99,13 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         shortcut: ['Ctrl+Alt+E', 'Cmd+Alt+E'],
         execute: async (d) => { await d.saveImageDiagram(); },
     },
+    // {
+    //     id: 'export-svg',
+    //     label: 'Export SVG',
+    //     tooltip: 'Export the diagram as an SVG file',
+    //     shortcut: ['Ctrl+Alt+E', 'Cmd+Alt+E'],
+    //     execute: async (d) => { await d.saveImageDiagram({ mimeType: 'image/svg+xml' }); },
+    // },
     {
         id: 'load-stylesheet',
         label: 'Load Stylesheet',

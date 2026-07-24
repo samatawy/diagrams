@@ -66,6 +66,7 @@ export class DiagramTopMenu extends TopMenu {
                 this.actionMenuItem('open', 'O'),
                 this.actionMenuItem('save', 'S'),
                 this.actionMenuItem('export', 'E'),
+                // this.actionMenuItem('export-svg', 'X'),
                 '-',
                 this.actionMenuItem('load-stylesheet', 'L'),
                 this.actionMenuItem('save-stylesheet', 'V'),

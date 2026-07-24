@@ -383,9 +383,10 @@ export class DiagramEditView extends DiagramView {
      * @returns The resolved value, or undefined when it cannot be resolved.
      */
     public async saveImageDiagram(options: { fileName?: string; mimeType?: string; quality?: number; padding?: number } = {}): Promise<string | undefined> {
-        const mimeType = options.mimeType ?? 'image/png';
+        let mimeType = options.mimeType ?? 'image/png';
         const fileName = options.fileName ?? (() => {
             switch (mimeType) {
+                // case 'image/svg+xml': return `${this.id}.svg`;
                 case 'image/jpeg': return `${this.id}.jpg`;
                 case 'image/webp': return `${this.id}.webp`;
                 case 'image/avif': return `${this.id}.avif`;
@@ -402,11 +403,20 @@ export class DiagramEditView extends DiagramView {
             return undefined;
         }
 
-        const blob = await this.exportImage({
-            mimeType: mimeType as any,
-            quality: options.quality,
-            padding: options.padding,
-        });
+        if (resolved.fileName) {
+            mimeType = resolved.fileName.endsWith('.jpg') ? 'image/jpeg'
+                : resolved.fileName.endsWith('.jpeg') ? 'image/jpeg'
+                    : resolved.fileName.endsWith('.webp') ? 'image/webp'
+                        : resolved.fileName.endsWith('.avif') ? 'image/avif'
+                            : 'image/png';
+        }
+
+        const blob = // (mimeType === 'image/svg+xml') ? this.exportSVG() :
+            await this.exportImage({
+                mimeType: mimeType as any,
+                quality: options.quality,
+                padding: options.padding,
+            });
 
         if (resolved.handle) {
             return await writeBlobToFileHandle(resolved.handle, blob);

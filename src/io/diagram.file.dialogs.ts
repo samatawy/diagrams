@@ -184,8 +184,8 @@ export class DiagramFileDialogs {
             return { ...options };
         }
 
-        const fileName = options.fileName ?? 'diagram.json';
-        const mimeType = options.mimeType ?? 'application/json';
+        let fileName = options.fileName ?? 'diagram.json';
+        let mimeType = options.mimeType ?? 'application/json';
         const handle = await picker({
             suggestedName: fileName,
             types: [{
@@ -196,6 +196,21 @@ export class DiagramFileDialogs {
 
         if (!handle) {
             return { ...options };
+        }
+
+        if (handle.name !== fileName) {
+            fileName = handle.name;
+            switch (this.extensionFor(fileName)) {
+                case '.json': mimeType = 'application/json'; break;
+                case '.png': mimeType = 'image/png'; break;
+                case '.jpg':
+                case '.jpeg': mimeType = 'image/jpeg'; break;
+                case '.webp': mimeType = 'image/webp'; break;
+                case '.avif': mimeType = 'image/avif'; break;
+                case '.svg': mimeType = 'image/svg+xml'; break;
+                default:
+                    console.warn(`The selected file name "${handle.name}" does not match the expected extension "${this.extensionFor(fileName)}".`);
+            }
         }
 
         return {
