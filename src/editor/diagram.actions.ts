@@ -14,7 +14,9 @@ export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' |
     'toggle-grid' | 'toggle-visual-grid' | 'toggle-guides' |
 
     'zoom-in' | 'zoom-out' | 'fit-horizontally' | 'fit-all' |
-    'autolayout' | 'autolayout-topdown' | 'autolayout-leftright' | 'autolayout-circuit' |
+    'autolayout' | 'autolayout-circuit' |
+    'autolayout-flow-top-down' | 'autolayout-flow-bottom-up' | 'autolayout-flow-left-right' | 'autolayout-flow-right-left' |
+    'autolayout-tree-top-down' | 'autolayout-tree-bottom-up' | 'autolayout-tree-left-right' | 'autolayout-tree-right-left' |
     'undo' | 'redo' |
     'front' | 'back' | 'forward' | 'backward' |
     'delete' | 'duplicate' | 'cut' | 'copy' | 'paste' | 'copy-styles' | 'paste-styles' |
@@ -266,32 +268,6 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         },
     },
     {
-        id: 'autolayout-topdown',
-        label: 'Top-Down',
-        tooltip: 'Automatically layout nodes in a top-down flow',
-        shortcut: ['Ctrl+Alt+T', 'Cmd+Alt+T'],
-        execute: (d) => {
-            // for (const edge of d.nodes.filter(n => isConnection(n))) {
-            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
-            // }
-            new ElkLayout(d).autoTopBottom()
-                .then(planned => d.animateLayout(planned));
-        },
-    },
-    {
-        id: 'autolayout-leftright',
-        label: 'Left-Right',
-        tooltip: 'Automatically layout nodes in a left-right flow',
-        shortcut: ['Ctrl+Alt+L', 'Cmd+Alt+L'],
-        execute: (d) => {
-            // for (const edge of d.nodes.filter(n => isConnection(n))) {
-            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
-            // }
-            new ElkLayout(d).autoLeftRight()
-                .then(planned => d.animateLayout(planned));
-        },
-    },
-    {
         id: 'autolayout-circuit',
         label: 'Circuit',
         tooltip: 'Automatically layout nodes in a circuit flow',
@@ -301,6 +277,111 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autoCircuit()
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+    {
+        id: 'autolayout-flow-top-down',
+        label: 'Top-Down Flow',
+        tooltip: 'Automatically layout nodes in a top-down flow',
+        shortcut: [],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autolayoutFlow('DOWN')
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+    {
+        id: 'autolayout-flow-bottom-up',
+        label: 'Bottom-Up Flow',
+        tooltip: 'Automatically layout nodes in a bottom-up flow',
+        shortcut: [],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autolayoutFlow('UP')
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+    {
+        id: 'autolayout-flow-left-right',
+        label: 'Left-Right Flow',
+        tooltip: 'Automatically layout nodes in a left-right flow',
+        shortcut: ['Ctrl+Alt+F', 'Cmd+Alt+F'],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autolayoutFlow('RIGHT')
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+    {
+        id: 'autolayout-flow-right-left',
+        label: 'Right-Left Flow',
+        tooltip: 'Automatically layout nodes in a right-left flow',
+        shortcut: [],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autolayoutFlow('LEFT')
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+
+    {
+        id: 'autolayout-tree-top-down',
+        label: 'Top-Down Tree',
+        tooltip: 'Automatically layout nodes in a top-down tree',
+        shortcut: ['Ctrl+Alt+T', 'Cmd+Alt+T'],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autoLayoutTree('DOWN')
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+    {
+        id: 'autolayout-tree-bottom-up',
+        label: 'Bottom-Up Tree',
+        tooltip: 'Automatically layout nodes in a bottom-up tree',
+        shortcut: [],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autoLayoutTree('UP')
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+    {
+        id: 'autolayout-tree-left-right',
+        label: 'Left-Right Tree',
+        tooltip: 'Automatically layout nodes in a left-right tree',
+        shortcut: [],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autoLayoutTree('RIGHT')
+                .then(planned => d.animateLayout(planned));
+        },
+    },
+    {
+        id: 'autolayout-tree-right-left',
+        label: 'Right-Left Tree',
+        tooltip: 'Automatically layout nodes in a right-left tree',
+        shortcut: [],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autoLayoutTree('LEFT')
                 .then(planned => d.animateLayout(planned));
         },
     },

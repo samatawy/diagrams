@@ -3,7 +3,7 @@ import type { DiagramView } from "../view/diagram.view";
 import { isConnection, isContainer } from "../guards";
 import { isLocked } from "../value.utils";
 import ELK from "elkjs";
-import type { ElkExtendedEdge, ElkNode, ElkPort, LayoutOptions } from "elkjs";
+import type { ElkCommonDescription, ElkExtendedEdge, ElkNode, ElkPort, LayoutOptions } from "elkjs";
 import { GroupBasics } from "../nodes/group.basics";
 import { NodeRegistry } from "../factory/node.registry";
 import type { CoordinateSystem } from "../view/coordinate.system";
@@ -56,13 +56,13 @@ export class ElkLayout {
     /**
      * Automatically layout the diagram in a top-to-bottom flow.
      */
-    public async autoTopBottom(): Promise<INode[]> {
+    public async autolayoutFlow(direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT'): Promise<INode[]> {
         const elk = new ELK();
         const graph = this.buildElkGraph();
 
         graph.layoutOptions = {
             'elk.algorithm': 'layered',
-            'elk.direction': 'DOWN',
+            'elk.direction': direction,
             'elk.spacing.nodeNode': '32',
             'elk.layered.spacing.nodeNodeBetweenLayers': '64',
             'elk.layered.spacing.edgeEdgeBetweenLayers': '32',
@@ -80,25 +80,85 @@ export class ElkLayout {
         return this.applyElkGraph(result);
     }
 
+    // /**
+    //  * Automatically layout the diagram in a left-to-right flow.
+    //  */
+    // public async autoLeftRight(): Promise<INode[]> {
+    //     const elk = new ELK();
+    //     const graph = this.buildElkGraph();
+
+    //     graph.layoutOptions = {
+    //         'elk.algorithm': 'layered',
+    //         'elk.direction': 'RIGHT',
+    //         'elk.spacing.nodeNode': '32',
+    //         'elk.layered.spacing.nodeNodeBetweenLayers': '64',
+    //         'elk.layered.spacing.edgeEdgeBetweenLayers': '32',
+    //         'elk.edgeRouting': 'ORTHOGONAL',
+
+    //         // 'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
+    //         // 'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+    //         'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
+    //         'elk.edgeRouting.avoidNodeOverlap': 'true',
+    //     };
+
+    //     const result = await elk.layout(graph);
+
+    //     console.log('Elk layout result:', result);
+    //     return this.applyElkGraph(result);
+    // }
+
     /**
-     * Automatically layout the diagram in a left-to-right flow.
+     * Automatically layout the diagram in a top-to-bottom tree.
      */
-    public async autoLeftRight(): Promise<INode[]> {
+    public async autoLayoutTree(direction: 'UP' | 'DOWN' | 'LEFT' | 'RIGHT'): Promise<INode[]> {
         const elk = new ELK();
         const graph = this.buildElkGraph();
 
         graph.layoutOptions = {
-            'elk.algorithm': 'layered',
-            'elk.direction': 'RIGHT',
+            'elk.algorithm': 'mrtree',
+            'elk.direction': direction,
+            'elk.mrtree.spacing': '64',
+            'elk.mrtree.maxDepth': '16',
+
             'elk.spacing.nodeNode': '32',
+            'elk.spacing.edgeEdge': '16',
+            'elk.spacing.edgeNode': '16',
             'elk.layered.spacing.nodeNodeBetweenLayers': '64',
             'elk.layered.spacing.edgeEdgeBetweenLayers': '32',
             'elk.edgeRouting': 'ORTHOGONAL',
 
-            // 'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
-            // 'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
-            'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
-            'elk.edgeRouting.avoidNodeOverlap': 'true',
+            'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+            'elk.layered.mergeEdges': 'true',
+        };
+
+        const result = await elk.layout(graph);
+
+        console.log('Elk layout result:', result);
+        return this.applyElkGraph(result);
+    }
+
+    /**
+     * Automatically layout the diagram in a bottom-to-top tree.
+     */
+    public async autoTreeBottomUp(): Promise<INode[]> {
+        const elk = new ELK();
+        const graph = this.buildElkGraph();
+
+        graph.layoutOptions = {
+            'elk.algorithm': 'mrtree',
+            'elk.direction': 'UP',
+            'elk.mrtree.spacing': '64',
+            'elk.mrtree.maxDepth': '16',
+
+            'elk.spacing.nodeNode': '32',
+            'elk.spacing.edgeEdge': '16',
+            'elk.spacing.edgeNode': '16',
+            'elk.layered.spacing.nodeNodeBetweenLayers': '64',
+            'elk.layered.spacing.edgeEdgeBetweenLayers': '32',
+            'elk.edgeRouting': 'ORTHOGONAL',
+
+            'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+            'elk.layered.mergeEdges': 'true',
         };
 
         const result = await elk.layout(graph);

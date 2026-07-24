@@ -314,7 +314,7 @@ export class TopMenu {
         return this.menuElement !== null;
     }
 
-    public addDropDownMenu(menu: DropDownMenu, index: number = -1): HTMLElement {
+    public addDropDownMenu(menu: DropDownMenu, parent?: HTMLElement, index: number = -1): HTMLElement {
         const item = document.createElement('div');
         setClasses(item, 'top-menu-item', this.config.itemClassName || '');
         if (menu.isEnabled && !menu.isEnabled(this.target)) toggleClasses(item, true, 'is-disabled', this.config.disabledClassName || '');
@@ -353,11 +353,19 @@ export class TopMenu {
             this.closeDropdown(menu);
         });
 
-        this.menuElement?.appendChild(item);
-        if (index >= 0 && index < this.topLevel.length) {
-            this.topLevel.splice(index, 0, menu);
+        if (parent) {
+            if (index >= 0 && index < parent.children.length) {
+                parent.insertBefore(item, parent.children[index]!);
+            } else {
+                parent.appendChild(item);
+            }
         } else {
-            this.topLevel.push(menu);
+            this.menuElement?.appendChild(item);
+            if (index >= 0 && index < this.topLevel.length) {
+                this.topLevel.splice(index, 0, menu);
+            } else {
+                this.topLevel.push(menu);
+            }
         }
         this.dropDownMenus.push(menu);
 

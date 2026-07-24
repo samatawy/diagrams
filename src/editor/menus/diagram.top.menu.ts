@@ -184,8 +184,16 @@ export class DiagramTopMenu extends TopMenu {
             items: [
                 this.actionMenuItem('autolayout', 'A'),
                 this.actionMenuItem('autolayout-circuit', 'C'),
-                this.actionMenuItem('autolayout-topdown', 'T'),
-                this.actionMenuItem('autolayout-leftright', 'L'),
+                '-',
+                this.actionMenuItem('autolayout-flow-left-right', 'F'),
+                this.actionMenuItem('autolayout-flow-right-left', 'I'),
+                this.actionMenuItem('autolayout-flow-top-down', 'W'),
+                this.actionMenuItem('autolayout-flow-bottom-up', 'U'),
+                '-',
+                this.actionMenuItem('autolayout-tree-top-down', 'T'),
+                this.actionMenuItem('autolayout-tree-bottom-up', 'B'),
+                this.actionMenuItem('autolayout-tree-left-right', 'L'),
+                this.actionMenuItem('autolayout-tree-right-left', 'R'),
             ],
         } as DropDownMenu);
 
