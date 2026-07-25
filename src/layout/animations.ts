@@ -550,46 +550,80 @@ export class DiagramAnimations {
     private applyLayoutProgress(channel: AnimationLayout, delta: number): void {
         for (const node of channel.nodes) {
             const target = this.diagram.node(node.id);
+            if (!target) continue;
 
-            /* Rectangle-based */
-            if (target && target.points.length === 2 && node.points.length === 2) {
-                const planned_first = target.points[0]!;
-                const planned_second = target.points[1]!;
-                const original_first = node.points[0]!;
-                const original_second = node.points[1]!;
-
-                planned_first.x += (original_first.x - planned_first.x) * delta;
-                planned_first.y += (original_first.y - planned_first.y) * delta;
-                planned_second.x += (original_second.x - planned_second.x) * delta;
-                planned_second.y += (original_second.y - planned_second.y) * delta;
+            const maxPoints = NodeRegistry.adapter(node.type)?.max_points ?? 0;
+            if (maxPoints > 0 && node.points.length > maxPoints) {
+                /* Take all points up to the max allowed but always include the first and last */
+                const firstPoint = node.points[0];
+                const lastPoint = node.points[node.points.length - 1];
+                const middlePoints = node.points.slice(1, node.points.length - 1).slice(0, maxPoints - 2);
+                node.points = [firstPoint, ...middlePoints, lastPoint];
+                //
+                // node.points = node.points.slice(0, maxPoints - 1, ...node.points.slice(-1));
             }
 
-            /* Polyline-based */
-            if (target && target.points.length > 2 && node.points.length === target.points.length) {
-                for (let i = 0; i < node.points.length; i++) {
-                    const planned = target.points[i]!;
-                    const original = node.points[i]!;
+            const diff = node.points.length - (target?.points.length ?? 0);
+            if (diff > 0) {
+                /* Target is missing points from planned node */
+                const first_pt = target?.points[0]!;
+                for (let i = 0; i < diff; i++) {
+                    target!.points.unshift({ ...first_pt });
+                }
+            } else if (diff < 0) {
+                /* Target has extra points that are not in the planned node */
+                target!.points.splice(node.points.length);
+            }
 
-                    planned.x += (original.x - planned.x) * delta;
-                    planned.y += (original.y - planned.y) * delta;
+            for (let i = 0; i < node.points.length; i++) {
+                if (target && target.points[i]) {
+                    const planned = node.points[i]!;
+                    const original = target.points[i]!;
+
+                    original.x += (planned.x - original.x) * delta;
+                    original.y += (planned.y - original.y) * delta;
                 }
             }
 
-            /* Simplified edges */
-            if (target && target.points.length >= 2 && node.points.length < target.points.length) {
-                const preserve = target.points.slice(0, node.points.length - 1);
-                const last = target.points[target.points.length - 1];
-                target.points = preserve.concat(last!);
+            // /* Rectangle-based */
+            // if (target && target.points.length === 2 && node.points.length === 2) {
+            //     const planned_first = target.points[0]!;
+            //     const planned_second = target.points[1]!;
+            //     const original_first = node.points[0]!;
+            //     const original_second = node.points[1]!;
 
-                // const rect = this.diagram.getCoordinates().getBoundingRect(node);
-                for (let i = 0; i < node.points.length; i++) {
-                    const planned = target.points[i]!;
-                    const original = node.points[i]!;
+            //     planned_first.x += (original_first.x - planned_first.x) * delta;
+            //     planned_first.y += (original_first.y - planned_first.y) * delta;
+            //     planned_second.x += (original_second.x - planned_second.x) * delta;
+            //     planned_second.y += (original_second.y - planned_second.y) * delta;
+            // }
 
-                    planned.x += (original.x - planned.x) * delta;
-                    planned.y += (original.y - planned.y) * delta;
-                }
-            }
+            // /* Polyline-based */
+            // if (target && target.points.length > 2 && node.points.length === target.points.length) {
+            //     for (let i = 0; i < node.points.length; i++) {
+            //         const planned = target.points[i]!;
+            //         const original = node.points[i]!;
+
+            //         planned.x += (original.x - planned.x) * delta;
+            //         planned.y += (original.y - planned.y) * delta;
+            //     }
+            // }
+
+            // /* Simplified edges */
+            // if (target && target.points.length >= 2 && node.points.length < target.points.length) {
+            //     const preserve = target.points.slice(0, node.points.length - 1);
+            //     const last = target.points[target.points.length - 1];
+            //     target.points = preserve.concat(last!);
+
+            //     // const rect = this.diagram.getCoordinates().getBoundingRect(node);
+            //     for (let i = 0; i < node.points.length; i++) {
+            //         const planned = target.points[i]!;
+            //         const original = node.points[i]!;
+
+            //         planned.x += (original.x - planned.x) * delta;
+            //         planned.y += (original.y - planned.y) * delta;
+            //     }
+            // }
         }
         // this.diagram.fitToNodes(); /* Adjust the viewport to fit the nodes after applying the layout progress */
     }

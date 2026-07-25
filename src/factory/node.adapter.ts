@@ -77,6 +77,12 @@ export interface INodeAdapter {
     multistep_create?: boolean;
 
     /**
+     * Specifies the maximum number of points that can be defined for this node type.
+     * If zero, there is no limit on the number of points. 
+     */
+    max_points: number;
+
+    /**
      * Indicates whether the node can be created by dragging from the tool palette onto the canvas.
      * If true, the adapter should implement the onCreateDraft method to provide the initial geometry of the draft node to be dragged.
      */
@@ -183,8 +189,6 @@ export interface INodeAdapter {
      * If true, the diagram control may adjust the node's position and size to align with the grid or guides.
      */
     can_snap?: boolean;
-
-    // can_snap_points?: number[];
 
     /**
      * Updates the draft node's points while the user is dragging during creation.

@@ -27,6 +27,7 @@ export class RectangleAdapter implements INodeAdapter {
 
     is_connector = false;
     multistep_create = false;
+    max_points = 2;
     drag_create = true;
     has_text = true;
     single_line_text = false;

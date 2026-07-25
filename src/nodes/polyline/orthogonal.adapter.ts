@@ -32,7 +32,7 @@ export class OrthogonalAdapter extends LineAdapter {
     text_overflow: TextOverflowMode = 'hidden';
 
     connection_handles: NodeHandle[] = [NodeHandle.POINT, NodeHandle.ALTER];
-
+    max_points = 2;
 
     // afterConnect(node: INode, direction: 'from' | 'to', anchor: IConnectionAnchor | null): void {
     //     if (direction === 'from' && anchor) {

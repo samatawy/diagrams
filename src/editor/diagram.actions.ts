@@ -15,7 +15,7 @@ export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' | 'export
     'toggle-grid' | 'toggle-visual-grid' | 'toggle-guides' |
 
     'zoom-in' | 'zoom-out' | 'fit-horizontally' | 'fit-all' |
-    'autolayout' | 'autolayout-circuit' |
+    'autolayout' | 'autolayout-circuit' | 'autolayout-stress' | 'autolayout-radial' |
     'autolayout-flow-top-down' | 'autolayout-flow-bottom-up' | 'autolayout-flow-left-right' | 'autolayout-flow-right-left' |
     'autolayout-tree-top-down' | 'autolayout-tree-bottom-up' | 'autolayout-tree-left-right' | 'autolayout-tree-right-left' |
     'undo' | 'redo' |
@@ -273,6 +273,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             // }
             new ElkLayout(d).autoLayout()
                 .then(planned => {
+                    d.addUndo();
                     if (d.grid.forced) d.snapToGrid(planned);
                     d.animateLayout(planned);
                 });
@@ -289,11 +290,47 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             // }
             new ElkLayout(d).autoCircuit()
                 .then(planned => {
+                    d.addUndo();
                     if (d.grid.forced) d.snapToGrid(planned);
                     d.animateLayout(planned);
                 });
         },
     },
+    {
+        id: 'autolayout-stress',
+        label: 'Stress',
+        tooltip: 'Automatically layout nodes in a stress layout',
+        shortcut: ['Ctrl+Alt+S', 'Cmd+Alt+S'],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }                        
+            new ElkLayout(d).autoStress()
+                .then(planned => {
+                    d.addUndo();
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
+        },
+    },
+    {
+        id: 'autolayout-radial',
+        label: 'Radial',
+        tooltip: 'Automatically layout nodes in a radial layout',
+        shortcut: ['Ctrl+Alt+R', 'Cmd+Alt+R'],
+        execute: (d) => {
+            // for (const edge of d.nodes.filter(n => isConnection(n))) {
+            //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
+            // }
+            new ElkLayout(d).autoRadial()
+                .then(planned => {
+                    d.addUndo();
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
+        },
+    },
+
     {
         id: 'autolayout-flow-top-down',
         label: 'Top-Down Flow',
@@ -305,6 +342,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             // }
             new ElkLayout(d).autolayoutFlow('DOWN')
                 .then(planned => {
+                    d.addUndo();
                     if (d.grid.forced) d.snapToGrid(planned);
                     d.animateLayout(planned);
                 });
@@ -321,6 +359,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             // }
             new ElkLayout(d).autolayoutFlow('UP')
                 .then(planned => {
+                    d.addUndo();
                     if (d.grid.forced) d.snapToGrid(planned);
                     d.animateLayout(planned);
                 });
@@ -337,6 +376,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             // }
             new ElkLayout(d).autolayoutFlow('RIGHT')
                 .then(planned => {
+                    d.addUndo();
                     if (d.grid.forced) d.snapToGrid(planned);
                     d.animateLayout(planned);
                 });
@@ -353,6 +393,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             // }
             new ElkLayout(d).autolayoutFlow('LEFT')
                 .then(planned => {
+                    d.addUndo();
                     if (d.grid.forced) d.snapToGrid(planned);
                     d.animateLayout(planned);
                 });
@@ -370,6 +411,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             // }
             new ElkLayout(d).autoLayoutTree('DOWN')
                 .then(planned => {
+                    d.addUndo();
                     if (d.grid.forced) d.snapToGrid(planned);
                     d.animateLayout(planned);
                 });
@@ -386,6 +428,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             // }
             new ElkLayout(d).autoLayoutTree('UP')
                 .then(planned => {
+                    d.addUndo();
                     if (d.grid.forced) d.snapToGrid(planned);
                     d.animateLayout(planned);
                 });
@@ -402,6 +445,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             // }
             new ElkLayout(d).autoLayoutTree('RIGHT')
                 .then(planned => {
+                    d.addUndo();
                     if (d.grid.forced) d.snapToGrid(planned);
                     d.animateLayout(planned);
                 });
@@ -418,6 +462,7 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             // }
             new ElkLayout(d).autoLayoutTree('LEFT')
                 .then(planned => {
+                    d.addUndo();
                     if (d.grid.forced) d.snapToGrid(planned);
                     d.animateLayout(planned);
                 });

@@ -17,6 +17,7 @@ export class LineAdapter extends PolylineAdapter {
 
     hollow_mode: HollowMode = 'always';
     multistep_create = false;
+    max_points = 2;
     has_text = true;
     text_overflow = 'visible' as TextOverflowMode;
 

@@ -227,6 +227,63 @@ export class ElkLayout {
         return this.applyElkGraph(result);
     }
 
+    /**
+     * Automatically layout the diagram in a network.
+     */
+    public async autoStress(): Promise<INode[]> {
+        const elk = new ELK();
+        const graph = this.buildElkGraph();
+
+        graph.layoutOptions = {
+            "elk.algorithm": "stress",
+            "elk.stress.desiredEdgeLength": "168",
+            "elk.stress.maxIterations": "500",
+            "elk.stress.clusterPenalty": "100",
+
+            "elk.edgeRouting": "ORTHOGONAL",
+            "elk.layered.edgeRouting.thoroughness": "EXPENSIVE",
+
+            "elk.spacing.nodeNode": "64",
+            'elk.spacing.edgeEdge': '32',
+            'elk.spacing.edgeNode': '48',
+
+            "elk.aspectRatio": "1.6",
+        };
+
+        const result = await elk.layout(graph);
+
+        console.log('Elk layout result:', result);
+        return this.applyElkGraph(result);
+    }
+
+    /**
+     * Automatically layout the diagram in a radial layout.
+     * N.B. Very poor results. To be evaluated before deployment.
+     */
+    public async autoRadial(): Promise<INode[]> {
+        const elk = new ELK();
+        const graph = this.buildElkGraph();
+
+        graph.layoutOptions = {
+            "elk.algorithm": "radial",
+            "elk.radial.nodePlacement": "CIRCULAR",
+            "elk.radial.wedge": "0.5",
+            "elk.radial.centralDistance": "1",
+            "elk.radial.distanceFactor": "2.0",
+
+            "elk.edgeRouting": "ORTHOGONAL",
+
+            "elk.spacing.nodeNode": "144",
+            'elk.spacing.edgeEdge': '32',
+            'elk.spacing.edgeNode': '32',
+        };
+
+        const result = await elk.layout(graph);
+
+        console.log('Elk layout result:', result);
+        return this.applyElkGraph(result);
+    }
+
     protected handleToElkPortSide(handle: NodeHandle): string {
         switch (handle) {
             case NodeHandle.N:
@@ -363,10 +420,11 @@ export class ElkLayout {
 
             const clone = {
                 ...node,
-                points: [
-                    { x: elkNode.x!, y: elkNode.y! },
-                    { x: elkNode.x! + elkNode.width!, y: elkNode.y! + elkNode.height! }
-                ]
+                points: this.getNodePoints(node, elkNode),
+                // [
+                //     { x: elkNode.x!, y: elkNode.y! },
+                //     { x: elkNode.x! + elkNode.width!, y: elkNode.y! + elkNode.height! }
+                // ]
             }
             planned.push(clone);
         }
@@ -377,23 +435,53 @@ export class ElkLayout {
 
             const clone = {
                 ...edge,
-                points: [] as IPoint[],
-                // points: elkEdge.sections?.flatMap(section => section.bendPoints?.map(bp => ({ x: bp.x, y: bp.y })) || []) || []
+                points: this.getEdgePoints(edge, elkEdge),
             }
-            for (const segment of elkEdge.sections || []) {
-                if (segment.startPoint) {
-                    clone.points.push({ x: segment.startPoint.x, y: segment.startPoint.y });
-                }
-                for (const bp of segment.bendPoints || []) {
-                    clone.points.push({ x: bp.x, y: bp.y });
-                }
-                if (segment.endPoint) {
-                    clone.points.push({ x: segment.endPoint.x, y: segment.endPoint.y });
-                }
-            }
+            // for (const segment of elkEdge.sections || []) {
+            //     if (segment.startPoint) {
+            //         clone.points.push({ x: segment.startPoint.x, y: segment.startPoint.y });
+            //     }
+            //     for (const bp of segment.bendPoints || []) {
+            //         clone.points.push({ x: bp.x, y: bp.y });
+            //     }
+            //     if (segment.endPoint) {
+            //         clone.points.push({ x: segment.endPoint.x, y: segment.endPoint.y });
+            //     }
+            // }
             planned.push(clone);
         }
         return planned;
+    }
+
+    private getNodePoints(node: INode, elkNode: ElkNode): IPoint[] {
+        const rect = this.diagram.getCoordinates().getBoundingRect(node);
+        const relative_points = node.points.map(p => ({
+            x: (p.x - rect.left) / rect.width,
+            y: (p.y - rect.top) / rect.height
+        }));
+
+        const scaled_points = relative_points.map(p => ({
+            x: elkNode.x! + p.x * elkNode.width!,
+            y: elkNode.y! + p.y * elkNode.height!
+        }));
+
+        return scaled_points;
+    }
+
+    private getEdgePoints(edge: INode, elkEdge: ElkExtendedEdge): IPoint[] {
+        const points: IPoint[] = [];
+        for (const segment of elkEdge.sections || []) {
+            if (segment.startPoint) {
+                points.push({ x: segment.startPoint.x, y: segment.startPoint.y });
+            }
+            for (const bp of segment.bendPoints || []) {
+                points.push({ x: bp.x, y: bp.y });
+            }
+            if (segment.endPoint) {
+                points.push({ x: segment.endPoint.x, y: segment.endPoint.y });
+            }
+        }
+        return points;
     }
 
     // /**

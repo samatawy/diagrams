@@ -36,6 +36,7 @@ export class PolylineAdapter implements INodeAdapter {
 
     is_connector = true;
     multistep_create = true;
+    max_points = 0; // 0 means unlimited
     has_text = true;
     single_line_text = true;
     text_overflow: TextOverflowMode = 'visible';
