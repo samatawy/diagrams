@@ -2,7 +2,7 @@ import { injectStyles } from '../../editor.utils';
 import { InspectorAdapter, type EditableRecord, type InspectorAdapterInit } from '../inspector.adapter';
 import type { DiagramEditView } from '../../../editview';
 import { DiagramConstants } from '../../../model/diagram.constants';
-import type { NodeStyle } from '../../../sheets/spec.sheet';
+import type { NodeStyle } from '../../../sheets/style.sheet';
 
 import DEFAULT_STYLES from '../../../css_generated/editor/inspector/adapters/class.actions.adapter.css';
 const STYLE_ID = 'class-actions-adapter-defaults';

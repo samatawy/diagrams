@@ -3,18 +3,18 @@ import type { INode } from "../interfaces";
 import { FormatValidator } from "../io/format.validator";
 import type { Diagram } from "../model/diagram";
 import { deepClone, nodeClass } from "../value.utils";
-import type { NodeStyle, EmbeddedSheet, SpecSheet } from "./spec.sheet";
+import type { NodeStyle, EmbeddedSheet, StyleSheet } from "./style.sheet";
 
 export class SheetRepository {
 
-    protected readonly spec_sheets: SpecSheet[] = [];
+    protected readonly spec_sheets: StyleSheet[] = [];
 
     /**
      * Inserts a new sheet or updates an existing one by id.
      * @param sheet Sheet payload to store.
      */
-    public upsertSheet(sheet: SpecSheet): void {
-        const cloned = this.cloneSpecSheet(sheet);
+    public upsertSheet(sheet: StyleSheet): void {
+        const cloned = this.cloneStyleSheet(sheet);
         const index = this.spec_sheets.findIndex(s => s.id === sheet.id);
         if (index >= 0) {
             this.spec_sheets[index] = cloned;
@@ -42,7 +42,7 @@ export class SheetRepository {
      * @param description Optional description override.
      * @returns The newly published sheet.
      */
-    public publishSheetAs(source_sheet_id: string, sheet_id: string, name: string, description?: string): SpecSheet {
+    public publishSheetAs(source_sheet_id: string, sheet_id: string, name: string, description?: string): StyleSheet {
         const source = this.sheet(source_sheet_id);
         if (!source) {
             throw new Error(`Spec sheet with id "${source_sheet_id}" not found.`);
@@ -60,8 +60,8 @@ export class SheetRepository {
             throw new Error(`Spec sheet with id "${nextId}" already exists.`);
         }
 
-        const published: SpecSheet = {
-            ...this.cloneSpecSheet(source),
+        const published: StyleSheet = {
+            ...this.cloneStyleSheet(source),
             id: nextId,
             name: nextName,
             description: description ?? source.description,
@@ -96,7 +96,7 @@ export class SheetRepository {
      * @param preferId Optional id used when source omits an id.
      * @returns Normalized spec sheet.
      */
-    public resolveSheetSource(source: string | EmbeddedSheet | SpecSheet | { sheet?: EmbeddedSheet | SpecSheet }, preferId?: string): SpecSheet {
+    public resolveSheetSource(source: string | EmbeddedSheet | StyleSheet | { sheet?: EmbeddedSheet | StyleSheet }, preferId?: string): StyleSheet {
         let payload: any = source;
 
         if (typeof source === 'string') {
@@ -137,10 +137,10 @@ export class SheetRepository {
      * @returns The stored spec sheet.
      * @throws Error when the source is invalid or fails validation.
      */
-    public async upsertSheetFromSource(source: string | EmbeddedSheet | SpecSheet | { sheet?: EmbeddedSheet | SpecSheet }, preferId?: string): Promise<SpecSheet> {
+    public async upsertSheetFromSource(source: string | EmbeddedSheet | StyleSheet | { sheet?: EmbeddedSheet | StyleSheet }, preferId?: string): Promise<StyleSheet> {
         const sheet = this.resolveSheetSource(source, preferId);
 
-        const check = await FormatValidator.isValidSpecSheet(sheet);
+        const check = await FormatValidator.isValidStyleSheet(sheet);
         const result = check.result({ flattened: true }) as ResultSet;
         if (!result.valid) {
             const errors = (Array.isArray(result.errors) ? result.errors : []);
@@ -198,7 +198,7 @@ export class SheetRepository {
      * @param sheet_id Sheet identifier.
      * @returns The resolved sheet.
      */
-    public writeSheet(sheet_id: string): SpecSheet {
+    public writeSheet(sheet_id: string): StyleSheet {
         const sheet = this.sheet(sheet_id);
         if (!sheet) {
             throw new Error(`Spec sheet with id "${sheet_id}" not found.`);
@@ -218,7 +218,7 @@ export class SheetRepository {
      * Returns a shallow copy of all sheets.
      * @returns Repository sheets snapshot.
      */
-    public get sheets(): SpecSheet[] {
+    public get sheets(): StyleSheet[] {
         return [...this.spec_sheets];
     }
 
@@ -253,7 +253,7 @@ export class SheetRepository {
      * @param sheet_id Sheet identifier.
      * @returns Resolved sheet or undefined when not found.
      */
-    public sheet(sheet_id: string): SpecSheet | undefined {
+    public sheet(sheet_id: string): StyleSheet | undefined {
         return this.spec_sheets.find(sheet => sheet.id === sheet_id);
     }
 
@@ -386,7 +386,7 @@ export class SheetRepository {
      * @param sheet Sheet payload to clone.
      * @returns Cloned sheet.
      */
-    private cloneSpecSheet(sheet: SpecSheet): SpecSheet {
+    private cloneStyleSheet(sheet: StyleSheet): StyleSheet {
         const types: Record<string, NodeStyle> = {};
         for (const [key, style] of Object.entries(sheet.types ?? {})) {
             types[key] = this.cloneNodeStyle(style);

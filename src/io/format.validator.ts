@@ -1,6 +1,6 @@
 import type { ISerializedDiagram, ISerializedNode } from "./serialized.types";
 import { ObjectCheck, type CheckOptions } from "@samatawy/checks";
-import type { SpecSheet } from "../sheets/spec.sheet";
+import type { StyleSheet } from "../sheets/style.sheet";
 
 const MISSING = 'missing';
 const MISTYPED = 'mistyped';
@@ -128,7 +128,7 @@ export class FormatValidator {
         return check;
     }
 
-    public static async isValidSpecSheet(sheet: SpecSheet): Promise<ObjectCheck> {
+    public static async isValidStyleSheet(sheet: StyleSheet): Promise<ObjectCheck> {
         const check = await ObjectCheck.for(sheet).check((s) => [
             s.required('id', this.missing('id')).string(),
             s.required('name', this.missing('name')).string(),

@@ -1,5 +1,5 @@
 import type { Diagram } from "../model/diagram";
-import type { EmbeddedSheet, SpecSheet } from "../sheets/spec.sheet";
+import type { EmbeddedSheet, StyleSheet } from "../sheets/style.sheet";
 import type { ISerializedDiagram, ISerializer } from "./serialized.types";
 
 // ==================================================
@@ -70,7 +70,7 @@ export interface DiagramExportResult extends DiagramExportOptions {
 // =============== Stylesheet open/save =============
 // ==================================================
 
-export type StylesheetOpenSource = string | EmbeddedSheet | SpecSheet;
+export type StylesheetOpenSource = string | EmbeddedSheet | StyleSheet;
 
 export interface StylesheetOpenOptions {
     source?: StylesheetOpenSource;

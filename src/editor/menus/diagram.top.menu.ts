@@ -10,7 +10,7 @@ import { DIAGRAM_SHEET_CHANGED_EVENT, DIAGRAM_SHEET_LOADED_EVENT } from '../../e
 
 
 /**
- * Configuration options for {@link DiagramTopMenu}.
+ * Configuration options for DiagramTopMenu.
  */
 export interface DiagramTopMenuConfig extends TopMenuConfig {
     editor?: DiagramEditor;
@@ -23,8 +23,8 @@ interface DiagramTopMenuItem extends TopMenuItem {
 /**
  * A context menu pre-populated with diagram editing actions.
  *
- * Wire it to a {@link DiagramView} by assigning to `view.contextMenu`.
- * The view will call {@link open} when a right-click event fires.
+ * Wire it to a DiagramView by assigning to `view.contextMenu`.
+ * The view will call open() when a right-click event fires.
  *
  * @example
  * ```ts

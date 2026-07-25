@@ -1,2 +1,2 @@
-export * from './spec.sheet';
+export * from './style.sheet';
 export * from './sheet.repository';

@@ -7,6 +7,8 @@ import { NodeRegistry } from "./node.registry";
  * Nodes is a convenience utility for quick access to node adapters.
  * 
  * Handlers should be registered with the NodeRegistry first.
+ * 
+ * N.B. This is being prepared but not yet in use. Code still uses corresponding methods from NodeRegistry.
  */
 export class Nodes {
 

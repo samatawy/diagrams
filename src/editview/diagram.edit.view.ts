@@ -55,7 +55,7 @@ import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
 import { GroupBasics } from "../nodes/group.basics";
 import type { SheetRepository } from "../sheets/sheet.repository";
-import type { NodeStyle, SpecSheet } from "../sheets/spec.sheet";
+import type { NodeStyle, StyleSheet } from "../sheets/style.sheet";
 import type { AnimationMode } from "../animation.types";
 import type { IGradient } from "../color.types";
 import { FreehandAdapter } from "../nodes/free/freehand.adapter";
@@ -104,7 +104,7 @@ export class DiagramEditView extends DiagramView {
         toolOptions?: { url?: string },
         draft?: INode,
         zoom_factor: number,
-        sheet?: SpecSheet,
+        sheet?: StyleSheet,
     } = {
             layer: undefined,
             toolOptions: undefined,
@@ -689,7 +689,7 @@ export class DiagramEditView extends DiagramView {
      * Gets the currently active sheet, if any.
      * @returns The current sheet, or undefined if no sheet is active.
      */
-    public get currentSheet(): SpecSheet | undefined {
+    public get currentSheet(): StyleSheet | undefined {
         if (this.current.sheet?.id === this.sheet_id) {
             return this.current.sheet;
         } else if (this.sheet_id) {
@@ -702,7 +702,7 @@ export class DiagramEditView extends DiagramView {
      * Sets the currently active sheet, applying its styles to the diagram and emitting a sheet-loaded event.
      * @param value The sheet to set as current, or undefined to clear the current sheet.
      */
-    public set currentSheet(value: SpecSheet | string | undefined) {
+    public set currentSheet(value: StyleSheet | string | undefined) {
         this.setCurrentSheet(value);
     }
 
@@ -710,7 +710,7 @@ export class DiagramEditView extends DiagramView {
      * Sets the currently active sheet, applying its styles to the diagram and emitting a sheet-loaded event.
      * @param value The sheet to set as current, or undefined to clear the current sheet.
      */
-    public setCurrentSheet(value: SpecSheet | string | undefined) {
+    public setCurrentSheet(value: StyleSheet | string | undefined) {
         const sheet = (typeof value === 'string') ? this.sheetRepository.sheet(value) : value;
         this.sheet_id = sheet?.id;
         this.current.sheet = sheet;
@@ -760,7 +760,7 @@ export class DiagramEditView extends DiagramView {
      * Publishes the current sheet under a new id/name so it can be reused by other diagrams.
      * The current diagram is switched to the published sheet.
      */
-    public publishCurrentSheetAs(sheet_id: string, name: string, description?: string): SpecSheet {
+    public publishCurrentSheetAs(sheet_id: string, name: string, description?: string): StyleSheet {
         const current = this.current.sheet;
         if (!current) {
             throw new Error('Cannot publish sheet: no current sheet selected.');
@@ -2833,29 +2833,6 @@ export class DiagramEditView extends DiagramView {
             /** Shouldn't this be handled inside the textarea ? How can this be reached ? */
             console.error('keydown event reached DiagramView while text editor is active. This should be handled inside the textarea.');
 
-            // const editingNode = this.node(this.activeTextEditor.nodeId);
-            // const singleLine = this.activeTextEditor.singleLine || (editingNode ? NodeRegistry.isSingleLineText(editingNode.type) : false);
-
-            // if (key === 'enter' && (singleLine || (!event.ctrlKey && !event.metaKey && !event.shiftKey))) {
-            //     consumeEvent();
-            //     this.closeTextEditor(true);
-
-            // } else if (key === 'escape') {
-            //     consumeEvent();
-            //     this.closeTextEditor(false);
-
-            //     // } else if (key === 'tab') {
-            //     //     consumeEvent();
-
-            //     //     if (event.shiftKey) {
-            //     //         this.selectPreviousTab();
-            //     //     } else {
-            //     //         this.selectNextTab();
-            //     //     }
-
-            // } else {
-            //     this.activeTextEditor.element.focus();
-            // }
             return;
         }
 
@@ -4576,14 +4553,6 @@ export class DiagramEditView extends DiagramView {
             return;
         }
 
-        // if (this.activeTextEditor) {
-        //     /* If a text editor is already active, animate the shutter to the new location. */
-        //     this.animateNodeShutter(node, () => { });
-        //     this.closeTextEditor(true);
-        // } else {
-        //     /* If no text editor is active, animate the shutter to the new node. */
-        //     this.animateNodeShutter(node, () => { });
-        // }
         this.setInteractionHint('Editing text');
         this.closeTextEditor(true);
         this.animateNodeShutter(node, () => {
@@ -4609,10 +4578,6 @@ export class DiagramEditView extends DiagramView {
         const textPadding = Math.max(DiagramConstants.DEFAULT_TEXT_PADDING, lineWidth(node));
         const baseline = textBaseline(node);
         const orientation = textOrientation(node);
-        // let rotateCenter: IPoint | undefined;
-        // const transformOrigin = 'center center';
-        // let rotateCenter: IPoint | undefined;
-        // let transformOrigin = 'center center';
 
         const fontFace = node.textStyle?.fontFace || this.textStyle.fontFace || DiagramConstants.DEFAULT_NODE_FONT_FACE;
         const fontSize = node.textStyle?.size || this.textStyle.size || DiagramConstants.DEFAULT_NODE_FONT_SIZE;
@@ -4633,17 +4598,6 @@ export class DiagramEditView extends DiagramView {
         };
         let layoutRect: IRect = { ...screenRect };
 
-        // let editorWidth: number;
-        // let editorHeight: number;
-        // let left: number;
-        // let top: number;
-        // let transform = '';
-        // let editorWidth: number;
-        // let editorHeight: number;
-        // let left: number;
-        // let top: number;
-        // let transform = '';
-
         /* Decide where text should be placed: */
 
         const screenTextArea = this.getScreenTextArea(node);
@@ -4656,112 +4610,6 @@ export class DiagramEditView extends DiagramView {
         const top = screenTextArea?.rect.top || screenRect.top;
         const editorWidth = screenTextArea?.rect.width || screenRect.width;
         const editorHeight = screenTextArea?.rect.height || screenRect.height;
-
-        // const placement = NodeRegistry.adapter(node.type)?.textPlacement(node);
-        // if (placement?.rect) {
-        //     /* Lines in a bounded rect */
-
-        //     rect = placement.rect;
-        //     screenRect = {
-        //         left: canvasRect.left + ((rect.left + textPadding) * zoom) - pan.x,
-        //         top: canvasRect.top + ((rect.top + textPadding) * zoom) - pan.y,
-        //         width: Math.max(1, (rect.width - (textPadding * 2)) * zoom),
-        //         height: Math.max(scaledLineHeight, (rect.height - (textPadding * 2)) * zoom),
-        //     };
-        //     layoutRect = { ...screenRect };
-
-        //     if (orientation === 'vertical') {
-        //         rotateCenter = {
-        //             x: screenRect.left + screenRect.width / 2,
-        //             y: screenRect.top + screenRect.height / 2,
-        //         };
-        //         layoutRect = {
-        //             left: rotateCenter.x - screenRect.height / 2,
-        //             top: rotateCenter.y - screenRect.width / 2,
-        //             width: screenRect.height,
-        //             height: screenRect.width,
-        //         };
-        //     }
-
-        //     left = layoutRect.left;
-        //     editorWidth = Math.max(24, layoutRect.width);
-
-        //     const text = nodeText(node);
-        //     const measureContext = this.context;
-        //     measureContext.save();
-        //     measureContext.font = [fontItalic, fontWeight, `${scaledFontSize}px`, fontFace].filter(Boolean).join(' ');
-        //     const wrapped = this.wrapEditorTextLines(text, editorWidth, measureContext);
-        //     measureContext.restore();
-
-        //     const lineCount = Math.max(1, wrapped.length);
-        //     const textBlockHeight = lineCount * scaledLineHeight;
-
-        //     editorHeight = Math.max(scaledLineHeight, textBlockHeight);
-        //     const halfLeading = (scaledLineHeight - scaledFontSize) / 2;
-        //     const firstLineTop = baseline === 'top'
-        //         ? layoutRect.top - halfLeading
-        //         : baseline === 'bottom'
-        //             ? layoutRect.top + layoutRect.height - editorHeight + halfLeading
-        //             : layoutRect.top + layoutRect.height / 2 - editorHeight / 2;
-        //     top = firstLineTop;
-
-        //     if (orientation === 'vertical') {
-        //         transform = `rotate(-90deg)`;
-        //         if (rotateCenter) {
-        //             transformOrigin = `${rotateCenter.x - left}px ${rotateCenter.y - top}px`;
-        //         } else {
-        //             transformOrigin = 'center center';
-        //         }
-        //     }
-
-        // } else if (placement?.segment) {
-        //     /* Text along a line segment */
-
-        //     rect = this.coordinates.getBoundingRect(node);
-
-        //     /* Normalise direction the same way the renderer does. */
-        //     const { from, to } = NodeBasics.normalizeLine(placement.segment.from, placement.segment.to);
-
-        //     const worldToScreen = (x: number, y: number): IPoint => ({
-        //         x: canvasRect.left + (x * zoom) - pan.x,
-        //         y: canvasRect.top + (y * zoom) - pan.y,
-        //     });
-
-        //     const fromScreen = worldToScreen(from.x, from.y);
-        //     const toScreen = worldToScreen(to.x, to.y);
-        //     const midScreen = { x: (fromScreen.x + toScreen.x) / 2, y: (fromScreen.y + toScreen.y) / 2 };
-
-        //     if (textOrientation(node) === 'path') {
-        //         /* Path label: rotate the textarea to follow the segment angle. */
-        //         const angle = NodeBasics.calculateAngle(from, to);
-        //         const nx = Math.sin(angle);
-        //         const ny = -Math.cos(angle);
-        //         const offset = scaledLineHeight / 2;
-
-        //         editorWidth = Math.max(24, NodeBasics.calculateLength(fromScreen, toScreen));
-        //         editorHeight = scaledLineHeight;
-        //         left = midScreen.x + nx * offset - editorWidth / 2;
-        //         top = midScreen.y + ny * offset - editorHeight / 2;
-        //         transform = `rotate(${angle}rad)`;
-
-        //     } else if (textOrientation(node) === 'horizontal') {
-        //         /* Horizontal label: anchor at segment midpoint shifted up by half a line, no rotation. */
-        //         editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
-        //         editorHeight = scaledLineHeight;
-        //         left = midScreen.x - editorWidth / 2;
-        //         top = midScreen.y - editorHeight / 2;
-        //         /* transform stays undefined — no rotation on the textarea. */
-
-        //     } else {
-        //         /* Unknown orientation: fallback to horizontal. */
-        //         editorWidth = Math.max(80, NodeBasics.calculateLength(fromScreen, toScreen));
-        //         editorHeight = scaledLineHeight;
-        //         left = midScreen.x - editorWidth / 2;
-        //         top = midScreen.y - editorHeight / 2;
-        //     }
-        // } else {
-        //     return;
-        // }
 
         /* Now we have the data so we can create the textarea: */
 
@@ -5958,63 +5806,11 @@ export class DiagramEditView extends DiagramView {
     // ====== Image management methods ======
     // ========================================
 
-    // /**
-    //  * Exports the diagram image data.
-    //  * @returns Image payload with data URL and dimensions, or null when unavailable.
-    //  */
-    // public getImage(): { dataurl: string, width: number, height: number } | null {
-
-    //     if (!this.model || !this.canvas) return null;
-
-    //     let target = this.canvas? this.canvas.nativeElement : null;
-    //     if (!target) return null;
-
-    //     let w = target.width;
-    //     let h = target.height;
-
-    //     // Draw all layers on one canvas..
-    //     let full = new FullPreview();
-    //     let ok = full.renderFull(this.model, target);
-
-    //     if (!ok) return null;
-    //     // let context = target.getContext('2d');
-    //     // this.model.render(context);
-    //     let src = target.toDataURL();
-
-    //     // Clear after export..
-    //     target.width = w;
-    //     target.height = h;
-
-    //     return {dataurl: src, width: full.width || 400, height: full.height || 300};
-    // }
-
-    // /**
-    //  * Opens SVG tool/image selection workflow.
-    //  */
-    // public pickSVG(): void {
-    //     // let ref = this.dialog.open(StencilDialog, {});
-    //     // ref.afterClosed().subscribe(choice => {
-    //     //     if (choice && choice.tool) {
-    //     //         // let src = (choice.tool as StencilTool).url;
-    //     //         this.pickTool('svg', choice.tool);
-    //     //         // if (this.current.shape) {
-    //     //         //     this.current.shape.setImage(src, 'contain');
-    //     //         // }
-    //     //     } else {
-    //     //         this.pickTool('select');
-    //     //     }
-    //     // })
-    // }
-
     /**
      * Opens image selection workflow for the current node selection.
      */
     public pickNodeImage(): void {
         if (!this.current.layer) return;
-
-        // if (this.imageFileInput && this.imageFileInput.nativeElement) {
-        //     this.imageFileInput.nativeElement.click();
-        // }
     }
 
     /**
@@ -6113,161 +5909,7 @@ export class DiagramEditView extends DiagramView {
     // ====== Preview and export methods ======
     // =========================================
 
-    /*public async getPreviewNode(): Promise<HTMLElement | null> {
-        if (!this.model)
-            return new Promise<null>(resolve => resolve(null));
-
-        // async getNode(node: HTMLElement, expr: FormulaExpression): Promise<HTMLElement> {
-        let capture = this.canvas_parent ? this.canvas_parent.nativeElement : null;
-        if (!capture)
-            return new Promise<null>(resolve => resolve(null));
-
-        let outer = document.createElement('div');
-        outer.className = 'illustration-view';
-
-        let inner = document.createElement('div');
-        inner.className = 'source';
-        inner.style.display = 'none';
-        inner.innerText = JSON.stringify(this.model.toJson('include_assets'));
-        outer.appendChild(inner);
-
-        let img = document.createElement('img');
-        // let rect = capture.getBoundingClientRect();
-        let data = this.getImage();
-        if (!data) return null;     // Invalid image..
-
-        img.width = data.width;
-        img.height = data.height;
-        // let svg = await this.getImageSVG(node, rect.width, rect.height);
-        // img.src = svg;
-        // let png = await this.getImagePNG(capture, rect.width, rect.height);
-        img.src = data.dataurl;   //png;
-
-        // let blob = await toBlob(node);
-        // if (blob && blob.size) {
-        //     img.src = await this.toDataURL(blob);
-        // }
-        // let canvas = await html2canvas.default(node, {backgroundColor: 'rgba(0,0,0,0)', allowTaint: true});
-        // if (canvas) img.src = canvas.toDataURL('image/png');
-        // .then(canvas => {
-        //     img.src = canvas.toDataURL('image/png', {});
-        // })
-        // toPng(node, {bgcolor: 'transparent'}).then(str => {
-        //     img.src = str;
-        // })
-        outer.appendChild(img);
-
-        return outer;
-    }
-        */
-
-    /*async getImagePNG(node: HTMLElement, w: number, h: number): Promise<string> {
-        // return await toPng(node, {bgcolor: 'transparent', width: w, height: h})
-        let scale = 2;
-        return await toPng(node, {bgcolor: 'transparent', 
-            height: node.offsetHeight * scale,
-            width: node.offsetWidth * scale,
-            style: {
-                transform: "scale(" + scale + ")",
-                transformOrigin: "top left",
-                width: node.offsetWidth + "px",
-                height: node.offsetHeight + "px"
-            }
-        })
-    }*/
-
-
-
-    /* doOpen(event) {
-        const file: File = event.target.files[0];
-
-        if (file) {
-            // let mime = this.fileProvider.getMimeType(file.name);
-            const reader = new FileReader();
-            reader.readAsText(file);
-            reader.onload = async () => {
-                try {
-                    if (!this.canvas) return;
-
-                    let json = JSON.parse('' + reader.result);
-
-                    if (this.model) this.model.clearLayers();
-
-                    this.model = await new StateDiagram(this.canvas.nativeElement).fromJson(json) as StateDiagram;
-
-                    if (this.model.layers.length === 0) {
-                        this.addLayer();        //model.addLayer('top');
-                    }
-                    this.colorPalette.extractColors(this.model);
-                    this.current.layer = this.model.layers[0];
-
-                    this.modified = false;
-                    this.history?.clear();
-                    // this.undoList = [];
-                    // this.redoList = [];
-
-                    setTimeout(() => {
-                        this.reposition();
-                        this.model?.render(null);
-                        this.model?.renderSelection();
-                        this.renderPreview();
-
-                    }, 100)
-
-                } catch (err) { }
-            };
-        }
-    }
-
-    download(content: string | Blob, fileName: string, contentType: string, anchor: string) {
-        const a: HTMLAnchorElement = document.getElementById(anchor) as HTMLAnchorElement;
-        const file = (content instanceof Blob) ? content : new Blob([content], { type: contentType });
-        a.href = URL.createObjectURL(file);
-        a.download = fileName;
-        a.click();
-    }
-
-    doSave() {
-        if (!this.model) return;
-
-        let data = JSON.stringify(this.model?.toJson('include_assets'));
-
-        if (!this.onSave.observed) {
-
-            this.download(data,
-                'Illustration' + '.json',
-                'application/json',
-                'ied_jsondownload');
-        }
-
-        this.onSave.emit(this.model);
-    }
-
-    doExportPng(): void {
-        // if (!this.model) return;
-
-        // let target = document.createElement('canvas');  // this.canvas.nativeElement;
-
-        // // Draw all layers on one canvas..
-        // let full = new FullPreview();
-        // let ok = full.renderFull(this.model, target);
-
-        // if (!ok) return;
-        // // let context = target.getContext('2d');
-        // // this.model.render(context);
-        // target.toBlob((blob) => {
-        //     if (!blob) return;
-
-        //     this.download(blob,
-        //         'Illustration' + '.png', 
-        //         'image/png', 
-        //         'ied_pngdownload');
-        // });
-
-        // target.remove();
-    }
-
-
+    /*
     is_fullscreen: boolean = false;
 
     fullScreen() {

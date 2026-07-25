@@ -48,7 +48,7 @@ export interface EmbeddedSheet {
     classes: Record<string, NodeStyle>;
 }
 
-export interface SpecSheet extends EmbeddedSheet {
+export interface StyleSheet extends EmbeddedSheet {
     /**
      * The unique identifier of the spec sheet.
      */
