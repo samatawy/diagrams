@@ -1,5 +1,5 @@
 import type { IGradient } from "./color.types";
-import type { ArrowType, IFontWeight, IPoint, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
+import type { ArrowType, IFontWeight, ImageAlign, ImageMode, IPoint, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 
 /**
  * TextStyle defines the properties of text that can be rendered on nodes in the diagram, including font, size, alignment, and color.
@@ -116,6 +116,33 @@ export interface FillStyle {
      * If the gradient value is undefined, the rendering logic may choose a default gradient based on the node's properties or theme.
      */
     gradient?: IGradient;
+}
+
+export interface ImageStyle {
+    /**
+     * The ID of the image source stored in the diagram-level image_assets dictionary.
+     */
+    image_id?: string;
+
+    /**
+     * The mode for rendering the image within the node, which can be:
+     * - 'contain': The image is scaled to fit within the node's area while maintaining its aspect ratio.
+     * - 'cover': The image is scaled to cover the node's area while maintaining its aspect ratio.
+     * - 'pattern': The image is repeated to fill the node's area, creating a pattern effect.
+     * - 'fit': The image is drawn once within the node's bounding box, without scaling.
+     * - 'none': The image is not rendered within the node.
+     */
+    mode?: ImageMode;
+
+    /**
+     * The padding in pixels between the image and the node's borders, used when mode is 'contain'.
+     */
+    padding?: number;
+
+    /**
+     * Alignment of the image within the node, used when mode is 'contain'. 
+     */
+    align?: ImageAlign;
 }
 
 /**

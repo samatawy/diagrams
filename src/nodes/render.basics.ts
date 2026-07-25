@@ -1,9 +1,9 @@
 import type { IConnection, INode } from "../interfaces";
-import type { ArrowType, ImageMode, IPoint, IRect } from "../types";
+import type { ArrowType, ImageAlign, ImageMode, IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
 import type { INodeCached } from "../view/view.cache";
 import type { TextOverflowMode } from "../factory/node.adapter";
-import { imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDashArray, fillColor, arrowStart, arrowEnd } from "../value.utils";
+import { imageMode, imageId, lineWidth, nodeFontFace, nodeFontSize, nodeOpacity, shadowStyle, strokeColor, textAlign, textBaseline, textColor, textHaloColor, isLocked, textOrientation, lineDashArray, fillColor, arrowStart, arrowEnd, imagePadding, imageAlign } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { NodeBasics } from "./node.basics";
 import { NodeRegistry } from "../factory/node.registry";
@@ -251,7 +251,7 @@ export class RenderBasics {
         const img = cached.img;
         if (!img) return;
 
-        const mode: ImageMode = node.image_mode ?? 'contain';
+        const mode: ImageMode = imageMode(node);
         if (mode === 'none' || mode === 'pattern') return;
 
         // For cover mode use the adapter's visual rect (which may extend beyond
@@ -282,7 +282,7 @@ export class RenderBasics {
     }
 
     private static getFitBounds(node: INode, rect: IRect, _img: HTMLImageElement): ImageBounds | null {
-        const pad = Math.max(0, node.image_padding ?? 0);
+        const pad = Math.max(0, imagePadding(node));
         const fw = rect.width - pad * 2;
         const fh = rect.height - pad * 2;
         if (fw <= 0 || fh <= 0) return null;
@@ -290,7 +290,7 @@ export class RenderBasics {
     }
 
     private static getContainBounds(node: INode, rect: IRect, img: HTMLImageElement): ImageBounds | null {
-        const pad = Math.max(0, node.image_padding ?? 0);
+        const pad = Math.max(0, imagePadding(node));
         const bx = rect.left + pad, by = rect.top + pad;
         const bw = rect.width - pad * 2, bh = rect.height - pad * 2;
         if (bw <= 0 || bh <= 0) return null;
@@ -306,7 +306,7 @@ export class RenderBasics {
         }
 
         const box = { left: bx, top: by, width: bw, height: bh };
-        const { x: fx, y: fy } = RenderBasics.alignedPosition(node.image_align, box, fw, fh);
+        const { x: fx, y: fy } = RenderBasics.alignedPosition(imageAlign(node), box, fw, fh);
         return { fx, fy, fw, fh };
     }
 
@@ -323,7 +323,7 @@ export class RenderBasics {
         if (imgAspect < bw / bh) { fw = bw; fh = bw / imgAspect; }
         else { fh = bh; fw = bh * imgAspect; }
 
-        const { x: fx, y: fy } = RenderBasics.alignedPosition(node.image_align, rect, fw, fh);
+        const { x: fx, y: fy } = RenderBasics.alignedPosition(imageAlign(node), rect, fw, fh);
         return { fx, fy, fw, fh };
     }
 
@@ -331,7 +331,7 @@ export class RenderBasics {
      * Computes the top-left position (fx, fy) to place a box of size (fw × fh)
      * inside a container of size (cw × ch) at origin (cx, cy), according to align.
      */
-    private static alignedPosition(align: INode['image_align'], rect: IRect, fw: number, fh: number): IPoint {
+    private static alignedPosition(align: ImageAlign, rect: IRect, fw: number, fh: number): IPoint {
         const { left: cx, top: cy, width: cw, height: ch } = rect;
         switch (align ?? 'center') {
             case 'top-left': return { x: cx, y: cy };

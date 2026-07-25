@@ -51,7 +51,7 @@ export function loadFlagIcons(): void {
         adapter.onCreateDraft = (name) => {
             return {
                 type: tool,
-                image_id: tool,
+                image: { image_id: tool },
                 locked_aspect: true,
                 points: [{ x: 0, y: 0 }, { x: width, y: height }],
             };

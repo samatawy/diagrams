@@ -12,7 +12,7 @@ import {
     type AnchorScope
 } from "../types";
 import { HistoryStack } from "./history";
-import { NORMAL_FONT_WEIGHT, type FillStyle, type ShadowStyle, type StrokeStyle, type TextStyle } from "../style.interfaces";
+import { NORMAL_FONT_WEIGHT, type FillStyle, type ImageStyle, type ShadowStyle, type StrokeStyle, type TextStyle } from "../style.interfaces";
 
 import { isConnection, isContainer, isNode } from "../guards";
 
@@ -794,6 +794,7 @@ export class DiagramEditView extends DiagramView {
                 textStyle: { ...class_style.textStyle, ...change.textStyle },
                 strokeStyle: { ...class_style.strokeStyle, ...change.strokeStyle },
                 fillStyle: { ...class_style.fillStyle, ...change.fillStyle },
+                image: { ...class_style.image, ...change.image },
                 shadowStyle: {
                     ...class_style.shadowStyle,
                     ...change.shadowStyle,
@@ -988,7 +989,6 @@ export class DiagramEditView extends DiagramView {
         this.setStrokeStyle(value);
     }
 
-
     /**
      * Gets the current default stroke style as a composed object.
      */
@@ -1005,6 +1005,26 @@ export class DiagramEditView extends DiagramView {
      */
     public set fillStyle(value: FillStyle) {
         this.setFillStyle(value);
+    }
+
+    /**
+     * Gets the current default image style as a composed object.
+     */
+    public get imageStyle(): ImageStyle {
+        return {
+            // image_id: this.settings.imageId,
+            mode: this.settings.imageMode,
+            align: this.settings.imageAlign,
+            padding: this.settings.imagePadding,
+        };
+    }
+
+    /**
+     * Sets the default image style and applies it to current selection.
+     * @param value Image style value.
+     */
+    public set imageStyle(value: ImageStyle) {
+        this.setImageStyle(value);
     }
 
     /**
@@ -1245,8 +1265,8 @@ export class DiagramEditView extends DiagramView {
     public get imageId(): string {
         const nodes = this.selection().filter(n => isNode(n));
         if (!nodes.length) return '';
-        const first = nodes[0]?.image_id ?? '';
-        return nodes.every(n => (n.image_id ?? '') === first) ? first : '';
+        const first = nodes[0]?.image?.image_id ?? '';
+        return nodes.every(n => (n.image?.image_id ?? '') === first) ? first : '';
     }
 
     /** 
@@ -1255,8 +1275,8 @@ export class DiagramEditView extends DiagramView {
     public get imageMode(): string {
         const nodes = this.selection().filter(n => isNode(n));
         if (!nodes.length) return '';
-        const first = nodes[0]?.image_mode ?? 'contain';
-        return nodes.every(n => (n.image_mode ?? 'contain') === first) ? first : '';
+        const first = nodes[0]?.image?.mode ?? 'contain';
+        return nodes.every(n => (n.image?.mode ?? 'contain') === first) ? first : '';
     }
 
     /** 
@@ -1265,8 +1285,8 @@ export class DiagramEditView extends DiagramView {
     public get imageAlign(): string {
         const nodes = this.selection().filter(n => isNode(n));
         if (!nodes.length) return '';
-        const first = nodes[0]?.image_align ?? 'center';
-        return nodes.every(n => (n.image_align ?? 'center') === first) ? first : '';
+        const first = nodes[0]?.image?.align ?? 'center';
+        return nodes.every(n => (n.image?.align ?? 'center') === first) ? first : '';
     }
 
     /** 
@@ -1275,8 +1295,8 @@ export class DiagramEditView extends DiagramView {
     public get imagePadding(): number {
         const nodes = this.selection().filter(n => isNode(n));
         if (!nodes.length) return 0;
-        const first = nodes[0]?.image_padding ?? 0;
-        return nodes.every(n => (n.image_padding ?? 0) === first) ? first : -1;
+        const first = nodes[0]?.image?.padding ?? 0;
+        return nodes.every(n => (n.image?.padding ?? 0) === first) ? first : -1;
     }
 
     /**
@@ -1316,7 +1336,8 @@ export class DiagramEditView extends DiagramView {
         this.addUndo();
         const value = id || undefined;
         for (const node of nodes) {
-            node.image_id = value;
+            node.image = node.image || {};
+            node.image.image_id = value;
         }
 
         this.render('all');
@@ -1497,6 +1518,37 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Sets the image style for the selected nodes and new nodes to be created.
+     * @param style The image style to set.
+     */
+    public setImageStyle(style: Partial<ImageStyle>): void {
+        const selected = this.selection();
+        if (selected.length) {
+            this.addUndo();
+        }
+
+        if (style.mode !== undefined) this.settings.imageMode = style.mode;
+        if (style.align !== undefined) this.settings.imageAlign = style.align;
+        if (style.padding !== undefined) this.settings.imagePadding = style.padding;
+
+        const merged: ImageStyle = {
+            image_id: style.image_id,
+            mode: this.settings.imageMode,
+            align: this.settings.imageAlign,
+            padding: this.settings.imagePadding,
+        };
+
+        for (let node of selected) {
+            node.image = merged;
+        }
+        this.applyClassChange(selected, { image: merged });
+
+        this.render('all');
+        this.renderPreview();
+        this.event_dispatcher.styleChanged('set-image-style');
+    }
+
+    /**
      * Sets the shadow style for the selected nodes and new nodes to be created.
      * @param style The shadow style to set.
      */
@@ -1641,6 +1693,10 @@ export class DiagramEditView extends DiagramView {
         if (patch['fillStyle.color'] !== undefined) this.settings.fillColor = String(patch['fillStyle.color']);
         if (patch['fillStyle.gradient'] !== undefined) this.settings.fillGradient = { ...patch['fillStyle.gradient'] } as IGradient;
 
+        if (patch['image.mode'] !== undefined) this.settings.imageMode = String(patch['image.mode']) as ImageMode;
+        if (patch['image.align'] !== undefined) this.settings.imageAlign = String(patch['image.align']) as ImageAlign;
+        if (patch['image.padding'] !== undefined) this.settings.imagePadding = Number(patch['image.padding']);
+
         if (patch['shadowStyle'] !== undefined) this.setShadowStyle(patch['shadowStyle'] as Partial<ShadowStyle>);
         if (patch['shadowStyle.color'] !== undefined) this.settings.shadowColor = String(patch['shadowStyle.color']);
         if (patch['shadowStyle.blur'] !== undefined) this.settings.shadowBlur = Number(patch['shadowStyle.blur']);
@@ -1659,14 +1715,16 @@ export class DiagramEditView extends DiagramView {
             if (key.startsWith('textStyle.') ||
                 key.startsWith('strokeStyle.') ||
                 key.startsWith('shadowStyle.') ||
-                key.startsWith('fillStyle.')) {
+                key.startsWith('fillStyle.') ||
+                key.startsWith('image.')
+            ) {
                 hasClassChanges = true;
                 break;
             }
         }
 
         if (hasClassChanges) {
-            const nodeStyle = { textStyle: {}, strokeStyle: {}, fillStyle: {}, shadowStyle: {} } as Partial<NodeStyle>;
+            const nodeStyle = { textStyle: {}, strokeStyle: {}, fillStyle: {}, image: {}, shadowStyle: {} } as Partial<NodeStyle>;
             if (patch['textStyle.fontFace'] !== undefined) nodeStyle.textStyle!.fontFace = patch['textStyle.fontFace'] as string;
             if (patch['textStyle.size'] !== undefined) nodeStyle.textStyle!.size = patch['textStyle.size'] as number;
             if (patch['textStyle.color'] !== undefined) nodeStyle.textStyle!.color = patch['textStyle.color'] as string;
@@ -1686,6 +1744,12 @@ export class DiagramEditView extends DiagramView {
 
             if (patch['fillStyle.color'] !== undefined) nodeStyle.fillStyle!.color = patch['fillStyle.color'] as string;
             if (patch['fillStyle.gradient'] !== undefined) nodeStyle.fillStyle!.gradient = { ...patch['fillStyle.gradient'] } as IGradient;
+
+            if (patch['image'] !== undefined) nodeStyle.image = { ...(nodeStyle.image || {}), ...(patch['image'] as Partial<ImageStyle>) } as ImageStyle;
+            if (patch['image.image_id'] !== undefined) nodeStyle.image!.image_id = patch['image.image_id'] as string;
+            if (patch['image.mode'] !== undefined) nodeStyle.image!.mode = patch['image.mode'] as ImageMode;
+            if (patch['image.align'] !== undefined) nodeStyle.image!.align = patch['image.align'] as ImageAlign;
+            if (patch['image.padding'] !== undefined) nodeStyle.image!.padding = patch['image.padding'] as number;
 
             if (patch['shadowStyle'] !== undefined) nodeStyle.shadowStyle = { ...(nodeStyle.shadowStyle || {}), ...(patch['shadowStyle'] as Partial<ShadowStyle>) } as ShadowStyle;
             if (patch['shadowStyle.color'] !== undefined) nodeStyle.shadowStyle!.color = patch['shadowStyle.color'] as string;
@@ -3282,6 +3346,7 @@ export class DiagramEditView extends DiagramView {
                         }
                         this.downPos = movePos;
 
+                        this.alteredNodes.add(this.downShape);
                         this.render('all');
                         this.setInteractionHint('Rotating selection');
                     }
@@ -4248,6 +4313,7 @@ export class DiagramEditView extends DiagramView {
             ready: _ready,
             points: templatePoints,
             fillStyle: templateFillStyle,
+            image: templateImage,
             strokeStyle: templateStrokeStyle,
             textStyle: templateTextStyle,
             shadowStyle: templateShadowStyle,
@@ -4267,6 +4333,7 @@ export class DiagramEditView extends DiagramView {
             ready: false,
             strokeStyle: { ...this.strokeStyle, ...(templateStrokeStyle || {}) },
             fillStyle: { ...this.fillStyle, ...(templateFillStyle || {}) },
+            image: { ...this.imageStyle, ...(templateImage || {}) },
             shadowStyle: { ...this.shadowStyle, ...(templateShadowStyle || {}) },
             ...templateRest,
             owner: this,
@@ -4489,6 +4556,11 @@ export class DiagramEditView extends DiagramView {
     public override panBy(byX: number, byY: number, mode: AnimationMode = 'instant'): void {
         this.closeTextEditor(false);
         super.panBy(byX, byY, mode);
+    }
+
+    public snapToGrid(nodes?: INode[]): void {
+        nodes = nodes || this.nodes;
+        nodes.forEach(n => NodeRegistry.adapter(n.type)?.snapToGrid?.(n, this.grid, NodeHandle.MOVE));
     }
 
     /**

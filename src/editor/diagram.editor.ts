@@ -1250,9 +1250,9 @@ export class DiagramEditor {
             if (this.imageSelect) {
                 this.imageSelect.setAssetStore(this.diagram.assetStore);
                 const imageId = this.diagram.imageId;
-                const nodes = this.diagram.selection().filter(n => n.image_id !== undefined);
+                const nodes = this.diagram.selection().filter(n => n.image?.image_id !== undefined);
                 const isMixed = !imageId && nodes.length > 0
-                    && new Set(this.diagram.selection().map(n => n.image_id ?? '')).size > 1;
+                    && new Set(this.diagram.selection().map(n => n.image?.image_id ?? '')).size > 1;
                 this.imageSelect.setMixed(isMixed);
                 if (!isMixed) {
                     this.imageSelect.value = imageId;

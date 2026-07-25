@@ -341,7 +341,6 @@ describe('DiagramEditable', () => {
             points: [{ x: 10, y: 20 }, { x: 110, y: 80 }],
             hollow: false,
             text: 'One',
-            image_mode: 'none',
             ready: false,
             strokeStyle: {
                 color: '#000000'
@@ -357,7 +356,6 @@ describe('DiagramEditable', () => {
             points: [{ x: 140, y: 20 }, { x: 240, y: 80 }],
             hollow: false,
             text: 'Two',
-            image_mode: 'none',
             ready: false,
             strokeStyle: {
                 color: '#000000',
@@ -791,7 +789,6 @@ describe('DiagramEditable', () => {
             points: [{ x: 10, y: 20 }, { x: 40, y: 50 }],
             hollow: false,
             text: 'One',
-            image_mode: 'none',
             ready: false,
             invisible: false,
             strokeStyle: { color: '#000000' },

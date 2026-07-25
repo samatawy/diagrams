@@ -38,13 +38,13 @@ export class ImageSelectAdapter extends InspectorAdapter {
     }
 
     override showValue(editable: EditableRecord): void {
-        const imageId = editable['image_id'] as string | undefined;
+        const imageId = editable['image.image_id'] as string | undefined;
         this.imageSelect.value = imageId ?? '';
         this.setUnset(!imageId);
     }
 
     override getValue(): EditableRecord {
-        return { image_id: this.imageSelect.value || undefined };
+        return { 'image.image_id': this.imageSelect.value || undefined };
     }
 
     override destroy(): void {

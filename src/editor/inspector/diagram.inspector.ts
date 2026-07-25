@@ -486,7 +486,7 @@ export class DiagramInspector extends Inspector {
         });
 
         this.addRow(fill, {
-            key: 'image_id', label: 'Image',
+            key: 'image.image_id', label: 'Image',
             type: 'string', editor: 'ImageSelect',
             editorOptions: {
                 diagram: this.diagram,
@@ -495,7 +495,7 @@ export class DiagramInspector extends Inspector {
             readonly: readonly, isVisible: hasNonConnections
         });
         this.addRow(fill, {
-            key: 'image_mode', label: 'Mode', type: 'select', editor: 'EnumSelect',
+            key: 'image.mode', label: 'Mode', type: 'select', editor: 'EnumSelect',
             editorOptions: {
                 tooltip: 'Select the image mode for the selected node(s)',
                 options: ['contain', 'cover', 'fit', 'pattern', 'none']
@@ -503,7 +503,7 @@ export class DiagramInspector extends Inspector {
             readonly: readonly, isVisible: hasNonConnections,
         });
         this.addRow(fill, {
-            key: 'image_align', label: 'Align', type: 'select', editor: 'EnumSelect',
+            key: 'image.align', label: 'Align', type: 'select', editor: 'EnumSelect',
             editorOptions: {
                 tooltip: 'Select the image alignment for the selected node(s)',
                 options: ['left', 'center', 'right', 'top', 'middle', 'bottom', 'top-left', 'top-right', 'bottom-left', 'bottom-right']
@@ -511,7 +511,7 @@ export class DiagramInspector extends Inspector {
             readonly: readonly, isVisible: hasNonConnections,
         });
         this.addRow(fill, {
-            key: 'image_padding', label: 'Padding', type: 'number', readonly: readonly,
+            key: 'image.padding', label: 'Padding', type: 'number', readonly: readonly,
             isVisible: hasNonConnections
         });
 

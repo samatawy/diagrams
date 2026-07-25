@@ -68,7 +68,7 @@ export class DiagramQualityService {
             this.addShadowColor(node, distinctNodeColors);
 
             if (node.textStyle?.fontFace) distinctFonts.add(node.textStyle.fontFace);
-            if (node.image_id) distinctAssets.add(node.image_id);
+            if (node.image?.image_id) distinctAssets.add(node.image.image_id);
         }
 
         for (const connection of connections) {
@@ -78,7 +78,7 @@ export class DiagramQualityService {
             this.addShadowColor(connection, distinctConnectionColors);
 
             if (connection.textStyle?.fontFace) distinctFonts.add(connection.textStyle.fontFace);
-            if (connection.image_id) distinctAssets.add(connection.image_id);
+            if (connection.image?.image_id) distinctAssets.add(connection.image.image_id);
         }
 
         for (const color of distinctNodeColors) {

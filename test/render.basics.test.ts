@@ -145,8 +145,10 @@ describe('RenderBasics', () => {
             id: 'svg-node',
             type: 'svg',
             points: [{ x: 20, y: 30 }, { x: 180, y: 90 }],
-            image_id: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>',
-            image_mode: 'contain',
+            image: {
+                image_id: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"></svg>',
+                mode: 'contain'
+            },
             strokeStyle: { color: '#334155' },
             owner,
         };

@@ -1,6 +1,6 @@
 import type { INode } from "./interfaces";
 import { BOLD_FONT_WEIGHT, NORMAL_FONT_WEIGHT, type FillStyle, type ShadowStyle, type TextStyle } from "./style.interfaces";
-import type { ArrowType, IFontWeight, ImageMode, IPoint, IRect, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
+import type { ArrowType, IFontWeight, ImageAlign, ImageMode, IPoint, IRect, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 import { DiagramConstants } from "./model/diagram.constants";
 import { NodeRegistry } from "./factory/node.registry";
 
@@ -261,17 +261,25 @@ export function isHollow(node: INode): boolean {
     } else if (adapter?.hollow_mode === 'never') {
         return false;
     } else {
-        return (node.fillStyle === undefined || fillColor(node) === 'transparent') && !node.fillStyle?.gradient && node.image_id === undefined;
+        return (node.fillStyle === undefined || fillColor(node) === 'transparent') && !node.fillStyle?.gradient && node.image?.image_id === undefined;
         // return (fillStyle(node) === undefined || fillStyle(node) === 'transparent') && imageId(node) === undefined;
     }
 }
 
-export function imageMode(node: INode): ImageMode {
-    return node.image_mode ?? (node.image_id ? 'contain' : 'none');
+export function imageId(node: INode): string | undefined {
+    return node.image?.image_id;
 }
 
-export function imageId(node: INode): string | undefined {
-    return node.image_id;
+export function imageMode(node: INode): ImageMode {
+    return node.image?.mode ?? (node.image?.image_id ? 'contain' : 'none');
+}
+
+export function imageAlign(node: INode): ImageAlign {
+    return node.image?.align ?? 'center';
+}
+
+export function imagePadding(node: INode): number {
+    return node.image?.padding ?? 0;
 }
 
 export const SHADOW_NONE: ShadowStyle = {

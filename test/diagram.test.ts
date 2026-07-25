@@ -1,4 +1,4 @@
-import { Diagram, type ILayer, type INode, type ISerializedDiagram } from '../src/index';
+import { Diagram, imageMode, type ILayer, type INode, type ISerializedDiagram } from '../src/index';
 import { jsonSerializer } from '../src/io/json.serializer';
 
 function createNode(id: string, text: string, x: number, y: number): INode {
@@ -56,7 +56,6 @@ describe('Diagram', () => {
                         size: 16,
                         color: '#000000',
                     },
-                    image_mode: 'none',
                     ready: false,
                     invisible: false,
                     strokeStyle: { color: '#000000' },
@@ -102,7 +101,6 @@ describe('Diagram', () => {
                         size: 16,
                         color: '#000000',
                     },
-                    image_mode: 'none',
                     ready: false,
                     invisible: true,
                     strokeStyle: { color: '#2563eb', width: 2, arrow_at: 'end' },
@@ -233,14 +231,14 @@ describe('Diagram', () => {
 
         diagram.setNodeImageSource('node-1', 'https://example.com/bg.png', 'pattern', 'bg-1');
 
-        expect(diagram.node('node-1')?.image_mode).toBe('pattern');
-        expect(diagram.node('node-1')?.image_id).toBe('bg-1');
+        expect(diagram.node('node-1')?.image?.mode).toBe('pattern');
+        expect(diagram.node('node-1')?.image?.image_id).toBe('bg-1');
         expect(diagram.resolveNodeImageSource('node-1')).toBe('https://example.com/bg.png');
 
         diagram.clearNodeImageSource('node-1');
 
-        expect(diagram.node('node-1')?.image_id).toBeUndefined();
-        expect(diagram.node('node-1')?.image_mode).toBe('none');
+        expect(diagram.node('node-1')?.image?.image_id).toBeUndefined();
+        expect(imageMode(diagram.node('node-1')!)).toBe('none');
         expect(diagram.resolveNodeImageSource('node-1')).toBeUndefined();
     });
 
@@ -255,8 +253,8 @@ describe('Diagram', () => {
         diagram.setNodeImageSource('node-a', src, 'contain');
         diagram.setNodeImageSource('node-b', src, 'pattern');
 
-        expect(diagram.node('node-a')?.image_id).toBeDefined();
-        expect(diagram.node('node-a')?.image_id).toBe(diagram.node('node-b')?.image_id);
+        expect(diagram.node('node-a')?.image?.image_id).toBeDefined();
+        expect(diagram.node('node-a')?.image?.image_id).toBe(diagram.node('node-b')?.image?.image_id);
         expect(diagram.resolveNodeImageSource('node-a')).toBe(src);
         expect(diagram.resolveNodeImageSource('node-b')).toBe(src);
 
@@ -264,8 +262,8 @@ describe('Diagram', () => {
         const serializedA = payload.nodes.find((n: any) => n.id === 'node-a');
         const serializedB = payload.nodes.find((n: any) => n.id === 'node-b');
 
-        expect(serializedA.image_id).toBeDefined();
-        expect(serializedB.image_id).toBeDefined();
+        expect(serializedA.image?.image_id).toBeDefined();
+        expect(serializedB.image?.image_id).toBeDefined();
     });
 
     it('serializes and restores the shared image asset dictionary', async () => {
@@ -278,10 +276,10 @@ describe('Diagram', () => {
 
         const payload = JSON.parse(diagram.write(jsonSerializer));
         expect(payload.image_assets).toEqual({ 'img-1': src });
-        expect(payload.nodes[0].image_id).toBe('img-1');
+        expect(payload.nodes[0].image?.image_id).toBe('img-1');
 
         const restored = await new Diagram('empty').read(payload, jsonSerializer);
-        expect(restored.node('node-1')?.image_id).toBe('img-1');
+        expect(restored.node('node-1')?.image?.image_id).toBe('img-1');
         expect(restored.resolveNodeImageSource('node-1')).toBe(src);
     });
 
@@ -294,6 +292,6 @@ describe('Diagram', () => {
         const src = diagram.resolveNodeImageSource('node-1') || '';
 
         expect(src.startsWith('data:image/svg+xml;utf8,')).toBe(true);
-        expect(diagram.node('node-1')?.image_mode).toBe('contain');
+        expect(diagram.node('node-1')?.image?.mode).toBe('contain');
     });
 });

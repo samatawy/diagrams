@@ -4,6 +4,7 @@ import { isConnection, isConnectionNode } from '../guards';
 import { textAlign, textBaseline, textBold, textItalic, textOrientation, textUnderline } from '../value.utils';
 import { NORMAL_FONT_WEIGHT, BOLD_FONT_WEIGHT } from '../style.interfaces';
 import { ElkLayout } from '../layout/elk';
+import { NodeBasics } from '../nodes/node.basics';
 
 /**
  * Available built-in diagram actions. These can be used in the toolbar layout, context menu, etc.
@@ -271,7 +272,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autoLayout()
-                .then(planned => d.animateLayout(planned));
+                .then(planned => {
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
         },
     },
     {
@@ -284,7 +288,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autoCircuit()
-                .then(planned => d.animateLayout(planned));
+                .then(planned => {
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
         },
     },
     {
@@ -297,7 +304,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autolayoutFlow('DOWN')
-                .then(planned => d.animateLayout(planned));
+                .then(planned => {
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
         },
     },
     {
@@ -310,7 +320,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autolayoutFlow('UP')
-                .then(planned => d.animateLayout(planned));
+                .then(planned => {
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
         },
     },
     {
@@ -323,7 +336,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autolayoutFlow('RIGHT')
-                .then(planned => d.animateLayout(planned));
+                .then(planned => {
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
         },
     },
     {
@@ -336,7 +352,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autolayoutFlow('LEFT')
-                .then(planned => d.animateLayout(planned));
+                .then(planned => {
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
         },
     },
 
@@ -350,7 +369,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autoLayoutTree('DOWN')
-                .then(planned => d.animateLayout(planned));
+                .then(planned => {
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
         },
     },
     {
@@ -363,7 +385,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autoLayoutTree('UP')
-                .then(planned => d.animateLayout(planned));
+                .then(planned => {
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
         },
     },
     {
@@ -376,7 +401,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autoLayoutTree('RIGHT')
-                .then(planned => d.animateLayout(planned));
+                .then(planned => {
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
         },
     },
     {
@@ -389,7 +417,10 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
             //     if (edge.type === 'line' || edge.type === 'polyline') edge.type = 'orthogonal';
             // }
             new ElkLayout(d).autoLayoutTree('LEFT')
-                .then(planned => d.animateLayout(planned));
+                .then(planned => {
+                    if (d.grid.forced) d.snapToGrid(planned);
+                    d.animateLayout(planned);
+                });
         },
     },
 

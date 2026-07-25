@@ -68,7 +68,7 @@ const DEFAULT_CONFIG: Required<Omit<ImageSelectConfig, 'assetStore'>> = {
  * Example:
  * ```ts
  * const pick = new ImageSelect(host, { assetStore: diagram.assetStore });
- * host.addEventListener('imagechange', e => node.image_id = e.detail || undefined);
+ * host.addEventListener('imagechange', e => node.image.image_id = e.detail || undefined);
  * ```
  */
 export class ImageSelect {

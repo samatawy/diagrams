@@ -48,10 +48,10 @@ export class DiagramClipboard {
             fillStyle: style.fillStyle,
             textStyle: style.textStyle,
             shadowStyle: style.shadowStyle,
-            image_id: isNode(style) ? style.image_id : undefined,
-            image_mode: isNode(style) ? style.image_mode : undefined,
-            image_align: isNode(style) ? style.image_align : undefined,
-            image_padding: isNode(style) ? style.image_padding : undefined,
+            image_id: isNode(style) ? style.image?.image_id : undefined,
+            image_mode: isNode(style) ? style.image?.mode : undefined,
+            image_align: isNode(style) ? style.image?.align : undefined,
+            image_padding: isNode(style) ? style.image?.padding : undefined,
         };
 
         this.can_paste_styles = true;
@@ -78,19 +78,23 @@ export class DiagramClipboard {
                     if (style.opacity !== undefined) node.opacity = style.opacity;
                     if (style.strokeStyle) node.strokeStyle = style.strokeStyle;
                     if (style.fillStyle) node.fillStyle = style.fillStyle;
+                    if (style.image) node.image = style.image;
                     if (style.textStyle) node.textStyle = style.textStyle;
                     if (style.shadowStyle) node.shadowStyle = style.shadowStyle;
 
-                    if (style.image_id !== undefined) node.image_id = style.image_id;
-                    if (style.image_mode !== undefined) node.image_mode = style.image_mode;
-                    if (style.image_align !== undefined) node.image_align = style.image_align;
-                    if (style.image_padding !== undefined) node.image_padding = style.image_padding;
+                    // node.image ??= {};
+                    // if (style.image_id !== undefined) node.image.image_id = style.image_id;
+                    // if (style.image_mode !== undefined) node.image.mode = style.image_mode;
+                    // if (style.image_align !== undefined) node.image.align = style.image_align;
+                    // if (style.image_padding !== undefined) node.image.padding = style.image_padding;
+                    // node.image = (style.image_id || style.image_mode || style.image_align || style.image_padding) ? node.image : undefined;
 
                     node.hollow = undefined; node.hollow = isHollow(node);
                 }
 
                 this.diagram.applyClassChange(selected, {
                     fillStyle: style.fillStyle,
+                    image: style.image,
                     strokeStyle: style.strokeStyle,
                     textStyle: style.textStyle,
                     shadowStyle: style.shadowStyle,

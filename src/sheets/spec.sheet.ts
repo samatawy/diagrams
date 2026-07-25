@@ -1,4 +1,4 @@
-import type { FillStyle, ShadowStyle, StrokeStyle, TextStyle } from "../style.interfaces";
+import type { FillStyle, ImageStyle, ShadowStyle, StrokeStyle, TextStyle } from "../style.interfaces";
 
 export interface NodeStyle {
     // id: string;
@@ -7,7 +7,9 @@ export interface NodeStyle {
 
     strokeStyle: StrokeStyle;
 
-    fillStyle: FillStyle;   // string;
+    fillStyle: FillStyle;
+
+    image?: ImageStyle;
 
     shadowStyle: ShadowStyle;
 }

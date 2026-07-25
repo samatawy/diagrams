@@ -7,7 +7,7 @@ import type { DiagramExportFormat, DiagramSaveOptions } from "../io/export.types
 import { AssetStore } from "../view/asset.store";
 import type { ImageMode } from "../types";
 import { SheetRepository } from "../sheets/sheet.repository";
-import { deepClone } from "../value.utils";
+import { deepClone, imageId } from "../value.utils";
 import type { FillStyle } from "../style.interfaces";
 import { isContainerNode } from "../guards";
 import { FormatValidator } from "../io/format.validator";
@@ -315,8 +315,9 @@ export class Diagram implements IDiagram, HasSheetRepository {
             return target;
         }
 
-        target.image_id = undefined;
-        target.image_mode = 'none';
+        target.image = undefined;
+        // target.image_id = undefined;
+        // target.image_mode = 'none';
         return target;
     }
     /**
@@ -328,11 +329,11 @@ export class Diagram implements IDiagram, HasSheetRepository {
             return undefined;
         }
 
-        if (!target.image_id) {
+        if (!imageId(target)) {
             return undefined;
         }
 
-        return this.asset_store.resolve(target.image_id);
+        return this.asset_store.resolve(imageId(target));
     }
 
     /**
@@ -590,9 +591,10 @@ export class Diagram implements IDiagram, HasSheetRepository {
         let imageAssets: Record<string, string> | undefined;
         if (allAssets) {
             for (const node of serializedNodes) {
-                if (node.image_id && allAssets[node.image_id]) {
+                const image_id = node.image?.image_id;
+                if (image_id && allAssets[image_id]) {
                     imageAssets ??= {};
-                    imageAssets[node.image_id] = allAssets[node.image_id]!;
+                    imageAssets[image_id] = allAssets[image_id]!;
                 }
             }
         }
@@ -703,8 +705,9 @@ export class Diagram implements IDiagram, HasSheetRepository {
     }
 
     protected applyNodeImageSource(target: INode, imageSrc: string, mode: ImageMode = 'contain', imageId?: string): void {
-        target.image_id = this.asset_store.register(imageSrc, imageId);
-        target.image_mode = mode;
+        target.image = target.image || {};
+        target.image.image_id = this.asset_store.register(imageSrc, imageId);
+        target.image.mode = mode;
     }
 
     /**

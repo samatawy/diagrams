@@ -1,6 +1,5 @@
 import type { Serializable } from "./io/serialized.types";
-import type { ImageAlign, ImageMode } from "./types";
-import type { FillStyle, ShadowStyle, StrokeStyle, TextStyle } from "./style.interfaces";
+import type { FillStyle, ImageStyle, ShadowStyle, StrokeStyle, TextStyle } from "./style.interfaces";
 import type { IPoint, NodeHandle } from "./types";
 import type { SheetRepository } from "./sheets/sheet.repository";
 
@@ -47,31 +46,6 @@ export interface INode {
     textStyle?: TextStyle;
 
     /**
-     * The ID of the image source stored in the diagram-level image_assets dictionary.
-     */
-    image_id?: string;
-
-    /**
-     * The mode for rendering the image within the node, which can be:
-     * - 'contain': The image is scaled to fit within the node's area while maintaining its aspect ratio.
-     * - 'cover': The image is scaled to cover the node's area while maintaining its aspect ratio.
-     * - 'pattern': The image is repeated to fill the node's area, creating a pattern effect.
-     * - 'fit': The image is drawn once within the node's bounding box, without scaling.
-     * - 'none': The image is not rendered within the node.
-     */
-    image_mode?: ImageMode;
-
-    /**
-     * The padding in pixels between the image and the node's borders, used when mode is 'contain'.
-     */
-    image_padding?: number;
-
-    /**
-     * Alignment of the image within the node, used when mode is 'contain'. 
-     */
-    image_align?: ImageAlign;
-
-    /**
      * Indicates whether the node is ready to be rendered, which can be used to control the creation process
      * and ensure that all necessary information is available before finalizing creation.
      */
@@ -106,6 +80,11 @@ export interface INode {
      * The fill style of the node, which can be used to control the color and pattern of the node's interior.
      */
     fillStyle?: FillStyle;
+
+    /**
+     * The image style of the node, which can be used to control the rendering of an image within the node.
+     */
+    image?: ImageStyle;
 
     /**
      * The shadow style of the node, which can be used to apply a shadow effect to the node.
