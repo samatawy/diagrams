@@ -46,32 +46,6 @@ export interface INode {
     textStyle?: TextStyle;
 
     /**
-     * Indicates whether the node is ready to be rendered, which can be used to control the creation process
-     * and ensure that all necessary information is available before finalizing creation.
-     */
-    ready?: boolean;
-
-    /**
-     * Indicates whether the node is locked, which can be used to prevent any modifications to the node's properties or geometry.
-     */
-    locked?: boolean;
-
-    /**
-     * Indicates whether the node's aspect ratio is locked, which can be used to maintain the original proportions of the node when resizing.
-     */
-    locked_aspect?: boolean;
-
-    /**
-     * Indicates whether the whole area of the node is selectable or only its border.
-     */
-    hollow?: boolean;
-
-    /**
-     * Indicates whether the node is invisible, which can be used to control the rendering style of the node.
-     */
-    invisible?: boolean;
-
-    /**
      * The stroke style of the node, which can be used to control the color and pattern of the node's border.
      */
     strokeStyle?: StrokeStyle;
@@ -121,6 +95,32 @@ export interface INode {
      * This can include custom properties, annotations, or any other relevant data that is not related to the node's appearance.
      */
     meta?: Record<string, unknown>;
+
+    /**
+     * Indicates whether the node is ready to be rendered, which can be used to control the creation process
+     * and ensure that all necessary information is available before finalizing creation.
+     */
+    ready?: boolean;
+
+    /**
+     * Indicates whether the node is locked, which can be used to prevent any modifications to the node's properties or geometry.
+     */
+    locked?: boolean;
+
+    /**
+     * Indicates whether the node's aspect ratio is locked, which can be used to maintain the original proportions of the node when resizing.
+     */
+    locked_aspect?: boolean;
+
+    /**
+     * Indicates whether the whole area of the node is selectable or only its border.
+     */
+    hollow?: boolean;
+
+    /**
+     * Indicates whether the node is invisible, which can be used to control the rendering style of the node.
+     */
+    invisible?: boolean;
 }
 
 /**
@@ -163,17 +163,10 @@ export interface IConnectionAnchor {
      */
     index?: number;
 
+    /**
+     * Relative offset from the containing IRect, used to differentiate anchor points of that may share the same handle.
+     */
     relative: IPoint;
-
-    // /**
-    //  * Optional pixel offsets that can be applied to the anchor point, providing additional control over the exact position of the connection attachment on the node.
-    //  */
-    // xOffset?: number;
-
-    // /**
-    //  * Optional pixel offsets that can be applied to the anchor point, providing additional control over the exact position of the connection attachment on the node.
-    //  */
-    // yOffset?: number;
 }
 
 /**

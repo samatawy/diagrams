@@ -6,14 +6,6 @@ category: Integration Paths
 
 # Use the view
 
-## Navigation
-
-- [Documentation](index.md)
-- [Use the model](use-model.md)
-- [Use the editor](use-editor.md)
-- [Build your own editor](build-your-own-editor.md)
-- [Operate the editor](operate-the-editor.md)
-
 Use `DiagramView` when you want a read-only/interaction-light viewer with selection and viewport controls, without editing toolbars.
 
 ## Basic setup

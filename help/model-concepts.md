@@ -6,15 +6,6 @@ category: Concepts
 
 # Model concepts
 
-## Navigation
-
-- [Documentation](index.md)
-- [Use the model](use-model.md)
-- [Use the view](use-view.md)
-- [Build your own editor](build-your-own-editor.md)
-- [Operate the editor](operate-the-editor.md)
-
----
 ---
 
 ## Diagram
@@ -66,7 +57,6 @@ An application defined object with string keys and native values. This can be us
 An object containing keys (image ids) and values (the actual images used in a diagram, encoded in base64 string format).
 This object exists in diagram files. At runtume, assets are loaded into the diagrams asset store and can be read by the property `image_assets`.
 
----
 ---
 
 ## Node
@@ -172,7 +162,6 @@ An object containing any values required by the nodes `type` but not used for po
 An application defined object with string keys and native values. This can be used for linking a node to another application area outside the diagram.
 
 ---
----
 
 ## Containers
 
@@ -183,7 +172,6 @@ If a node is a container it can own a group of nodes with a unique id.
 Groups cannot be nested, so if a node has a value for `owns_group` it cannot be grouped with other nodes.
 
 ---
----
 
 ## Connections
 
@@ -191,7 +179,6 @@ A connection is a node that has a `type` supporting connections as well as the f
 - `from`
 - `to`
 
----
 ---
 
 ## Style Sheet

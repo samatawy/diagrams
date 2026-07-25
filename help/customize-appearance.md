@@ -6,15 +6,6 @@ category: Integration Paths
 
 # Customize appearance
 
-## Navigation
-
-- [Documentation](index.md)
-- [Use the model](use-model.md)
-- [Use the view](use-view.md)
-- [Use the editor](use-editor.md)
-- [Build your own editor](build-your-own-editor.md)
-- [Operate the editor](operate-the-editor.md)
-
 You can customize appearance at three levels:
 
 1. Diagram constants (canvas/grid defaults for viewing and editing)

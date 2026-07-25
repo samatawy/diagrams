@@ -6,21 +6,15 @@ category: Integration Paths
 
 # Use the editor
 
-## Navigation
-
-- [Documentation](index.md)
-- [Use the model](use-model.md)
-- [Use the view](use-view.md)
-- [Build your own editor](build-your-own-editor.md)
-- [Operate the editor](operate-the-editor.md)
-
 Use `DiagramEditor` for a quick, batteries-included editing experience.
 
 It wires:
 
-- tool palette
+- tool box containing one or more tool sets
+- top menu
 - action toolbar
-- style controls
+- property inspector
+- status bar and minimap
 - prompts and file dialogs
 - `DiagramEditView` orchestration
 
@@ -47,7 +41,7 @@ diagram.setTool('rectangle');
 ```ts
 await editor.openDiagram();
 await editor.saveDiagram();
-await editor.exportDiagram({ format: 'png' });
+await editor.exportDiagram({ filename: 'flow-01.png' });
 ```
 
 ## Configure handlers (optional)

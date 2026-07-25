@@ -6,14 +6,6 @@ category: Integration Paths
 
 # Use the model
 
-## Navigation
-
-- [Documentation](index.md)
-- [Use the view](use-view.md)
-- [Use the editor](use-editor.md)
-- [Build your own editor](build-your-own-editor.md)
-- [Operate the editor](operate-the-editor.md)
-
 Use this path when you only need diagram data manipulation in a Node.js environment (for generation, migration, validation, or automation) without rendering UI.
 
 ## 1. Create and load a diagram model
@@ -37,18 +29,27 @@ function rectangleNode(
       { x: left + width, y: top + height },
     ],
     text,
-    textAlign: 'center',
-    textBaseline: 'middle',
-    font: '16px Tahoma',
+    textStyle: {
+      color: '#0f172a',
+      align: 'center',
+      baseline: 'middle',
+      fontFace: 'Tahoma',
+      size: 16,
+    },
+    strokeStyle: {
+      color: '#0f172a',
+      width: 1,
+    },
+    fillStyle: {
+      color: '#e2e8f0',
+    },
+    image: {
+      mode: 'none'
+    },
     ready: true,
     hollow: false,
     transparent: false,
-    strokeStyle: '#0f172a',
-    fillStyle: '#e2e8f0',
-    textColor: '#0f172a',
-    lineWidth: 1,
     angle: 0,
-    img_mode: 'none',
   };
 }
 
@@ -70,7 +71,7 @@ const diagram = await new Diagram('placeholder').read(serialized);
 const review = diagram.node('review');
 if (review) {
   review.text = 'Approve';
-  review.fillStyle = '#bbf7d0';
+  review.fillStyle.color = '#bbf7d0';
 }
 
 diagram.meta = {

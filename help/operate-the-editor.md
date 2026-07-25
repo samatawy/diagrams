@@ -6,14 +6,6 @@ category: End User
 
 # Operate the editor
 
-## Navigation
-
-- [Documentation](index.md)
-- [Use the model](use-model.md)
-- [Use the view](use-view.md)
-- [Use the editor](use-editor.md)
-- [Build your own editor](build-your-own-editor.md)
-
 This page is for end users of applications built with the diagrams editor.
 
 ## Pointer interactions

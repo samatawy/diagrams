@@ -1,6 +1,7 @@
 ---
 title: Documentation
 children:
+  - ./model-concepts.md
   - ./use-model.md
   - ./use-view.md
   - ./use-editor.md
@@ -17,6 +18,7 @@ This package intentionally starts small. It gives browser applications a typed m
 
 ## Documentation
 
+- [Model concepts](model-concepts.md)
 - [Use the model](use-model.md)
 - [Use the view](use-view.md)
 - [Use the editor](use-editor.md)

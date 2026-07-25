@@ -6,14 +6,6 @@ category: Integration Paths
 
 # Build your own editor
 
-## Navigation
-
-- [Documentation](index.md)
-- [Use the model](use-model.md)
-- [Use the view](use-view.md)
-- [Use the editor](use-editor.md)
-- [Operate the editor](operate-the-editor.md)
-
 Use `DiagramEditView` when you want editing power with your own UI architecture.
 
 This approach gives you full control over layout, branding, and workflows while reusing mutation logic.
@@ -23,7 +15,7 @@ This approach gives you full control over layout, branding, and workflows while 
 ```ts
 import {
   DiagramEditView,
-  ToolPalette,
+  ToolBox,
   DiagramToolBar,
   ColorSelect,
   WidthSelect,
@@ -31,14 +23,20 @@ import {
   SizeSelect,
   ArrowSelect,
   IntegerRangeSelect,
+  registerBasicTools,
+  registerBpmnTools,
 } from '@samatawy/diagrams';
+
+// Register any toolsets you need or build a custom toolset from any tools you register.
+registerBasicTools();
+registerBpmnTools();
 
 const canvasHost = document.getElementById('canvas-host')!;
 const toolsHost = document.getElementById('tools-host')!;
 const barHost = document.getElementById('toolbar-host')!;
 
 const edit = new DiagramEditView('custom-editor', canvasHost);
-new ToolPalette(toolsHost, edit);
+new ToolBox(toolsHost, edit);
 new DiagramToolBar(barHost, edit);
 
 // Example: custom control wiring
@@ -59,10 +57,12 @@ From `src/editor` exports:
 - `IntegerRangeSelect`
 - `ArrowSelect`
 - `PromptDialog`
-- `ToolPalette`
+- `ToolBox`
 - `ToolBar`
 - `DiagramToolBar`
 - `DiagramEditor` (prebuilt shell)
+
+Plus more. Browse the documentation or repo for more classes and components.
 
 ## 3. Add your own component
 

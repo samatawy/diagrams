@@ -4,6 +4,7 @@
         "src/index.ts"
     ],
     "projectDocuments": [
+        "help/model-concepts.md",
         "help/use-model.md",
         "help/use-view.md",
         "help/use-editor.md",
