@@ -21,7 +21,7 @@ export class BpmnAssociationAdapter extends OrthogonalAdapter {
             strokeStyle: {
                 color: BPMN_CONNECTION_STROKE_STYLE,
                 width: 1,
-                dash: 'dotted',
+                dash: 'dotted', // [1, 2],
                 arrow_start: 'none',
                 arrow_end: 'none',
             },

@@ -81,10 +81,10 @@ export class ElkLayout {
             "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
             "elk.layered.crossingMinimization.semiInteractive": "true",
 
-            "elk.hierarchyHandling": "INCLUDE_CHILDREN",
+            // "elk.hierarchyHandling": "INCLUDE_CHILDREN",
 
-            // 'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
             // 'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
+
             'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
             "elk.layered.nodePlacement.bk.fixedAlignment": "BALANCED",
             "elk.layered.cycleBreaking.strategy": "GREEDY",
@@ -93,7 +93,6 @@ export class ElkLayout {
 
         const result = await elk.layout(graph);
 
-        console.log('Elk layout result:', result);
         return this.applyElkGraph(result);
     }
 
@@ -120,36 +119,8 @@ export class ElkLayout {
 
         const result = await elk.layout(graph);
 
-        console.log('Elk layout result:', result);
         return this.applyElkGraph(result);
     }
-
-    // /**
-    //  * Automatically layout the diagram in a left-to-right flow.
-    //  */
-    // public async autoLeftRight(): Promise<INode[]> {
-    //     const elk = new ELK();
-    //     const graph = this.buildElkGraph();
-
-    //     graph.layoutOptions = {
-    //         'elk.algorithm': 'layered',
-    //         'elk.direction': 'RIGHT',
-    //         'elk.spacing.nodeNode': '32',
-    //         'elk.layered.spacing.nodeNodeBetweenLayers': '64',
-    //         'elk.layered.spacing.edgeEdgeBetweenLayers': '32',
-    //         'elk.edgeRouting': 'ORTHOGONAL',
-
-    //         // 'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
-    //         // 'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
-    //         'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
-    //         'elk.edgeRouting.avoidNodeOverlap': 'true',
-    //     };
-
-    //     const result = await elk.layout(graph);
-
-    //     console.log('Elk layout result:', result);
-    //     return this.applyElkGraph(result);
-    // }
 
     /**
      * Automatically layout the diagram in a top-to-bottom tree.
@@ -177,7 +148,6 @@ export class ElkLayout {
 
         const result = await elk.layout(graph);
 
-        console.log('Elk layout result:', result);
         return this.applyElkGraph(result);
     }
 
@@ -207,7 +177,6 @@ export class ElkLayout {
 
         const result = await elk.layout(graph);
 
-        console.log('Elk layout result:', result);
         return this.applyElkGraph(result);
     }
 
@@ -267,7 +236,6 @@ export class ElkLayout {
 
         const result = await elk.layout(graph);
 
-        console.log('Elk layout result:', result);
         return this.applyElkGraph(result);
     }
 
@@ -296,7 +264,6 @@ export class ElkLayout {
 
         const result = await elk.layout(graph);
 
-        console.log('Elk layout result:', result);
         return this.applyElkGraph(result);
     }
 
@@ -324,7 +291,6 @@ export class ElkLayout {
 
         const result = await elk.layout(graph);
 
-        console.log('Elk layout result:', result);
         return this.applyElkGraph(result);
     }
 

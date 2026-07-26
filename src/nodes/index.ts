@@ -44,6 +44,8 @@ export * from './erd/index';
 export * from './logic/index';
 export * from './uml/index';
 
+export * from './flags/index';
+
 export function registerBasicAdapters(): void {
 
     FreehandAdapter.register();

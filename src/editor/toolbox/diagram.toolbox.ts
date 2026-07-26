@@ -1,18 +1,8 @@
 import type { DiagramEditView } from "../../editview";
 import { injectStyles, setClasses } from "../editor.utils";
 import { DiagramToolset } from "./diagram.toolset";
-// import { BASIC_TOOL_LAYOUT } from "../../nodes";
-// import { BPMN_TOOL_LAYOUT } from "../../nodes/bpmn";
-// import { C4_TOOL_LAYOUT } from "../../nodes/c4";
-// import { ERD_TOOL_LAYOUT } from "../../nodes/erd";
-// import { UML_TOOL_LAYOUT } from "../../nodes/uml";
-// import { LOGIC_TOOL_LAYOUT } from "../../nodes/logic";
 
 import DEFAULT_STYLES from '../../css_generated/editor/toolbox/diagram.toolbox.css';
-// import { loadTablerIcons } from "../../factory/svg.tool.loader";
-import { loadFlagIcons } from "../../factory/svg.tool.loader";
-// import { ICON_NAMES as TABLER_ICON_NAMES } from "../../icons_generated/tabler.icons";
-import { ICON_NAMES as FLAG_ICON_NAMES } from "../../icons_generated/flag.icons";
 import { ToolsetRegistry, type ToolsetConfig } from "../../factory/toolset.registry";
 
 const STYLE_ID = 'toolbox-defaults';
@@ -101,8 +91,10 @@ export class DiagramToolbox {
      */
     constructor(target: HTMLElement, diagram: DiagramEditView, config: DiagramToolBoxConfig = {}) {
         ensureDefaultStyles();
+
         // loadTablerIcons();
-        loadFlagIcons();
+        // loadFlagIcons();
+
         this.diagram = diagram;
         this.config = { ...DEFAULT_CONFIG, ...config };
         this.host = target;

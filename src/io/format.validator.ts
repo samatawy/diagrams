@@ -1,5 +1,5 @@
-import type { ISerializedDiagram, ISerializedNode } from "./serialized.types";
-import { ObjectCheck, type CheckOptions } from "@samatawy/checks";
+import type { ISerializedDiagram } from "./serialized.types";
+import { FieldCheck, ObjectCheck, type CheckOptions } from "@samatawy/checks";
 import type { StyleSheet } from "../sheets/style.sheet";
 
 const MISSING = 'missing';
@@ -30,7 +30,6 @@ export class FormatValidator {
     }
 
     private static checkTextStyle = (ts: ObjectCheck) => {
-        console.debug('Checking text style', (ts as any).data?.weight, (ts as any).data);
         return [
             ts.optional('fontFace').string(),
             ts.optional('size').number().atLeast(0),
@@ -50,7 +49,10 @@ export class FormatValidator {
         return [
             ss.optional('color').string(),
             ss.optional('width').number().atLeast(1),
-            ss.optional('dash').array().of('number'),
+            ss.optional('dash').anyOf([
+                (f) => [f.string().equalsOneOf(['solid', 'dashed', 'dotted', 'dashdot', 'dash_dot', 'dash-dot'])],
+                (f) => [f.array().of('number')],
+            ]),
             ss.optional('arrow_start').string()
                 .equalsOneOf(['none', 'solid_triangle', 'hollow_triangle', 'solid_spear', 'hollow_spear', 'solid_diamond', 'hollow_diamond', 'solid_circle', 'hollow_circle']),
             ss.optional('arrow_end').string()
@@ -151,153 +153,4 @@ export class FormatValidator {
         return check;
     }
 
-
-    // public static isValidDiagram(json: ISerializedDiagram): FormatValidationResult {
-
-    //     if (!json || typeof json !== 'object') return INVALID_FORMAT_RESULT;
-    //     if (!Array.isArray(json.nodes)) return INVALID_FORMAT_RESULT;
-    //     for (const node of json.nodes) {
-    //         const result = this.isValidNode(node);
-    //         if (!result.is_valid) return result;
-    //     }
-
-    //     if (json.id && typeof json.id !== 'string') return INVALID_FORMAT_RESULT;
-    //     if (json.groups && !Array.isArray(json.groups)) return INVALID_FORMAT_RESULT;
-    //     if (json.layers && !Array.isArray(json.layers)) return INVALID_FORMAT_RESULT;
-
-    //     if (json.sheet_id && typeof json.sheet_id !== 'string') return INVALID_FORMAT_RESULT;
-    //     if (json.sheet && typeof json.sheet !== 'object') return INVALID_FORMAT_RESULT;
-
-    //     if (json.background && !this.isValidFillStyle(json.background)) return INVALID_FORMAT_RESULT;
-    //     if (json.meta && typeof json.meta !== 'object') return INVALID_FORMAT_RESULT;
-    //     if (json.image_assets && typeof json.image_assets !== 'object') return INVALID_FORMAT_RESULT;
-
-    //     return VALID_FORMAT_RESULT;
-    // }
-
-    // public static isValidNode(json: ISerializedNode): FormatValidationResult {
-    //     if (!json || typeof json !== 'object') return INVALID_FORMAT_RESULT;
-    //     if (typeof json.id !== 'string') return INVALID_FORMAT_RESULT;
-    //     if (typeof json.type !== 'string') return INVALID_FORMAT_RESULT;
-
-    //     if (json.angle && typeof json.angle !== 'number') return INVALID_FORMAT_RESULT;
-    //     if (json.opacity && typeof json.opacity !== 'number') return INVALID_FORMAT_RESULT;
-
-    //     if (json.hollow && typeof json.hollow !== 'boolean') return INVALID_FORMAT_RESULT;
-    //     if (json.locked && typeof json.locked !== 'boolean') return INVALID_FORMAT_RESULT;
-    //     if (json.locked_aspect && typeof json.locked_aspect !== 'boolean') return INVALID_FORMAT_RESULT;
-    //     if (json.invisible && typeof json.invisible !== 'boolean') return INVALID_FORMAT_RESULT;
-
-    //     if (json.textStyle && !this.isValidTextStyle(json.textStyle)) return INVALID_FORMAT_RESULT;
-    //     if (json.strokeStyle && !this.isValidStrokeStyle(json.strokeStyle)) return INVALID_FORMAT_RESULT;
-    //     if (json.fillStyle && !this.isValidFillStyle(json.fillStyle)) return INVALID_FORMAT_RESULT;
-
-    //     if (json.points && !this.isValidPointArray(json.points)) return INVALID_FORMAT_RESULT;
-
-    //     if (json.geometry && typeof json.geometry !== 'object') return INVALID_FORMAT_RESULT;
-    //     if (json.specific && typeof json.specific !== 'object') return INVALID_FORMAT_RESULT;
-    //     if (json.meta && typeof json.meta !== 'object') return INVALID_FORMAT_RESULT;
-
-    //     return VALID_FORMAT_RESULT;
-    // }
-
-    // public static isValidStylesheet(json: any): FormatValidationResult {
-    //     // Implement your validation logic here
-    //     return VALID_FORMAT_RESULT;
-    // }
-
-    // public static isValidTextStyle(json: TextStyle): FormatValidationResult {
-
-    //     if (!json || typeof json !== 'object') return INVALID_FORMAT_RESULT;
-    //     if (json.fontFace && typeof json.fontFace !== 'string') return INVALID_FORMAT_RESULT;
-    //     if (json.size && !this.isValidSize(json.size)) return INVALID_FORMAT_RESULT;
-    //     if (json.color && typeof json.color !== 'string') return INVALID_FORMAT_RESULT;
-    //     if (json.halo && typeof json.halo !== 'string') return INVALID_FORMAT_RESULT;
-    //     if (json.align && !this.isValidTextAlign(json.align)) return INVALID_FORMAT_RESULT;
-    //     if (json.baseline && !this.isValidTextBaseline(json.baseline)) return INVALID_FORMAT_RESULT;
-    //     if (json.orientation && !this.isValidTextOrientation(json.orientation)) return INVALID_FORMAT_RESULT;
-    //     if (json.weight && !this.isValidFontWeight(json.weight)) return INVALID_FORMAT_RESULT;
-    //     if (json.italic && typeof json.italic !== 'boolean') return INVALID_FORMAT_RESULT;
-    //     if (json.underline && typeof json.underline !== 'boolean') return INVALID_FORMAT_RESULT;
-
-    //     return VALID_FORMAT_RESULT;
-    // }
-
-    // public static isValidPoint(json: IPoint): FormatValidationResult {
-    //     if (!json || typeof json !== 'object') return INVALID_FORMAT_RESULT;
-    //     if (typeof json.x !== 'number') return INVALID_FORMAT_RESULT;
-    //     if (typeof json.y !== 'number') return INVALID_FORMAT_RESULT;
-
-    //     return VALID_FORMAT_RESULT;
-    // }
-
-    // public static isValidPointArray(json: IPoint[]): FormatValidationResult {
-    //     if (!Array.isArray(json)) return INVALID_FORMAT_RESULT;
-    //     for (const point of json) {
-    //         const result = this.isValidPoint(point);
-    //         if (!result.is_valid) return INVALID_FORMAT_RESULT;
-    //     }
-    //     return VALID_FORMAT_RESULT;
-    // }
-
-    // public static isValidStrokeStyle(json: StrokeStyle): FormatValidationResult {
-
-    //     if (!json || typeof json !== 'object') return INVALID_FORMAT_RESULT;
-    //     if (json.color && typeof json.color !== 'string') return INVALID_FORMAT_RESULT;
-    //     if (json.width && !this.isValidSize(json.width)) return INVALID_FORMAT_RESULT;
-    //     if (json.dash && !this.isValidDashArray(json.dash)) return INVALID_FORMAT_RESULT;
-    //     if (json.arrow_start && !this.isValidArrowType(json.arrow_start)) return INVALID_FORMAT_RESULT;
-    //     if (json.arrow_end && !this.isValidArrowType(json.arrow_end)) return INVALID_FORMAT_RESULT;
-
-    //     return VALID_FORMAT_RESULT;
-    // }
-
-    // public static isValidFillStyle(json: FillStyle): FormatValidationResult {
-
-    //     if (!json || typeof json !== 'object') return INVALID_FORMAT_RESULT;
-    //     if (json.color && typeof json.color !== 'string') return INVALID_FORMAT_RESULT;
-    //     if (json.gradient && !this.isValidGradient(json.gradient)) return INVALID_FORMAT_RESULT;
-
-    //     return VALID_FORMAT_RESULT;
-    // }
-
-    // private static isValidGradient(json: IGradient): boolean {
-    //     if (!json || typeof json !== 'object') return false;
-    //     if (json.type && typeof json.type !== 'string') return false;
-    //     if (json.stops && !Array.isArray(json.stops)) return false;
-    //     return true;
-    // }
-
-    // private static isValidTextAlign(value: any): boolean {
-    //     const validAligns: ITextAlign[] = ['left', 'center', 'right'];
-    //     return validAligns.includes(value);
-    // }
-
-    // private static isValidTextBaseline(value: any): boolean {
-    //     const validBaselines: ITextBaseline[] = ['top', 'middle', 'bottom'];
-    //     return validBaselines.includes(value);
-    // }
-
-    // private static isValidTextOrientation(value: any): boolean {
-    //     const validOrientations: ITextOrientation[] = ['horizontal', 'vertical', 'path'];
-    //     return validOrientations.includes(value);
-    // }
-
-    // private static isValidFontWeight(value: any): boolean {
-    //     return typeof value === 'number' && value >= 100 && value <= 900 && value % 100 === 0;
-    // }
-
-    // private static isValidSize(value: any): boolean {
-    //     return typeof value === 'number' && value > 0;
-    // }
-
-    // private static isValidDashArray(value: any): boolean {
-    //     if (!Array.isArray(value)) return false;
-    //     return value.every(num => typeof num === 'number' && num >= 0);
-    // }
-
-    // private static isValidArrowType(value: any): boolean {
-    //     const validArrowTypes: ArrowType[] = ['none', 'solid_triangle', 'hollow_triangle', 'solid_spear', 'hollow_spear', 'solid_diamond', 'hollow_diamond', 'solid_circle', 'hollow_circle'];
-    //     return validArrowTypes.includes(value);
-    // }
 }

@@ -2600,9 +2600,9 @@ export class DiagramEditView extends DiagramView {
     }
 
     public autoLayout(method: AutoLayoutMethod, direction?: AutoLayoutDirection) {
+        this.addUndo();
         new ElkLayout(this).autoLayout(method, direction)
             .then(planned => {
-                this.addUndo();
                 if (this.grid.forced) this.snapToGrid(planned);
                 this.animateLayout(planned);
             });

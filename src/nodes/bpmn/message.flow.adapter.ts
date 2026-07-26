@@ -21,7 +21,7 @@ export class BpmnMessageFlowAdapter extends OrthogonalAdapter {
             strokeStyle: {
                 color: BPMN_CONNECTION_STROKE_STYLE,
                 width: 1,
-                dash: 'dashed',
+                dash: [4, 4],
                 arrow_start: 'none',
                 arrow_end: 'solid_triangle',
             },

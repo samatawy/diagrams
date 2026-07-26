@@ -47,11 +47,11 @@ import { DiagramHintService } from "../status/diagram.hint.service";
 import { SheetRepository } from "../sheets/sheet.repository";
 import { DiagramToolbox, type DiagramToolBoxConfig } from "./toolbox";
 import { registerBasicAdapters } from "../nodes";
-import { registerBpmnAdapters } from "../nodes/bpmn";
-import { registerC4Adapters } from "../nodes/c4";
-import { registerErdAdapters } from "../nodes/erd";
-import { registerUmlAdapters } from "../nodes/uml";
-import { registerLogicAdapters } from "../nodes/logic";
+// import { registerBpmnAdapters } from "../nodes/bpmn";
+// import { registerC4Adapters } from "../nodes/c4";
+// import { registerErdAdapters } from "../nodes/erd";
+// import { registerUmlAdapters } from "../nodes/uml";
+// import { registerLogicAdapters } from "../nodes/logic";
 
 import DIAGRAM_EDITOR_STYLES from '../css_generated/editor/diagram.editor.css';
 import { DiagramTopMenu } from "./menus/diagram.top.menu";
@@ -205,11 +205,13 @@ export class DiagramEditor {
 
     static {
         registerBasicAdapters();
-        registerBpmnAdapters();
-        registerC4Adapters();
-        registerErdAdapters();
-        registerUmlAdapters();
-        registerLogicAdapters();
+
+        // Optionally register other adapters for specific diagram types if needed.
+        // registerBpmnAdapters();
+        // registerC4Adapters();
+        // registerErdAdapters();
+        // registerUmlAdapters();
+        // registerLogicAdapters();
     }
 
     /**

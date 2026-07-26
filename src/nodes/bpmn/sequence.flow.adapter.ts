@@ -20,7 +20,7 @@ export class BpmnSequenceFlowAdapter extends OrthogonalAdapter {
             text: '',
             strokeStyle: {
                 color: BPMN_CONNECTION_STROKE_STYLE,
-                dash: 'solid',
+                dash: [],
                 arrow_start: 'none',
                 arrow_end: 'solid_triangle',
             },

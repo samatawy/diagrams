@@ -50,6 +50,17 @@
     "lint:editor": "npm --prefix packages/editor run lint",
     "build:bpmn": "npm run build:editor && npm --prefix packages/bpmn run build",
     "lint:bpmn": "npm --prefix packages/bpmn run lint",
+    "build:c4": "npm run build:editor && npm --prefix packages/c4 run build",
+    "lint:c4": "npm --prefix packages/c4 run lint",
+    "build:erd": "npm run build:editor && npm --prefix packages/erd run build",
+    "lint:erd": "npm --prefix packages/erd run lint",
+    "build:flags": "npm run build:editor && npm --prefix packages/flags run build",
+    "lint:flags": "npm --prefix packages/flags run lint",
+    "build:logic": "npm run build:editor && npm --prefix packages/logic run build",
+    "lint:logic": "npm --prefix packages/logic run lint",
+    "build:uml": "npm run build:editor && npm --prefix packages/uml run build",
+    "lint:uml": "npm --prefix packages/uml run lint",
+    "build:custom": "npm run build:bpmn && npm run build:c4 && npm run build:erd && npm run build:flags && npm run build:logic && npm run build:uml",
     "prepublishOnly": "npm run lint && npm run test && npm run build && npm run docs"
   },
   "keywords": [
