@@ -36,15 +36,30 @@ export class ElkLayout {
 
         graph.layoutOptions = {
             'elk.algorithm': 'layered',
-            'elk.spacing.nodeNode': '32',
-            'elk.layered.spacing.nodeNodeBetweenLayers': '32',
-            'elk.layered.spacing.edgeEdgeBetweenLayers': '16',
+            "elk.direction": "UNDEFINED",
+
+            'elk.spacing.nodeNode': '40',
+            'elk.spacing.edgeEdge': '32',
+            'elk.spacing.edgeNode': '32',
+
+            'elk.layered.spacing.nodeNodeBetweenLayers': '40',
+            'elk.layered.spacing.edgeEdgeBetweenLayers': '32',
+            'elk.layered.spacing.edgeNodeBetweenLayers': '32',
+
             'elk.edgeRouting': 'ORTHOGONAL',
+
+            "elk.layered.edgeRouting.thoroughness": "EXPENSIVE",
+            "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
+            "elk.layered.crossingMinimization.semiInteractive": "true",
+
+            "elk.hierarchyHandling": "INCLUDE_CHILDREN",
 
             // 'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
             // 'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
             'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
-            'elk.edgeRouting.avoidNodeOverlap': 'true',
+            "elk.layered.nodePlacement.bk.fixedAlignment": "BALANCED",
+            "elk.layered.cycleBreaking.strategy": "GREEDY",
+            // 'elk.edgeRouting.avoidNodeOverlap': 'true',
         };
 
         const result = await elk.layout(graph);
@@ -363,7 +378,7 @@ export class ElkLayout {
 
         let routing = 'ORTHOGONAL';
         if (edge.type === 'line') {
-            routing = 'ORTHOGONAL';
+            routing = 'POLYLINE';
         } else if (edge.type === 'curve') {
             routing = 'SPLINES';
         }

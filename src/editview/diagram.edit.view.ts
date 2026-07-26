@@ -2377,17 +2377,37 @@ export class DiagramEditView extends DiagramView {
 
         const _node = (typeof node === 'string') ? this.node(node) : node;
         if (_node) {
+            const adapter = NodeRegistry.adapter(type);
+            if (!adapter) return;
+
             this.addUndo();
 
             _node.type = type;
 
             /* Normalize text orientation if the new type does not support the current orientation. */
             if (_node.textStyle?.orientation !== undefined) {
-                const allowed = NodeRegistry.adapter(_node.type)?.text_orientations;
+                const allowed = adapter.text_orientations;
                 if (allowed && !allowed.includes(_node.textStyle.orientation)) {
                     _node.textStyle.orientation = allowed[0] ?? 'horizontal';
                 }
             }
+            /* Normalize points array */
+            const maxPoints = adapter.max_points;
+            if (maxPoints !== undefined && _node.points && _node.points.length > maxPoints) {
+                const first = _node.points[0]!;
+                const last = _node.points[_node.points.length - 1]!;
+                const middlePoints = _node.points.slice(1, _node.points.length - 1).slice(0, maxPoints - 2);
+                _node.points = [first, ...middlePoints, last];
+            }
+            /* Normalize geometry for endpoints */
+            if (adapter.afterConnect) {
+                const fromAnchor = ConnectionBasics.reconnectToBestHandle(_node, 'from');
+                if (fromAnchor) adapter.afterConnect(_node, 'from', fromAnchor);
+
+                const toAnchor = ConnectionBasics.reconnectToBestHandle(_node, 'to');
+                if (toAnchor) adapter.afterConnect(_node, 'to', toAnchor);
+            }
+
             /* Normalize connection anchors if the new type does not support the current anchor handle.
                Anchors whose handle is still valid for the new type are left untouched. 
             */

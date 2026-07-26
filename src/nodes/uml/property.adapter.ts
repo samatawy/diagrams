@@ -48,13 +48,8 @@ export class UmlPropertyAdapter extends RectangleAdapter {
             RenderBasics.skipShadow(context);
             context.stroke(path);
 
-            // if (node.text && show !== 'quick') {
-            //     RenderBasics.renderText(node, context, { overflow: this.text_overflow, path });
-            // }
-
             if (show !== 'quick') {
                 // Render the datatype and constraints on the right side of the field
-                // const datatype = node.specific?.datatype || '';
                 let scope = '';
                 if (node.specific?.scope === 'public') scope = '+';
                 if (node.specific?.scope === 'protected') scope = '#';

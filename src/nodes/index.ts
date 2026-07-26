@@ -91,6 +91,7 @@ export function registerBasicAdapters(): void {
     ]);
 
     NodeRegistry.registerTransferables([
+        LineAdapter.TYPE,
         PolylineAdapter.TYPE,
         OrthogonalAdapter.TYPE,
         CurveAdapter.TYPE,

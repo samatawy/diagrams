@@ -54,7 +54,6 @@ export class FieldAdapter extends RectangleAdapter {
 
             if (show !== 'quick') {
                 // Render the datatype and constraints on the right side of the field
-                // const datatype = node.specific?.datatype || '';
                 const constraints = [];
                 if (node.specific?.primary_key) constraints.push('PK');
                 if (node.specific?.foreign_key) constraints.push('FK');
@@ -63,7 +62,6 @@ export class FieldAdapter extends RectangleAdapter {
                 if (node.specific?.not_null) constraints.push('NN');
                 const constraintText = constraints.join(', ');
 
-                // const rightText = [datatype, constraintText].filter(Boolean).join(' | ');
                 const rightText = constraintText; // Only show constraints for now
 
                 if (rightText) {
