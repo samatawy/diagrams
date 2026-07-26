@@ -1,0 +1,83 @@
+{
+  "name": "@samatawy/diagrams-viewer",
+  "version": "0.1.0",
+  "description": "Viewer package for @samatawy/diagrams.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "browser": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js",
+      "require": "./dist/core.cjs"
+    },
+    "./view": {
+      "types": "./dist/view.d.ts",
+      "import": "./dist/view.js",
+      "require": "./dist/view.cjs"
+    },
+    "./layout": {
+      "types": "./dist/layout.d.ts",
+      "import": "./dist/layout.js",
+      "require": "./dist/layout.cjs"
+    },
+    "./status": {
+      "types": "./dist/status.d.ts",
+      "import": "./dist/status.js",
+      "require": "./dist/status.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "tsup --config tsup.config.ts",
+    "dev": "tsup --config tsup.config.ts --watch",
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "prepublishOnly": "npm run lint && npm run build"
+  },
+  "keywords": [
+    "typescript",
+    "viewer",
+    "diagram",
+    "canvas"
+  ],
+  "author": "Sam Atawy <sam.atawy@gmail.com>",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samatawy/diagrams.git"
+  },
+  "bugs": {
+    "url": "https://github.com/samatawy/diagrams/issues"
+  },
+  "homepage": "https://samatawy.github.io/diagrams/",
+  "devDependencies": {
+    "@samatawy/diagrams-model": "workspace:*",
+    "@types/node": "^24.3.1",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "@samatawy/diagrams-model": "^0.1.0"
+  },
+  "dependencies": {}
+}

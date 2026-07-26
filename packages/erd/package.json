@@ -1,5 +1,5 @@
 {
-  "name": "@samatawy/diagrams",
+  "name": "@samatawy/diagrams-erd",
   "version": "0.6.6",
   "description": "TypeScript library for designing, viewing, and managing diagrams.",
   "type": "module",
@@ -26,9 +26,6 @@
   "engines": {
     "node": ">=18"
   },
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
     "css:embed": "node scripts/css-to-ts.mjs",
     "icons:embed-tabler": "node scripts/import-icons.mjs ../node_modules/@tabler/icons/icons/outline icons_generated/tabler.icons.ts",
@@ -42,10 +39,6 @@
     "docs": "npm run css:embed && typedoc",
     "site": "npm run build && npm run docs && node scripts/build-site.mjs",
     "site:run": "npm run site && npx --yes http-server -p 4173 ./site",
-    "build:model": "npm --prefix packages/model run build",
-    "lint:model": "npm --prefix packages/model run lint",
-    "build:viewer": "npm run build:model && npm --prefix packages/viewer run build",
-    "lint:viewer": "npm --prefix packages/viewer run lint",
     "prepublishOnly": "npm run lint && npm run test && npm run build && npm run docs"
   },
   "keywords": [
