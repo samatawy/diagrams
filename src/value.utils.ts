@@ -3,10 +3,30 @@ import { BOLD_FONT_WEIGHT, NORMAL_FONT_WEIGHT, type FillStyle, type ShadowStyle,
 import type { ArrowType, IFontWeight, ImageAlign, ImageMode, IPoint, IRect, ITextAlign, ITextBaseline, ITextOrientation } from "./types";
 import { DiagramConstants } from "./model/diagram.constants";
 import { NodeRegistry } from "./factory/node.registry";
+import { v6 } from "uuid";
 
 export function humanize(key: string): string {
     const parts = key.split(/[-_]/).filter(Boolean);
     return parts.map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+}
+
+export function newGroupId(): string {
+    return 'g-' + v6();
+}
+
+// export function newLayerId(): string {
+//     return 'l-' + v6();
+// }
+
+export function newNodeId(type: string): string {
+    if (!type) return `n-${v6()}`;
+
+    const is_connector = NodeRegistry.adapter(type)?.is_connector;
+    return is_connector ? `c-${v6()}` : `n-${v6()}`;
+}
+
+export function newDiagramId(): string {
+    return `diagram-${v6()}`;
 }
 
 export function deepClone(obj: any, options?: { exclude?: string[] }): any {

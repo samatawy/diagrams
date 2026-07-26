@@ -15,6 +15,7 @@ export default defineConfig({
         'probe-image-size'
     ],
     noExternal: [
+        'uuid',
         'elkjs',
         '@samatawy/checks'
     ]

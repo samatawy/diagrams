@@ -199,7 +199,6 @@ export class Diagram implements IDiagram, HasSheetRepository {
         return this.nodes.find(n => (n as any).owns_group === group.id);
     }
 
-
     /**
      * Add or remove a node from a layer. If the layerId is undefined, the node is removed from any layer it belongs to.
      * A node can only belong to one layer at a time. If the node is already in a different layer, it will be removed
@@ -284,6 +283,10 @@ export class Diagram implements IDiagram, HasSheetRepository {
         this.layers = this.layers.filter(layer => layer.id !== layerId);
     }
 
+    // ======================================
+    // ========== Image and Asset methods ==========
+    // ======================================
+
     /**
      * Assigns an image source to a node for background/content rendering.
      */
@@ -335,6 +338,10 @@ export class Diagram implements IDiagram, HasSheetRepository {
 
         return this.asset_store.resolve(imageId(target));
     }
+
+    // ======================================
+    // ========== Metadata methods ==========
+    // ======================================
 
     /**
      * The diagram's sheet repository, for managing and applying spec sheets to the diagram and its nodes.

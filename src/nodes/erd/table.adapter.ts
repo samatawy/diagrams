@@ -1,10 +1,10 @@
 import { isContainer, isDiagramViewLike } from "../../guards";
 import type { IContainer, INode } from "../../interfaces";
-import { isHollow, lineWidth } from "../../value.utils";
+import { isHollow, lineWidth, newGroupId } from "../../value.utils";
 import type { INodeCached } from "../../view/view.cache";
 import { VerticalPoolAdapter } from "../container/vertical.pool.adapter";
 import { RenderBasics } from "../render.basics";
-import { NodeHandle, type AnchorScope, type IPoint } from "../../types";
+import { NodeHandle, type AnchorScope } from "../../types";
 import { GroupBasics } from "../group.basics";
 import { DiagramConstants } from "../../model/diagram.constants";
 import { NodeRegistry } from "../../factory/node.registry";
@@ -243,7 +243,8 @@ export class TableAdapter extends VerticalPoolAdapter {
             },
             geometry: { radius: 8 },    // DiagramConstants.HANDLE_HIT_EPSILON },
 
-            owns_group: `table-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            owns_group: newGroupId(),
+            // owns_group: `table-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         }
     }
 }

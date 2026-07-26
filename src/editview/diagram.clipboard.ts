@@ -3,7 +3,7 @@ import type { IConnection, IConnectionAnchor, IContainer, IGroup, INode } from "
 import { jsonSerializer } from "../io/json.serializer";
 import type { ISerializedNode } from "../io/serialized.types";
 import { NodeBasics } from "../nodes/node.basics";
-import { deepClone, isHollow } from "../value.utils";
+import { deepClone, isHollow, newGroupId, newNodeId } from "../value.utils";
 import type { DiagramEditView } from "./diagram.edit.view";
 
 
@@ -192,7 +192,7 @@ export class DiagramClipboard {
                 if (envelope.groups?.length) {
                     for (const group of envelope.groups) {
                         /* We only need the groups, members will be cloned into them */
-                        this.diagram.groups.push(group);    // { id: group.id, nodes: [] });
+                        this.diagram.groups.push(group);
                     }
                 }
 
@@ -317,7 +317,8 @@ export class DiagramClipboard {
     protected cloneNode(node: INode | ISerializedNode, id?: string): INode {
         return {
             ...node,    /* Must NOT use deepClone on INode */
-            id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            id: id || newNodeId(node.type),
+            // id: id || `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             points: deepClone(node.points),         // node.points.map(p => ({ ...p })),
             ...(node.textStyle && { textStyle: deepClone(node.textStyle) }),
             ...(node.strokeStyle && { strokeStyle: deepClone(node.strokeStyle) }),
@@ -342,7 +343,7 @@ export class DiagramClipboard {
          */
         const idMap = new Map<string, string>();
         for (const node of nodes) {
-            const newId = `${node.type}-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+            const newId = newNodeId(node.type);
             idMap.set(node.id, newId);
         }
 
@@ -363,7 +364,7 @@ export class DiagramClipboard {
                 const group = this.diagram.group(group_id);
                 if (group) {
                     /* create a clone group from selected nodes */
-                    let cloned_group_id = `group-clone-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+                    let cloned_group_id = newGroupId();
                     let new_members = group.nodes.filter(id => idMap.has(id));
                     new_members = new_members.map(id => idMap.get(id)!);
                     const new_group = { id: cloned_group_id, nodes: new_members };

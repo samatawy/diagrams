@@ -1,6 +1,6 @@
 import { isContainer, isDiagramViewLike } from "../../guards";
 import type { IContainer, INode } from "../../interfaces";
-import { isHollow, lineWidth } from "../../value.utils";
+import { isHollow, lineWidth, newGroupId } from "../../value.utils";
 import type { INodeCached } from "../../view/view.cache";
 import { VerticalPoolAdapter } from "../container/vertical.pool.adapter";
 import { RenderBasics } from "../render.basics";
@@ -311,7 +311,8 @@ export class UmlClassAdapter extends VerticalPoolAdapter {
             },
             geometry: { radius: 0 },
 
-            owns_group: `class-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            owns_group: newGroupId(),
+            // owns_group: `class-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         }
     }
 }

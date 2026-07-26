@@ -1,10 +1,10 @@
 import type { INode, IContainer } from "../../interfaces";
-import { NodeHandle, type AnchorScope, type IRect, type ITextBaseline, type ITextOrientation } from "../../types";
+import type { AnchorScope, IRect, ITextBaseline, ITextOrientation } from "../../types";
 import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RectangleAdapter } from "../rectangle/rectangle.adapter";
 import { RenderBasics } from "../render.basics";
-import { isHollow } from "../../value.utils";
+import { isHollow, newGroupId } from "../../value.utils";
 import { DiagramConstants } from "../../model/diagram.constants";
 import type { TextOverflowMode, TextPlacement } from "../../factory/node.adapter";
 import { NodeRegistry } from "../../factory/node.registry";
@@ -32,7 +32,9 @@ export class VerticalPoolAdapter extends RectangleAdapter {
             type: this.type,
             points: [{ x: 0, y: 0 }, { x: 104, y: 240 }],
             geometry: { radius: 8 },    // DiagramConstants.HANDLE_HIT_EPSILON },
-            owns_group: `group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+
+            owns_group: newGroupId(),
+            // owns_group: `group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         }
     }
 

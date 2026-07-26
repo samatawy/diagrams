@@ -6,13 +6,6 @@ export interface IPoint {
     y: number;
 }
 
-// /**
-//  * A single point in 2D space that serves as an anchor for connections, defined by its ID and coordinates.
-//  */
-// export interface AnchorPoint extends IPoint {
-//     id: string;
-// }
-
 /**
  * A rectangle defined by its left and top coordinates, as well as its width and height. 
  * This is commonly used for bounding boxes and layout calculations.

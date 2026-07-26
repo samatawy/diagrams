@@ -50,6 +50,8 @@ import {
     humanize, isInvisible, isLocked, lineDash, lineWidth,
     nodeAngle, nodeFontFace, nodeFontSize, nodeOpacity, nodeText, absoluteToRelative, strokeColor,
     textAlign, textBaseline, textColor, textHaloColor, textItalic, textOrientation, textWeight,
+    newNodeId, newGroupId,
+    newDiagramId,
 } from "../value.utils";
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramEditViewKeyboard } from "./edit.keyboard";
@@ -303,7 +305,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         this.clear();
-        this.id = `diagram-${Date.now()}`;
+        this.id = newDiagramId();
         return true;
     }
 
@@ -2338,7 +2340,7 @@ export class DiagramEditView extends DiagramView {
 
         this.addUndo();
 
-        const groupId = `group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const groupId = newGroupId();
         this.upsertGroup(groupId);
 
         for (const node of selected) {
@@ -3901,7 +3903,8 @@ export class DiagramEditView extends DiagramView {
         const created = {
             ...this.dragCreateDraft,
             points: deepClone(this.dragCreateDraft.points),
-            id: `${this.dragCreateDraft.type}-drop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+            id: newNodeId(this.dragCreateDraft.type),
+            // id: `${this.dragCreateDraft.type}-drop-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
         };
         const point = this.coordinates.getPointFromEvent(event, this.grid);
         let connected_to: string | undefined = undefined;
@@ -3960,7 +3963,8 @@ export class DiagramEditView extends DiagramView {
                         handle: to_handle,
                         relative: absoluteToRelative(to_point, this.coordinates.getBoundingRect(created))
                     },
-                    id: `auto-line-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+                    id: newNodeId(this.dragDraftConnector.type),
+                    // id: `auto-line-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
                 } as INode & IConnection;
 
                 const created_rect = this.coordinates.getBoundingRect(created);
@@ -4294,6 +4298,7 @@ export class DiagramEditView extends DiagramView {
     }, start: { x: number; y: number } = { x: 0, y: 0 }): INode {
 
         const tool = toolName || this.current.tool || 'rectangle';
+
         const points = (tool === 'polygon')
             ? [{ ...start }, { ...start }, { ...start }, { ...start }]
             : [{ ...start }, { ...start }];
@@ -4322,7 +4327,7 @@ export class DiagramEditView extends DiagramView {
            editor defaults. The current defaults are the fallback when the template omits
            a property (signalled by null / undefined → nullish-coalescing). */
         const draft: INode = {
-            id: `${tool}-draft-${Date.now()}`,
+            id: _id ?? newNodeId(tool),  //  `${tool}-draft-${Date.now()}`,
             type: tool,
             points,
             text: tool === 'text' ? 'Text' : '',
