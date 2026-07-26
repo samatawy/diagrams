@@ -62,6 +62,7 @@ import type { AnimationMode } from "../animation.types";
 import type { IGradient } from "../color.types";
 import { FreehandAdapter } from "../nodes/free/freehand.adapter";
 import { DiagramClipboard } from "./diagram.clipboard";
+import { ElkLayout, type AutoLayoutDirection, type AutoLayoutMethod } from "../layout/elk";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -2596,6 +2597,15 @@ export class DiagramEditView extends DiagramView {
 
         /* Render animated */
         this.animateLayout(nodes, () => { });
+    }
+
+    public autoLayout(method: AutoLayoutMethod, direction?: AutoLayoutDirection) {
+        new ElkLayout(this).autoLayout(method, direction)
+            .then(planned => {
+                this.addUndo();
+                if (this.grid.forced) this.snapToGrid(planned);
+                this.animateLayout(planned);
+            });
     }
 
     // ==================================================

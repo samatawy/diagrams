@@ -3,11 +3,15 @@ import type { DiagramView } from "../view/diagram.view";
 import { isConnection, isContainer } from "../guards";
 import { isLocked } from "../value.utils";
 import ELK from "elkjs";
-import type { ElkCommonDescription, ElkExtendedEdge, ElkNode, ElkPort, LayoutOptions } from "elkjs";
+import type { ElkExtendedEdge, ElkNode, ElkPort } from "elkjs";
 import { GroupBasics } from "../nodes/group.basics";
 import { NodeRegistry } from "../factory/node.registry";
 import type { CoordinateSystem } from "../view/coordinate.system";
 import type { INode } from "../interfaces";
+
+export type AutoLayoutDirection = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
+
+export type AutoLayoutMethod = 'block' | 'flow' | 'tree' | 'circuit' | 'stress' | 'radial';
 
 /**
  * ElkLayout is a utility class that provides methods to automatically layout nodes using ELK. 
@@ -28,9 +32,34 @@ export class ElkLayout {
     }
 
     /**
+     * Automatically layout the diagram using the specified method and direction.
+     * @param method The layout method to use (flow, tree, circuit, stress, radial)
+     * @param direction The direction for the layout (UP, DOWN, LEFT, RIGHT)
+     * @returns A promise that resolves to the array of laid out nodes
+     */
+    public autoLayout(method: AutoLayoutMethod, direction?: AutoLayoutDirection): Promise<INode[]> {
+        switch (method) {
+            case 'block':
+                return this.autoLayoutBlock();
+            case 'flow':
+                return this.autolayoutFlow(direction ?? 'RIGHT');
+            case 'tree':
+                return this.autoLayoutTree(direction ?? 'DOWN');
+            case "circuit":
+                return this.autoCircuit();
+            case "stress":
+                return this.autoStress();
+            case "radial":
+                return this.autoRadial();
+            default:
+                return this.autoLayoutBlock();
+        }
+    }
+
+    /**
      * Automatically layout the diagram in a default flow.
      */
-    public async autoLayout(): Promise<INode[]> {
+    public async autoLayoutBlock(): Promise<INode[]> {
         const elk = new ELK();
         const graph = this.buildElkGraph();
 

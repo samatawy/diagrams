@@ -46,6 +46,10 @@
     "lint:model": "npm --prefix packages/model run lint",
     "build:viewer": "npm run build:model && npm --prefix packages/viewer run build",
     "lint:viewer": "npm --prefix packages/viewer run lint",
+    "build:editor": "npm run build:viewer && npm --prefix packages/editor run build",
+    "lint:editor": "npm --prefix packages/editor run lint",
+    "build:bpmn": "npm run build:editor && npm --prefix packages/bpmn run build",
+    "lint:bpmn": "npm --prefix packages/bpmn run lint",
     "prepublishOnly": "npm run lint && npm run test && npm run build && npm run docs"
   },
   "keywords": [

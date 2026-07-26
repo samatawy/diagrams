@@ -14,6 +14,7 @@ import { IconRegistry } from '../../factory/icon.registry';
 import { NodeRegistry } from '../../factory/node.registry';
 import { ContextMenu, type ContextMenuConfig } from './context.menu';
 import { TypeTransferPanel } from '../inputs/type.transfer.panel';
+import { registerEditorIcons } from '../../editview/editor.icons';
 
 /**
  * Layout shown when nothing is selected: grid/guides toggles, zoom/fit, and paste.
@@ -82,6 +83,9 @@ export class DiagramContextMenu extends ContextMenu {
         this.diagram = diagram;
         this.emptyLayout = config?.emptyLayout ?? EMPTY_SELECTION_LAYOUT;
         this.selectionLayout = config?.selectionLayout ?? HAS_SELECTION_LAYOUT;
+
+        /* Duplicate registration of icons to ensure they are available for the menu. */
+        registerEditorIcons();
     }
 
     /**

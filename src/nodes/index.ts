@@ -25,7 +25,7 @@ import { VerticalPoolAdapter } from './container/vertical.pool.adapter';
 
 import { SvgAdapter } from './rectangle/svg.adapter';
 import { FreehandAdapter } from './free/freehand.adapter';
-import type { StringDecoder } from 'string_decoder';
+import { registerBasicIcons } from './basic.icons';
 
 export * from './node.basics';
 export * from './connection.basics';
@@ -73,6 +73,8 @@ export function registerBasicAdapters(): void {
 
     PolygonAdapter.register();
     SvgAdapter.register();
+
+    registerBasicIcons();
 
     NodeRegistry.registerTransferables([
         RectangleAdapter.TYPE,

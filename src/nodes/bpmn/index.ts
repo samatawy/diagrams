@@ -12,6 +12,7 @@ import { BpmnDataAssociationAdapter } from './data.association.adapter';
 import { BpmnAssociationAdapter } from './association.adapter';
 import { BpmnMessageFlowAdapter } from './message.flow.adapter';
 import { BpmnSequenceFlowAdapter } from './sequence.flow.adapter';
+import { registerBpmnIcons } from './icons';
 
 export function registerBpmnAdapters(): void {
     BpmnTaskAdapter.register();
@@ -29,6 +30,8 @@ export function registerBpmnAdapters(): void {
     BpmnMessageFlowAdapter.register();
     BpmnAssociationAdapter.register();
     BpmnDataAssociationAdapter.register();
+
+    registerBpmnIcons();
 
     NodeRegistry.registerTransferables([
         BpmnStartEventAdapter.TYPE,

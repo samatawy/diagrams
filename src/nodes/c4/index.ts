@@ -10,6 +10,7 @@ import { C4PersonAdapter } from "./person.adapter";
 import { C4RelationshipAdapter } from './relationship.adapter';
 import { C4AsyncRelationshipAdapter } from './async.relationship.adapter';
 import { C4DependencyAdapter } from './dependency.adapter';
+import { registerC4Icons } from './icons';
 
 export function registerC4Adapters(): void {
     C4SystemAdapter.register();
@@ -22,6 +23,8 @@ export function registerC4Adapters(): void {
     C4RelationshipAdapter.register();
     C4AsyncRelationshipAdapter.register();
     C4DependencyAdapter.register();
+
+    registerC4Icons();
 
     NodeRegistry.registerTransferables([
         C4SystemAdapter.TYPE,

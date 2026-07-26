@@ -1,7 +1,7 @@
 {
   "name": "@samatawy/diagrams-editor",
-  "version": "0.6.6",
-  "description": "TypeScript library for designing, viewing, and managing diagrams.",
+  "version": "0.1.0",
+  "description": "Editor package for @samatawy/diagrams.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -9,6 +9,36 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "import": "./dist/core.js",
+      "require": "./dist/core.cjs"
+    },
+    "./view": {
+      "types": "./dist/view.d.ts",
+      "import": "./dist/view.js",
+      "require": "./dist/view.cjs"
+    },
+    "./layout": {
+      "types": "./dist/layout.d.ts",
+      "import": "./dist/layout.js",
+      "require": "./dist/layout.cjs"
+    },
+    "./status": {
+      "types": "./dist/status.d.ts",
+      "import": "./dist/status.js",
+      "require": "./dist/status.cjs"
+    },
+    "./editview": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./editor": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
@@ -27,33 +57,16 @@
     "node": ">=18"
   },
   "scripts": {
-    "css:embed": "node scripts/css-to-ts.mjs",
-    "icons:embed-tabler": "node scripts/import-icons.mjs ../node_modules/@tabler/icons/icons/outline icons_generated/tabler.icons.ts",
-    "icons:embed-flag": "node scripts/import-icons.mjs ../node_modules/flag-icons/flags/4x3 icons_generated/flag.icons.ts",
-    "clean": "rimraf dist docs",
-    "build": "npm run css:embed && tsup src/index.ts --format esm,cjs --dts --clean --platform browser",
-    "dev": "npm run css:embed && tsup src/index.ts --format esm,cjs --dts --watch --platform browser",
-    "lint": "npm run css:embed && tsc --noEmit -p tsconfig.json",
-    "test": "npm run css:embed && vitest run",
-    "test:watch": "vitest",
-    "docs": "npm run css:embed && typedoc",
-    "site": "npm run build && npm run docs && node scripts/build-site.mjs",
-    "site:run": "npm run site && npx --yes http-server -p 4173 ./site",
-    "prepublishOnly": "npm run lint && npm run test && npm run build && npm run docs"
+    "clean": "rimraf dist",
+    "build": "tsup --config tsup.config.ts",
+    "dev": "tsup --config tsup.config.ts --watch",
+    "lint": "tsc --noEmit -p tsconfig.json",
+    "prepublishOnly": "npm run lint && npm run build"
   },
   "keywords": [
     "typescript",
-    "viewer",
     "editor",
     "diagram",
-    "graph",
-    "illustration",
-    "block",
-    "flow",
-    "bpmn",
-    "c4",
-    "erd",
-    "uml",
     "canvas"
   ],
   "author": "Sam Atawy <sam.atawy@gmail.com>",
@@ -67,19 +80,15 @@
   },
   "homepage": "https://samatawy.github.io/diagrams/",
   "devDependencies": {
-    "@tabler/icons": "^3.44.0",
     "@types/node": "^24.3.1",
-    "flag-icons": "^7.5.0",
-    "jsdom": "^26.1.0",
     "rimraf": "^6.0.1",
     "tsup": "^8.5.0",
-    "typedoc": "^0.28.14",
-    "typescript": "^5.9.2",
-    "vitest": "^3.2.4"
+    "typescript": "^5.9.2"
   },
+  "peerDependencies": {},
   "dependencies": {
-    "@samatawy/checks": "^0.3.1",
-    "elkjs": "^0.12.0",
-    "uuid": "^14.0.0"
+    "@samatawy/diagrams-viewer": "file:../viewer",
+    "@samatawy/diagrams-model": "file:../model",
+    "elkjs": "^0.12.0"
   }
 }

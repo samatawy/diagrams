@@ -7,6 +7,7 @@ import { DiagramConstants } from '../../model';
 import type { ShadowStyle } from '../../style.interfaces';
 import type { DiagramEditor } from '../diagram.editor';
 import { DIAGRAM_SHEET_CHANGED_EVENT, DIAGRAM_SHEET_LOADED_EVENT } from '../../events/diagram.events';
+import { registerEditorIcons } from '../../editview/editor.icons';
 
 
 /**
@@ -47,6 +48,9 @@ export class DiagramTopMenu extends TopMenu {
         this.diagram = diagram;
         this.initialize();
         this.bindDiagramEventListeners();
+
+        /* Duplicate registration of icons to ensure they are available for the menu. */
+        registerEditorIcons();
     }
 
     public destroy(): void {
