@@ -1,7 +1,7 @@
 import type { IDiagram, IGrid, INode } from "../interfaces";
 import type { IPoint, IRect } from "../types";
 import { isDiagramViewLike } from "../guards";
-import { nodeAngle } from "../value.utils";
+import { deepClone, nodeAngle } from "../value.utils";
 
 /**
  * CoordinateSystem is a utility class that manages the transformation between diagram coordinates and canvas coordinates, including handling zooming, panning, and grid snapping.
@@ -278,6 +278,31 @@ export class CoordinateSystem {
             }
         }
         return { left: 0, top: 0, width: 0, height: 0 };
+    }
+
+    /**
+     * Calculate the bounding rectangle that encompasses all visible nodes in the diagram.
+     * @returns The bounding rectangle of all visible nodes, or `undefined` if there are no visible nodes.
+     */
+    public getBoundingRectAll(nodes: INode[]): IRect | undefined {
+        let bounds: IRect | undefined;
+
+        for (const node of nodes) {
+            const rect = this.getBoundingRect(node, true);
+
+            if (!bounds) {
+                bounds = deepClone(rect);
+                continue;
+            }
+
+            const right = Math.max(bounds.left + bounds.width, rect.left + rect.width);
+            const bottom = Math.max(bounds.top + bounds.height, rect.top + rect.height);
+            bounds.left = Math.min(bounds.left, rect.left);
+            bounds.top = Math.min(bounds.top, rect.top);
+            bounds.width = right - bounds.left;
+            bounds.height = bottom - bounds.top;
+        }
+        return bounds;
     }
 
     /**

@@ -1,4 +1,4 @@
-import { NodeHandle, type IPoint } from "../types";
+import { NodeHandle, type IPoint, type IRect } from "../types";
 import type { DiagramView } from "../view/diagram.view";
 import { isConnection, isContainer } from "../guards";
 import { deepClone, isLocked } from "../value.utils";
@@ -7,7 +7,7 @@ import type { ElkExtendedEdge, ElkNode, ElkPort } from "elkjs";
 import { GroupBasics } from "../nodes/group.basics";
 import { NodeRegistry } from "../factory/node.registry";
 import type { CoordinateSystem } from "../view/coordinate.system";
-import type { IContainer, INode } from "../interfaces";
+import type { IContainer, IGroup, INode } from "../interfaces";
 
 export type AutoLayoutDirection = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 
@@ -296,7 +296,7 @@ export class ElkLayout {
         }
     }
 
-    protected buildElkNode(node: any, relative_to?: INode, coordinates?: CoordinateSystem): ElkNode | undefined {
+    protected buildElkNode(node: any, relative_to?: IRect, coordinates?: CoordinateSystem): ElkNode | undefined {
         if (!node) return undefined;
 
         coordinates = coordinates ?? this.diagram.getCoordinates();
@@ -323,9 +323,17 @@ export class ElkLayout {
         elk_node.ports = ports;
 
         if (relative_to) {
-            const relative_rect = coordinates.getBoundingRect(relative_to);
-            elk_node.x = rect.left - relative_rect.left;
-            elk_node.y = rect.top - relative_rect.top;
+            // const relative_rect = coordinates.getBoundingRect(relative_to);
+            // elk_node.x = rect.left - relative_rect.left;
+            // elk_node.y = rect.top - relative_rect.top;
+
+            elk_node.x = rect.left - relative_to.left;
+            elk_node.y = rect.top - relative_to.top;
+
+            // elk_node.layoutOptions = {
+            //     ...elk_node.layoutOptions,
+            //     'elk.noLayout': 'true',
+            // }
         }
 
         if (isLocked(node)) {
@@ -345,16 +353,51 @@ export class ElkLayout {
                     'elk.algorithm': 'fixed',
                     // 'elk.noLayout': 'true',
                     // 'elk.nodeSize.constraints': 'PORTS',
-                    // 'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+                    'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
                 };
                 const children = group.nodes.map(id => this.diagram.node(id));
-                elk_node.children = children.map(child => this.buildElkNode(child, node as unknown as INode, coordinates))
+                elk_node.children = children.map(child => this.buildElkNode(child, rect, coordinates))
                     .filter(child => child !== undefined) as ElkNode[];
             }
         }
 
         return elk_node;
     }
+
+    protected buildElkGroup(group: IGroup, coordinates?: CoordinateSystem): ElkNode | undefined {
+        coordinates = coordinates ?? this.diagram.getCoordinates();
+        const nodes = group.nodes.map(id => this.diagram.node(id))
+            .filter(node => node !== undefined);
+
+        const rect = coordinates.getBoundingRectAll(nodes);
+        if (!rect) return undefined;
+
+        const elk_group: ElkNode = {
+            id: group.id,
+            width: rect.width,
+            height: rect.height,
+            layoutOptions: {
+                'elk.algorithm': 'fixed',
+                'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+            }
+        };
+
+        const children = group.nodes.map(id => this.diagram.node(id));
+        elk_group.children = children.map(child => this.buildElkNode(child, rect, coordinates))
+            .filter(child => child !== undefined) as ElkNode[];
+
+        return elk_group;
+    }
+
+    // protected buildElkPort(node: any, handle: NodeHandle): ElkPort | undefined {
+    //     if (!node) return undefined;
+    //     return {
+    //         id: `${node.id}_${handle}`,
+    //         layoutOptions: {
+    //             'portConstraints': 'FIXED_SIDE',
+    //         }
+    //     };
+    // }
 
     protected buildElkEdge(edge: any): ElkExtendedEdge | undefined {
         const source_id = (typeof edge.from?.node === 'string') ? edge.from.node : edge.from?.node?.id;
@@ -395,8 +438,17 @@ export class ElkLayout {
                 return undefined; // Skip nodes in groups, as they are handled by their container
             }
             return this.buildElkNode(node, undefined, coordinates);
-        })
-            .filter(node => node !== undefined) as ElkNode[];
+        }).filter(node => node !== undefined) as ElkNode[];
+
+        for (const group of this.diagram.groups) {
+            const owner = this.diagram.nodes
+                .filter(n => isContainer(n))
+                .find(n => n.owns_group === group.id);
+            if (owner) continue; // Skip groups that have an owner, as they are handled by their container
+
+            const elkGroupNode = this.buildElkGroup(group, coordinates);
+            if (elkGroupNode) elkNodes.push(elkGroupNode);
+        }
 
         const elkEdges: ElkExtendedEdge[] = edges.map(edge => {
             return this.buildElkEdge(edge);
@@ -445,6 +497,36 @@ export class ElkLayout {
                     for (const pt of cloneChild.points) {
                         pt.x += elkNode.x ?? 0;
                         pt.y += elkNode.y ?? 0;
+                    }
+
+                    planned.push(cloneChild);
+                }
+            }
+        }
+
+        for (const group of this.diagram.groups) {
+            const elkGroup = nodeMap.get(group.id);
+            if (!elkGroup) continue;
+
+            // const clone = {
+            //     ...group,
+            //     points: this.getNodePoints(group, elkGroup),
+            // }
+            // planned.push(clone);
+
+            if (elkGroup.children && elkGroup.children.length > 0) {
+                for (const child of elkGroup.children) {
+                    const childNode = this.diagram.node(child.id);
+                    if (!childNode) continue;
+
+                    const cloneChild = {
+                        ...childNode,
+                        points: this.getNodePoints(childNode, child),
+                    }
+
+                    for (const pt of cloneChild.points) {
+                        pt.x += elkGroup.x ?? 0;
+                        pt.y += elkGroup.y ?? 0;
                     }
 
                     planned.push(cloneChild);
