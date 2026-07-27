@@ -168,6 +168,8 @@ export class Diagram implements IDiagram, HasSheetRepository {
         const targetNode = this.resolveNode(node);
         if (!targetNode) return;
 
+        targetNode.in_group = groupId;
+
         let targetGroup = groupId ? this.group(groupId) : undefined;
         if (groupId && !targetGroup) {
             targetGroup = this.upsertGroup(groupId);
@@ -183,21 +185,21 @@ export class Diagram implements IDiagram, HasSheetRepository {
         }
     }
 
-    /**
-     * Gets the group that a node belongs to, if any.
-     * @param node The node or node ID to check.
-     * @returns The group the node belongs to, or undefined if it doesn't belong to any group.
-     */
-    public nodeGroup(node: string | INode): IGroup | undefined {
-        const targetNode = this.resolveNode(node);
-        if (!targetNode) return undefined;
+    // /**
+    //  * Gets the group that a node belongs to, if any.
+    //  * @param node The node or node ID to check.
+    //  * @returns The group the node belongs to, or undefined if it doesn't belong to any group.
+    //  */
+    // public nodeGroup(node: string | INode): IGroup | undefined {
+    //     const targetNode = this.resolveNode(node);
+    //     if (!targetNode) return undefined;
 
-        return this.groups.find(group => group.nodes.includes(targetNode.id));
-    }
+    //     return this.groups.find(group => group.nodes.includes(targetNode.id));
+    // }
 
-    protected groupOwner(group: IGroup): INode | undefined {
-        return this.nodes.find(n => (n as any).owns_group === group.id);
-    }
+    // protected groupOwner(group: IGroup): INode | undefined {
+    //     return this.nodes.find(n => (n as any).owns_group === group.id);
+    // }
 
     /**
      * Add or remove a node from a layer. If the layerId is undefined, the node is removed from any layer it belongs to.

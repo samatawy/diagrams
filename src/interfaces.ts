@@ -24,6 +24,8 @@ export interface INode {
      */
     owner: IDiagram;
 
+    in_group?: string;
+
     /**
      * The points that define the geometry of the node, which can be used for rendering and for determining how connections attach to the node.
      */
@@ -211,6 +213,10 @@ export interface IGroup {
      * The unique identifier of the group.
      */
     id: string;
+    /**
+     * An optional reference to the container node that owns this group.
+     */
+    owner?: string;
     /**
      * An array of node IDs that belong to this group.
      */

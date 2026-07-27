@@ -1,8 +1,8 @@
-import { isNode } from "../guards";
+import { isContainer, isNode } from "../guards";
 import type { IConnection, IConnectionAnchor, IContainer, IGroup, INode } from "../interfaces";
 import { jsonSerializer } from "../io/json.serializer";
 import type { ISerializedNode } from "../io/serialized.types";
-import { NodeBasics } from "../nodes/node.basics";
+import { GroupBasics } from "../nodes/group.basics";
 import { deepClone, isHollow, newGroupId, newNodeId } from "../value.utils";
 import type { DiagramEditView } from "./diagram.edit.view";
 
@@ -188,13 +188,24 @@ export class DiagramClipboard {
                     return [];
                 }
 
-                /* Merge referenced groups into this diagram before hydrating. */
-                if (envelope.groups?.length) {
-                    for (const group of envelope.groups) {
-                        /* We only need the groups, members will be cloned into them */
-                        this.diagram.groups.push(group);
-                    }
+                const selected = envelope.nodes.map(node => ({ ...node, owner: this.diagram }));
+                const group_ids = new Set(selected.map(node => node.in_group).filter(g => g !== undefined));
+                const owned_ids = new Set(selected.map(node => isContainer(node) ? node.owns_group : undefined).filter(g => g !== undefined));
+                const groupMap = new Map<string, string>();
+                for (const g of group_ids) {
+                    groupMap.set(g, newGroupId());
                 }
+                for (const g of owned_ids) {
+                    groupMap.set(g, newGroupId());
+                }
+
+                /* Merge referenced groups into this diagram before hydrating. */
+                // if (envelope.groups?.length) {
+                //     for (const group of envelope.groups) {
+                //         /* We only need the groups, members will be cloned into them */
+                //         this.diagram.groups.push(group);
+                //     }
+                // }
 
                 /* Merge referenced assets into this diagram's store before hydrating. */
                 if (envelope.image_assets) {
@@ -204,6 +215,28 @@ export class DiagramClipboard {
                 this.diagram.addUndo();
                 const pastedNodes = this.cloneNodes(envelope.nodes);
                 this.diagram.setSelection(pastedNodes);
+
+                // const cloned = this.clipboard.cloneNodes(selected);
+                // this.setSelection(cloned);
+
+                if (groupMap.size > 0) {
+                    for (const node of pastedNodes) {
+                        if (node.in_group) {
+                            node.in_group = groupMap.get(node.in_group) || node.in_group;
+                        }
+                        if (isContainer(node)) {
+                            node.owns_group = groupMap.get(node.owns_group) || node.owns_group;
+                        }
+                    }
+
+                    for (const id of groupMap.values()) {
+                        this.diagram.upsertGroup({
+                            id: id,
+                            owner: pastedNodes.find(node => isContainer(node) && node.owns_group === id)?.id,
+                            nodes: pastedNodes.filter(node => node.in_group === id).map(node => node.id),
+                        });
+                    }
+                }
 
                 this.can_paste = true;
                 // this.emitClipboardChange('paste', pastedNodes);
@@ -358,7 +391,7 @@ export class DiagramClipboard {
             creating new cloned groups if there was a container node in the paste batch.
         */
         const groupMap: Map<string, IGroup> = new Map();
-        for (let node of nodes) {       // }.filter(n => (n as IContainer & INode)?.owns_group)) {
+        for (let node of nodes) {
             const group_id = (node as IContainer & INode)?.owns_group;
             if (group_id) {
                 const group = this.diagram.group(group_id);

@@ -258,7 +258,7 @@ export class DiagramEditView extends DiagramView {
         this.color_palette.refresh();
         this.modified = false;
 
-        this.groups = [];
+        // this.groups = [];
         this.ensureCurrentLayer();
 
         this.render('all');
@@ -2030,8 +2030,6 @@ export class DiagramEditView extends DiagramView {
                         return node;
                     });
                 this.animateLayout(target_place, () => { });
-                //         this.render('all');
-                // this.renderPreview();
 
                 this.emitClipboardChange('paste', pastedNodes);
             });
@@ -2320,15 +2318,42 @@ export class DiagramEditView extends DiagramView {
         this.addUndo();
 
         const selected = this.selection();
-        const groups = selected.map(node => this.nodeGroup(node.id));
-        const group = (groups.length === 1 ? groups[0] : undefined);
+        const groups = new Set(selected.map(node => GroupBasics.nodeGroup(node)).filter(g => g !== undefined) as IGroup[]);
+        const owned = new Set(selected.map(node => GroupBasics.ownedGroup(node)).filter(g => g !== undefined) as IGroup[]);
+        // let group = (groups.size === 1 ? Array.from(groups)[0] : undefined);
+        const groupMap = new Map<string, string>();
+        for (const g of groups) {
+            groupMap.set(g.id, newGroupId());
+        }
+        for (const g of owned) {
+            groupMap.set(g.id, newGroupId());
+        }
 
         const cloned = this.clipboard.cloneNodes(selected);
         this.setSelection(cloned);
 
-        if (group) {
-            group.nodes.push(...cloned.map(node => node.id));
+        if (groupMap.size > 0) {
+            for (const node of cloned) {
+                if (node.in_group) {
+                    node.in_group = groupMap.get(node.in_group) || node.in_group;
+                }
+                if (isContainer(node)) {
+                    node.owns_group = groupMap.get(node.owns_group) || node.owns_group;
+                }
+            }
+
+            for (const id of groupMap.values()) {
+                this.upsertGroup({
+                    id: id,
+                    owner: cloned.find(node => isContainer(node) && node.owns_group === id)?.id,
+                    nodes: cloned.filter(node => node.in_group === id).map(node => node.id),
+                });
+            }
         }
+
+        // if (group) {
+        //     group.nodes.push(...cloned.map(node => node.id));
+        // }
 
         /* Render animated */
         const target_place = cloned.map(node => deepCloneNode(node))
@@ -3519,7 +3544,7 @@ export class DiagramEditView extends DiagramView {
                         /* Don't move nodes moved within their container onto another container
                             We can allow this if we want to support copying the contents of one container into another, 
                             but for now we don't want to do that. */
-                        const group = this.nodeGroup(shape);
+                        const group = GroupBasics.nodeGroup(shape);
                         if (group && moved_containers.includes(group.id)) continue;
 
                         this.setNodeGroup(shape, one.owns_group);
@@ -5303,9 +5328,9 @@ export class DiagramEditView extends DiagramView {
         /* Handle groups */
 
         // TODO: Is this needed any more?
-        const group = this.nodeGroup(reference_node);
+        const group = GroupBasics.nodeGroup(reference_node);
         if (group) {
-            const owner = this.groupOwner(group);
+            const owner = GroupBasics.groupOwner(group, this);
             if (owner !== reference_node) {
                 /* Resizing a node inside a container only resizes that node, not the whole group.
                    The group will resize when the container node is resized. */
@@ -5417,13 +5442,13 @@ export class DiagramEditView extends DiagramView {
      * @param preserveAspect Whether to preserve aspect ratio.
      */
     private applyGuideSnapForSelection(nodes: INode[], handle: NodeHandle, preserveAspect?: boolean): void {
-        const group = this.downShape ? this.nodeGroup(this.downShape) : undefined;
+        const group = this.downShape ? GroupBasics.nodeGroup(this.downShape) : undefined;
         if (!group || !this.downShape) {
             this.applyPendingGuideSnap(nodes, handle, preserveAspect);
             return;
         }
 
-        const owner = this.groupOwner(group);
+        const owner = GroupBasics.groupOwner(group, this);
         if (!owner) {
             this.applyPendingGuideSnap(nodes, handle, preserveAspect);
             return;
@@ -5482,14 +5507,14 @@ export class DiagramEditView extends DiagramView {
                 }
             }
 
-            const group = this.nodeGroup(shape);
+            const group = GroupBasics.nodeGroup(shape);
             if (!group) {
                 /* This node is not part of a group, so just snap it to the grid. */
                 adapter.snapToGrid(shape, this.grid, handle);
                 continue;
             }
 
-            const owner = this.groupOwner(group);
+            const owner = GroupBasics.groupOwner(group, this);
             if (!owner) {
                 /* This node is not part of a group, so just snap it to the grid. */
                 adapter.snapToGrid(shape, this.grid, handle);

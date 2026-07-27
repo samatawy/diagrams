@@ -34,7 +34,6 @@ export class HorizontalPoolAdapter extends RectangleAdapter {
             geometry: { radius: 8 },    // DiagramConstants.HANDLE_HIT_EPSILON },
 
             owns_group: newGroupId(),
-            // owns_group: `group-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         }
     }
 

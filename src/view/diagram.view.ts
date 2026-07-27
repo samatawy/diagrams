@@ -342,7 +342,7 @@ export class DiagramView extends Diagram implements HasSelection {
         if (containers.length > 0) return undefined;    /* More than one container is selected. */
 
         for (const node of selected.filter(n => !isContainer(n))) {
-            const group = this.nodeGroup(node);
+            const group = GroupBasics.nodeGroup(node);
             if (group?.id !== containers[0]?.id) {
                 return undefined;   /* Selected nodes are not all in the same container. */
             }
@@ -463,7 +463,7 @@ export class DiagramView extends Diagram implements HasSelection {
         if (!node) return;
         const start = this.resolveNode(node);
         if (!start) return;
-        const group = this.nodeGroup(start);
+        const group = GroupBasics.nodeGroup(start);
         const candidates = group ? group.nodes.map(id => this.node(id) as INode).filter(n => !!n) : this.nodes;
         const ordered = this.getTabOrder(candidates);
         const index = ordered.indexOf(start);
@@ -479,7 +479,7 @@ export class DiagramView extends Diagram implements HasSelection {
         if (!node) return;
         const start = this.resolveNode(node);
         if (!start) return;
-        const group = this.nodeGroup(start);
+        const group = GroupBasics.nodeGroup(start);
         const candidates = group ? group.nodes.map(id => this.node(id) as INode).filter(n => !!n) : this.nodes;
         const ordered = this.getTabOrder(candidates);
         const index = ordered.indexOf(start);

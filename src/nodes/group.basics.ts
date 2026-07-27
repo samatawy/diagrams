@@ -19,18 +19,19 @@ export class GroupBasics {
         const ids: string[] = [];
         if (isContainer(node)) {
             // The node owns a group
-            const group = diagram.group(node.owns_group);
+            const group = this.ownedGroup(node);    // diagram.group(node.owns_group);
             if (group) {
                 ids.push(...group.nodes.filter(n => n !== node.id));
             }
         }
         else {
             // The node may be a member of a group
-            const group = diagram.groups.find(g => g.nodes.includes(node.id));
+            const group = this.nodeGroup(node);     // diagram.groups.find(g => g.nodes.includes(node.id));
             if (group) {
                 ids.push(...group.nodes.filter(n => n !== node.id));
 
-                const owner = diagram.nodes.find(n => (n as any as IContainer).owns_group === group.id);
+                // const owner = diagram.nodes.find(n => (n as any as IContainer).owns_group === group.id);
+                const owner = this.groupOwner(group, diagram);
                 if (owner) ids.push(owner.id);
             }
         }
@@ -38,12 +39,43 @@ export class GroupBasics {
         return ids.map(id => diagram.node(id) as INode).filter(n => !!n);
     }
 
+    public static groupOwner(group: string | IGroup, diagram: Diagram): INode | undefined {
+
+        let _group = (typeof group === 'string') ? diagram.group(group) : group;
+        if (_group) {
+            if (_group.owner) {
+                const owner = diagram.node(_group.owner);
+                if (owner) return owner;
+            }
+            else {
+                const owner = diagram.nodes.find(n => (n as any as IContainer).owns_group === _group!.id);
+                if (owner) {
+                    _group.owner = owner.id;
+                    return owner;
+                }
+            }
+        }
+        return undefined;
+    }
+
     public static ownedGroup(node: INode): IGroup | undefined {
         if (!isContainer(node)) return undefined;
         const diagram = node.owner;
         if (!diagram) return undefined;
 
-        return diagram.groups?.find(group => group.id === node.owns_group);
+        /* Find or create a group */
+        let group = diagram.groups?.find(group => group.id === node.owns_group);
+        if (!group) {
+            group = {
+                id: node.owns_group,
+                owner: node.id,
+                nodes: []
+            };
+            (diagram as Diagram).upsertGroup(group);
+        }
+        return group;
+
+        // return diagram.groups?.find(group => group.id === node.owns_group);
     }
 
     public static nodeGroup(node: INode): IGroup | undefined {
@@ -53,6 +85,26 @@ export class GroupBasics {
         const targetNode = diagram.nodes.find(n => n.id === node.id);
         if (!targetNode) return undefined;
 
-        return diagram.groups?.find(group => group.nodes.includes(targetNode.id));
+        if (targetNode?.in_group) {
+            /* Find or create a group */
+            let group = diagram.groups?.find(group => group.id === targetNode.in_group);
+            if (!group) {
+                group = {
+                    id: targetNode.in_group,
+                    nodes: [targetNode.id]
+                };
+                (diagram as Diagram).upsertGroup(group);
+            }
+            return group;
+        }
+        else {
+            /* Find a group that includes the target node */
+            const group = diagram.groups?.find(group => group.nodes.includes(targetNode.id));
+            if (group) {
+                targetNode.in_group = group.id;
+                return group;
+            }
+        }
+        // return diagram.groups?.find(group => group.nodes.includes(targetNode.id));
     }
 }

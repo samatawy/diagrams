@@ -508,12 +508,6 @@ export class ElkLayout {
             const elkGroup = nodeMap.get(group.id);
             if (!elkGroup) continue;
 
-            // const clone = {
-            //     ...group,
-            //     points: this.getNodePoints(group, elkGroup),
-            // }
-            // planned.push(clone);
-
             if (elkGroup.children && elkGroup.children.length > 0) {
                 for (const child of elkGroup.children) {
                     const childNode = this.diagram.node(child.id);

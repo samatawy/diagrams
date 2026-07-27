@@ -312,7 +312,6 @@ export class UmlClassAdapter extends VerticalPoolAdapter {
             geometry: { radius: 0 },
 
             owns_group: newGroupId(),
-            // owns_group: `class-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         }
     }
 }

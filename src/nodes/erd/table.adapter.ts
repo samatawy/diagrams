@@ -244,7 +244,6 @@ export class TableAdapter extends VerticalPoolAdapter {
             geometry: { radius: 8 },    // DiagramConstants.HANDLE_HIT_EPSILON },
 
             owns_group: newGroupId(),
-            // owns_group: `table-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         }
     }
 }
