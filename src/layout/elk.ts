@@ -1,13 +1,13 @@
 import { NodeHandle, type IPoint } from "../types";
 import type { DiagramView } from "../view/diagram.view";
 import { isConnection, isContainer } from "../guards";
-import { isLocked } from "../value.utils";
+import { deepClone, isLocked } from "../value.utils";
 import ELK from "elkjs";
 import type { ElkExtendedEdge, ElkNode, ElkPort } from "elkjs";
 import { GroupBasics } from "../nodes/group.basics";
 import { NodeRegistry } from "../factory/node.registry";
 import type { CoordinateSystem } from "../view/coordinate.system";
-import type { INode } from "../interfaces";
+import type { IContainer, INode } from "../interfaces";
 
 export type AutoLayoutDirection = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 
@@ -81,6 +81,7 @@ export class ElkLayout {
             "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
             "elk.layered.crossingMinimization.semiInteractive": "true",
 
+            "elk.hierarchyHandling": "SEPARATE_CHILDREN",
             // "elk.hierarchyHandling": "INCLUDE_CHILDREN",
 
             // 'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
@@ -92,6 +93,8 @@ export class ElkLayout {
         };
 
         const result = await elk.layout(graph);
+
+        console.log('ELK Result:', result);
 
         return this.applyElkGraph(result);
     }
@@ -111,8 +114,6 @@ export class ElkLayout {
             'elk.layered.spacing.edgeEdgeBetweenLayers': '32',
             'elk.edgeRouting': 'ORTHOGONAL',
 
-            // 'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
-            // 'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
             'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
             'elk.edgeRouting.avoidNodeOverlap': 'true',
         };
@@ -214,24 +215,6 @@ export class ElkLayout {
             "elk.layered.spacing.nodeNodeBetweenLayers": "64",
             "elk.layered.spacing.edgeEdgeBetweenLayers": "32",
             "elk.layered.spacing.edgeNodeBetweenLayers": "32",
-
-            // 'elk.algorithm': 'force',
-
-            // 'elk.force.iterations': '500',
-            // 'elk.force.repulsion': '0.5',
-            // 'elk.force.gravity': '0.1',
-
-            // 'elk.spacing.nodeNode': '64',
-            // 'elk.spacing.edgeEdge': '32',
-            // 'elk.spacing.edgeNode': '32',
-            // // 'elk.layered.spacing.nodeNodeBetweenLayers': '64',
-            // // 'elk.layered.spacing.edgeEdgeBetweenLayers': '32',
-            // 'elk.edgeRouting': 'ORTHOGONAL',
-
-            // 'elk.layered.crossingMinimization.forceNodeModelOrder': 'true',
-            // 'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
-            // 'elk.layered.nodePlacement.strategy': 'BRANDES_KOEPF',
-            // 'elk.edgeRouting.avoidNodeOverlap': 'true',
         };
 
         const result = await elk.layout(graph);
@@ -313,7 +296,7 @@ export class ElkLayout {
         }
     }
 
-    protected buildElkNode(node: any, coordinates?: CoordinateSystem): ElkNode | undefined {
+    protected buildElkNode(node: any, relative_to?: INode, coordinates?: CoordinateSystem): ElkNode | undefined {
         if (!node) return undefined;
 
         coordinates = coordinates ?? this.diagram.getCoordinates();
@@ -339,6 +322,12 @@ export class ElkLayout {
         }) || [];
         elk_node.ports = ports;
 
+        if (relative_to) {
+            const relative_rect = coordinates.getBoundingRect(relative_to);
+            elk_node.x = rect.left - relative_rect.left;
+            elk_node.y = rect.top - relative_rect.top;
+        }
+
         if (isLocked(node)) {
             elk_node.x = rect.left;
             elk_node.y = rect.top;
@@ -351,8 +340,16 @@ export class ElkLayout {
         if (isContainer(node)) {
             const group = this.diagram.group(node.owns_group);
             if (group) {
+                elk_node.layoutOptions = {
+                    ...elk_node.layoutOptions,
+                    'elk.algorithm': 'fixed',
+                    // 'elk.noLayout': 'true',
+                    // 'elk.nodeSize.constraints': 'PORTS',
+                    // 'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
+                };
                 const children = group.nodes.map(id => this.diagram.node(id));
-                elk_node.children = children.map(child => this.buildElkNode(child)).filter(child => child !== undefined) as ElkNode[];
+                elk_node.children = children.map(child => this.buildElkNode(child, node as unknown as INode, coordinates))
+                    .filter(child => child !== undefined) as ElkNode[];
             }
         }
 
@@ -397,7 +394,7 @@ export class ElkLayout {
             if (GroupBasics.nodeGroup(node)) {
                 return undefined; // Skip nodes in groups, as they are handled by their container
             }
-            return this.buildElkNode(node, coordinates);
+            return this.buildElkNode(node, undefined, coordinates);
         })
             .filter(node => node !== undefined) as ElkNode[];
 
@@ -411,6 +408,7 @@ export class ElkLayout {
             edges: elkEdges,
         };
 
+        console.log('ELK Graph:', graph);
         return graph;
     }
 
@@ -431,12 +429,27 @@ export class ElkLayout {
             const clone = {
                 ...node,
                 points: this.getNodePoints(node, elkNode),
-                // [
-                //     { x: elkNode.x!, y: elkNode.y! },
-                //     { x: elkNode.x! + elkNode.width!, y: elkNode.y! + elkNode.height! }
-                // ]
             }
             planned.push(clone);
+
+            if (elkNode.children && elkNode.children.length > 0) {
+                for (const child of elkNode.children) {
+                    const childNode = this.diagram.node(child.id);
+                    if (!childNode) continue;
+
+                    const cloneChild = {
+                        ...childNode,
+                        points: this.getNodePoints(childNode, child),
+                    }
+
+                    for (const pt of cloneChild.points) {
+                        pt.x += elkNode.x ?? 0;
+                        pt.y += elkNode.y ?? 0;
+                    }
+
+                    planned.push(cloneChild);
+                }
+            }
         }
 
         for (const edge of this.diagram.nodes.filter(node => isConnection(node))) {
@@ -447,17 +460,6 @@ export class ElkLayout {
                 ...edge,
                 points: this.getEdgePoints(edge, elkEdge),
             }
-            // for (const segment of elkEdge.sections || []) {
-            //     if (segment.startPoint) {
-            //         clone.points.push({ x: segment.startPoint.x, y: segment.startPoint.y });
-            //     }
-            //     for (const bp of segment.bendPoints || []) {
-            //         clone.points.push({ x: bp.x, y: bp.y });
-            //     }
-            //     if (segment.endPoint) {
-            //         clone.points.push({ x: segment.endPoint.x, y: segment.endPoint.y });
-            //     }
-            // }
             planned.push(clone);
         }
         return planned;
@@ -480,6 +482,9 @@ export class ElkLayout {
 
     private getEdgePoints(edge: INode, elkEdge: ElkExtendedEdge): IPoint[] {
         const points: IPoint[] = [];
+        if (!elkEdge.sections || elkEdge.sections.length === 0) {
+            return deepClone(edge.points);
+        }
         for (const segment of elkEdge.sections || []) {
             if (segment.startPoint) {
                 points.push({ x: segment.startPoint.x, y: segment.startPoint.y });
@@ -493,67 +498,5 @@ export class ElkLayout {
         }
         return points;
     }
-
-    // /**
-    //  * Applies the calculated viewport settings (zoom and pan) to the diagram based on the provided bounds.
-    //  * This method applies a transform to the diagram's canvas and coordinate system.
-    //  * @param bounds The bounding rectangle of the content to fit.
-    //  * @param zoom The zoom level to apply.
-    //  * @param padding The padding to apply around the content.
-    //  * @param alignment The alignment options for fitting the content.
-    //  */
-    // protected applyViewportForBounds(bounds: IRect, zoom: number, padding: number, alignment?: FitAlign): void {
-    //     const canvas = this.diagram.getCanvas();
-    // const coordinates = this.diagram.getCoordinates();
-    // const pixelRatio = coordinates.pixelRatio || 1;
-    // const horizontal = alignment?.horizontal || 'center';
-    // const vertical = alignment?.vertical || 'center';
-
-    // const contentWidth = bounds.width * zoom;
-    // const contentHeight = bounds.height * zoom;
-    // const viewportWidth = canvas.width / pixelRatio;
-    // const viewportHeight = canvas.height / pixelRatio;
-    // const offsetX = this.getHorizontalOffset(viewportWidth, contentWidth, padding, horizontal);
-    // const offsetY = this.getVerticalOffset(viewportHeight, contentHeight, padding, vertical);
-
-    // this.diagram.animateViewport({
-    //     zoom: zoom,
-    //     pan: {
-    //         x: bounds.left * zoom - offsetX,
-    //         y: bounds.top * zoom - offsetY,
-    //     }
-    // });
-    // }
-
-    // /**
-    //  * Clamps the zoom value to the allowed range defined by `minZoom` and `maxZoom`.
-    //  * @param value The zoom value to clamp.
-    //  * @returns The clamped zoom value.
-    //  */
-    // public clampZoom(value: number): number {
-    //     return Math.min(this.maxZoom, Math.max(this.minZoom, value || 1));
-    // }
-
-    // private getHorizontalOffset(viewportWidth: number, contentWidth: number, padding: number, alignment: HorizontalAlign): number {
-    //     switch (alignment) {
-    //         case 'left':
-    //             return padding;
-    //         case 'right':
-    //             return viewportWidth - padding - contentWidth;
-    //         default:
-    //             return (viewportWidth - contentWidth) / 2;
-    //     }
-    // }
-
-    // private getVerticalOffset(viewportHeight: number, contentHeight: number, padding: number, alignment: VerticalAlign): number {
-    //     switch (alignment) {
-    //         case 'top':
-    //             return padding;
-    //         case 'bottom':
-    //             return viewportHeight - padding - contentHeight;
-    //         default:
-    //             return (viewportHeight - contentHeight) / 2;
-    //     }
-    // }
 
 }

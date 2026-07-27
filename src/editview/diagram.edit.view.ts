@@ -2023,8 +2023,15 @@ export class DiagramEditView extends DiagramView {
                     }
                 }
 
-                this.render('all');
-                this.renderPreview();
+                /* Render animated */
+                const target_place = pastedNodes.map(node => deepCloneNode(node))
+                    .map(node => {
+                        NodeBasics.moveBy(node, 24, 24, 'ignore_scale');
+                        return node;
+                    });
+                this.animateLayout(target_place, () => { });
+                //         this.render('all');
+                // this.renderPreview();
 
                 this.emitClipboardChange('paste', pastedNodes);
             });

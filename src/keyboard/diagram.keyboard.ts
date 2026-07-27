@@ -151,7 +151,6 @@ export class DiagramKeyboard<T> {
     public invokeEvent(diagram: T, event: KeyboardEvent): boolean {
         const shortcut = this.getEventShortcut(event);
         if (shortcut) {
-            console.log(`Invoking action for shortcut`);
             event.preventDefault();
             event.stopPropagation();
             shortcut.action(diagram);

@@ -176,7 +176,11 @@ export class DiagramAnimations {
     public animateLayout(nodes: INode[], func: () => void): void {
         let channel = this.map.get('layout') as AnimationLayout | undefined;
         if (channel) {
-            this.applyLayoutProgress(channel, 1); /* Apply the current layout before starting a new one */
+            if (channel.progress < 1) {
+                this.applyLayoutProgress(channel, 1); /* Apply the current layout before starting a new one */
+            }
+            this.stopAnimation('layout');
+
             channel.state = 'idle';
             channel.progress = 0;
             channel.nodes = nodes;
@@ -429,7 +433,6 @@ export class DiagramAnimations {
 
             // Draw with identity tranform since we already transformed the cutout to canvas coordinates
             shutterContext.transform(1, 0, 0, 1, 0, 0); // Reset any existing transformations
-            // context.transform(coordinates.zoom * coordinates.pixelRatio, 0, 0, coordinates.zoom * coordinates.pixelRatio, -coordinates.pan.x * coordinates.zoom * coordinates.pixelRatio, -coordinates.pan.y * coordinates.zoom * coordinates.pixelRatio);
 
             const padding = DiagramConstants.HANDLE_HIT_EPSILON * 2 * coordinates.pixelRatio;
 
@@ -457,20 +460,12 @@ export class DiagramAnimations {
                 shutterContext.restore();
             }
 
-            // context.fillRect(channel.cutout.left, channel.cutout.top, channel.cutout.width, channel.cutout.height);
-
-            // shutterContext.globalCompositeOperation = 'source-over';
-
             if (channel.strokeStyle) {
                 shutterContext.save();
                 shutterContext.strokeStyle = channel.strokeStyle;
-                // shutterContext.fillStyle = 'rgba(0, 0, 0, 0)';
-                // shutterContext.lineJoin = 'round';
                 shutterContext.lineWidth = 1 * coordinates.pixelRatio;
                 shutterContext.setLineDash([6 / coordinates.zoom, 4 / coordinates.zoom]);
-                // shutterContext.filter = 'blur(3px)';
-                // shutterContext.lineWidth = 2 * coordinates.pixelRatio;  // * shrink;
-                // shutterContext.setLineDash([shrink, shrink]);
+
                 const path = new Path2D();
                 path.roundRect(
                     cutout.left - padding,
@@ -489,15 +484,6 @@ export class DiagramAnimations {
             context.restore();
 
             shutterCanvas.remove();
-
-            // if (context) {
-            //     context.save();
-            //     context.beginPath();
-            //     context.rect(channel.cutout.left, channel.cutout.top, channel.cutout.width, channel.cutout.height);
-            //     context.clip();
-            //     this.diagram.render('all');
-            //     context.restore();
-            // }
 
             func();
 
@@ -584,48 +570,7 @@ export class DiagramAnimations {
                     original.y += (planned.y - original.y) * delta;
                 }
             }
-
-            // /* Rectangle-based */
-            // if (target && target.points.length === 2 && node.points.length === 2) {
-            //     const planned_first = target.points[0]!;
-            //     const planned_second = target.points[1]!;
-            //     const original_first = node.points[0]!;
-            //     const original_second = node.points[1]!;
-
-            //     planned_first.x += (original_first.x - planned_first.x) * delta;
-            //     planned_first.y += (original_first.y - planned_first.y) * delta;
-            //     planned_second.x += (original_second.x - planned_second.x) * delta;
-            //     planned_second.y += (original_second.y - planned_second.y) * delta;
-            // }
-
-            // /* Polyline-based */
-            // if (target && target.points.length > 2 && node.points.length === target.points.length) {
-            //     for (let i = 0; i < node.points.length; i++) {
-            //         const planned = target.points[i]!;
-            //         const original = node.points[i]!;
-
-            //         planned.x += (original.x - planned.x) * delta;
-            //         planned.y += (original.y - planned.y) * delta;
-            //     }
-            // }
-
-            // /* Simplified edges */
-            // if (target && target.points.length >= 2 && node.points.length < target.points.length) {
-            //     const preserve = target.points.slice(0, node.points.length - 1);
-            //     const last = target.points[target.points.length - 1];
-            //     target.points = preserve.concat(last!);
-
-            //     // const rect = this.diagram.getCoordinates().getBoundingRect(node);
-            //     for (let i = 0; i < node.points.length; i++) {
-            //         const planned = target.points[i]!;
-            //         const original = node.points[i]!;
-
-            //         planned.x += (original.x - planned.x) * delta;
-            //         planned.y += (original.y - planned.y) * delta;
-            //     }
-            // }
         }
-        // this.diagram.fitToNodes(); /* Adjust the viewport to fit the nodes after applying the layout progress */
     }
 
     private doAnimateLayout(channel: AnimationLayout, func: () => void): void {
@@ -643,9 +588,14 @@ export class DiagramAnimations {
             const attained = channel.progress > 0.99;
 
             if (attained) {
+                channel.progress = 1;
                 channel.lastFrame = undefined;
+                channel.state = 'idle';
+
                 this.applyLayoutProgress(channel, 1);
                 func();
+
+                this.stopAnimation('layout');
                 return;
             }
 
