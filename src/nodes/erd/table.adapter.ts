@@ -8,11 +8,13 @@ import { NodeHandle, type AnchorScope } from "../../types";
 import { GroupBasics } from "../group.basics";
 import { DiagramConstants } from "../../model/diagram.constants";
 import { NodeRegistry } from "../../factory/node.registry";
+import type { HollowMode } from "../../factory/node.adapter";
 
 export class TableAdapter extends VerticalPoolAdapter {
 
     public static TYPE = 'table';
 
+    hollow_mode = 'never' as HollowMode;
     connection_handles = [NodeHandle.N, NodeHandle.S];
 
     public override render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {

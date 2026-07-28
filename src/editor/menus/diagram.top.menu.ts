@@ -189,7 +189,7 @@ export class DiagramTopMenu extends TopMenu {
             items: [
                 this.actionMenuItem('autolayout', 'A'),
                 this.actionMenuItem('autolayout-circuit', 'C'),
-                this.actionMenuItem('autolayout-stress', 'S'),
+                this.actionMenuItem('autolayout-force', 'Y'),
                 // this.actionMenuItem('autolayout-radial', 'D'),   // Poor results. To be evaluated before deployment.
                 '-',
                 this.actionMenuItem('autolayout-flow-left-right', 'F'),

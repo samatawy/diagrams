@@ -123,7 +123,7 @@ export class OrthogonalAdapter extends LineAdapter {
         }
     }
 
-    private drawArcRadius(pt: IPoint, prev: IPoint, next: IPoint, corner_radius: number): number {
+    protected drawArcRadius(pt: IPoint, prev: IPoint, next: IPoint, corner_radius: number): number {
         // if (!prev || !next) return 0;
 
         const inDx = pt.x - prev.x;
@@ -157,7 +157,7 @@ export class OrthogonalAdapter extends LineAdapter {
         return radius;
     }
 
-    private planBestPath(node: INode, points: IPoint[], from_handle?: NodeHandle, to_handle?: NodeHandle): IPoint[] {
+    protected planBestPath(node: INode, points: IPoint[], from_handle?: NodeHandle, to_handle?: NodeHandle): IPoint[] {
 
         const source: DirectedPoint[] = this.cloneDirected(points, from_handle, to_handle);
 

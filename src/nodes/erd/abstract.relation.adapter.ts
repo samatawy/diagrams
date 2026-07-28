@@ -48,65 +48,65 @@ export abstract class AbstractRelationAdapter extends OrthogonalAdapter {
     //     }
     // }
 
-    // render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
-    //     if (!context) return;
-    //     const diagram = node.owner;
-    //     if (!isDiagramViewLike(diagram)) return;
-    //     const cache = diagram.getCache();
-    //     const cached = cache.getNode(node) || {} as INodeCached;
+    render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {
+        if (!context) return;
+        const diagram = node.owner;
+        if (!isDiagramViewLike(diagram)) return;
+        const cache = diagram.getCache();
+        const cached = cache.getNode(node) || {} as INodeCached;
 
-    //     if (node.points.length > 1) {
-    //         context.save();
-    //         RenderBasics.prepare(node, context, show);
-    //         if (isConnectionNode(node)) {
-    //             ConnectionBasics.syncEndpoints(node);
-    //         }
+        if (node.points.length > 1) {
+            context.save();
+            RenderBasics.prepare(node, context, show);
+            if (isConnectionNode(node)) {
+                ConnectionBasics.syncEndpoints(node);
+            }
 
-    //         const fromHandle = node.geometry?.from_handle as NodeHandle;
-    //         const toHandle = node.geometry?.to_handle as NodeHandle;
-    //         const corner_radius = node.geometry?.radius as number ?? 8;
+            const fromHandle = node.geometry?.from_handle as NodeHandle;
+            const toHandle = node.geometry?.to_handle as NodeHandle;
+            const corner_radius = node.geometry?.radius as number ?? 8;
 
-    //         const pathPoints = this.planBestPath(node, node.points, fromHandle, toHandle);
+            const pathPoints = this.planBestPath(node, node.points, fromHandle, toHandle);
 
-    //         const path = new Path2D();
-    //         path.moveTo(pathPoints[0]!.x, pathPoints[0]!.y);
+            const path = new Path2D();
+            path.moveTo(pathPoints[0]!.x, pathPoints[0]!.y);
 
-    //         for (let i = 1; i < pathPoints.length; i++) {
-    //             const prev = pathPoints[i - 1]!;
-    //             const pt = pathPoints[i]!;
-    //             const next = pathPoints[i + 1];
+            for (let i = 1; i < pathPoints.length; i++) {
+                const prev = pathPoints[i - 1]!;
+                const pt = pathPoints[i]!;
+                const next = pathPoints[i + 1];
 
-    //             if (!next) {
-    //                 path.lineTo(pt.x, pt.y);
-    //                 continue;
-    //             }
+                if (!next) {
+                    path.lineTo(pt.x, pt.y);
+                    continue;
+                }
 
-    //             const radius = this.drawArcRadius(pt, prev, next, corner_radius);
-    //             if (radius > 0) {
-    //                 path.arcTo(pt.x, pt.y, next.x, next.y, radius);
-    //             } else {
-    //                 path.lineTo(pt.x, pt.y);
-    //             }
-    //         }
+                const radius = this.drawArcRadius(pt, prev, next, corner_radius);
+                if (radius > 0) {
+                    path.arcTo(pt.x, pt.y, next.x, next.y, radius);
+                } else {
+                    path.lineTo(pt.x, pt.y);
+                }
+            }
 
-    //         context.stroke(path);
+            context.stroke(path);
 
-    //         ERDBasics.renderRelationMarkers(node, context, pathPoints);
+            ERDBasics.renderRelationMarkers(node, context, pathPoints);
 
-    //         if (node.text && show !== 'quick') {
-    //             const { from, to } = NodeBasics.longestSegment(pathPoints) || { from: pathPoints[0]!, to: pathPoints[1]! };
-    //             RenderBasics.renderText(node, context, {
-    //                 overflow: this.text_overflow,
-    //                 from, to
-    //             });
-    //         }
+            if (node.text && show !== 'quick') {
+                const { from, to } = NodeBasics.longestSegment(pathPoints) || { from: pathPoints[0]!, to: pathPoints[1]! };
+                RenderBasics.renderText(node, context, {
+                    overflow: this.text_overflow,
+                    from, to
+                });
+            }
 
-    //         cached.path = path;
-    //         cache.setNode(node, cached);
+            cached.path = path;
+            cache.setNode(node, cached);
 
-    //         context.restore();
-    //     }
-    // }
+            context.restore();
+        }
+    }
 
     // private drawArcRadius(pt: IPoint, prev: IPoint, next: IPoint, corner_radius: number): number {
     //     // if (!prev || !next) return 0;

@@ -1,4 +1,4 @@
-import type { SpecificOptions, TextOverflowMode } from "../../factory";
+import type { HollowMode, SpecificOptions, TextOverflowMode } from "../../factory";
 import { isDiagramViewLike } from "../../guards";
 import type { IHandlePoint, INode } from "../../interfaces";
 import { NodeHandle, type AnchorScope, type IPoint, type ITextBaseline, type ITextOrientation } from "../../types";
@@ -13,6 +13,7 @@ export class FieldAdapter extends RectangleAdapter {
 
     can_rotate = false;
     drag_create = true;
+    hollow_mode = 'never' as HollowMode;
     connection_handles = [NodeHandle.E, NodeHandle.W];
     resize_handles = [];
     single_line_text = true;
@@ -117,7 +118,7 @@ export class FieldAdapter extends RectangleAdapter {
     public override canConnectTo(node: INode, handle: NodeHandle, direction: 'from' | 'to' | 'any', target?: Partial<INode>, point?: IPoint): boolean {
         if (!this.connection_handles.includes(handle)) return false;
         if (target && !target.type?.startsWith('erd')) return false;
-        return node.ready === true;
+        return true;    //node.ready === true;
     }
 
     specificOptions(node: INode, path: string): SpecificOptions | undefined {

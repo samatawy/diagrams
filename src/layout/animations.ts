@@ -401,7 +401,13 @@ export class DiagramAnimations {
             channel.target = { ...nodeRect };
 
             if (!channel.cutout) {
-                channel.cutout = deepClone(canvasFullRect);
+                // channel.cutout = deepClone(canvasFullRect);
+                channel.cutout = {
+                    left: nodeRect.left,
+                    top: nodeRect.top,
+                    width: nodeRect.width,
+                    height: nodeRect.height
+                }
             }
             const cutout = channel.cutout!;
 
@@ -417,7 +423,14 @@ export class DiagramAnimations {
 
             if (attainedLeft && attainedTop && attainedWidth && attainedHeight) {
                 channel.lastFrame = undefined;
-                channel.cutout = deepClone(nodeRect);
+                // channel.cutout = deepClone(nodeRect);
+                channel.cutout = {
+                    left: nodeRect.left,
+                    top: nodeRect.top,
+                    width: nodeRect.width,
+                    height: nodeRect.height
+                }
+
                 func();
                 return;
             }
@@ -432,7 +445,7 @@ export class DiagramAnimations {
             this.diagram.render('all');
 
             // Draw with identity tranform since we already transformed the cutout to canvas coordinates
-            shutterContext.transform(1, 0, 0, 1, 0, 0); // Reset any existing transformations
+            shutterContext.setTransform(1, 0, 0, 1, 0, 0); // Reset any existing transformations
 
             const padding = DiagramConstants.HANDLE_HIT_EPSILON * 2 * coordinates.pixelRatio;
 
@@ -479,7 +492,7 @@ export class DiagramAnimations {
             }
 
             context.save();
-            context.transform(1, 0, 0, 1, 0, 0); // Reset any existing transformations
+            context.setTransform(1, 0, 0, 1, 0, 0); // Reset any existing transformations
             context.drawImage(shutterCanvas, 0, 0);
             context.restore();
 

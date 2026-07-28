@@ -2377,7 +2377,16 @@ export class DiagramEditView extends DiagramView {
         this.upsertGroup(groupId);
 
         for (const node of selected) {
+            /* Skip nodes that are children of containers */
+            const existing = GroupBasics.nodeGroup(node);
+            if (existing && existing.owner) continue;
+
+            /* Otherwise add the node into the new group */
             this.setNodeGroup(node, groupId);
+        }
+        const added = this.group(groupId);
+        if (added?.nodes.length === 0) {
+            this.deleteGroup(groupId);
         }
 
         this.render('all');
@@ -4233,7 +4242,7 @@ export class DiagramEditView extends DiagramView {
             if (source.id === connector.id) continue;
 
             const pointer = this.coordinates.getPoint(canvasX, canvasY, 'ignore_grid');
-            const at = NodeBasics.connectionHandleAtPoint(source, pointer, direction, target);
+            const at = NodeBasics.connectionHandleAtPoint(source, pointer, direction, connector);   // was target) ?
             if (!at || at.handle === NodeHandle.ROTATE) continue;
 
             const rect = this.coordinates.getBoundingRect(source, false);

@@ -11,7 +11,7 @@ import type { IContainer, IGroup, INode } from "../interfaces";
 
 export type AutoLayoutDirection = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT';
 
-export type AutoLayoutMethod = 'block' | 'flow' | 'tree' | 'circuit' | 'stress' | 'radial';
+export type AutoLayoutMethod = 'block' | 'flow' | 'tree' | 'circuit' | 'force' | 'radial';
 
 /**
  * ElkLayout is a utility class that provides methods to automatically layout nodes using ELK. 
@@ -47,8 +47,8 @@ export class ElkLayout {
                 return this.autoLayoutTree(direction ?? 'DOWN');
             case "circuit":
                 return this.autoCircuit();
-            case "stress":
-                return this.autoStress();
+            case "force":
+                return this.autoForce();
             case "radial":
                 return this.autoRadial();
             default:
@@ -225,25 +225,48 @@ export class ElkLayout {
     /**
      * Automatically layout the diagram in a network.
      */
-    public async autoStress(): Promise<INode[]> {
+    public async autoForce(): Promise<INode[]> {
         const elk = new ELK();
         const graph = this.buildElkGraph();
 
         graph.layoutOptions = {
-            "elk.algorithm": "stress",
-            "elk.stress.desiredEdgeLength": "168",
-            "elk.stress.maxIterations": "500",
-            "elk.stress.clusterPenalty": "100",
+            "elk.algorithm": "force",
+            "elk.force.repulsion": "1.5",
+            "elk.force.gravity": "0.1",
+            "elk.force.temperature": "1.5",
+            "elk.force.iterations": "1000",
+            "elk.force.compact": "true",
+
+            "elk.nodeSize.constraints": "MINIMUM_SIZE",
+            "elk.nodeSize.options": "CORRECT_PORT_SPACING",
 
             "elk.edgeRouting": "ORTHOGONAL",
             "elk.layered.edgeRouting.thoroughness": "EXPENSIVE",
 
             "elk.spacing.nodeNode": "64",
             'elk.spacing.edgeEdge': '32',
-            'elk.spacing.edgeNode': '48',
-
-            "elk.aspectRatio": "1.6",
+            'elk.spacing.edgeNode': '32',
         };
+
+        // graph.layoutOptions = {
+        //     "elk.algorithm": "stress",
+        //     "elk.stress.desiredEdgeLength": "168",
+        //     "elk.stress.maxIterations": "500",
+        //     "elk.stress.clusterPenalty": "100",
+
+        //     "elk.nodeSize.constraints": "MINIMUM_SIZE",
+        //     "elk.nodeSize.options": "CORRECT_PORT_SPACING",
+        //     "elk.stress.nodeRepulsion": "10000",
+
+        //     "elk.edgeRouting": "ORTHOGONAL",
+        //     "elk.layered.edgeRouting.thoroughness": "EXPENSIVE",
+
+        //     "elk.spacing.nodeNode": "64",
+        //     'elk.spacing.edgeEdge': '32',
+        //     'elk.spacing.edgeNode': '48',
+
+        //     "elk.aspectRatio": "1.6",
+        // };
 
         const result = await elk.layout(graph);
 

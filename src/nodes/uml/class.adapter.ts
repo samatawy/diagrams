@@ -8,12 +8,13 @@ import { NodeHandle, type AnchorScope, type IPoint } from "../../types";
 import { GroupBasics } from "../group.basics";
 import { DiagramConstants } from "../../model/diagram.constants";
 import { NodeRegistry } from "../../factory/node.registry";
-import type { SpecificOptions, TextPlacement } from "../../factory/node.adapter";
+import type { HollowMode, SpecificOptions, TextPlacement } from "../../factory/node.adapter";
 
 export class UmlClassAdapter extends VerticalPoolAdapter {
 
     public static TYPE = 'uml_class';
 
+    hollow_mode = 'never' as HollowMode;
     connection_handles = [NodeHandle.N, NodeHandle.S];
 
     public override render(node: INode, context: CanvasRenderingContext2D, show?: 'all' | 'quick'): void {

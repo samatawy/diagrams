@@ -101,10 +101,6 @@ export class DiagramClipboard {
                 });
 
                 return selected;
-
-                // this.diagram.render('all');
-                // this.diagram.renderPreview();
-                // this.diagram.eventDispatcher.styleChanged('paste-styles');
             })
     }
 
@@ -188,17 +184,6 @@ export class DiagramClipboard {
                     return [];
                 }
 
-                const selected = envelope.nodes.map(node => ({ ...node, owner: this.diagram }));
-                const group_ids = new Set(selected.map(node => node.in_group).filter(g => g !== undefined));
-                const owned_ids = new Set(selected.map(node => isContainer(node) ? node.owns_group : undefined).filter(g => g !== undefined));
-                const groupMap = new Map<string, string>();
-                for (const g of group_ids) {
-                    groupMap.set(g, newGroupId());
-                }
-                for (const g of owned_ids) {
-                    groupMap.set(g, newGroupId());
-                }
-
                 /* Merge referenced groups into this diagram before hydrating. */
                 // if (envelope.groups?.length) {
                 //     for (const group of envelope.groups) {
@@ -219,24 +204,35 @@ export class DiagramClipboard {
                 // const cloned = this.clipboard.cloneNodes(selected);
                 // this.setSelection(cloned);
 
-                if (groupMap.size > 0) {
-                    for (const node of pastedNodes) {
-                        if (node.in_group) {
-                            node.in_group = groupMap.get(node.in_group) || node.in_group;
-                        }
-                        if (isContainer(node)) {
-                            node.owns_group = groupMap.get(node.owns_group) || node.owns_group;
-                        }
-                    }
+                // const selected = pastedNodes;       //.map(node => ({ ...node, owner: this.diagram }));
+                // const group_ids = new Set(selected.map(node => node.in_group).filter(g => g !== undefined));
+                // const owned_ids = new Set(selected.map(node => isContainer(node) ? node.owns_group : undefined).filter(g => g !== undefined));
+                // const groupMap = new Map<string, string>();
+                // for (const g of group_ids) {
+                //     groupMap.set(g, newGroupId());
+                // }
+                // for (const g of owned_ids) {
+                //     groupMap.set(g, newGroupId());
+                // }
 
-                    for (const id of groupMap.values()) {
-                        this.diagram.upsertGroup({
-                            id: id,
-                            owner: pastedNodes.find(node => isContainer(node) && node.owns_group === id)?.id,
-                            nodes: pastedNodes.filter(node => node.in_group === id).map(node => node.id),
-                        });
-                    }
-                }
+                // if (groupMap.size > 0) {
+                //     for (const node of pastedNodes) {
+                //         if (node.in_group) {
+                //             node.in_group = groupMap.get(node.in_group) || node.in_group;
+                //         }
+                //         if (isContainer(node)) {
+                //             node.owns_group = groupMap.get(node.owns_group) || node.owns_group;
+                //         }
+                //     }
+
+                //     for (const id of groupMap.values()) {
+                //         this.diagram.upsertGroup({
+                //             id: id,
+                //             owner: pastedNodes.find(node => isContainer(node) && node.owns_group === id)?.id,
+                //             nodes: pastedNodes.filter(node => node.in_group === id).map(node => node.id),
+                //         });
+                //     }
+                // }
 
                 this.can_paste = true;
                 // this.emitClipboardChange('paste', pastedNodes);
@@ -390,23 +386,23 @@ export class DiagramClipboard {
         /* Second pass: remap group memberships
             creating new cloned groups if there was a container node in the paste batch.
         */
-        const groupMap: Map<string, IGroup> = new Map();
-        for (let node of nodes) {
-            const group_id = (node as IContainer & INode)?.owns_group;
-            if (group_id) {
-                const group = this.diagram.group(group_id);
-                if (group) {
-                    /* create a clone group from selected nodes */
-                    let cloned_group_id = newGroupId();
-                    let new_members = group.nodes.filter(id => idMap.has(id));
-                    new_members = new_members.map(id => idMap.get(id)!);
-                    const new_group = { id: cloned_group_id, nodes: new_members };
-                    groupMap.set(group.id, new_group);
+        // const groupMap: Map<string, IGroup> = new Map();
+        // for (let node of nodes) {
+        //     const group_id = (node as IContainer & INode)?.owns_group;
+        //     if (group_id) {
+        //         const group = this.diagram.group(group_id);
+        //         if (group) {
+        //             /* create a clone group from selected nodes */
+        //             let cloned_group_id = newGroupId();
+        //             let new_members = group.nodes.filter(id => idMap.has(id));
+        //             new_members = new_members.map(id => idMap.get(id)!);
+        //             const new_group = { id: cloned_group_id, nodes: new_members };
+        //             groupMap.set(group.id, new_group);
 
-                    this.diagram.upsertGroup(new_group);
-                }
-            }
-        }
+        //             this.diagram.upsertGroup(new_group);
+        //         }
+        //     }
+        // }
 
         /* Finally, clone the nodes into the diagram. */
         for (let node of nodes) {
@@ -414,7 +410,7 @@ export class DiagramClipboard {
             const conn = clone as INode & IConnection;
             conn.from = remapAnchor(conn.from);
             conn.to = remapAnchor(conn.to);
-            if ((clone as any).owns_group) (clone as any).owns_group = groupMap.get((clone as any).owns_group)?.id;
+            // if ((clone as any).owns_group) (clone as any).owns_group = groupMap.get((clone as any).owns_group)?.id;
             this.diagram.upsertNode(clone);
             layer.nodes.push(clone.id);
 
@@ -422,6 +418,40 @@ export class DiagramClipboard {
             cloned.push(clone);
         }
 
-        return cloned;
+        const regrouped = this.remapNodeGroups(cloned) as INode[];
+
+        return regrouped;   //cloned;
+    }
+
+    protected remapNodeGroups(nodes: INode[] | ISerializedNode[]): INode[] | ISerializedNode[] {
+        const group_ids = new Set(nodes.map(node => node.in_group).filter(g => g !== undefined));
+        const owned_ids = new Set(nodes.map(node => isContainer(node) ? node.owns_group : undefined).filter(g => g !== undefined));
+        const groupMap = new Map<string, string>();
+        for (const g of group_ids) {
+            groupMap.set(g, newGroupId());
+        }
+        for (const g of owned_ids) {
+            groupMap.set(g, newGroupId());
+        }
+
+        if (groupMap.size > 0) {
+            for (const node of nodes) {
+                if (node.in_group) {
+                    node.in_group = groupMap.get(node.in_group) || node.in_group;
+                }
+                if (isContainer(node)) {
+                    node.owns_group = groupMap.get(node.owns_group) || node.owns_group;
+                }
+            }
+
+            for (const id of groupMap.values()) {
+                this.diagram.upsertGroup({
+                    id: id,
+                    owner: nodes.find(node => isContainer(node) && node.owns_group === id)?.id,
+                    nodes: nodes.filter(node => node.in_group === id).map(node => node.id),
+                });
+            }
+        }
+        return nodes;
     }
 }

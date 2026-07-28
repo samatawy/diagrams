@@ -13,7 +13,7 @@ export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' | 'export
     'toggle-grid' | 'toggle-visual-grid' | 'toggle-guides' |
 
     'zoom-in' | 'zoom-out' | 'fit-horizontally' | 'fit-all' |
-    'autolayout' | 'autolayout-circuit' | 'autolayout-stress' | 'autolayout-radial' |
+    'autolayout' | 'autolayout-circuit' | 'autolayout-force' | 'autolayout-radial' |
     'autolayout-flow-top-down' | 'autolayout-flow-bottom-up' | 'autolayout-flow-left-right' | 'autolayout-flow-right-left' |
     'autolayout-tree-top-down' | 'autolayout-tree-bottom-up' | 'autolayout-tree-left-right' | 'autolayout-tree-right-left' |
     'undo' | 'redo' |
@@ -275,11 +275,11 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         execute: (d) => d.autoLayout('circuit'),
     },
     {
-        id: 'autolayout-stress',
-        label: 'Stress',
-        tooltip: 'Automatically layout nodes in a stress layout',
-        shortcut: ['Ctrl+Alt+S', 'Cmd+Alt+S'],
-        execute: (d) => d.autoLayout('stress'),
+        id: 'autolayout-force',
+        label: 'Force',
+        tooltip: 'Automatically layout nodes in a force layout',
+        shortcut: [],
+        execute: (d) => d.autoLayout('force'),
     },
     {
         id: 'autolayout-radial',
