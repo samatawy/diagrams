@@ -3271,7 +3271,7 @@ export class DiagramEditView extends DiagramView {
     private selectMove(event: PointerEvent): void {
         if (!this.canvas) return;
 
-        if (event.buttons === 1 && this.downPos) {
+        if (event.buttons === 1 && this.downPos && this.inSelectGesture) {
             switch (this.downHandle) {
                 case NodeHandle.MOVE: {
                     let movePos = { x: event.offsetX, y: event.offsetY }
@@ -3415,7 +3415,7 @@ export class DiagramEditView extends DiagramView {
                     break;
 
                 case NodeHandle.NONE:
-                    if (this.downRect) {
+                    if (this.downRect) {         // && this.inSelectGesture
                         /* Dragging a selection rectangle.. */
                         let movePos = { x: event.offsetX, y: event.offsetY }
                         let moveRect = this.normalizeRect(this.downPos, movePos);
