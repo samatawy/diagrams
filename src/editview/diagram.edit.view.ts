@@ -3567,6 +3567,9 @@ export class DiagramEditView extends DiagramView {
         this.render('all');
 
         this.downHandle = NodeHandle.NONE;
+        this.downShape = undefined;
+        this.downPos = undefined;
+        this.downRect = undefined;
         this.connectionBeforeEdit = undefined;
 
         this.emitPendingMutationEvents();
