@@ -226,21 +226,41 @@ export function lineDash(node: INode): string | number[] {
 }
 
 export function lineDashArray(node: INode): number[] {
-    const scale = lineWidth(node);
+    // Scaling has been changed to a fixed correction factor to avoid excessive dash lengths for thick lines.
+    // const scale = lineWidth(node);
+    // if (Array.isArray(node.strokeStyle?.dash)) {
+    //     return node.strokeStyle.dash.map(v => v * scale).filter(v => v > 0);
+    // } else {
+    //     switch (node.strokeStyle?.dash) {
+    //         case 'solid':
+    //             return [];
+    //         case 'dashed':
+    //             return [10 * scale, 6 * scale];
+    //         case 'dotted':
+    //             return [2 * scale, 4 * scale];
+    //         case 'dashdot':
+    //         case 'dash-dot':
+    //         case 'dash_dot':
+    //             return [10 * scale, 4 * scale, 2 * scale, 4 * scale];
+    //         default:
+    //             return [];
+    //     }
+    // }
+    const inc = lineWidth(node) - 1;
     if (Array.isArray(node.strokeStyle?.dash)) {
-        return node.strokeStyle.dash.map(v => v * scale).filter(v => v > 0);
+        return node.strokeStyle.dash.map(v => v + inc).filter(v => v > 0);
     } else {
         switch (node.strokeStyle?.dash) {
             case 'solid':
                 return [];
             case 'dashed':
-                return [10 * scale, 6 * scale];
+                return [5 + inc, 3 + inc];
             case 'dotted':
-                return [2 * scale, 4 * scale];
+                return [1 + inc, 2 + inc];
             case 'dashdot':
             case 'dash-dot':
             case 'dash_dot':
-                return [10 * scale, 4 * scale, 2 * scale, 4 * scale];
+                return [5 + inc, 2 + inc, 1 + inc, 2 + inc];
             default:
                 return [];
         }
