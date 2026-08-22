@@ -63,6 +63,7 @@ import type { IGradient } from "../color.types";
 import { FreehandAdapter } from "../nodes/free/freehand.adapter";
 import { DiagramClipboard } from "./diagram.clipboard";
 import { ElkLayout, type AutoLayoutDirection, type AutoLayoutMethod } from "../layout/elk";
+import { EditorFiles, type EditorFile } from "../io/editor.files";
 
 
 export { DIAGRAM_EDIT_CONTEXT_MENU_EVENT } from "../events/diagram.events";
@@ -212,6 +213,9 @@ export class DiagramEditView extends DiagramView {
 
     private dragDraftConnector?: INode;
 
+    // public currentFile?: EditorFile;
+    public editorFiles: EditorFiles;
+
     /**
      * Creates an instance of DiagramEditView.
      * @param id The unique identifier for the diagram.
@@ -232,6 +236,7 @@ export class DiagramEditView extends DiagramView {
         this.color_palette = new ColorPalette(this);
         this.editKeyboard = new DiagramEditViewKeyboard();
         this.clipboard = new DiagramClipboard(this);
+        this.editorFiles = EditorFiles.loaded();
     }
 
     /**
@@ -307,6 +312,8 @@ export class DiagramEditView extends DiagramView {
 
         this.clear();
         this.id = newDiagramId();
+        this.editorFiles.onNew();
+        // this.currentFile = undefined;
         return true;
     }
 
@@ -335,6 +342,22 @@ export class DiagramEditView extends DiagramView {
             return await this.loadDiagram(options.source);
         }
 
+        if (options?.path) {
+            // If a path is provided, we can attempt to load the diagram from that path.
+            const handle = this.editorFiles.handleForPath(options.path);
+            if (handle && handle.getFile) try {
+                const file = await handle.getFile();
+                const content = await file.text();
+                const success = await this.loadDiagram(content);
+                if (success) {
+                    this.editorFiles.add(EditorFiles.wrapFile(handle)!);
+                    this.eventDispatcher.diagramOpened({ file: EditorFiles.wrapFile(handle)! });
+                    return success;
+                }
+            } catch (error) {
+            }
+        }
+
         if (!(await this.confirmReplaceIfNeeded('open'))) {
             return false;
         }
@@ -347,6 +370,13 @@ export class DiagramEditView extends DiagramView {
         }
 
         await this.applyDiagramSource(resolved.source);
+
+        if (resolved.handle) {
+            const wrapped = EditorFiles.wrapFile(resolved.handle);
+            this.editorFiles.add(wrapped!);
+            this.eventDispatcher.diagramOpened({ file: wrapped! });
+        }
+
         return true;
     }
 
@@ -362,7 +392,8 @@ export class DiagramEditView extends DiagramView {
 
         const resolvedOptions: DiagramSaveOptions = {
             ...options,
-            fileName: options.fileName ?? `${this.id}.json`,
+            fileName: options.fileName ?? this.editorFiles.current?.filename ?? `${this.id}.json`,
+            path: options.path ?? this.editorFiles.current?.path,
         };
 
         const resolved: DiagramSaveResult | undefined = this.fileDialogs
@@ -374,7 +405,13 @@ export class DiagramEditView extends DiagramView {
 
         const content = this.export('json', resolved.pretty ?? true, resolved.serializer ?? jsonSerializer) as string;
         if (resolved.handle) {
-            return await writeTextToFileHandle(resolved.handle, content, resolved.mimeType ?? 'application/json');
+            const result = await writeTextToFileHandle(resolved.handle, content, resolved.mimeType ?? 'application/json');
+
+            const wrapped = EditorFiles.wrapFile(resolved.handle);
+            this.editorFiles.add(wrapped!);
+            this.eventDispatcher.diagramSaved({ file: wrapped! });
+
+            return result;
         }
 
         return this.save(resolved);

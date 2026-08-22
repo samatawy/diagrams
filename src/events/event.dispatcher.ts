@@ -36,6 +36,9 @@ import {
     type DiagramSheetChanged,
     DIAGRAM_ERROR_EVENT,
     type DiagramErrorEvent,
+    DIAGRAM_OPEN_EVENT,
+    DIAGRAM_SAVE_EVENT,
+    type DiagramFileEvent,
 } from "./diagram.events";
 
 /**
@@ -181,6 +184,14 @@ export class EventDispatcher {
      */
     public toolChanged(detail: DiagramToolChange): void {
         this.dispatchInternal(DIAGRAM_TOOL_CHANGED_EVENT, detail);
+    }
+
+    public diagramOpened(detail: DiagramFileEvent): void {
+        this.dispatchInternal(DIAGRAM_OPEN_EVENT, detail);
+    }
+
+    public diagramSaved(detail: DiagramFileEvent): void {
+        this.dispatchInternal(DIAGRAM_SAVE_EVENT, detail);
     }
 
     public sheetLoaded(detail: DiagramSheetLoaded): void {

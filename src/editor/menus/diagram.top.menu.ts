@@ -1,4 +1,3 @@
-import type { DiagramView } from '../../view/diagram.view';
 import { DiagramEditView } from '../../editview/diagram.edit.view';
 
 import { ACTION_MAP, type DiagramAction, type DiagramActionId } from '../diagram.actions';
@@ -8,6 +7,7 @@ import type { ShadowStyle } from '../../style.interfaces';
 import type { DiagramEditor } from '../diagram.editor';
 import { DIAGRAM_SHEET_CHANGED_EVENT, DIAGRAM_SHEET_LOADED_EVENT } from '../../events/diagram.events';
 import { registerEditorIcons } from '../../editview/editor.icons';
+import type { EditorFile } from '../../io/editor.files';
 
 
 /**
@@ -68,6 +68,7 @@ export class DiagramTopMenu extends TopMenu {
             items: [
                 this.actionMenuItem('new', 'N'),
                 this.actionMenuItem('open', 'O'),
+                this.recentFileMenu(),
                 this.actionMenuItem('save', 'S'),
                 this.actionMenuItem('export', 'E'),
                 // this.actionMenuItem('export-svg', 'X'),
@@ -76,6 +77,8 @@ export class DiagramTopMenu extends TopMenu {
                 this.actionMenuItem('save-stylesheet', 'V'),
             ],
         } as DropDownMenu);
+
+        // this.addDropDownMenu(this.recentFileMenu()),
 
         this.addDropDownMenu({
             label: 'Edit',
@@ -288,6 +291,23 @@ export class DiagramTopMenu extends TopMenu {
         } as DropDownMenu);
     }
 
+    public updateRecentFiles(): void {
+        const recentMenu = this.dropDownMenus.find(menu => menu.label === 'Recent');
+        if (!recentMenu) return;
+
+        const fileMenu = this.topLevel.find(menu => menu.label === 'File') as DropDownMenu | undefined;
+        if (fileMenu && fileMenu.element) {
+            const recentMenuIndex = fileMenu.items.findIndex(item => (item as DropDownMenu)?.label === recentMenu.label);
+            if (recentMenuIndex >= 0) {
+                fileMenu.items.splice(recentMenuIndex, 1, this.recentFileMenu());
+            }
+
+            this.menuElement?.removeChild(fileMenu.element!);
+            // this.addDropDownMenu(fileMenu, undefined, 0);
+            this.addDropDownMenu(fileMenu, this.menuElement!, 0);
+        }
+    }
+
     private actionMenuItem(actionId: DiagramActionId, altKey: string): DiagramTopMenuItem {
         const action = ACTION_MAP.get(actionId);
         if (!action) throw new Error(`Action not found: ${actionId}`);
@@ -322,6 +342,28 @@ export class DiagramTopMenu extends TopMenu {
                 this.diagram.applyNodePatch({ 'shadowStyle': style }, 'shadowStyle');
             }
         };
+    }
+
+    private recentFileMenu(): DropDownMenu {
+        return {
+            label: 'Recent',
+            altKey: 'R',
+            icon: 'open',
+            items: [
+                ...this.diagram.editorFiles.mru.map(item => this.recentFileItem(item))
+            ]
+        } as DropDownMenu
+    }
+
+    private recentFileItem(file: EditorFile): DiagramTopMenuItem {
+        return {
+            label: file.filename,
+            altKey: '',
+            isEnabled: () => file.exists,
+            onClick: () => {
+                this.diagram.openDiagram({ path: file.path })
+            }
+        }
     }
 }
 

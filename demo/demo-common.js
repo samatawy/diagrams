@@ -6,7 +6,7 @@ import {
     DIAGRAM_CHANGED_EVENT,
     NodeHandle,
     registerBasicAdapters, registerBpmnAdapters, registerBpmnToolset, registerC4Toolset, registerErdToolset, registerLogicToolset, registerUmlToolset,
-    registerFlagToolset,
+    // registerFlagToolset,
     ToolsetRegistry,
 } from '../dist/index.js';
 
@@ -25,7 +25,7 @@ export function registerTools() {
     registerLogicToolset();
     registerUmlToolset();
 
-    registerFlagToolset();
+    // registerFlagToolset();
 }
 
 export function makeBox(owner, id, type, left, top, width, height, options = {}) {

@@ -39,6 +39,8 @@ export type DiagramOpenSource = string | ISerializedDiagram | Diagram;
 
 export interface DiagramOpenOptions {
     source?: DiagramOpenSource;
+    path?: string;
+    handle?: FileSystemFileHandle;
 }
 
 export interface DiagramOpenResult {

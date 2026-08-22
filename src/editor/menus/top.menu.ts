@@ -341,6 +341,8 @@ export class TopMenu {
                 this.addSeparator(dropdownContainer);
             } else if (isMenuItem(subItem)) {
                 this.addMenuItem(subItem, dropdownContainer);
+            } else if (isDropDownMenu(subItem)) {
+                this.addDropDownMenu(subItem, dropdownContainer);
             }
         });
         item.appendChild(dropdownContainer);

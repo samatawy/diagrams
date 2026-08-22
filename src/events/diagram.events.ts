@@ -1,3 +1,4 @@
+import type { EditorFile } from "../io/editor.files";
 import type { IConnection, INode } from "../interfaces";
 import type { IPoint } from "../types";
 
@@ -31,6 +32,12 @@ export const DIAGRAM_SHEET_LOADED_EVENT = "diagram-sheet-loaded";
 export const DIAGRAM_SHEET_CHANGED_EVENT = "diagram-sheet-changed";
 
 /**
+ * File events.
+ */
+export const DIAGRAM_OPEN_EVENT = "diagram-open";
+export const DIAGRAM_SAVE_EVENT = "diagram-save";
+
+/**
  * Broad compatibility event.
  */
 export const DIAGRAM_CHANGED_EVENT = "diagram-changed";
@@ -45,6 +52,16 @@ export const DIAGRAM_ERROR_EVENT = "diagram-error";
  * enabling developers to optimize performance and user experience by responding appropriately to different types of changes.
  */
 export type DiagramChangeScope = 'model' | 'view' | 'style';
+
+/**
+ * Represents a file-related event in the diagram system, such as opening or saving a diagram.
+ */
+export interface DiagramFileEvent {
+    /**
+     * The file associated with the event, which can be used in MRU lists, etc.
+     */
+    file: EditorFile;
+}
 
 /**
  * Represents a change in the diagram, including the scope of the change and the source event that triggered it.

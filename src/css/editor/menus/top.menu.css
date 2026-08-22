@@ -35,6 +35,7 @@
 }
 
 .top-menu-item {
+    /* position: relative; DOES NOT WORK */
     display: flex;
     align-items: center;
     gap: 8px;
@@ -45,6 +46,15 @@
 /* .top-menu-item:hover, */
 .top-menu-item.selected {
     background: var(--diagram-ui-hover-bg, rgba(15, 118, 110, 0.1));
+}
+
+.top-menu-dropdown .top-menu-dropdown {
+    left: calc(100% - 8px);
+    top: 0 !important;
+}
+
+.top-menu-dropdown .top-menu-item:has(.top-menu-dropdown) {
+    position: relative;
 }
 
 .top-menu-item.is-active .top-menu-item-icon {

@@ -26,7 +26,7 @@ import { injectStyles, setClasses } from "./editor.utils";
 import { FontSelect, type FontSelectConfig } from "./inputs/font.select";
 import { PromptDialog } from "./prompt.dialog";
 import { SizeSelect, type SizeSelectConfig } from "./inputs/size.select";
-import { DIAGRAM_CHANGED_EVENT, DIAGRAM_ERROR_EVENT, type DiagramErrorEvent, type DiagramHintChange } from "../events/diagram.events";
+import { DIAGRAM_CHANGED_EVENT, DIAGRAM_ERROR_EVENT, DIAGRAM_OPEN_EVENT, DIAGRAM_SAVE_EVENT, type DiagramErrorEvent, type DiagramHintChange } from "../events/diagram.events";
 import { EventDispatcher } from "../events/event.dispatcher";
 import { WidthSelect, type WidthSelectConfig } from "./inputs/width.select";
 import { ArrowTypeSelect, type ArrowTypeSelectConfig } from "./inputs/arrow.type.select";
@@ -47,11 +47,6 @@ import { DiagramHintService } from "../status/diagram.hint.service";
 import { SheetRepository } from "../sheets/sheet.repository";
 import { DiagramToolbox, type DiagramToolBoxConfig } from "./toolbox";
 import { registerBasicAdapters } from "../nodes";
-// import { registerBpmnAdapters } from "../nodes/bpmn";
-// import { registerC4Adapters } from "../nodes/c4";
-// import { registerErdAdapters } from "../nodes/erd";
-// import { registerUmlAdapters } from "../nodes/uml";
-// import { registerLogicAdapters } from "../nodes/logic";
 
 import DIAGRAM_EDITOR_STYLES from '../css_generated/editor/diagram.editor.css';
 import { DiagramTopMenu } from "./menus/diagram.top.menu";
@@ -203,6 +198,8 @@ export class DiagramEditor {
 
     protected syncingControls: boolean = false;
 
+    // protected editorFiles: EditorFiles;
+
     static {
         registerBasicAdapters();
 
@@ -239,6 +236,7 @@ export class DiagramEditor {
         // Workaround to keep diagram required even if none was passed.
         this.diagram = this.getDiagramView();
         this.diagram.sheetRepository = this.sheet_repository;
+        // this.editorFiles = EditorFiles.loaded();
     }
 
     /**
@@ -318,6 +316,8 @@ export class DiagramEditor {
         const created = await this.diagram.newDiagram();
         if (created) {
             this.reflectStyles();
+            /* Add to file history */
+            // this.editorFiles.onNew();
         }
         return created;
     }
@@ -352,6 +352,9 @@ export class DiagramEditor {
             const opened = await this.diagram.openDiagram(options);
             if (opened) {
                 this.reflectStyles();
+                /* Add to file history */
+                // this.editorFiles.add(this.diagram.currentFile!);
+                this.topMenu?.updateRecentFiles();
             }
             return opened;
         } catch (error) {
@@ -404,7 +407,15 @@ export class DiagramEditor {
      * @returns The serialized diagram string, or undefined when saving was canceled.
      */
     public async saveDiagram(options?: DiagramSaveOptions): Promise<string | undefined> {
-        return await this.diagram.saveDiagram(options);
+        const result = await this.diagram.saveDiagram(options);
+
+        /* Add to file history */
+        // if (result && this.diagram.currentFile) {
+        //     this.editorFiles.update(this.diagram.currentFile);
+        // }
+        this.topMenu?.updateRecentFiles();
+
+        return result;
     }
 
     /**
@@ -1141,6 +1152,13 @@ export class DiagramEditor {
                 }
             });
         }
+
+        this.addManagedEventListener(this.host, DIAGRAM_OPEN_EVENT, () => {
+            this.topMenu?.updateRecentFiles();
+        });
+        this.addManagedEventListener(this.host, DIAGRAM_SAVE_EVENT, () => {
+            this.topMenu?.updateRecentFiles();
+        });
 
         this.addManagedEventListener(this.host, DIAGRAM_CHANGED_EVENT, () => {
             this.reflectStyles();
