@@ -112,7 +112,7 @@ export class DiagramLayerItem {
             deleteButton.addEventListener('click', (event) => {
                 event.stopPropagation();
                 this.diagram.deleteLayer(this.layer.id);
-                this.host.remove();
+                this.host.closest('.diagram-layer-row')?.remove();
             });
             this.host.appendChild(deleteButton);
         } else {

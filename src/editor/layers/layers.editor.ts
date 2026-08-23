@@ -27,9 +27,17 @@ export class DiagramLayersEditor {
     protected readonly diagram: DiagramView | DiagramEditView;
     protected readonly config: Required<DiagramLayersEditorConfig>;
     protected draggedLayerId?: string;
+    protected dropTargetLayerId?: string;
+    protected dropPosition: 'before' | 'after' = 'before';
     protected collapsed = false;
     protected layerItems = new Map<string, DiagramLayerItem>();
     protected listHost?: HTMLElement;
+    protected dragSlot?: HTMLElement;
+    protected tailSlot?: HTMLElement;
+    protected rowWrappers = new Map<string, HTMLElement>();
+    protected draggedWrapper?: HTMLElement;
+    protected draggedItemHeight = 40;
+    protected dragWasDropped = false;
 
     protected readonly onDiagramChanged = (): void => {
         this.refresh();
@@ -93,6 +101,71 @@ export class DiagramLayersEditor {
 
     protected getDisplayedLayers(): ILayer[] {
         return [...this.diagram.layers].reverse();
+    }
+
+    protected clearDropTarget(): void {
+        for (const wrapper of this.rowWrappers.values()) {
+            const slot = wrapper.querySelector('.diagram-layer-slot') as HTMLElement | null;
+            slot?.classList.remove('is-visible');
+        }
+        this.tailSlot?.classList.remove('is-visible');
+        this.dragSlot = undefined;
+        this.dropTargetLayerId = undefined;
+        this.dropPosition = 'before';
+    }
+
+    protected setDraggedWrapperState(collapsed: boolean): void {
+        if (!this.draggedWrapper) {
+            return;
+        }
+
+        this.draggedWrapper.classList.toggle('is-dragging', collapsed);
+        const row = this.draggedWrapper.querySelector('.diagram-layer-item') as HTMLElement | null;
+        row?.classList.toggle('is-dragging', collapsed);
+    }
+
+    protected getDraggedDropHeight(): number {
+        return Math.max(this.draggedItemHeight || 40, 40);
+    }
+
+    protected getTailDropThreshold(): number {
+        return Math.max(this.getDraggedDropHeight() + 8, 40);
+    }
+
+    protected ensureBeforeSlot(wrapper: HTMLElement, targetRow: HTMLElement): void {
+        if (!this.draggedLayerId) {
+            return;
+        }
+
+        const slotHeight = this.getDraggedDropHeight();
+        const slot = wrapper.querySelector('.diagram-layer-slot') as HTMLElement | null;
+        if (!slot) {
+            return;
+        }
+
+        this.dragSlot = slot;
+        this.dragSlot.style.setProperty('--diagram-layer-drop-height', `${Math.max(slotHeight, 20)}px`);
+        this.dragSlot.dataset.layerId = targetRow.dataset.layerId ?? '';
+        this.dragSlot.dataset.position = 'before';
+        this.dropTargetLayerId = targetRow.dataset.layerId ?? undefined;
+        this.dropPosition = 'before';
+        this.dragSlot.classList.add('is-visible');
+    }
+
+    protected ensureTailSlot(slot: HTMLElement): void {
+        if (!this.draggedLayerId) {
+            return;
+        }
+
+        const slotHeight = this.getDraggedDropHeight();
+
+        this.dragSlot = slot;
+        this.dragSlot.style.setProperty('--diagram-layer-drop-height', `${Math.max(slotHeight, 20)}px`);
+        this.dragSlot.dataset.layerId = '__tail__';
+        this.dragSlot.dataset.position = 'after';
+        this.dropTargetLayerId = '__tail__';
+        this.dropPosition = 'after';
+        this.dragSlot.classList.add('is-visible');
     }
 
     public refresh(): void {
@@ -189,6 +262,55 @@ export class DiagramLayersEditor {
         const list = document.createElement('div');
         list.className = 'diagram-layers-list';
 
+        list.addEventListener('dragover', (event) => {
+            if (!this.draggedLayerId) {
+                return;
+            }
+
+            const listRect = list.getBoundingClientRect();
+            const tailThreshold = this.getTailDropThreshold();
+            const isInTailRegion = event.clientY >= listRect.bottom - tailThreshold;
+            if (!isInTailRegion) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            if (!this.tailSlot) {
+                return;
+            }
+            this.ensureTailSlot(this.tailSlot);
+        });
+
+        list.addEventListener('dragleave', (event) => {
+            const nextTarget = event.relatedTarget as Node | null;
+            if (nextTarget && list.contains(nextTarget)) {
+                return;
+            }
+            this.clearDropTarget();
+        });
+
+        list.addEventListener('drop', (event) => {
+            if (!this.draggedLayerId) {
+                this.clearDropTarget();
+                return;
+            }
+
+            const listRect = list.getBoundingClientRect();
+            const tailThreshold = this.getTailDropThreshold();
+            const isInTailRegion = event.clientY >= listRect.bottom - tailThreshold;
+            if (!isInTailRegion) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            this.reorderLayer(this.draggedLayerId, '__tail__', 'after');
+            this.draggedLayerId = undefined;
+            this.clearDropTarget();
+            this.refresh();
+        });
+
         const displayedLayers = this.getDisplayedLayers();
 
         if (displayedLayers.length === 0) {
@@ -202,8 +324,18 @@ export class DiagramLayersEditor {
         }
 
         this.layerItems.clear();
+        this.rowWrappers.clear();
+
+        const tailSlot = document.createElement('div');
+        tailSlot.className = 'diagram-layer-slot diagram-layer-slot--tail';
+        tailSlot.dataset.layerId = '__tail__';
+        this.tailSlot = tailSlot;
 
         for (const layer of displayedLayers) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'diagram-layer-row';
+            const slot = document.createElement('div');
+            slot.className = 'diagram-layer-slot';
             const row = document.createElement('div');
             const item = new DiagramLayerItem(row, this.diagram, layer, {
                 readonly: !(this.diagram instanceof DiagramEditView),
@@ -214,54 +346,125 @@ export class DiagramLayersEditor {
             });
 
             this.layerItems.set(layer.id, item);
-            list.appendChild(row);
+            this.rowWrappers.set(layer.id, wrapper);
+            wrapper.appendChild(slot);
+            wrapper.appendChild(row);
+            list.appendChild(wrapper);
 
             if (this.config.allowReorder && this.diagram instanceof DiagramEditView) {
-                row.addEventListener('dragstart', () => {
+                wrapper.addEventListener('dragstart', (event) => {
+                    const target = event.target as HTMLElement | null;
+                    if (target && target.closest('.diagram-layer-delete, .diagram-layer-visibility, .diagram-layer-name')) {
+                        return;
+                    }
+                    const row = wrapper.querySelector('.diagram-layer-item') as HTMLElement | null;
+                    this.draggedItemHeight = Math.max(row?.getBoundingClientRect().height ?? 40, 40);
                     this.draggedLayerId = layer.id;
-                    row.classList.add('is-dragging');
+                    this.draggedWrapper = wrapper;
+                    this.dragWasDropped = false;
+                    this.clearDropTarget();
+                    this.setDraggedWrapperState(true);
                 });
 
-                row.addEventListener('dragend', () => {
-                    this.draggedLayerId = undefined;
-                    row.classList.remove('is-dragging');
-                });
-
-                row.addEventListener('dragover', (event) => {
+                wrapper.addEventListener('dragenter', (event) => {
                     event.preventDefault();
+                    event.stopPropagation();
                     if (!this.draggedLayerId || this.draggedLayerId === layer.id) {
                         return;
                     }
-                    row.classList.add('is-drop-target');
+                    this.dropTargetLayerId = layer.id;
+                    this.dropPosition = 'before';
+                    this.ensureBeforeSlot(wrapper, row);
                 });
 
-                row.addEventListener('dragleave', () => {
-                    row.classList.remove('is-drop-target');
-                });
-
-                row.addEventListener('drop', (event) => {
-                    event.preventDefault();
-                    row.classList.remove('is-drop-target');
+                wrapper.addEventListener('dragover', (event) => {
                     if (!this.draggedLayerId || this.draggedLayerId === layer.id) {
                         return;
                     }
-                    this.reorderLayer(this.draggedLayerId, layer.id);
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    this.dropTargetLayerId = layer.id;
+                    this.dropPosition = 'before';
+                    this.ensureBeforeSlot(wrapper, row);
+                });
+
+                wrapper.addEventListener('dragleave', (event) => {
+                    const nextTarget = event.relatedTarget as Node | null;
+                    if (nextTarget && wrapper.contains(nextTarget)) {
+                        return;
+                    }
+                    this.clearDropTarget();
+                });
+
+                wrapper.addEventListener('drop', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    if (!this.draggedLayerId || this.draggedLayerId === layer.id) {
+                        this.dragWasDropped = false;
+                        this.clearDropTarget();
+                        return;
+                    }
+
+                    this.dragWasDropped = true;
+                    this.reorderLayer(this.draggedLayerId, layer.id, 'before');
                     this.draggedLayerId = undefined;
+                    this.clearDropTarget();
                     this.refresh();
+                });
+
+                wrapper.addEventListener('dragend', () => {
+                    if (!this.dragWasDropped) {
+                        this.setDraggedWrapperState(false);
+                    }
+                    this.draggedWrapper = undefined;
+                    this.draggedLayerId = undefined;
+                    this.dragWasDropped = false;
+                    this.clearDropTarget();
+                });
+
+                wrapper.addEventListener('dragcancel', () => {
+                    this.dragWasDropped = false;
+                    this.setDraggedWrapperState(false);
+                    this.draggedWrapper = undefined;
+                    this.draggedLayerId = undefined;
+                    this.clearDropTarget();
                 });
             }
         }
 
+        list.appendChild(tailSlot);
         body.appendChild(list);
         this.host.appendChild(body);
     }
 
-    protected reorderLayer(fromLayerId: string, toLayerId: string): void {
+    protected reorderLayer(fromLayerId: string, toLayerId: string, position: 'before' | 'after' = 'before'): void {
         const displayed = this.getDisplayedLayers();
         const fromIndex = displayed.findIndex(layer => layer.id === fromLayerId);
-        const toIndex = displayed.findIndex(layer => layer.id === toLayerId);
 
-        if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+        if (fromIndex < 0) {
+            return;
+        }
+
+        if (toLayerId === '__tail__') {
+            if (fromIndex === displayed.length - 1) {
+                return;
+            }
+
+            const nextDisplay = [...displayed];
+            const [moved] = nextDisplay.splice(fromIndex, 1);
+            if (!moved) {
+                return;
+            }
+
+            nextDisplay.push(moved);
+            this.diagram.layers = [...nextDisplay].reverse();
+            this.diagram.render('all');
+            return;
+        }
+
+        const toIndex = displayed.findIndex(layer => layer.id === toLayerId);
+        if (toIndex < 0 || (fromIndex === toIndex && position === 'before')) {
             return;
         }
 
@@ -271,7 +474,10 @@ export class DiagramLayersEditor {
             return;
         }
 
-        nextDisplay.splice(toIndex, 0, moved);
+        const targetIndex = nextDisplay.findIndex(layer => layer.id === toLayerId);
+        const insertionIndex = position === 'before' ? targetIndex : targetIndex + 1;
+        nextDisplay.splice(insertionIndex, 0, moved);
+
         this.diagram.layers = [...nextDisplay].reverse();
         this.diagram.render('all');
     }
