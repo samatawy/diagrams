@@ -89,11 +89,27 @@
 .diagram-layers-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    /* gap: 6px; */
+    gap: 0;
     min-height: 0;
     opacity: 1;
     transition: opacity 0.22s ease, padding 0.26s var(--diagram-layers-caret-ease);
     overflow: hidden;
+}
+
+.diagram-layers-list .diagram-layer-row .diagram-layer-item {
+    border-radius: 0;
+}
+
+.diagram-layers-list .diagram-layer-row:first-child .diagram-layer-item {
+    border-top-left-radius: var(--diagram-ui-panel-radius, 5px);
+    border-top-right-radius: var(--diagram-ui-panel-radius, 5px);
+}
+
+.diagram-layers-list .diagram-layer-row:has(+ .diagram-layer-slot--tail) .diagram-layer-item {
+    /* .diagram-layers-list .diagram-layer-row:not(.diagram-layer-slot--tail):last-child .diagram-layer-item { */
+    border-bottom-left-radius: var(--diagram-ui-panel-radius, 5px);
+    border-bottom-right-radius: var(--diagram-ui-panel-radius, 5px);
 }
 
 .diagram-layers-editor.is-collapsed .diagram-layers-list {

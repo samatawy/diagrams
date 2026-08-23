@@ -54,6 +54,7 @@ import { DiagramTopMenu } from "./menus/diagram.top.menu";
 import { registerEditorIcons } from "../editview/editor.icons";
 
 const DIAGRAM_EDITOR_STYLE_ID = 'diagram-editor-layout';
+const DIAGRAM_EDITOR_THEME_STORAGE_KEY = 'diagram-editor-theme';
 
 function ensureEditorStyles(): void {
     injectStyles(DIAGRAM_EDITOR_STYLE_ID, DIAGRAM_EDITOR_STYLES);
@@ -478,6 +479,10 @@ export class DiagramEditor {
     }
 
     public setTheme(theme: 'light' | 'dark') {
+        this.applyTheme(theme, true);
+    }
+
+    protected applyTheme(theme: 'light' | 'dark', persist: boolean): void {
         if (theme === 'dark') {
             document.body.classList.add('dark-editor-theme');
             document.body.classList.remove('light-editor-theme');
@@ -487,6 +492,26 @@ export class DiagramEditor {
             document.body.classList.remove('dark-editor-theme');
             this.prefer_dark = false;
         }
+
+        if (persist) {
+            try {
+                localStorage.setItem(DIAGRAM_EDITOR_THEME_STORAGE_KEY, theme);
+            } catch {
+                // Ignore browser storage failures silently.
+            }
+        }
+    }
+
+    protected readStoredTheme(): 'light' | 'dark' | undefined {
+        try {
+            const stored = localStorage.getItem(DIAGRAM_EDITOR_THEME_STORAGE_KEY);
+            if (stored === 'light' || stored === 'dark') {
+                return stored;
+            }
+        } catch {
+            // Ignore browser storage failures silently.
+        }
+        return undefined;
     }
 
     /**
@@ -942,13 +967,18 @@ export class DiagramEditor {
         if (this.mediaQuery) return;
 
         this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        this.prefer_dark = this.mediaQuery.matches;
-        this.setTheme(this.prefer_dark ? 'dark' : 'light');
+
+        const storedTheme = this.readStoredTheme();
+        const initialTheme = storedTheme ?? (this.mediaQuery.matches ? 'dark' : 'light');
+        this.applyTheme(initialTheme, false);
 
         const handler = (event: MediaQueryListEvent) => {
+            if (this.readStoredTheme() !== undefined) {
+                return;
+            }
+
             const isDark = event.matches;
-            this.setTheme(isDark ? 'dark' : 'light');
-            console.log(`Theme changed to: ${isDark ? 'dark' : 'light'}`);
+            this.applyTheme(isDark ? 'dark' : 'light', false);
         };
         this.mediaQuery.addEventListener('change', handler);
 
