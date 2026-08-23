@@ -3,124 +3,12 @@ import { DiagramEditView } from '../../editview/diagram.edit.view';
 import type { DiagramView } from '../../view/diagram.view';
 import { injectStyles, setClasses } from '../editor.utils';
 
+import LAYER_ITEM_DEFAULT_STYLES from '../../css_generated/editor/layers/layer.item.css';
+
 const LAYER_ITEM_STYLE_ID = 'diagram-layers-item-defaults';
 
-const LAYER_ITEM_STYLES = `
-    .diagram-layer-item {
-        display: grid;
-        grid-template-columns: auto auto minmax(0, 1fr) auto auto;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 8px;
-        border: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
-        border-radius: 8px;
-        background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
-        color: var(--diagram-ui-text, inherit);
-        cursor: pointer;
-        user-select: none;
-        transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
-    }
-
-    .diagram-layer-item:hover {
-        border-color: var(--diagram-ui-border-strong, rgba(15, 23, 42, 0.24));
-    }
-
-    .diagram-layer-item.is-active {
-        background: rgba(var(--diagram-inspector-base, 15, 23, 42), 0.08);
-        border-color: rgba(var(--diagram-inspector-base, 15, 23, 42), 0.28);
-    }
-
-    .diagram-layer-item.is-hidden {
-        opacity: 0.6;
-    }
-
-    .diagram-layer-visibility {
-        width: 14px;
-        height: 14px;
-        margin: 0;
-        accent-color: var(--diagram-ui-accent, #0f766e);
-        cursor: pointer;
-    }
-
-    .diagram-layer-visibility:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-    }
-
-    .diagram-layer-name {
-        min-width: 0;
-        max-width: 100%;
-        border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.15));
-        background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
-        color: var(--diagram-ui-text, #1f2937);
-        padding: var(--diagram-ui-control-padding-y, 3px) var(--diagram-ui-control-padding-x, 6px);
-        border-radius: var(--diagram-ui-control-radius, 6px);
-        font: var(--diagram-ui-font-size, 12px)/1.4 var(--diagram-ui-font-family, system-ui);
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .diagram-layer-name:focus {
-        outline: none;
-        border-color: var(--diagram-ui-border-strong, rgba(15, 118, 110, 0.45));
-        background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.88));
-    }
-
-    .diagram-layer-count {
-        min-width: 18px;
-        padding: 2px 4px;
-        border-radius: 999px;
-        background: rgba(148, 163, 184, 0.16);
-        color: var(--diagram-ui-text-muted, #475569);
-        text-align: center;
-        font-size: 9px;
-        line-height: 1.4;
-    }
-
-    .diagram-layer-delete {
-        width: 22px;
-        height: 22px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0;
-        border: 1px solid transparent;
-        border-radius: 5px;
-        background: transparent;
-        /* color: #b91c1c; */
-        color: red;
-        cursor: pointer;
-    }
-
-    .diagram-layer-delete:hover:not(:disabled) {
-    /*
-        border-color: rgba(239, 68, 68, 0.2);
-        background: rgba(239, 68, 68, 0.08);
-        color: #991b1b; */
-        border-color: rgba(255, 0, 0, 0.2);
-        background: rgba(255, 0, 0, 0.08);
-        color: red;
-    }
-
-    .diagram-layer-delete:disabled {
-        opacity: 0.35;
-        cursor: not-allowed;
-    }
-
-    .diagram-layer-drag-handle {
-        width: 16px;
-        height: 16px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--diagram-ui-text-muted, #475569);
-        font-size: 11px;
-        line-height: 1;
-    }
-`;
-
 function ensureLayerItemStyles(): void {
-    injectStyles(LAYER_ITEM_STYLE_ID, LAYER_ITEM_STYLES);
+    injectStyles(LAYER_ITEM_STYLE_ID, LAYER_ITEM_DEFAULT_STYLES);
 }
 
 export interface DiagramLayerItemConfig {

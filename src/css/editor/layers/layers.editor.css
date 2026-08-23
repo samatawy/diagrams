@@ -1,0 +1,112 @@
+.diagram-layers-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 180px;
+    max-width: var(--diagram-inspector-width, 300px);
+    width: 100%;
+    box-sizing: border-box;
+    color: var(--diagram-ui-text, inherit);
+    --diagram-layers-caret-ease: cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.diagram-layers-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 6px 8px;
+    font: 600 var(--diagram-ui-label-font-size, 11px)/1.2 var(--diagram-ui-font-family, system-ui);
+    color: rgba(var(--diagram-inspector-base, 15, 118, 110), 1);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border: var(--diagram-ui-border-width, 1px) solid rgba(var(--diagram-inspector-base, 15, 118, 110), 0.34);
+    border-radius: var(--diagram-ui-panel-radius, 5px);
+    background: rgba(var(--diagram-inspector-base, 15, 118, 110), 0.14);
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease;
+}
+
+.diagram-layers-header::before {
+    content: '';
+    width: 3px;
+    height: 3px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    margin-inline-end: 2px;
+    transform: rotate(45deg);
+    transform-origin: 50% 50%;
+    transition: transform 0.26s var(--diagram-layers-caret-ease);
+}
+
+.diagram-layers-editor.is-collapsed .diagram-layers-header::before {
+    transform: rotate(-45deg);
+}
+
+.diagram-layers-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    flex: 1;
+}
+
+.diagram-layers-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.diagram-layers-button {
+    border: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
+    color: inherit;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font: inherit;
+    cursor: pointer;
+}
+
+.diagram-layers-button:hover {
+    border-color: var(--diagram-ui-border-strong, rgba(15, 23, 42, 0.22));
+}
+
+.diagram-layers-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.26s var(--diagram-layers-caret-ease);
+    overflow: hidden;
+}
+
+.diagram-layers-editor.is-collapsed .diagram-layers-body {
+    grid-template-rows: 0fr;
+}
+
+.diagram-layers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    opacity: 1;
+    transition: opacity 0.22s ease, padding 0.26s var(--diagram-layers-caret-ease);
+    overflow: hidden;
+}
+
+.diagram-layers-editor.is-collapsed .diagram-layers-list {
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.diagram-layers-empty {
+    border: 1px dashed var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
+    border-radius: 8px;
+    padding: 10px 8px;
+    color: var(--diagram-ui-text-muted, #475569);
+    font-size: 11px;
+    text-align: center;
+    background: rgba(148, 163, 184, 0.03);
+}
