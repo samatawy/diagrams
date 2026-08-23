@@ -89,7 +89,8 @@ export class DiagramClipboard {
                     // if (style.image_padding !== undefined) node.image.padding = style.image_padding;
                     // node.image = (style.image_id || style.image_mode || style.image_align || style.image_padding) ? node.image : undefined;
 
-                    node.hollow = undefined; node.hollow = isHollow(node);
+                    node.hollow = undefined;
+                    // node.hollow = isHollow(node);
                 }
 
                 this.diagram.applyClassChange(selected, {

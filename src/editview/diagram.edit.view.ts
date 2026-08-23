@@ -1284,9 +1284,9 @@ export class DiagramEditView extends DiagramView {
 
         for (let node of selected) {
             node.fillStyle = { ...node.fillStyle, color };
-            if (NodeRegistry.adapter(node.type)?.hollow_mode === 'if_transparent') {
-                node.hollow = color === 'transparent';
-            }
+            // if (NodeRegistry.adapter(node.type)?.hollow_mode === 'if_transparent') {
+            //     node.hollow = color === 'transparent';
+            // }
         }
         this.applyClassChange(selected, { fillStyle: { color } });
 
@@ -4448,12 +4448,12 @@ export class DiagramEditView extends DiagramView {
             draft.points = templatePoints.map((pt) => ({ x: pt.x + dx, y: pt.y + dy }));
         }
 
-        const hollow_mode = NodeRegistry.adapter(tool)?.hollow_mode || 'if_transparent';
-        if (typeof draft.hollow !== 'boolean') {
-            const fillStyle = draft.fillStyle || defaultFillStyle;
-            draft.hollow = (hollow_mode === 'always')
-                || (hollow_mode === 'if_transparent' && fillStyle.color === 'transparent');
-        }
+        // const hollow_mode = NodeRegistry.adapter(tool)?.hollow_mode || 'if_transparent';
+        // if (typeof draft.hollow !== 'boolean') {
+        //     const fillStyle = draft.fillStyle || defaultFillStyle;
+        // draft.hollow = (hollow_mode === 'always')
+        //     || (hollow_mode === 'if_transparent' && fillStyle.color === 'transparent' && fillStyle.gradient === undefined);
+        // }
 
         if (NodeRegistry.isConnection(tool)) {
             draft.strokeStyle!.arrow_start = draft.strokeStyle!.arrow_start ?? this.settings.arrowStart;
@@ -5918,6 +5918,7 @@ export class DiagramEditView extends DiagramView {
             this.settings.lineDash = lineDash(shape);
             this.settings.strokeColor = strokeColor(shape);
             this.settings.fillColor = fillColor(shape);
+            this.settings.fillGradient = shape.fillStyle?.gradient || undefined;
             this.settings.textColor = textColor(shape);
             this.settings.textOrientation = textOrientation(shape);
             this.settings.textWeight = textWeight(shape);
