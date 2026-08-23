@@ -1953,6 +1953,13 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
+     * Returns the currently active layer for editing, when available.
+     */
+    public get currentLayer(): ILayer | undefined {
+        return this.current.layer;
+    }
+
+    /**
      * Undoes the last action performed on the diagram, reverting it to the previous state.
      */
     public async undo(): Promise<void> {
@@ -4514,7 +4521,9 @@ export class DiagramEditView extends DiagramView {
         }
 
         if (this.layers.length === 0) {
-            this.createLayerAt('top');
+            const layer = this.createLayerAt('top', 'main');
+            layer.name = 'Main';
+            layer.nodes = [...this.nodes.map(node => node.id)];
         }
 
         this.current.layer = this.layers[0];
@@ -4548,13 +4557,18 @@ export class DiagramEditView extends DiagramView {
      * @returns The created or updated layer.
      */
     private createLayerAt(place: 'top' | 'bottom' = 'top', id?: string): ILayer {
-        const layerId = id || this.generateLayerId();
+        const layerId = id || (this.layers.length === 0 ? 'main' : this.generateLayerId());
         const existing = this.layer(layerId);
         if (existing) {
             return this.upsertLayer(existing);
         }
 
         const created = this.createLayer(layerId);
+        if (layerId === 'main') {
+            created.name = 'Main';
+            created.nodes = [...this.nodes.map(node => node.id)];
+        }
+
         if (place === 'bottom') {
             this.layers.unshift(created);
         } else {
@@ -4582,6 +4596,14 @@ export class DiagramEditView extends DiagramView {
             this.current.layer = active;
         }
 
+        if (this.layers.length === 1 && this.current.layer.id === 'main') {
+            const allNodeIds = this.nodes.map(node => node.id);
+            const layerNodeIds = new Set(this.current.layer.nodes);
+            if (allNodeIds.length !== this.current.layer.nodes.length || allNodeIds.some(id => !layerNodeIds.has(id))) {
+                this.current.layer.nodes = allNodeIds;
+            }
+        }
+
         return this.current.layer;
     }
 
@@ -4591,7 +4613,8 @@ export class DiagramEditView extends DiagramView {
      * @returns The new unique layer ID.
      */
     private generateLayerId(prefix: string = 'layer'): string {
-        let index = this.layers.length + 1;
+        const hasMainLayer = this.layers.some(layer => layer.id === 'main');
+        let index = hasMainLayer ? 1 : this.layers.length + 1;
         let id = `${prefix}-${index}`;
 
         while (this.layer(id)) {

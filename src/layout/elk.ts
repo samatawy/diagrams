@@ -25,7 +25,6 @@ export class ElkLayout {
      * Creates an instance of ElkLayout and attaches it to a DiagramView.
      * This allows the ElkLayout to manipulate the viewport of the DiagramView when fitting content.
      * @param diagram the DiagramView instance to attach to
-     * @param options optional configuration for minimum and maximum zoom levels
      */
     constructor(diagram: DiagramView) {
         this.diagram = diagram;

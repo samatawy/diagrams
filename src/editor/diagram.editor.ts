@@ -38,6 +38,7 @@ import type { ArrowType } from "../types";
 import { IntegerRangeSelect, type IntegerRangeSelectConfig } from "./inputs/integer.range.select";
 import { DiagramInspector } from "./inspector/diagram.inspector";
 import type { InspectorConfig } from "./inspector/inspector";
+import { DiagramLayersEditor, type DiagramLayersEditorConfig } from "./layers/layers.editor";
 import { DiagramContextMenu } from "./menus/diagram.context.menu";
 import { DiagramConstants } from "../model/diagram.constants";
 import { DiagramStatusBar } from "../status/diagram.status.bar";
@@ -78,9 +79,11 @@ export type DiagramEditorFileDialogsConfig = {
 export type DiagramEditorConfig = {
     hostClassName?: string;
     showInspector?: boolean;
+    showLayers?: boolean;
     showInputs?: boolean;
 
     inspector?: InspectorConfig;
+    layers?: DiagramLayersEditorConfig;
     toolbars?: DiagramToolBarConfig[];
     toolbox?: DiagramToolBoxConfig;
 
@@ -135,6 +138,8 @@ export class DiagramEditor {
 
     protected inspectorHost?: HTMLElement;
     protected inspector?: DiagramInspector;
+    protected layersHost?: HTMLElement;
+    protected layersEditor?: DiagramLayersEditor;
     protected statusBar?: DiagramStatusBar;
     protected hintService?: DiagramHintService;
 
@@ -568,6 +573,13 @@ export class DiagramEditor {
     }
 
     /**
+     * Returns the layer editor control when available.
+     */
+    public getLayersEditor(): DiagramLayersEditor | undefined {
+        return this.layersEditor;
+    }
+
+    /**
      * Returns the font family selector control when available.
      */
     public getFontSelect(): FontSelect | undefined {
@@ -718,6 +730,12 @@ export class DiagramEditor {
 
         if (this.inspectorHost) {
             this.inspector = new DiagramInspector(this.inspectorHost, this.diagram, config.inspector || {});
+            if (config.showLayers !== false) {
+                this.layersHost = document.createElement('div');
+                setClasses(this.layersHost, 'diagram-editor-layers-panel');
+                this.inspectorHost.appendChild(this.layersHost);
+                this.layersEditor = new DiagramLayersEditor(this.layersHost, this.diagram, config.layers || {});
+            }
         }
 
         if (this.statusBarHost) {

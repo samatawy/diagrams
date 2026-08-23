@@ -5,3 +5,4 @@ export * from './node.support';
 export * from './image.serializer';
 export * from './diagram.file.dialogs';
 export * from './json.serializer';
+export * from './editor.files';

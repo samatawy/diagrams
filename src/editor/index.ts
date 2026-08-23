@@ -23,5 +23,8 @@ export * from './inspector/index';
 // Toolbox
 export * from './toolbox/index';
 
+// Layers
+export * from './layers/index';
+
 // Editor component
 export * from './diagram.editor';

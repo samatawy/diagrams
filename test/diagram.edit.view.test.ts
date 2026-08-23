@@ -839,4 +839,25 @@ describe('DiagramEditable', () => {
         editview.sendLayerToBack('layer-2');
         expect(editview.layers.map(layer => layer.id)).toEqual(['layer-2', 'layer-1', 'layer-3']);
     });
+
+    it('starts with Main and numbers new layers from layer-1', async () => {
+        const host = createHost(400, 300);
+        const editview = new TestDiagramEditView('demo', host);
+
+        editview.upsertNode(makeNode('node-1', 10, 20, 80, 70, editview));
+        await editview.init();
+
+        expect(editview.layers).toHaveLength(1);
+        expect(editview.layers[0]?.id).toBe('main');
+        expect(editview.layers[0]?.name).toBe('Main');
+        expect(editview.layers[0]?.nodes).toEqual(['node-1']);
+        expect(editview.currentLayer?.id).toBe('main');
+
+        editview.addLayer('', 'top');
+        expect(editview.layers.map(layer => layer.id)).toEqual(['main', 'layer-1']);
+        expect(editview.layers[1]?.name).toBe('layer-1');
+
+        editview.addLayer('', 'top');
+        expect(editview.layers.map(layer => layer.id)).toEqual(['main', 'layer-1', 'layer-2']);
+    });
 });

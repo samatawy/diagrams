@@ -851,7 +851,7 @@ export class Diagram implements IDiagram, HasSheetRepository {
     }
 
     private buildMissingLayer(): void {
-        const layer = this.createLayer('layer-1', 'layer-1', true,
+        const layer = this.createLayer('main', 'Main', true,
             this.nodes.map(node => node.id)
         );
         this.layers = [layer];
@@ -865,7 +865,8 @@ export class Diagram implements IDiagram, HasSheetRepository {
 
         const layer = this.layers[0]!;
         // Check layer metadata.
-        if (layer.id !== 'layer-1' || layer.name !== 'layer-1' || layer.visible !== true) {
+        const isMainLayer = (layer.id === 'main' || layer.id === 'layer-1') && (layer.name === 'Main' || layer.name === 'layer-1');
+        if (!isMainLayer || layer.visible !== true) {
             return false;
         }
 
