@@ -1,10 +1,10 @@
 import { injectStyles, setClasses } from '../editor.utils';
 import { CHECKER_CSS_IMAGE, type IGradient } from '../../color.types';
-
-import DEFAULT_STYLES from '../../css_generated/editor/inputs/gradient.select.css';
 import { GradientPicker } from '../gradient/gradient.picker';
 import { buildGradientCss } from '../gradient/color.utils';
-const STYLE_ID = 'color-select-defaults';
+
+import DEFAULT_STYLES from '../../css_generated/editor/inputs/gradient.select.css';
+const STYLE_ID = 'gradient-defaults';
 
 function ensureDefaultStyles(): void {
     injectStyles(STYLE_ID, DEFAULT_STYLES);
@@ -28,13 +28,18 @@ export interface GradientSelectConfig {
      * Optional class name for the color swatch elements.
      */
     swatchClassName?: string;
+    /**
+     * Optional class name for the clear button.
+     */
+    clearButtonClassName?: string;
 }
 
 const DEFAULT_CONFIG: Required<GradientSelectConfig> = {
     tooltip: '',
-    hostClassName: 'color-preset-control',
-    triggerClassName: 'color-preset-trigger',
-    swatchClassName: 'color-preset-swatch',
+    hostClassName: 'gradient-select-control',
+    triggerClassName: 'gradient-trigger',
+    swatchClassName: 'gradient-swatch',
+    clearButtonClassName: 'gradient-clear-button',
 };
 
 /**
@@ -48,6 +53,8 @@ export class GradientSelect {
     protected config: Required<GradientSelectConfig>;
 
     private readonly trigger: HTMLButtonElement;
+
+    private readonly clearButton: HTMLButtonElement;
 
     /** Inner swatch div — gradient background lives here so CSS `>* opacity:0` hides it during mixed/unset. */
     private readonly swatch: HTMLDivElement;
@@ -74,16 +81,29 @@ export class GradientSelect {
         // Trigger styled to match .color-preset-trigger exactly.
         this.trigger = document.createElement('button');
         this.trigger.type = 'button';
-        setClasses(this.trigger, 'gp-trigger', this.config.triggerClassName);
+        setClasses(this.trigger, 'gradient-trigger', this.config.triggerClassName);
         this.trigger.title = this.config.tooltip ?? '';
 
         // Inner swatch — mirrors .color-preset-swatch structure.
         // backgroundImage and backgroundSize are always set together in syncSwatch().
         this.swatch = document.createElement('div');
-        setClasses(this.swatch, 'gp-swatch', this.config.swatchClassName);
+        setClasses(this.swatch, 'gradient-swatch', this.config.swatchClassName);
 
         this.trigger.appendChild(this.swatch);
         this.trigger.addEventListener('click', () => this.openPicker());
+
+        this.clearButton = document.createElement('button');
+        this.clearButton.type = 'button';
+        setClasses(this.clearButton, 'gradient-clear-button', this.config.clearButtonClassName);
+        this.clearButton.textContent = '×';
+        this.clearButton.title = 'Clear Gradient';
+        this.trigger.appendChild(this.clearButton);
+        this.clearButton.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this.value = null;
+            // this.setUnset(true);
+            // this.notifyChange(undefined);
+        });
 
         this.host.appendChild(this.trigger);
     }

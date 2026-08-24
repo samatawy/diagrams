@@ -1,6 +1,11 @@
 .gp-trigger {
-    display: block;
+    /* display: block; */
     width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    min-width: 120px;
     padding: 6px 8px;
     cursor: pointer;
     appearance: none;
@@ -13,7 +18,58 @@
 
 .gp-trigger .gp-swatch {
     width: 100%;
+    flex: 1;
     min-height: 18px;
     border-radius: 5px;
     border: var(--diagram-ui-border-width, 1px) solid var(--diagram-ui-border, rgba(15, 23, 42, 0.2));
 }
+
+.gp-trigger .gp-clear-button {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: red;
+    cursor: pointer;
+}
+
+.gp-trigger .gp-clear-button:hover:not(:disabled) {
+    border-color: rgba(255, 0, 0, 0.2);
+    background: rgba(255, 0, 0, 0.08);
+    color: red;
+}
+
+.gp-trigger .gp-clear-button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* .diagram-gradient-delete {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    color: red;
+    cursor: pointer;
+}
+
+.diagram-gradient-delete:hover:not(:disabled) {
+    border-color: rgba(255, 0, 0, 0.2);
+    background: rgba(255, 0, 0, 0.08);
+    color: red;
+}
+
+.diagram-gradient-delete:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+} */

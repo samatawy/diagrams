@@ -2210,7 +2210,8 @@ export class DiagramEditView extends DiagramView {
             }
             this.current.layer = targetLayer;
 
-            this.eventDispatcher.nodeAdded({ node: this.selection()[0]!, nodeId: this.selection()[0]!.id });
+            /* trigger listeners that respond to node changes */
+            this.emitNodeAdded(this.selection()[0]!);
 
             /* render after initialization.. */
             setTimeout(() => {
@@ -3687,6 +3688,8 @@ export class DiagramEditView extends DiagramView {
     private freehandUp(event: PointerEvent): void {
         if (!this.freehandPath) return;
 
+        this.addUndo();
+
         /* 1. Reduce points (Douglas-Peucker or simple threshold) */
         const compacted = FreehandAdapter.douglasPeucker(this.freehandPath, 1.5); // 1.5px tolerance
 
@@ -3717,6 +3720,8 @@ export class DiagramEditView extends DiagramView {
 
         /* 4. Store as vector, clear temp array */
         //   diagram.storeFreehandPath(pathData);
+
+        this.emitNodeAdded(node);
 
         this.freehandPath = undefined;
         this.lastFreehandPoint = undefined;
@@ -3868,6 +3873,7 @@ export class DiagramEditView extends DiagramView {
         }
 
         this.render('all');
+        /* Finish and emit event */
         this.finishDraftIfReady();
     }
 

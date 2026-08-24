@@ -6,7 +6,7 @@ import { isDiagramViewLike } from "../../guards";
 import type { INodeCached } from "../../view/view.cache";
 import { RenderBasics } from "../render.basics";
 import { DiagramConstants } from "../../model";
-import { hexLuminance } from "../../value.utils";
+import { hexLuminance, lineWidth } from "../../value.utils";
 
 /**
  * FreehandAdapter is a node adapter responsible for rendering freehand nodes in the diagram.
@@ -51,8 +51,10 @@ export class FreehandAdapter extends PolylineAdapter {
             // context.strokeStyle = hexLuminance(node.strokeStyle?.color || '#000') > 0.179 ? '#000000' : '#ffffff';
 
             context.strokeStyle = hexLuminance(node.strokeStyle?.color || '#000') > 0.279 ? '#000000' : '#ffffff';
-            context.lineWidth = (node.strokeStyle?.width) ? Math.min(2, node.strokeStyle.width) * 2 : 4;
-            context.setLineDash([1, 5]);
+            context.lineWidth = (node.strokeStyle?.width) ? Math.min(2, node.strokeStyle.width) * 4 : 4;
+            // context.setLineDash([1, 5]);
+            context.lineCap = 'butt';
+            context.setLineDash([context.lineWidth, context.lineWidth * 2]);
 
             context.stroke(cached.path);
             context.restore();

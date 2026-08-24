@@ -77,7 +77,8 @@ body.dark-editor-theme {
 
     min-height: 0;
     max-height: 40vh;
-    overflow-y: auto;
+    /* overflow-y: auto; */
+    overflow-y: visible;
     transition: min-height 0.3s ease-in-out, max-height 0.3s ease-in-out, padding 0.3s ease-in-out;
 }
 

@@ -3,7 +3,14 @@ import type { IGradient } from '../../../color.types';
 import { InspectorAdapter, type EditableRecord, type InspectorAdapterInit } from '../inspector.adapter';
 
 import { GradientSelect, type GradientSelectConfig } from '../../inputs/gradient.select';
-const STYLE_ID = 'gp-defaults';
+
+// import DEFAULT_STYLES from '../../../css_generated/editor/gradient/gradient.adapter.css';
+// import { injectStyles } from '../../editor.utils';
+// const STYLE_ID = 'gp-defaults';
+
+// function ensureDefaultStyles(): void {
+//     injectStyles(STYLE_ID, DEFAULT_STYLES);
+// }
 
 /**
  * Inspector adapter for `fillStyle.gradient` and similar properties.
@@ -22,6 +29,8 @@ export class GradientSelectAdapter extends InspectorAdapter {
 
     constructor(cell: HTMLElement, mixedClassName: string, _initial: InspectorAdapterInit) {
         super(cell, mixedClassName);
+        // ensureDefaultStyles();
+
         const host = document.createElement('div');
         host.style.width = '100%';
         cell.appendChild(host);
