@@ -8,6 +8,7 @@ import type { DiagramEditor } from '../diagram.editor';
 import { DIAGRAM_SHEET_CHANGED_EVENT, DIAGRAM_SHEET_LOADED_EVENT } from '../../events/diagram.events';
 import { registerEditorIcons } from '../../editview/editor.icons';
 import type { EditorFile } from '../../io/editor.files';
+import type { ILayer } from '../../interfaces';
 
 
 /**
@@ -162,6 +163,9 @@ export class DiagramTopMenu extends TopMenu {
                 this.actionMenuItem('group-nodes', 'G'),
                 this.actionMenuItem('ungroup-nodes', 'U'),
                 '-',
+                this.actionMenuItem('move-to-new-layer', 'N'),
+                this.moveToLayerMenu(),
+                '-',
                 this.actionMenuItem('forward', 'R'),
                 this.actionMenuItem('backward', 'W'),
                 this.actionMenuItem('front', 'F'),
@@ -308,6 +312,26 @@ export class DiagramTopMenu extends TopMenu {
         }
     }
 
+    public updateLayers(): void {
+        const layerMenu = this.dropDownMenus.find(menu => menu.label === 'Move to Layer');
+        if (!layerMenu) return;
+
+        const selectionMenu = this.topLevel.find(menu => menu.label === 'Selection') as DropDownMenu | undefined;
+        if (selectionMenu && selectionMenu.element) {
+            const layerMenuIndex = selectionMenu.items.findIndex(item => (item as DropDownMenu)?.label === layerMenu.label);
+            if (layerMenuIndex >= 0) {
+                selectionMenu.items.splice(layerMenuIndex, 1, this.moveToLayerMenu());
+            }
+
+            const index = this.menuElement?.children ? Array.from(this.menuElement.children).indexOf(selectionMenu.element!) : -1;
+            if (index >= 0) {
+                this.menuElement?.removeChild(selectionMenu.element!);
+                // this.addDropDownMenu(selectionMenu, undefined, 0);
+                this.addDropDownMenu(selectionMenu, this.menuElement!, index);
+            }
+        }
+    }
+
     private actionMenuItem(actionId: DiagramActionId, altKey: string): DiagramTopMenuItem {
         const action = ACTION_MAP.get(actionId);
         if (!action) throw new Error(`Action not found: ${actionId}`);
@@ -365,5 +389,28 @@ export class DiagramTopMenu extends TopMenu {
             }
         }
     }
+
+    private moveToLayerMenu(): DropDownMenu {
+        return {
+            label: 'Move to Layer',
+            altKey: 'M',
+            icon: 'layer',
+            items: [
+                ...this.diagram.layers.map(layer => this.moveToLayerItem(layer))
+            ]
+        } as DropDownMenu
+    }
+
+    private moveToLayerItem(layer: ILayer): DiagramTopMenuItem {
+        return {
+            label: layer.name,
+            altKey: '',
+            isEnabled: () => !!this.diagram.selection().length,
+            onClick: () => {
+                this.diagram.moveSelectedToLayer(layer);
+            }
+        }
+    }
+
 }
 

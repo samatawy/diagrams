@@ -2120,30 +2120,6 @@ export class DiagramEditView extends DiagramView {
     }
 
     /**
-     * Moves the selected nodes to a new layer.
-     */
-    public moveToNewLayer(): void {
-        if (this.selection().length > 0) {
-            this.addUndo();
-
-            const newLayer = this.createLayerAt('top');
-            if (this.current.layer) {
-                for (let id of this.current.layer.nodes) {
-                    newLayer.nodes.push(id);
-                }
-                this.current.layer.nodes = this.current.layer.nodes.filter(id => !this.selection().some(s => s.id === id));
-            }
-            this.current.layer = newLayer;
-
-            /* render after initialization.. */
-            setTimeout(() => {
-                this.render('all');
-                this.renderPreview();
-            }, 100);
-        }
-    }
-
-    /**
      * Selects all nodes within the specified layer.
      * @param layer The layer whose nodes should be selected.
      */
@@ -2207,6 +2183,41 @@ export class DiagramEditView extends DiagramView {
         }
 
         this.render('all');
+    }
+
+    /**
+     * Moves the selected nodes to a new layer.
+     */
+    public moveSelectedToLayer(layer?: ILayer): void {
+        if (this.selection().length > 0) {
+            this.addUndo();
+
+            this.ensureCurrentLayer();
+            if (layer && layer.id === this.current.layer?.id) {
+                return;
+            }
+            const targetLayer = layer ? layer : this.createLayerAt('top');
+
+            /* Add ids to target layer */
+            for (let node of this.selection()) {
+                targetLayer.nodes.push(node.id);
+            }
+            /* Remove ids from other layers */
+            for (let layer of this.layers) {
+                if (layer.id !== targetLayer.id) {
+                    layer.nodes = layer.nodes.filter(id => !targetLayer.nodes.includes(id));
+                }
+            }
+            this.current.layer = targetLayer;
+
+            this.eventDispatcher.nodeAdded({ node: this.selection()[0]!, nodeId: this.selection()[0]!.id });
+
+            /* render after initialization.. */
+            setTimeout(() => {
+                this.render('all');
+                this.renderPreview();
+            }, 100);
+        }
     }
 
     // ==================================================

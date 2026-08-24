@@ -1203,13 +1203,16 @@ export class DiagramEditor {
 
         this.addManagedEventListener(this.host, DIAGRAM_OPEN_EVENT, () => {
             this.topMenu?.updateRecentFiles();
+            this.topMenu?.updateLayers();
         });
         this.addManagedEventListener(this.host, DIAGRAM_SAVE_EVENT, () => {
             this.topMenu?.updateRecentFiles();
+            this.topMenu?.updateLayers();
         });
 
         this.addManagedEventListener(this.host, DIAGRAM_CHANGED_EVENT, () => {
             this.reflectStyles();
+            this.topMenu?.updateLayers();
         });
 
         this.addManagedEventListener(this.host, DIAGRAM_ERROR_EVENT, (event: unknown) => {

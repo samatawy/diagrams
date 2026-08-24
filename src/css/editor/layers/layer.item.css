@@ -4,6 +4,8 @@
     align-items: center;
     gap: 6px;
     padding: 6px 8px;
+    margin: 0;
+    margin-bottom: 3px;
     border: 1px solid var(--diagram-ui-border, rgba(15, 23, 42, 0.12));
     border-radius: 8px;
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
@@ -67,6 +69,7 @@
     opacity: 1;
     /* margin: 0 0 6px; */
     margin: 0;
+    margin-bottom: 3px;
     border-width: 1px;
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
     transition: height 0.29s ease, opacity 0.29s ease, margin 0.29s ease, border-width 0.29s ease, background 0.29s ease;
@@ -84,7 +87,7 @@
 .diagram-layer-slot--tail.is-visible {
     height: var(--diagram-layer-drop-height, 40px);
     min-height: 40px;
-    margin: 0;
+    margin: 2px 0;
     border-width: 1px;
     background: var(--diagram-ui-surface, rgba(255, 255, 255, 0.82));
 }

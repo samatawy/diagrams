@@ -213,7 +213,7 @@ export class DiagramLayersEditor {
             return;
         }
 
-        this.diagram.moveToNewLayer();
+        this.diagram.moveSelectedToLayer();
         this.render();
     }
 

@@ -24,7 +24,8 @@ export type DiagramActionId = '|' | 'new' | 'open' | 'save' | 'export' | 'export
     'text-left' | 'text-center' | 'text-right' | 'text-top' | 'text-middle' | 'text-bottom' |
     'text-bold' | 'text-italic' | 'text-underline' |
     'text-orientation-horizontal' | 'text-orientation-vertical' | 'text-orientation-path' |
-    'group-nodes' | 'ungroup-nodes';
+    'group-nodes' | 'ungroup-nodes' |
+    'move-to-new-layer';
 
 export interface DiagramAction {
     /**
@@ -632,6 +633,14 @@ export const DIAGRAM_ACTIONS: DiagramAction[] = [
         isEnabled: (d) => d.selection().length >= 1,
     },
 
+    // Layer actions
+    {
+        id: 'move-to-new-layer',
+        label: 'Move to New Layer',
+        tooltip: 'Move selected nodes to a new layer',
+        execute: (d) => d.moveSelectedToLayer(),
+        isEnabled: (d) => d.selection().length > 0,
+    },
 ];
 
 /**

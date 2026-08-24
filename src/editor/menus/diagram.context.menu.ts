@@ -7,6 +7,7 @@ import {
     DIAGRAM_ZORDER_ACTION_LAYOUT,
     DIAGRAM_CLIPBOARD_ACTION_LAYOUT,
     DIAGRAM_ALIGN_ACTION_LAYOUT,
+    DIAGRAM_LAYER_ACTION_LAYOUT,
 } from '../diagram.action.layouts';
 
 import { ACTION_MAP, type DiagramActionId } from '../diagram.actions';
@@ -35,6 +36,7 @@ const HAS_SELECTION_LAYOUT: DiagramActionId[] = [
     ...DIAGRAM_CLIPBOARD_ACTION_LAYOUT,
     '|',
     ...DIAGRAM_ZORDER_ACTION_LAYOUT,
+    ...DIAGRAM_LAYER_ACTION_LAYOUT,
     '|',
     ...DIAGRAM_ALIGN_ACTION_LAYOUT,
 ];

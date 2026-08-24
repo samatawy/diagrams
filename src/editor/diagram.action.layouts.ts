@@ -41,6 +41,10 @@ export const DIAGRAM_ZORDER_ACTION_LAYOUT: DiagramActionId[] = [
     'back',
 ];
 
+export const DIAGRAM_LAYER_ACTION_LAYOUT: DiagramActionId[] = [
+    'move-to-new-layer',
+];
+
 export const DIAGRAM_CLIPBOARD_ACTION_LAYOUT: DiagramActionId[] = [
     'delete',
     'duplicate',
