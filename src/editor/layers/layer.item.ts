@@ -101,6 +101,11 @@ export class DiagramLayerItem {
             target.name = value;
             this.render();
         });
+        nameInput.addEventListener('focus', (event) => {
+            event.stopPropagation();
+            nameInput.select();
+            this.setCurrentLayer(this.layer);
+        });
         this.host.appendChild(nameInput);
 
         if (canEdit && this.config.allowDelete && this.layer.nodes.length === 0) {
@@ -132,5 +137,17 @@ export class DiagramLayerItem {
             }
             this.refresh();
         });
+    }
+
+    private setCurrentLayer(layer: ILayer): void {
+        if (this.diagram instanceof DiagramEditView) {
+            this.diagram.setCurrentLayer(layer);
+            const parentList = this.host.closest('.diagram-layers-list');
+            const siblings = parentList?.querySelectorAll('.diagram-layer-item');
+            siblings?.forEach(sibling => {
+                sibling.classList.toggle('is-active', sibling === this.host);
+            });
+            // this.host.classList.toggle('is-active', this.diagram.currentLayer?.id === layer.id);
+        }
     }
 }

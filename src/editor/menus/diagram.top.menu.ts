@@ -396,7 +396,7 @@ export class DiagramTopMenu extends TopMenu {
             altKey: 'M',
             icon: 'layer',
             items: [
-                ...this.diagram.layers.map(layer => this.moveToLayerItem(layer))
+                ...this.diagram.layers.slice().reverse().map(layer => this.moveToLayerItem(layer))
             ]
         } as DropDownMenu
     }

@@ -63,8 +63,8 @@
 
 .inspector .inspector-heading::before {
     content: '';
-    width: 3px;
-    height: 3px;
+    width: 4.9px;
+    height: 4.9px;
     border-right: 2px solid currentColor;
     border-bottom: 2px solid currentColor;
     margin-inline-end: 2px;
